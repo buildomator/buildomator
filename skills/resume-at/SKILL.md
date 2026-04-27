@@ -1,6 +1,6 @@
 ---
 name: gsd:resume-at
-description: Schedule a future resume of work — wraps Claude Code's /schedule for GSD continuity
+description: Schedule a future resume of work - e.g. '/gsd:resume-at 09:00', '/gsd:resume-at +2h', or '/gsd:resume-at 04:00 --cmd /gsd:execute-phase 9'
 argument-hint: "<HH:MM | ISO 8601 | +<duration>> [--cmd <command>]"
 allowed-tools:
   - Skill
