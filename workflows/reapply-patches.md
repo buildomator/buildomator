@@ -1,6 +1,6 @@
 # Reapply Local Patches Workflow
 
-Invoked by `/gsd:update --reapply` (`commands/gsd/update.md`).
+Invoked by `/gsd-update --reapply` (`commands/gsd/update.md`).
 
 After a GSD update wipes and reinstalls files, this workflow merges user's previously saved local modifications back into the new version. Uses three-way comparison (pristine baseline, user-modified backup, newly installed version) to reliably distinguish user customizations from version drift.
 
@@ -111,7 +111,7 @@ Read `backup-meta.json` from the patches directory.
 ```
 No local patches found. Nothing to reapply.
 
-Local patches are automatically saved when you run /gsd:update
+Local patches are automatically saved when you run /gsd-update
 after modifying any GSD workflow, command, or agent files.
 ```
 Exit.
@@ -269,17 +269,80 @@ After writing each merged file, verify that user modifications survived the merg
 
 ## Step 5: Hunk Verification Gate
 
-Before proceeding to cleanup, evaluate the Hunk Verification Table produced in Step 4.
+Two layered gates. Both must pass before proceeding to cleanup.
 
-**If the Hunk Verification Table is absent** (Step 4 did not produce it), STOP immediately and report to the user:
-```
-ERROR: Hunk Verification Table is missing. Post-merge verification was not completed.
-Rerun /gsd:update --reapply to retry with full verification.
+### 5a: Deterministic verifier (binding gate, #2969)
+
+Run the deterministic verifier script. Do NOT rely solely on the free-text `verified: yes/no` Hunk Verification Table from Step 4 — bug #2969 traced repeated false-positive `verified: yes` reports to that table being filled in without an actual content-presence check. The script performs the check structurally and exits non-zero on any miss.
+
+Run the verifier as a child process (the gsd-tools binary directory is not required — the script ships under `scripts/` in the source repo and is also exposed via the SDK at `sdk/dist/cli.js verify-reapply` when present):
+
+```bash
+PRISTINE_DIR="${CONFIG_DIR}/gsd-pristine"
+
+# Build args as a bash array so paths with spaces survive expansion intact
+# (string-concat + unquoted expansion would split incorrectly on whitespace).
+VERIFY_ARGS=(
+  --patches-dir "$PATCHES_DIR"
+  --config-dir  "$CONFIG_DIR"
+)
+if [ -d "$PRISTINE_DIR" ]; then
+  VERIFY_ARGS+=(--pristine-dir "$PRISTINE_DIR")
+fi
+VERIFY_ARGS+=(--json)
+
+# Capture stdout (the structured JSON report) separately from stderr so that
+# Node warnings, deprecation notices, or stack traces do not corrupt the
+# JSON parse downstream. Stderr is preserved on the controlling terminal
+# for operator visibility.
+VERIFY_OUTPUT="$(node "${GSD_HOME}/scripts/verify-reapply-patches.cjs" "${VERIFY_ARGS[@]}")"
+VERIFY_STATUS=$?
 ```
 
-**If any row in the Hunk Verification Table shows `verified: no`**, STOP and report to the user:
+**If `VERIFY_STATUS` is non-zero**, STOP and report to the user, parsing the JSON output:
+
+```text
+ERROR: {failures} file(s) failed deterministic post-merge verification (#2969 gate).
+
+The verifier compared user-added lines (computed from the diff between
+the backup and the pristine baseline) against the merged installed file.
+Lines listed below are present in the backup but absent from the merged result.
+
+For each failed file:
+  {file}
+    missing: {first significant missing line, up to 5 per file}
+    backup:  {patches_dir}/{file}
+
+Resolve before proceeding:
+  (a) Re-merge the missing content into the installed file by hand, or
+  (b) Restore from backup: cp {patches_dir}/{file} {installed_path}
+
+Then re-run /gsd-update --reapply to re-verify.
 ```
-ERROR: {N} hunk(s) failed verification — content may have been dropped during merge.
+
+Do not proceed to cleanup until the verifier exits 0.
+
+**Only when `VERIFY_STATUS` is 0** (or when all files had zero significant user-added lines, which the verifier reports as `Failures: 0`) may execution continue to gate 5b.
+
+### 5b: Hunk Verification Table review (advisory gate, #1999)
+
+The Hunk Verification Table produced in Step 4 must also be reviewed before proceeding. This is advisory after the script gate but is preserved as a defense-in-depth check — if the script ever has a bug or the pristine baseline is unavailable, the table-based gate still catches obvious regressions.
+
+**If the Hunk Verification Table is absent** (Step 4 silently produced nothing), STOP and report:
+
+```
+ERROR: Hunk Verification Table is missing — Step 4 did not produce it.
+The deterministic verifier (5a) may still have passed, but a missing table
+means post-merge verification was not fully completed. Rerun
+/gsd-update --reapply to retry with full verification.
+```
+
+A missing table absent from the workflow output cannot bypass this gate.
+
+**If any row in the Hunk Verification Table shows `verified: no`**, STOP and report:
+
+```
+ERROR: {N} hunk(s) failed Step 5b verification — content may have been dropped during merge.
 
 Unverified hunks:
   {file} hunk {hunk_id}: signature line "{signature_line}" not found in merged output
@@ -290,9 +353,9 @@ Review the merged file manually, then either:
   (b) Restore from backup: cp {patches_dir}/{file} {installed_path}
 ```
 
-Do not proceed to cleanup until the user confirms they have resolved all unverified hunks.
+Do not proceed to cleanup until both gates (5a and 5b) pass.
 
-**Only when all rows show `verified: yes`** (or when all files had zero user-added hunks) may execution continue to Step 6.
+**Why both gates?** 5a (the script) is the binding gate — it does the actual substring check structurally and cannot be shortcut by the LLM. 5b (the table review) is the advisory gate — it provides a redundant safety net via the Step 4 prose summary, ensuring that even a script regression or absent pristine baseline cannot silently allow a `verified: no` row to slip past, nor can a missing table go unnoticed. Layered gates favour false-positive halts (recoverable) over silent successes on lost content (unrecoverable).
 
 ## Step 6: Cleanup option
 

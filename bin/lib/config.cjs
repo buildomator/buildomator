@@ -43,7 +43,7 @@ function validateKnownConfigKeyPath(keyPath) {
  * Merges (increasing priority):
  *   1. Hardcoded defaults — every key that loadConfig() resolves, plus mode/granularity
  *   2. User-level defaults from ~/.gsd/defaults.json (if present)
- *   3. userChoices — the settings the user explicitly selected during /gsd:new-project
+ *   3. userChoices — the settings the user explicitly selected during /gsd-new-project
  *
  * Uses the canonical `git` namespace for branching keys (consistent with VALID_CONFIG_KEYS
  * and the settings workflow). loadConfig() handles both flat and nested formats, so this
@@ -167,7 +167,7 @@ function buildNewProjectConfig(userChoices) {
  * Command: create a fully-materialized .planning/config.json for a new project.
  *
  * Accepts user-chosen settings as a JSON string (the keys the user explicitly
- * configured during /gsd:new-project). All remaining keys are filled from
+ * configured during /gsd-new-project). All remaining keys are filled from
  * hardcoded defaults and optional ~/.gsd/defaults.json.
  *
  * Idempotent: if config.json already exists, returns { created: false }.
@@ -377,6 +377,15 @@ function cmdConfigSet(cwd, keyPath, value, raw) {
   output(setConfigValueResult, raw, `${keyPath}=${parsedValue}`);
 }
 
+/**
+ * Schema-level defaults for well-known config keys.
+ * When a key is absent from config.json and no --default flag was supplied,
+ * cmdConfigGet checks here before emitting "Key not found".
+ */
+const SCHEMA_DEFAULTS = {
+  'context_window': 200000,
+};
+
 function cmdConfigGet(cwd, keyPath, raw, defaultValue) {
   const configPath = path.join(planningDir(cwd), 'config.json');
   const hasDefault = defaultValue !== undefined;
@@ -406,6 +415,11 @@ function cmdConfigGet(cwd, keyPath, raw, defaultValue) {
   for (const key of keys) {
     if (current === undefined || current === null || typeof current !== 'object') {
       if (hasDefault) { output(defaultValue, raw, String(defaultValue)); return; }
+      if (Object.prototype.hasOwnProperty.call(SCHEMA_DEFAULTS, keyPath)) {
+        const def = SCHEMA_DEFAULTS[keyPath];
+        output(def, raw, String(def));
+        return;
+      }
       error(`Key not found: ${keyPath}`);
     }
     current = current[key];
@@ -413,6 +427,11 @@ function cmdConfigGet(cwd, keyPath, raw, defaultValue) {
 
   if (current === undefined) {
     if (hasDefault) { output(defaultValue, raw, String(defaultValue)); return; }
+    if (Object.prototype.hasOwnProperty.call(SCHEMA_DEFAULTS, keyPath)) {
+      const def = SCHEMA_DEFAULTS[keyPath];
+      output(def, raw, String(def));
+      return;
+    }
     error(`Key not found: ${keyPath}`);
   }
 
