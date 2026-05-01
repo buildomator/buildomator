@@ -21,7 +21,7 @@ No Pass/Fail buttons. No severity questions. Just: "Here's what should happen. D
 </philosophy>
 
 <template>
-@${CLAUDE_PLUGIN_ROOT}/templates/UAT.md
+@~/.claude/get-shit-done/templates/UAT.md
 </template>
 
 <process>
@@ -32,8 +32,8 @@ If $ARGUMENTS contains a phase number, load context:
 ```bash
 INIT=$(gsd-sdk query init.verify-work "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_PLANNER=$(gsd-sdk query agent-skills gsd-planner 2>/dev/null)
-AGENT_SKILLS_CHECKER=$(gsd-sdk query agent-skills gsd-checker 2>/dev/null)
+AGENT_SKILLS_PLANNER=$(gsd-sdk query agent-skills gsd-planner)
+AGENT_SKILLS_CHECKER=$(gsd-sdk query agent-skills gsd-plan-checker)
 ```
 
 Parse JSON for: `planner_model`, `checker_model`, `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `has_verification`, `uat_path`.
@@ -391,7 +391,7 @@ Clear Current Test section:
 
 Commit the UAT file:
 ```bash
-gsd-sdk query commit "test({phase_num}): complete UAT - {passed} passed, {issues} issues" ".planning/phases/XX-name/{phase_num}-UAT.md"
+gsd-sdk query commit "test({phase_num}): complete UAT - {passed} passed, {issues} issues" --files ".planning/phases/XX-name/{phase_num}-UAT.md"
 ```
 
 Present summary:
@@ -464,7 +464,7 @@ Run phase artifact scan to surface any open items before marking phase verified:
 `audit-open` is CJS-only until registered on `gsd-sdk query`:
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" audit-open --json 2>/dev/null
+gsd-sdk query audit-open --json
 ```
 
 Parse the JSON output. For the CURRENT PHASE ONLY, surface:
@@ -499,7 +499,7 @@ Spawning parallel debug agents to investigate each issue.
 ```
 
 - Load diagnose-issues workflow
-- Follow @${CLAUDE_PLUGIN_ROOT}/workflows/diagnose-issues.md
+- Follow @~/.claude/get-shit-done/workflows/diagnose-issues.md
 - Spawn parallel debug agents for each issue
 - Collect root causes
 - Update UAT.md with root causes
@@ -551,6 +551,8 @@ Plans must be executable prompts.
 )
 ```
 
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
 On return:
 - **PLANNING COMPLETE:** Proceed to `verify_gap_plans`
 - **PLANNING INCONCLUSIVE:** Report and offer manual intervention
@@ -600,6 +602,8 @@ Return one of:
 )
 ```
 
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
 On return:
 - **VERIFICATION PASSED:** Proceed to `present_ready`
 - **ISSUES FOUND:** Proceed to `revision_loop`
@@ -643,6 +647,8 @@ Do NOT replan from scratch unless issues are fundamental.
   description="Revise Phase {phase} plans"
 )
 ```
+
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 After planner returns → spawn checker again (verify_gap_plans logic)
 Increment iteration_count

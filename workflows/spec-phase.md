@@ -188,7 +188,7 @@ If gate passes (ambiguity ≤ 0.20 AND all minimums met):
 
 ## Step 6: Generate SPEC.md
 
-Use the SPEC.md template from @${CLAUDE_PLUGIN_ROOT}/templates/spec.md.
+Use the SPEC.md template from @~/.claude/get-shit-done/templates/spec.md.
 
 **Requirements for every requirement entry:**
 - One specific, testable statement

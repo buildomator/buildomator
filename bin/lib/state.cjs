@@ -4,7 +4,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const { escapeRegex, loadConfig, getMilestoneInfo, getMilestonePhaseFilter, normalizeMd, planningDir, planningPaths, output, error, atomicWriteFileSync } = require('./core.cjs');
+const { escapeRegex, loadConfig, getMilestoneInfo, getMilestonePhaseFilter, normalizeMd, output, error, atomicWriteFileSync } = require('./core.cjs');
+const { planningDir, planningPaths } = require('./planning-workspace.cjs');
 const { extractFrontmatter, reconstructFrontmatter } = require('./frontmatter.cjs');
 
 // Cache disk scan results from buildStateFrontmatter per cwd per process (#1967).
@@ -29,12 +30,13 @@ process.on('exit', () => {
 
 // Shared helper: extract a field value from STATE.md content.
 // Supports both **Field:** bold and plain Field: format.
+// Horizontal whitespace only after ':' so YAML keys like `progress:` do not match as `Progress:` (parity with sdk/helpers stateExtractField).
 function stateExtractField(content, fieldName) {
   const escaped = escapeRegex(fieldName);
-  const boldPattern = new RegExp(`\\*\\*${escaped}:\\*\\*\\s*(.+)`, 'i');
+  const boldPattern = new RegExp(`\\*\\*${escaped}:\\*\\*[ \\t]*(.+)`, 'i');
   const boldMatch = content.match(boldPattern);
   if (boldMatch) return boldMatch[1].trim();
-  const plainPattern = new RegExp(`^${escaped}:\\s*(.+)`, 'im');
+  const plainPattern = new RegExp(`^${escaped}:[ \\t]*(.+)`, 'im');
   const plainMatch = content.match(plainPattern);
   return plainMatch ? plainMatch[1].trim() : null;
 }
@@ -720,7 +722,13 @@ function buildStateFrontmatter(bodyContent, cwd) {
   const status = stateExtractField(bodyContent, 'Status');
   const progressRaw = stateExtractField(bodyContent, 'Progress');
   const lastActivity = stateExtractField(bodyContent, 'Last Activity');
-  const stoppedAt = stateExtractField(bodyContent, 'Stopped At') || stateExtractField(bodyContent, 'Stopped at');
+  // Bug #2444: scope Stopped At extraction to the ## Session section so that
+  // historical "Stopped at:" prose elsewhere in the body (e.g. in a
+  // Session Continuity Archive section) never overwrites the current value.
+  // Fall back to full-body search only when no ## Session section exists.
+  const sessionSectionMatch = bodyContent.match(/##\s*Session\s*\n([\s\S]*?)(?=\n##|$)/i);
+  const sessionBodyScope = sessionSectionMatch ? sessionSectionMatch[1] : bodyContent;
+  const stoppedAt = stateExtractField(sessionBodyScope, 'Stopped At') || stateExtractField(sessionBodyScope, 'Stopped at');
   const pausedAt = stateExtractField(bodyContent, 'Paused At');
 
   let milestone = null;
@@ -747,9 +755,33 @@ function buildStateFrontmatter(bodyContent, cwd) {
         let cached = _diskScanCache.get(cwd);
         if (!cached) {
           const isDirInMilestone = getMilestonePhaseFilter(cwd);
-          const phaseDirs = fs.readdirSync(phasesDir, { withFileTypes: true })
+          const allMatchingDirs = fs.readdirSync(phasesDir, { withFileTypes: true })
             .filter(e => e.isDirectory()).map(e => e.name)
             .filter(isDirInMilestone);
+
+          // Bug #2445: when stale phase dirs from a prior milestone remain in
+          // .planning/phases/ alongside new dirs with the same phase number,
+          // de-duplicate by normalized phase number keeping the most recently
+          // modified dir. This prevents double-counting (e.g. two "Phase 1" dirs).
+          const seenPhaseNums = new Map(); // normalizedNum -> dirName
+          for (const dir of allMatchingDirs) {
+            const m = dir.match(/^0*(\d+[A-Za-z]?(?:\.\d+)*)/);
+            const key = m ? m[1].toLowerCase() : dir;
+            if (!seenPhaseNums.has(key)) {
+              seenPhaseNums.set(key, dir);
+            } else {
+              // Keep the dir that is newer on disk (more likely current milestone)
+              try {
+                const existing = path.join(phasesDir, seenPhaseNums.get(key));
+                const candidate = path.join(phasesDir, dir);
+                if (fs.statSync(candidate).mtimeMs > fs.statSync(existing).mtimeMs) {
+                  seenPhaseNums.set(key, dir);
+                }
+              } catch { /* keep existing on stat error */ }
+            }
+          }
+          const phaseDirs = [...seenPhaseNums.values()];
+
           let diskTotalPlans = 0;
           let diskTotalSummaries = 0;
           let diskCompletedPhases = 0;
@@ -1223,6 +1255,70 @@ function cmdStatePlannedPhase(cwd, phaseNumber, planCount, raw) {
 }
 
 /**
+ * Bug #2630: reset STATE.md for a new milestone cycle.
+ * Stomps frontmatter milestone/milestone_name/status/progress AND rewrites
+ * the Current Position body. Preserves Accumulated Context.
+ * Symmetric with the SDK `stateMilestoneSwitch` handler.
+ */
+function cmdStateMilestoneSwitch(cwd, version, name, raw) {
+  if (!version || !String(version).trim()) {
+    output({ error: 'milestone required (--milestone <vX.Y>)' }, raw);
+    return;
+  }
+  const resolvedName = (name && String(name).trim()) || 'milestone';
+  const statePath = planningPaths(cwd).state;
+  const today = new Date().toISOString().split('T')[0];
+
+  const lockPath = acquireStateLock(statePath);
+  try {
+    const content = fs.existsSync(statePath) ? fs.readFileSync(statePath, 'utf-8') : '';
+    const existingFm = extractFrontmatter(content);
+    const body = stripFrontmatter(content);
+
+    const positionPattern = /(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i;
+    const resetPositionBody =
+      `\nPhase: Not started (defining requirements)\n` +
+      `Plan: —\n` +
+      `Status: Defining requirements\n` +
+      `Last activity: ${today} — Milestone ${version} started\n\n`;
+    let newBody;
+    if (positionPattern.test(body)) {
+      newBody = body.replace(positionPattern, (_m, header) => `${header}${resetPositionBody}`);
+    } else {
+      const preface = body.trim().length > 0 ? body : '# Project State\n';
+      newBody = `${preface.trimEnd()}\n\n## Current Position\n${resetPositionBody}`;
+    }
+
+    const fm = {
+      gsd_state_version: existingFm.gsd_state_version || '1.0',
+      milestone: version,
+      milestone_name: resolvedName,
+      status: 'planning',
+      last_updated: new Date().toISOString(),
+      last_activity: today,
+      progress: {
+        total_phases: 0,
+        completed_phases: 0,
+        total_plans: 0,
+        completed_plans: 0,
+        percent: 0,
+      },
+    };
+
+    const yamlStr = reconstructFrontmatter(fm);
+    const assembled = `---\n${yamlStr}\n---\n\n${newBody.replace(/^\n+/, '')}`;
+    atomicWriteFileSync(statePath, normalizeMd(assembled), 'utf-8');
+    output(
+      { switched: true, version, name: resolvedName, status: 'planning' },
+      raw,
+      'true',
+    );
+  } finally {
+    releaseStateLock(lockPath);
+  }
+}
+
+/**
  * Gate 1: Validate STATE.md against filesystem.
  * Returns { valid, warnings, drift } JSON.
  */
@@ -1588,6 +1684,92 @@ function cmdStatePrune(cwd, options, raw) {
   }, raw, totalPruned > 0 ? 'true' : 'false');
 }
 
+/**
+ * Mark the current phase as COMPLETE in STATE.md.
+ * Updates Status, Last Activity, and the Current Position section to reflect
+ * that the phase execution is finished and the project is ready for the next phase.
+ * Implements the `gsd state complete-phase` subcommand (issue #2735).
+ */
+function cmdStateCompletePhase(cwd, raw) {
+  const statePath = planningPaths(cwd).state;
+  if (!fs.existsSync(statePath)) {
+    output({ error: 'STATE.md not found' }, raw);
+    return;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const updated = [];
+  let resolvedPhase = '?';
+
+  readModifyWriteStateMd(statePath, (content) => {
+    // Read the current phase number for descriptive messages.
+    //
+    // The 'Phase' fallback can match the decorated body line under
+    // `## Current Position` (e.g. `Phase: 01 (Foo) — EXECUTING`), which would
+    // flow downstream into messy `Status: Phase 01 (Foo) — EXECUTING complete`
+    // output. Strip everything past the leading numeric/decimal token so the
+    // fallback path produces a clean phase identifier matching the canonical
+    // `Current Phase` field. CodeRabbit nitpick on PR #2761.
+    const rawPhase = stateExtractField(content, 'Current Phase') ||
+                     stateExtractField(content, 'Phase') ||
+                     '';
+    const phaseToken = rawPhase.match(/^\s*([\w.-]+)/);
+    const currentPhase = phaseToken ? phaseToken[1] : '?';
+    resolvedPhase = currentPhase;
+
+    // Update Status field
+    const statusValue = `Phase ${currentPhase} complete`;
+    let result = stateReplaceField(content, 'Status', statusValue);
+    if (result) { content = result; updated.push('Status'); }
+
+    // Update Last Activity date
+    result = stateReplaceField(content, 'Last Activity', today);
+    if (result) { content = result; updated.push('Last Activity'); }
+
+    // Update Last Activity Description
+    const activityDesc = `Phase ${currentPhase} marked complete`;
+    result = stateReplaceField(content, 'Last Activity Description', activityDesc);
+    if (result) { content = result; updated.push('Last Activity Description'); }
+
+    // Update ## Current Position section
+    const positionPattern = /(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i;
+    const positionMatch = content.match(positionPattern);
+    if (positionMatch) {
+      const header = positionMatch[1];
+      let posBody = positionMatch[2];
+
+      // Update Phase line to show COMPLETE
+      const newPhase = `Phase: ${currentPhase} — COMPLETE`;
+      if (/^Phase:/m.test(posBody)) {
+        posBody = posBody.replace(/^Phase:.*$/m, newPhase);
+      }
+
+      // Update Status line if present
+      const newStatus = `Status: Phase ${currentPhase} complete`;
+      if (/^Status:/m.test(posBody)) {
+        posBody = posBody.replace(/^Status:.*$/m, newStatus);
+      }
+
+      // Update Last activity line if present
+      const newActivity = `Last activity: ${today} -- Phase ${currentPhase} marked complete`;
+      if (/^Last activity:/im.test(posBody)) {
+        posBody = posBody.replace(/^Last activity:.*$/im, newActivity);
+      }
+
+      content = content.replace(positionPattern, `${header}${posBody}`);
+      updated.push('Current Position');
+    }
+
+    return content;
+  }, cwd);
+
+  output(
+    { updated, phase: resolvedPhase },
+    raw,
+    updated.length > 0 ? 'true' : 'false',
+  );
+}
+
 module.exports = {
   stateExtractField,
   stateReplaceField,
@@ -1610,9 +1792,11 @@ module.exports = {
   cmdStateJson,
   cmdStateBeginPhase,
   cmdStatePlannedPhase,
+  cmdStateCompletePhase,
   cmdStateValidate,
   cmdStateSync,
   cmdStatePrune,
+  cmdStateMilestoneSwitch,
   cmdSignalWaiting,
   cmdSignalResume,
 };

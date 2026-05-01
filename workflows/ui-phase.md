@@ -5,7 +5,7 @@ UI-SPEC.md locks spacing, typography, color, copywriting, and design system deci
 </purpose>
 
 <required_reading>
-@${CLAUDE_PLUGIN_ROOT}/references/ui-brand.md
+@~/.claude/get-shit-done/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
@@ -21,8 +21,8 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ```bash
 INIT=$(gsd-sdk query init.plan-phase "$PHASE")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI=$(gsd-sdk query agent-skills gsd-ui-researcher 2>/dev/null)
-AGENT_SKILLS_UI_CHECKER=$(gsd-sdk query agent-skills gsd-ui-checker 2>/dev/null)
+AGENT_SKILLS_UI=$(gsd-sdk query agent-skills gsd-ui-researcher)
+AGENT_SKILLS_UI_CHECKER=$(gsd-sdk query agent-skills gsd-ui-checker)
 ```
 
 Parse JSON for: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_context`, `has_research`, `commit_docs`.
@@ -164,6 +164,8 @@ Task(
 )
 ```
 
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
 ## 6. Handle Researcher Return
 
 **If `## UI-SPEC COMPLETE`:**
@@ -214,6 +216,8 @@ Task(
   description="Verify UI-SPEC Phase {N}"
 )
 ```
+
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 ## 8. Handle Checker Return
 
@@ -294,7 +298,7 @@ Dimensions: 6/6 passed
 ## 11. Commit (if configured)
 
 ```bash
-gsd-sdk query commit "docs(${padded_phase}): UI design contract" "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
+gsd-sdk query commit "docs(${padded_phase}): UI design contract" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
 ```
 
 ## 12. Update State

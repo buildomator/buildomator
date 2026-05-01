@@ -82,7 +82,7 @@ Shipped v1.2 with 3 phases, 3 plans, 14 tasks, plus 3 structurally related quick
 Tech stack: Node.js CJS (bin/lib), MCP server (stdio JSON-RPC), Claude Code plugin system.
 ~14k LOC in bin/*.cjs, ~573 LOC MCP server, 81 self-contained skill files (~21k LOC).
 Published as [jnuyens/gsd-plugin](https://github.com/jnuyens/gsd-plugin) on GitHub.
-Based on [GSD 1.38.3](https://github.com/gsd-build/get-shit-done) by TACHES (Lex Christopherson).
+Based on [GSD 1.39.0](https://github.com/gsd-build/get-shit-done) by TACHES (Lex Christopherson).
 
 ## Constraints
 
@@ -135,4 +135,4 @@ This document evolves at phase transitions and milestone boundaries.
 9. **Run `UPSTREAM_VERSION=v1.x.y node bin/maintenance/check-upstream-schema.cjs`** (use the just-synced version) — must exit 0 before declaring the sync complete. If upstream added fields, decide whether to absorb them into `schema/handoff-v1.json` as optional or bump to a `handoff-v2.json` alongside
 
 ---
-*Last updated: 2026-04-25 — shipped plugin-local `workflows/` dir + rewrote `@`-includes to `${CLAUDE_PLUGIN_ROOT}` form (closes Category B drift).*
+*Last updated: 2026-05-01 — synced upstream GSD 1.39.0 (plugin v2.39.0); local patches preserved in core.cjs + gsd-tools.cjs.*

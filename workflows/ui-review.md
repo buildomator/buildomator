@@ -3,7 +3,7 @@ Retroactive 6-pillar visual audit of implemented frontend code. Standalone comma
 </purpose>
 
 <required_reading>
-@${CLAUDE_PLUGIN_ROOT}/references/ui-brand.md
+@~/.claude/get-shit-done/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
@@ -18,7 +18,7 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ```bash
 INIT=$(gsd-sdk query init.phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI_REVIEWER=$(gsd-sdk query agent-skills gsd-ui-reviewer 2>/dev/null)
+AGENT_SKILLS_UI_REVIEWER=$(gsd-sdk query agent-skills gsd-ui-auditor)
 ```
 
 Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `commit_docs`.
@@ -107,6 +107,8 @@ Task(
 )
 ```
 
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
 ## 4. Handle Return
 
 **If `## UI REVIEW COMPLETE`:**
@@ -174,7 +176,7 @@ tools is detected at runtime.
 ## 5. Commit (if configured)
 
 ```bash
-gsd-sdk query commit "docs(${padded_phase}): UI audit review" "${PHASE_DIR}/${PADDED_PHASE}-UI-REVIEW.md"
+gsd-sdk query commit "docs(${padded_phase}): UI audit review" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-REVIEW.md"
 ```
 
 </process>

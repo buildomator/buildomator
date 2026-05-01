@@ -8,6 +8,27 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.39.0] - 2026-05-01  (based on upstream GSD 1.39.0)
+
+Upstream sync release — picks up upstream GSD 1.39.0 source-tree changes (workflows, references, templates, contexts, bin/lib utilities, bin/gsd-tools.cjs) while preserving plugin-only patches in `bin/lib/core.cjs` (CLAUDE_PLUGIN_ROOT path resolution helpers — `resolveGsdRoot` / `resolveGsdDataDir` / `resolveGsdAsset`) and `bin/gsd-tools.cjs` (`migrate` command, `hook` handlers for session-start / pre-compact / post-tool-use, `checkpoint` command, `write-phase-memory` command, plugin-root-aware paths).
+
+### Added
+- **Upstream v1.39.0 source-tree changes** — full tree-copy of `workflows/` (78 → 85 top-level workflow bodies), `references/`, `templates/`, `contexts/`, `bin/lib/*.cjs`, and `bin/gsd-tools.cjs`. Notable upstream additions surfaced via the sync:
+  - **`--minimal` install profile** — ~94% cold-start token reduction for local LLMs (32K–128K context), writes only main-loop core skills (upstream #2762).
+  - **`/gsd:edit-phase`** — modify any roadmap phase field in place without renumbering (upstream #2617).
+  - **Post-merge build & test gate** — execute-phase auto-detects build/test commands across Xcode, Make, Just, Cargo, Go, Python, npm; iOS projects run `xcodebuild` automatically (upstream #2720).
+  - **Per-runtime review models** — `review.models.<cli>` config + extended `RUNTIME_PROFILE_MAP` covering `gemini`, `qwen`, `opencode`, `copilot` (upstream #2612, #2748).
+  - **Workstream config inheritance** — root `.planning/config.json` deep-merged into each workstream config; explicit `null` overrides parent (upstream #2714).
+  - **Skill-surface consolidation** — upstream collapsed 86 → 59 skill entries via four new grouped skills (`capture`, `phase`, `config`, `workspace`) and six parents absorbing sub-operations as flags. The plugin still ships 82 `skills/<name>/SKILL.md` files because `skills/` is not in the tree-copy scope (the plugin owns the slash-command surface; upstream's `commands/gsd/*` consolidation is informational here).
+- See full upstream release notes: <https://github.com/gsd-build/get-shit-done/releases/tag/v1.39.0>.
+
+### Changed
+- **Version bump** — plugin `2.38.8 → 2.39.0` per `plugin_major = upstream_major + 1` versioning (README § Versioning).
+- **README counts** — workflow bodies `78 → 85`, agent definitions `21 → 33` (post-sync `agents/` count corrected). Slash commands stays at 82 (`skills/` not in tree-copy scope).
+
+### Fixed
+- **`MODEL_ALIAS_MAP.opus` no longer needs a plugin patch** — upstream caught up (`MODEL_ALIAS_MAP` and `RUNTIME_PROFILE_MAP.claude.opus` updated to `claude-opus-4-7` in upstream #2733). Our patch was previously the only way the plugin pinned the right model ID; now it's parity with upstream and the patch is structurally identical.
+
 ## [2.38.8] - 2026-04-27  (based on upstream GSD 1.38.3)
 
 Plugin-only feature release — adds scheduled-resume support and surfaces plugin-only features more prominently in the README.

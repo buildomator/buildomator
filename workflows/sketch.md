@@ -11,10 +11,10 @@ Supports two modes:
 <required_reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-@${CLAUDE_PLUGIN_ROOT}/references/sketch-theme-system.md
-@${CLAUDE_PLUGIN_ROOT}/references/sketch-variant-patterns.md
-@${CLAUDE_PLUGIN_ROOT}/references/sketch-interactivity.md
-@${CLAUDE_PLUGIN_ROOT}/references/sketch-tooling.md
+@~/.claude/get-shit-done/references/sketch-theme-system.md
+@~/.claude/get-shit-done/references/sketch-variant-patterns.md
+@~/.claude/get-shit-done/references/sketch-interactivity.md
+@~/.claude/get-shit-done/references/sketch-tooling.md
 </required_reading>
 
 <process>
@@ -296,7 +296,7 @@ Iterate until satisfied.
 
 **h.** Commit (if `COMMIT_DOCS` is true):
 ```bash
-gsd-sdk query commit "docs(sketch-NNN): [winning direction] — [key visual insight]" .planning/sketches/NNN-descriptive-name/ .planning/sketches/MANIFEST.md
+gsd-sdk query commit "docs(sketch-NNN): [winning direction] — [key visual insight]" --files .planning/sketches/NNN-descriptive-name/ .planning/sketches/MANIFEST.md
 ```
 
 **i.** Report:

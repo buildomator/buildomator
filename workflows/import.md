@@ -198,6 +198,8 @@ Task({
 })
 ```
 
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
 If the checker returns errors:
 - Display the errors to the user
 - Ask the user to resolve issues before the plan is considered imported
@@ -218,7 +220,7 @@ Update `.planning/STATE.md` if appropriate (e.g., increment total plan count).
 
 Commit the imported plan and updated files:
 ```bash
-gsd-sdk query commit "docs({phase}): import plan from {basename FILEPATH}" .planning/phases/{phase}/{plan}-PLAN.md .planning/ROADMAP.md
+gsd-sdk query commit "docs({phase}): import plan from {basename FILEPATH}" --files .planning/phases/{phase}/{plan}-PLAN.md .planning/ROADMAP.md
 ```
 
 Display completion:

@@ -3,7 +3,7 @@ Verify threat mitigations for a completed phase. Confirm PLAN.md threat register
 </purpose>
 
 <required_reading>
-@${CLAUDE_PLUGIN_ROOT}/references/ui-brand.md
+@~/.claude/get-shit-done/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
@@ -18,7 +18,7 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ```bash
 INIT=$(gsd-sdk query init.phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_AUDITOR=$(gsd-sdk query agent-skills gsd-security-auditor 2>/dev/null)
+AGENT_SKILLS_AUDITOR=$(gsd-sdk query agent-skills gsd-security-auditor)
 ```
 
 Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`.
@@ -95,6 +95,8 @@ Task(
   description="Verify threat mitigations for Phase {N}"
 )
 ```
+
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 Handle return:
 - `## SECURED` → record closures → Step 6

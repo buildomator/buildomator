@@ -40,10 +40,8 @@ When a milestone completes:
 <step name="pre_close_artifact_audit">
 Before proceeding with milestone close, run the comprehensive open artifact audit.
 
-`audit-open` is not registered on `gsd-sdk query` yet; use the installed CJS CLI:
-
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" audit-open 2>/dev/null
+gsd-sdk query audit-open
 ```
 
 If the output contains open items (any section with count > 0):
@@ -59,7 +57,7 @@ These items are open. Choose an action:
 ```
 
 If user chooses [A] (Acknowledge):
-1. Re-run `audit-open --json` to get structured data
+1. Re-run `gsd-sdk query audit-open --json` to get structured data
 2. Write acknowledged items to STATE.md under `## Deferred Items` section:
    ```markdown
    ## Deferred Items
@@ -78,7 +76,7 @@ If user chooses [A] (Acknowledge):
 
 If output shows all clear (no open items): print `All artifact types clear.` and proceed.
 
-SECURITY: Audit JSON output is structured data from `audit-open` (gsd-tools.cjs) — validated and sanitized at source. When writing to STATE.md, item slugs and descriptions are sanitized via `sanitizeForDisplay()` before inclusion. Never inject raw user-supplied content into STATE.md without sanitization.
+SECURITY: Audit JSON output is structured data from the `audit-open` query handler (same JSON contract as legacy `gsd-tools.cjs audit-open`) — validated and sanitized at source. When writing to STATE.md, item slugs and descriptions are sanitized via `sanitizeForDisplay()` before inclusion. Never inject raw user-supplied content into STATE.md without sanitization.
 </step>
 
 <step name="verify_readiness">
@@ -496,7 +494,7 @@ Append the extracted Backlog content verbatim to the end of the newly written RO
 **Safety commit — commit archive files BEFORE deleting any originals:**
 
 ```bash
-gsd-sdk query commit "chore: archive v[X.Y] milestone files" .planning/milestones/v[X.Y]-ROADMAP.md .planning/milestones/v[X.Y]-REQUIREMENTS.md .planning/milestones/v[X.Y]-MILESTONE-AUDIT.md .planning/MILESTONES.md .planning/PROJECT.md .planning/STATE.md .planning/ROADMAP.md
+gsd-sdk query commit "chore: archive v[X.Y] milestone files" --files .planning/milestones/v[X.Y]-ROADMAP.md .planning/milestones/v[X.Y]-REQUIREMENTS.md .planning/milestones/v[X.Y]-MILESTONE-AUDIT.md .planning/MILESTONES.md .planning/PROJECT.md .planning/STATE.md .planning/ROADMAP.md
 ```
 
 This creates a durable checkpoint in git history. If anything fails after this point, the working tree can be reconstructed from git.
@@ -565,7 +563,7 @@ If the "## Cross-Milestone Trends" section exists, update the tables with new da
 
 **Commit:**
 ```bash
-gsd-sdk query commit "docs: update retrospective for v${VERSION}" .planning/RETROSPECTIVE.md
+gsd-sdk query commit "docs: update retrospective for v${VERSION}" --files .planning/RETROSPECTIVE.md
 ```
 
 </step>

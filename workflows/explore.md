@@ -6,8 +6,8 @@ offers mid-conversation research when useful, then routes crystallized outputs t
 <required_reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-@${CLAUDE_PLUGIN_ROOT}/references/questioning.md
-@${CLAUDE_PLUGIN_ROOT}/references/domain-probes.md
+@~/.claude/get-shit-done/references/questioning.md
+@~/.claude/get-shit-done/references/domain-probes.md
 </required_reading>
 
 <available_agent_types>
@@ -66,6 +66,8 @@ Task(
 )
 ```
 
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
 Share findings and continue the conversation.
 
 If the topic doesn't warrant research, skip this step entirely. **Don't force it.**
@@ -113,7 +115,7 @@ For each selected output, write the file:
 
 Commit if `commit_docs` is enabled:
 ```bash
-gsd-sdk query commit "docs: capture exploration — {topic_slug}" {file_list}
+gsd-sdk query commit "docs: capture exploration — {topic_slug}" --files {file_list}
 ```
 
 ## Step 6: Close

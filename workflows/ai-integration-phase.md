@@ -11,8 +11,8 @@ This prevents the two most common AI development failures: choosing the wrong fr
 </purpose>
 
 <required_reading>
-@${CLAUDE_PLUGIN_ROOT}/references/ai-frameworks.md
-@${CLAUDE_PLUGIN_ROOT}/references/ai-evals.md
+@~/.claude/get-shit-done/references/ai-frameworks.md
+@~/.claude/get-shit-done/references/ai-evals.md
 </required_reading>
 
 <process>

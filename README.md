@@ -1,16 +1,16 @@
 # GSD Plugin -- Get Shit Done for Claude Code
 
-**Based on:** [GSD 1.38.3](https://github.com/gsd-build/get-shit-done/releases/tag/v1.38.3) base tree by **TACHES** (Lex Christopherson)
+**Based on:** [GSD 1.39.0](https://github.com/gsd-build/get-shit-done/releases/tag/v1.39.0) base tree by **TACHES** (Lex Christopherson)
 
-**Plugin version:** `2.38.8`
+**Plugin version:** `2.39.0`
 
 A performance-optimized plugin packaging of [GSD](https://github.com/gsd-build/get-shit-done) for Claude Code. Reduces per-turn token overhead by ~92%, adds MCP-backed project state, auto-resumes across `/compact`, and bundles everything into a single-install plugin.
 
 ## What GSD Plugin provides
 
 - **82 slash commands** (`/gsd:*`) for project planning, execution, debugging, and verification
-- **21 agent definitions** for specialized workflow roles (planner, executor, researcher, verifier, etc.)
-- **78 workflow bodies** in `workflows/` — operational logic that skills delegate to via `@${CLAUDE_PLUGIN_ROOT}/workflows/<name>.md`
+- **33 agent definitions** for specialized workflow roles (planner, executor, researcher, verifier, etc.)
+- **85 workflow bodies** in `workflows/` — operational logic that skills delegate to via `@${CLAUDE_PLUGIN_ROOT}/workflows/<name>.md`
 - **MCP server** exposing project state as queryable resources and mutation tools
 - **Hooks** for session-start context loading, workflow enforcement, checkpoint on compact, and tool-use monitoring
 - **Auto-resume across `/compact`** -- PreCompact hook writes `.planning/HANDOFF.json`; on the next session, SessionStart auto-invokes `/gsd:resume-work` so Claude continues at the same phase/plan/task with zero manual intervention
@@ -38,7 +38,7 @@ This plugin starts from upstream GSD's source tree but adds Claude-Code-native c
 | **Plugin-version-churn fallback** | If another session upgrades the plugin mid-run and prunes the baked `${CLAUDE_PLUGIN_ROOT}` path, hooks resolve through a Node inline resolver that falls back to the newest cached plugin version. Long sessions survive plugin updates. | Hook command resolver |
 | **CI-enforced drift detection** | Three detectors run on every push: file-layout drift, HANDOFF schema integrity, and namespace normalization. Each has a ratchet baseline; regressions hard-fail. An upstream-schema detector runs post-sync to catch upstream format divergence early. | `bin/maintenance/check-drift.cjs` |
 | **92% per-turn token reduction** | Skill bodies are isolated in `context: fork` sub-agents; orchestration runs in clean child contexts instead of polluting the parent CLAUDE.md. State access uses MCP resources/tools instead of BashTool roundtrips to a CLI. | Plugin architecture |
-| **Plugin-local workflow bodies** | All 78 workflow bodies ship inside the plugin (`workflows/<name>.md`) and resolve via `${CLAUDE_PLUGIN_ROOT}/workflows/<name>.md`. Upstream's setup relies on a global `~/.claude/get-shit-done/` install dir that fails silently when missing. | `workflows/` dir |
+| **Plugin-local workflow bodies** | All 85 workflow bodies ship inside the plugin (`workflows/<name>.md`) and resolve via `${CLAUDE_PLUGIN_ROOT}/workflows/<name>.md`. Upstream's setup relies on a global `~/.claude/get-shit-done/` install dir that fails silently when missing. | `workflows/` dir |
 | **Standardized continuation prompts** | 6 terminal skills (`execute-phase`, `complete-milestone`, `verify-work`, `quick`, `plan-phase`, `ship`) emit "Next Up" blocks per `references/continuation-format.md` — `/clear`-then-[next] suggestions with a "/clear is safe (resume restores from HANDOFF)" footer. | All terminal skills |
 | **Memory across sessions** | Phase outcomes persist via Claude Code's memdir and are auto-recalled at session start. Upstream has no persistence — each session starts cold. | Built-in |
 

@@ -101,9 +101,29 @@ Task(
 )
 ```
 
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
 **b. Run tests:**
 ```bash
-npm test 2>&1 | tail -20
+AUDIT_TEST_CMD=$(gsd-sdk query config-get workflow.test_command --default "" 2>/dev/null || true)
+if [ -z "$AUDIT_TEST_CMD" ]; then
+  if [ -f "Makefile" ] && grep -q "^test:" Makefile; then
+    AUDIT_TEST_CMD="make test"
+  elif [ -f "Justfile" ] || [ -f "justfile" ]; then
+    AUDIT_TEST_CMD="just test"
+  elif [ -f "package.json" ]; then
+    AUDIT_TEST_CMD="npm test"
+  elif [ -f "Cargo.toml" ]; then
+    AUDIT_TEST_CMD="cargo test"
+  elif [ -f "go.mod" ]; then
+    AUDIT_TEST_CMD="go test ./..."
+  elif [ -f "pyproject.toml" ] || [ -f "requirements.txt" ]; then
+    AUDIT_TEST_CMD="python -m pytest -x -q --tb=short"
+  else
+    AUDIT_TEST_CMD="true"
+  fi
+fi
+eval "$AUDIT_TEST_CMD" 2>&1 | tail -20
 ```
 
 **c. If tests pass** — commit atomically:

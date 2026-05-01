@@ -2,8 +2,6 @@
 
 Standard format for presenting next steps after completing a command or workflow.
 
-> **`/clear` is safe.** Since v1.1 (Phase 4 + Phase 5), the plugin's PreCompact hook + PostToolUse periodic checkpoint write `.planning/HANDOFF.json` continuously, and the SessionStart hook detects it on the next session. Running `/gsd:resume-work` restores phase/plan/task position from the handoff file if a `/clear` was unintentional. Treat `/clear` suggestions in this format as low-friction — they break the prompt cache and shed context, but lose nothing about workflow state. Mention this safety net in the parenthetical when suggesting `/clear`: *(`/clear` is safe — `/gsd:resume-work` restores position from `HANDOFF.json` if you change your mind)*.
-
 ## Core Structure
 
 ```

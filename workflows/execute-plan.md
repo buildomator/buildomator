@@ -6,7 +6,7 @@ Execute a phase prompt (PLAN.md) and create the outcome summary (SUMMARY.md).
 Read STATE.md before any operation to load project context.
 Read config.json for planning behavior settings.
 
-@${CLAUDE_PLUGIN_ROOT}/references/git-integration.md
+@~/.claude/get-shit-done/references/git-integration.md
 </required_reading>
 
 <available_agent_types>
@@ -402,15 +402,19 @@ If SUMMARY "Issues Encountered" ≠ "None": yolo → log and continue. Interacti
 </step>
 
 <step name="update_roadmap">
-**Skip this step if running in parallel mode** (the orchestrator handles ROADMAP.md
-updates centrally after merging worktrees).
+Run this step only when NOT executing inside a git worktree (i.e.
+`use_worktrees: false`, the bug #2661 reproducer). In worktree mode each
+worktree has its own ROADMAP.md, so per-plan writes here would diverge
+across siblings; the orchestrator owns the post-merge sync centrally
+(see execute-phase.md §5.7, single-writer contract from #1486 / dcb50396).
 
 ```bash
-# Auto-detect parallel mode: .git is a file in worktrees, a directory in main repo
+# Auto-detect worktree mode: .git is a file in worktrees, a directory in main repo.
+# This mirrors the use_worktrees config flag for the executing handler.
 IS_WORKTREE=$([ -f .git ] && echo "true" || echo "false")
 
-# Skip in parallel mode — orchestrator handles ROADMAP.md centrally
 if [ "$IS_WORKTREE" != "true" ]; then
+  # use_worktrees: false → this handler is the sole post-plan sync point (#2661)
   gsd-sdk query roadmap.update-plan-progress "${PHASE}"
 fi
 ```
@@ -436,9 +440,9 @@ IS_WORKTREE=$([ -f .git ] && echo "true" || echo "false")
 
 # In parallel mode: exclude STATE.md and ROADMAP.md (orchestrator commits these)
 if [ "$IS_WORKTREE" = "true" ]; then
-  gsd-sdk query commit "docs({phase}-{plan}): complete [plan-name] plan" .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md .planning/REQUIREMENTS.md
+  gsd-sdk query commit "docs({phase}-{plan}): complete [plan-name] plan" --files .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md .planning/REQUIREMENTS.md
 else
-  gsd-sdk query commit "docs({phase}-{plan}): complete [plan-name] plan" .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md .planning/STATE.md .planning/ROADMAP.md .planning/REQUIREMENTS.md
+  gsd-sdk query commit "docs({phase}-{plan}): complete [plan-name] plan" --files .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md .planning/STATE.md .planning/ROADMAP.md .planning/REQUIREMENTS.md
 fi
 ```
 </step>
@@ -454,7 +458,7 @@ git diff --name-only ${FIRST_TASK}^..HEAD 2>/dev/null || true
 Update only structural changes: new src/ dir → STRUCTURE.md | deps → STACK.md | file pattern → CONVENTIONS.md | API client → INTEGRATIONS.md | config → STACK.md | renamed → update paths. Skip code-only/bugfix/content changes.
 
 ```bash
-gsd-sdk query commit "" .planning/codebase/*.md --amend
+gsd-sdk query commit "" --files .planning/codebase/*.md --amend
 ```
 </step>
 

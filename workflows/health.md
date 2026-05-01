@@ -11,21 +11,60 @@ Read all files referenced by the invoking prompt's execution_context before star
 <step name="parse_args">
 **Parse arguments:**
 
-Check if `--repair` flag is present in the command arguments.
+Check if `--repair`, `--backfill`, or `--context` flags are present in the command arguments.
 
 ```
 REPAIR_FLAG=""
+BACKFILL_FLAG=""
+CONTEXT_MODE=""
 if arguments contain "--repair"; then
   REPAIR_FLAG="--repair"
 fi
+if arguments contain "--backfill"; then
+  BACKFILL_FLAG="--backfill"
+fi
+if arguments contain "--context"; then
+  CONTEXT_MODE="true"
+fi
 ```
+
+If `CONTEXT_MODE` is set, jump to the `context_check` step and skip the
+integrity validation steps. The two modes are orthogonal — context utilization
+has nothing to do with `.planning/` directory health.
+</step>
+
+<step name="context_check">
+**Run only when `--context` is set.**
+
+The model running this workflow self-reports the current session's
+approximate `tokensUsed` and the active model's `contextWindow`. Use the values
+visible in your runtime (Claude Code's `/context` slash command output, or the
+model's own session telemetry). If the runtime exposes neither, prompt the user
+once via AskUserQuestion for both numbers.
+
+**TEXT_MODE fallback:** when `text_mode` is true (config or `--text` flag) the
+runtime is non-Claude (Codex, Gemini, etc.) and `AskUserQuestion` is not
+available — replace the prompt with a plain-text two-question sequence
+("Approximate tokens used? Context window size?") and read the answers as
+plain text from the user's response.
+
+```bash
+gsd-sdk query validate.context \
+  --tokens-used "$TOKENS_USED" \
+  --context-window "$CONTEXT_WINDOW"
+```
+
+The query prints a one-line status (`Context utilization: NN% (state)`) plus
+a recommendation line for the warning and critical states. Print the SDK
+output verbatim and end the workflow — do **not** mix in `.planning/`
+health output, the two modes are independent diagnostics.
 </step>
 
 <step name="run_health_check">
 **Run health validation:**
 
 ```bash
-gsd-sdk query validate.health $REPAIR_FLAG
+gsd-sdk query validate.health $REPAIR_FLAG $BACKFILL_FLAG
 ```
 
 Parse JSON output:
@@ -138,6 +177,8 @@ Report final status.
 | W007 | warning | Phase on disk but not in ROADMAP | No |
 | W008 | warning | config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip) | Yes |
 | W009 | warning | Phase has Validation Architecture in RESEARCH.md but no VALIDATION.md | No |
+| W018 | warning | MILESTONES.md missing entry for archived milestone snapshot | Yes (`--backfill`) |
+| W019 | warning | Unrecognized .planning/ root file — not a canonical GSD artifact | No |
 | I001 | info | Plan without SUMMARY (may be in progress) | No |
 
 </error_codes>
@@ -150,6 +191,7 @@ Report final status.
 | resetConfig | Delete + recreate config.json | Loses custom settings |
 | regenerateState | Create STATE.md from ROADMAP structure when it is missing | Loses session history |
 | addNyquistKey | Add workflow.nyquist_validation: true to config.json | None — matches existing default |
+| backfillMilestones | Synthesize missing MILESTONES.md entries from `.planning/milestones/vX.Y-ROADMAP.md` snapshots | None — additive only; triggered by `--backfill` flag |
 
 **Not repairable (too risky):**
 - PROJECT.md, ROADMAP.md content
