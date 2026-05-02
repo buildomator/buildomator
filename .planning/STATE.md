@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-11)
 Milestone: v1.2 shipped (2026-04-24) — all 9 requirements satisfied, tagged, archived.
 Phase: none active. v1.2 phase artifacts moved to `.planning/milestones/v1.2-phases/`.
 Next action: `/gsd:new-milestone` to scope v1.3.
-Last activity: 2026-05-01 — Completed quick task 260502-0h9: sync upstream GSD to v1.39.1 (plugin v2.39.1, hotfix bundle)
+Last activity: 2026-05-02 — Completed quick task 260502-rx0: surface rate-limit fallback via Stop hook + skill/wrapper docs
 
 ```
 v1.2 shipped: [==========] 100%
@@ -112,6 +112,7 @@ None.
 | 260428-1fl | Add `bin/gsd-resume-at` shell wrapper so resume-at scheduling works without tokens (macOS, nohup+sleep+osascript) | 2026-04-28 | c166a04 |  | [260428-1fl-add-bin-gsd-resume-at-shell-wrapper-so-r](./quick/260428-1fl-add-bin-gsd-resume-at-shell-wrapper-so-r/) |
 | 260501-sun | Sync upstream GSD to v1.39.0 (plugin v2.39.0): tree-copy with patch preservation in core.cjs/gsd-tools.cjs, version bumps, README/PROJECT.md/CHANGELOG updates, namespace rewrite (831 replacements across 120 files), drift-baseline regen — both gates pass | 2026-05-01 | 8b128f2 | Verified | [260501-sun-sync-upstream-gsd-to-v1-39-0-per-project](./quick/260501-sun-sync-upstream-gsd-to-v1-39-0-per-project/) |
 | 260502-0h9 | Sync upstream GSD to v1.39.1 (plugin v2.39.1): hotfix bundle (~12 PRs incl. #2917 raw agent_skills, #2942 skills/ in GSD_MANAGED_DIRS, #2924 worktree HEAD assertion); core.cjs untouched upstream so patches kept verbatim, gsd-tools.cjs 1-line merge clean, namespace rewrite 820 replacements across 119 files, drift-baseline matched exactly (no regen) — both gates pass | 2026-05-02 | 1a4996c |  | [260502-0h9-address-another-upstream-version-jump](./quick/260502-0h9-address-another-upstream-version-jump/) |
+| 260502-rx0 | Surface rate-limit fallback example (/exit + gsd-resume-at HH:MM) at 3 surfaces: new Stop hook in gsd-tools.cjs that tails transcript and prints bordered hint on rate-limit pattern, /exit-first example added to resume-at SKILL.md No-token fallback callout, same example added to gsd-resume-at wrapper head comment + usage() — drift gates clean | 2026-05-02 | 364ae58 |  | [260502-rx0-surface-rate-limit-fallback-example-for-](./quick/260502-rx0-surface-rate-limit-fallback-example-for-/) |
 
 ## Session Continuity
 
