@@ -15,15 +15,22 @@ Schedule a future Claude Code session that automatically resumes the current GSD
 - Pausing for the day and wanting work to **kick off overnight** so HANDOFF restores the morning session
 - Queuing a future GSD command (e.g. `/gsd:execute-phase 9` at 04:00) for off-peak quota use
 
-> **No-token fallback.** If you've hit your usage cap and the skill itself won't run (it needs tokens to parse args and call CronCreate — the very moment you don't have any), invoke the shell wrapper directly from your terminal:
+> **No-token fallback.** If you've hit your usage cap and the skill itself won't run (it needs tokens to parse args and call CronCreate — the very moment you don't have any), `/exit` the rate-limited session and invoke the shell wrapper from a plain terminal:
 >
 > ```bash
+> /exit                                 # leave the rate-limited Claude session first
+> gsd-resume-at 17:41                   # then schedule from your shell — no tokens consumed
+> # or with explicit duration / project:
+> gsd-resume-at +3h --project ~/code/myproject
+> # if `gsd-resume-at` isn't on PATH:
 > $CLAUDE_PLUGIN_ROOT/bin/gsd-resume-at +3h
-> # or with absolute path if $CLAUDE_PLUGIN_ROOT isn't exported in your shell:
-> # ~/.claude/plugins/cache/gsd-plugin/gsd/<version>/bin/gsd-resume-at +3h
+> # or fully absolute:
+> ~/.claude/plugins/cache/gsd-plugin/gsd/<version>/bin/gsd-resume-at +3h
 > ```
 >
 > Pure shell — uses `nohup sleep` to schedule an OS-level timer, no Claude tokens consumed. macOS only for v1; the script will tell you if you're on another platform. Does NOT survive a reboot — for durable cross-reboot scheduling, use this skill (`/gsd:resume-at`) when tokens are available.
+>
+> The plugin's `Stop` hook will surface this same hint automatically when it detects a rate-limit message in the session transcript.
 
 This skill is a thin wrapper. The plugin already covers the *resume itself* (HANDOFF.json + `/gsd:resume-work`). What was missing was a way to ask Claude to come back at time T. This skill provides the scheduling on-ramp; Claude Code's built-in `/schedule` (or CronCreate primitive) does the durable cron storage.
 </objective>

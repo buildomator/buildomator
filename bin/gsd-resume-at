@@ -17,6 +17,11 @@ set -euo pipefail
 #   bin/gsd-resume-at 09:00
 #   bin/gsd-resume-at 2026-04-28T08:00 --project ~/code/myproject
 #
+# Rate-limited? When Claude Code shows "You've hit your limit", the
+# /gsd:resume-at SKILL won't run (it needs tokens). Recover with:
+#   /exit                    # leave the rate-limited Claude session first
+#   gsd-resume-at 17:41      # then run this wrapper from a plain terminal
+#
 # Platform: macOS only (v1).
 
 # --- Usage ---
@@ -39,6 +44,11 @@ Examples:
   gsd-resume-at +3h
   gsd-resume-at 09:00
   gsd-resume-at 2026-04-28T08:00 --project ~/code/myproject
+
+Rate-limited? When Claude Code shows "You've hit your limit", the
+/gsd:resume-at SKILL won't run (it needs tokens). Recover with:
+  /exit                    # leave the rate-limited Claude session first
+  gsd-resume-at 17:41      # then run this wrapper from a plain terminal
 EOF
 }
 
