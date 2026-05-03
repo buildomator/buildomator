@@ -203,7 +203,7 @@ Workspace created: $TARGET_PATH
 
 Next steps:
   cd "$TARGET_PATH"
-  /gsd-new-project    # Initialize GSD in the workspace
+  /gsd:new-project    # Initialize GSD in the workspace
 ```
 
 **If some repos failed:**
@@ -216,7 +216,7 @@ Workspace created with $SUCCESS_COUNT of $TOTAL_COUNT repos: $TARGET_PATH
 
 Next steps:
   cd "$TARGET_PATH"
-  /gsd-new-project    # Initialize GSD in the workspace
+  /gsd:new-project    # Initialize GSD in the workspace
 ```
 
 **Offer to initialize GSD (if not `--auto`):**
@@ -225,7 +225,7 @@ Use AskUserQuestion:
 - header: "Initialize GSD"
 - question: "Would you like to initialize a GSD project in the new workspace?"
 - options:
-  - "Yes — run /gsd-new-project" → tell user to `cd "$TARGET_PATH"` first, then run `/gsd-new-project`
+  - "Yes — run /gsd:new-project" → tell user to `cd "$TARGET_PATH"` first, then run `/gsd:new-project`
   - "No — I'll set it up later" → done
 
 </process>

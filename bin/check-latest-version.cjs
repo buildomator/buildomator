@@ -2,9 +2,9 @@
 'use strict';
 
 /**
- * Deterministic latest-version check for /gsd-update (#2992).
+ * Deterministic latest-version check for /gsd:update (#2992).
  *
- * The /gsd-update workflow's check_latest_version step was previously
+ * The /gsd:update workflow's check_latest_version step was previously
  * prescribed in LLM-driven prose ("run `npm view get-shit-done-cc
  * version`"). The executing model could shortcut the prescription and
  * invent npm queries against wrong-shaped names (`@get-shit-done/cli`,
@@ -44,7 +44,7 @@ function checkLatestVersion(opts = {}) {
     stdio: ['ignore', 'pipe', 'pipe'],
     shell: process.platform === 'win32', // npm is npm.cmd on Windows
     // Bound the registry call so a hung network/registry doesn't block the
-    // entire /gsd-update workflow indefinitely (#2993 CR). 15s is generous
+    // entire /gsd:update workflow indefinitely (#2993 CR). 15s is generous
     // for `npm view <pkg> version`; on timeout, spawnSync returns with
     // signal !== null and the existing failure path emits FAIL_NPM_FAILED.
     timeout: 15_000,
