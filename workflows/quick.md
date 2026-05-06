@@ -138,6 +138,14 @@ fi
 ```
 
 ```bash
+# [PLUGIN PATCH #PLUGIN-AGENTS-DIR] Point gsd-sdk's getAgentsDir() at the
+# plugin's bundled agents/ when running under a plugin install. Without this,
+# gsd-sdk searches upstream's flat layout and reports agents_installed:false
+# even though the plugin ships them — triggering misleading install warnings.
+if [ -n "$CLAUDE_PLUGIN_ROOT" ] && [ -d "$CLAUDE_PLUGIN_ROOT/agents" ]; then
+  export GSD_AGENTS_DIR="$CLAUDE_PLUGIN_ROOT/agents"
+fi
+
 INIT=$(gsd-sdk query init.quick "$DESCRIPTION")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 AGENT_SKILLS_PLANNER=$(gsd-sdk query agent-skills gsd-planner)

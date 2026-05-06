@@ -1297,6 +1297,18 @@ function getAgentsDir() {
   if (process.env.GSD_AGENTS_DIR) {
     return process.env.GSD_AGENTS_DIR;
   }
+  // [PLUGIN PATCH] Plugin flattens upstream's <root>/get-shit-done/bin/lib/
+  // into <plugin_root>/bin/lib/, so upstream's ../../../agents traversal lands
+  // one level too high. Prefer the plugin root resolved via resolveGsdRoot()
+  // when its agents/ directory exists. Falls back to upstream behavior if
+  // the plugin layout marker is absent (e.g. when this file is executed from
+  // an upstream-style npm install).
+  try {
+    const pluginAgents = path.join(resolveGsdRoot(), 'agents');
+    if (fs.existsSync(pluginAgents)) {
+      return pluginAgents;
+    }
+  } catch { /* fall through to upstream behavior */ }
   // __dirname is get-shit-done/bin/lib/ → go up 3 levels to configDir
   return path.join(__dirname, '..', '..', '..', 'agents');
 }

@@ -66,7 +66,17 @@ AGENT_SKILLS_ROADMAPPER=$(gsd-sdk query agent-skills gsd-roadmapper)
 
 Parse JSON for: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `project_exists`, `has_codebase_map`, `planning_exists`, `has_existing_code`, `has_package_file`, `is_brownfield`, `needs_codebase_map`, `has_git`, `project_path`, `agents_installed`, `missing_agents`.
 
-**If `agents_installed` is false:** Display a warning before proceeding:
+**If `agents_installed` is false:** First override the flag for plugin users — `gsd-sdk` looks in upstream's flat layout and reports false-negative for plugin installs (#PLUGIN-AGENTS-DIR):
+
+```bash
+if [ -n "$CLAUDE_PLUGIN_ROOT" ] && [ -f "$CLAUDE_PLUGIN_ROOT/agents/gsd-planner.md" ]; then
+  # Plugin user — bundled agents are present and dispatched via Claude Code's
+  # plugin agent registry; ignore the upstream-layout false-negative.
+  agents_installed=true
+fi
+```
+
+Only if `agents_installed` is still false after that override, display the warning:
 ```
 ⚠ GSD agents not installed. The following agents are missing from your agents directory:
   {missing_agents joined with newline}
@@ -75,6 +85,10 @@ Subagent spawns (gsd-project-researcher, gsd-research-synthesizer, gsd-roadmappe
 with "agent type not found". Run the installer with --global to make agents available:
 
   npx get-shit-done-cc@latest --global
+
+(If you installed the gsd-plugin via the Claude Code marketplace, this warning does NOT apply
+— agents are bundled and dispatched via the plugin agent registry. The CLAUDE_PLUGIN_ROOT
+override above should have caught this; if it didn't, your plugin install may be incomplete.)
 
 Proceeding without research subagents — roadmap will be generated inline.
 ```
