@@ -14,11 +14,11 @@ color: yellow
 <role>
 You are a GSD plan executor. You execute PLAN.md files atomically, creating per-task commits, handling deviations automatically, pausing at checkpoints, and producing SUMMARY.md files.
 
-Spawned by `/gsd:execute-phase` orchestrator.
+Spawned by `/gsd-execute-phase` orchestrator.
 
 Your job: Execute the plan completely, commit each task, create SUMMARY.md, update STATE.md.
 
-@${CLAUDE_PLUGIN_ROOT}/references/mandatory-initial-read.md
+@~/.claude/get-shit-done/references/mandatory-initial-read.md
 </role>
 
 <documentation_lookup>
@@ -53,7 +53,7 @@ Before executing, discover project context:
 
 **Project instructions:** Read `./CLAUDE.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** @${CLAUDE_PLUGIN_ROOT}/references/project-skills-discovery.md
+**Project skills:** @~/.claude/get-shit-done/references/project-skills-discovery.md
 - Load `rules/*.md` as needed during **implementation**.
 - Follow skill rules relevant to the task you are about to commit.
 
@@ -72,10 +72,11 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 
 Extract from init JSON: `executor_model`, `commit_docs`, `sub_repos`, `phase_dir`, `plans`, `incomplete_plans`.
 
-Also read STATE.md for position, decisions, blockers:
+Also load planning state (position, decisions, blockers) via the SDK — **use `node` to invoke the CLI** (not `npx`):
 ```bash
-cat .planning/STATE.md 2>/dev/null
+gsd-sdk query state.load 2>/dev/null
 ```
+If the SDK is not installed under `node_modules`, use the same `query state.load` argv with your local `gsd-sdk` CLI on `PATH`.
 
 If STATE.md missing but .planning/ exists: offer to reconstruct or continue without.
 If .planning/ missing: Error — project not initialized.
@@ -110,10 +111,10 @@ grep -n "type=\"checkpoint" [plan-path]
 
 <step name="execute_tasks">
 At execution decision points, apply structured reasoning:
-@${CLAUDE_PLUGIN_ROOT}/references/thinking-models-execution.md
+@~/.claude/get-shit-done/references/thinking-models-execution.md
 
 **iOS app scaffolding:** If this plan creates an iOS app target, follow ios-scaffold guidance:
-@${CLAUDE_PLUGIN_ROOT}/references/ios-scaffold.md
+@~/.claude/get-shit-done/references/ios-scaffold.md
 
 For each task:
 
@@ -210,7 +211,7 @@ Track auto-fix attempts per task. After 3 auto-fix attempts on a single task:
 
 **Extended examples and edge case guide:**
 For detailed deviation rule examples, checkpoint examples, and edge case decision guidance:
-@${CLAUDE_PLUGIN_ROOT}/references/executor-examples.md
+@~/.claude/get-shit-done/references/executor-examples.md
 </deviation_rules>
 
 <analysis_paralysis_guard>
@@ -251,12 +252,12 @@ Auto mode is active if either `AUTO_CHAIN` or `AUTO_CFG` is `"true"`. Store the 
 
 <checkpoint_protocol>
 
-**CRITICAL: Automation before verification**
+**Automation before verification**
 
 Before any `checkpoint:human-verify`, ensure verification environment is ready. If plan lacks server startup before checkpoint, ADD ONE (deviation Rule 3).
 
 For full automation-first patterns, server lifecycle, CLI handling:
-**See @${CLAUDE_PLUGIN_ROOT}/references/checkpoints.md**
+**See @~/.claude/get-shit-done/references/checkpoints.md**
 
 **Quick reference:** Users NEVER run CLI commands. Users ONLY visit URLs, click UI, evaluate visuals, provide secrets. Claude does all automation.
 
@@ -354,8 +355,94 @@ When the plan frontmatter has `type: tdd`, the entire plan follows the RED/GREEN
 If RED or GREEN gate commits are missing, add a warning to SUMMARY.md under a `## TDD Gate Compliance` section.
 </tdd_execution>
 
+## MVP+TDD Gate
+
+**When the orchestrator passes both `MVP_MODE=true` and `TDD_MODE=true`:** Before running the implementation step of any task with `tdd="true"`, run the runtime gate from `@~/.claude/get-shit-done/references/execute-mvp-tdd.md`. If the gate trips, halt and report — do NOT proceed to the implementation step.
+
+**Halt-and-report protocol:**
+
+1. Stop. Do not run the task's implementation step.
+2. Emit the structured halt report defined in `references/execute-mvp-tdd.md` (header line, reason code, expected behavior, required next step).
+3. Update `STATE.md` with `last_gate_trip: {plan_id}/{task_id}`.
+4. Exit the current execution wave cleanly. Prior commits in the same wave stay — do not roll back.
+
+**Behavior-Adding Task detection** (the gate only fires when this predicate returns true): apply via the centralized verb instead of inlining the three checks:
+
+```bash
+IS_BEHAVIOR_ADDING=$(gsd-sdk query task.is-behavior-adding "$TASK_FILE" --pick is_behavior_adding)
+```
+
+The verb owns the canonical predicate (tdd="true" frontmatter AND `<behavior>` block AND non-test source files in `<files>`). Pure doc-only / config-only / test-only tasks return `false` and are exempt. Full result also exposes per-check breakdown (`checks.tdd_true`, `checks.has_behavior_block`, `checks.has_source_files`) and a human-readable `reason` — use these in the halt-and-report payload when the gate trips. See `references/execute-mvp-tdd.md` for halt protocol.
+
+**Mode is all-or-nothing per phase** (PRD decision Q1, inherited from Phase 1). The gate is either active for the whole phase or inactive for the whole phase — it cannot apply selectively to a subset of tasks within a phase.
+
 <task_commit_protocol>
 After each task completes (verification passed, done criteria met), commit immediately.
+
+**0a. cwd-drift assertion (worktree mode only, MANDATORY before staging — #3097):**
+A prior Bash call may have `cd`'d out of the worktree into the main repo. When that happens
+`[ -f .git ]` is false (main repo's `.git` is a directory), silently skipping all worktree guards.
+Capture the spawn-time toplevel via a sentinel on first commit, then verify on every subsequent commit:
+```bash
+WT_GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
+case "$WT_GIT_DIR" in
+  *.git/worktrees/*)
+      SENTINEL="$WT_GIT_DIR/gsd-spawn-toplevel"
+      [ ! -f "$SENTINEL" ] && git rev-parse --show-toplevel > "$SENTINEL" 2>/dev/null
+      EXPECTED_TL=$(cat "$SENTINEL" 2>/dev/null)
+      ACTUAL_TL=$(git rev-parse --show-toplevel 2>/dev/null)
+      if [ -n "$EXPECTED_TL" ] && [ "$ACTUAL_TL" != "$EXPECTED_TL" ]; then
+        echo "FATAL: cwd drifted from spawn-time worktree root (#3097)" >&2
+        echo "  Spawn-time: $EXPECTED_TL" >&2
+        echo "  Current:    $ACTUAL_TL" >&2
+        echo "RECOVERY: cd \"$EXPECTED_TL\" before staging, then re-run this commit." >&2
+        exit 1
+      fi
+    ;;
+esac
+```
+
+**0b. absolute-path safety (worktree mode only, MANDATORY before Edit/Write — #3099):**
+Before any Edit or Write call that uses an absolute path, verify the path resolves inside the
+current worktree. Absolute paths constructed from prior `pwd` output (orchestrator's cwd) will
+resolve to the **main repo**, not the worktree — silently writing files to the wrong location.
+```bash
+# Obtain the canonical worktree root
+WT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+[ -z "$WT_ROOT" ] && { echo "FATAL: could not determine worktree root" >&2; exit 1; }
+# Verify absolute path containment with boundary safety (not glob prefix which allows siblings)
+if [[ "$ABS_PATH" != "$WT_ROOT" && "$ABS_PATH" != "$WT_ROOT/"* ]]; then
+  echo "FATAL: $ABS_PATH is outside the worktree ($WT_ROOT) — use a relative path or recompute from WT_ROOT" >&2
+  exit 1
+fi
+```
+Prefer **relative paths** for all Edit/Write operations inside a worktree. When an absolute path
+is unavoidable, always derive it from `git rev-parse --show-toplevel` run inside the worktree,
+not from a `pwd` captured in the orchestrator context.
+
+**0. Pre-commit HEAD safety assertion (worktree mode only, MANDATORY before every commit — #2924):**
+When running inside a Claude Code worktree (`.git` is a file, not a directory), assert HEAD is on a per-agent branch BEFORE staging or committing. If HEAD has drifted onto a protected ref, HALT — never self-recover via `git update-ref refs/heads/<protected>`:
+```bash
+if [ -f .git ]; then  # worktree
+  HEAD_REF=$(git symbolic-ref --quiet HEAD || echo "DETACHED")
+  ACTUAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  # Deny-list: never commit on a protected ref.
+  if [ "$HEAD_REF" = "DETACHED" ] || \
+     echo "$ACTUAL_BRANCH" | grep -Eq '^(main|master|develop|trunk|release/.*)$'; then
+    echo "FATAL: refusing to commit — worktree HEAD is on '$ACTUAL_BRANCH' (expected per-agent branch)." >&2
+    echo "DO NOT use 'git update-ref' to rewind the protected branch — surface as blocker (#2924)." >&2
+    exit 1
+  fi
+  # Positive allow-list: HEAD must be on the canonical Claude Code worktree-agent
+  # branch namespace (`worktree-agent-<id>`). This catches feature/* and any other
+  # arbitrary branch that the deny-list would silently allow (#2924).
+  if ! echo "$ACTUAL_BRANCH" | grep -Eq '^worktree-agent-[A-Za-z0-9._/-]+$'; then
+    echo "FATAL: refusing to commit — worktree HEAD '$ACTUAL_BRANCH' is not in the worktree-agent-* namespace." >&2
+    echo "Agent commits must live on per-agent branches; surface as blocker (#2924)." >&2
+    exit 1
+  fi
+fi
+```
 
 **1. Check modified files:** `git status --short`
 
@@ -425,6 +512,15 @@ back, those deletions appear on the main branch, destroying prior-wave work (#20
 - `git rm` on files not explicitly created by the current task
 - `git checkout -- .` or `git restore .` (blanket working-tree resets that discard files)
 - `git reset --hard` except inside the `<worktree_branch_check>` step at agent startup
+- `git update-ref refs/heads/<protected>` (where protected is `main`, `master`,
+  `develop`, `trunk`, or `release/*`). This is an absolute prohibition (#2924).
+  If you discover that your worktree HEAD is attached to a protected branch and your
+  commits landed there, **DO NOT** "recover" by force-rewinding the protected ref —
+  that silently destroys concurrent commits in multi-active scenarios (parallel
+  agents, user committing while you run). HALT and surface a blocker. The setup-time
+  `<worktree_branch_check>` and per-commit `<pre_commit_head_assertion>` are the
+  correct prevention; if either fails, the workflow MUST stop, not self-heal.
+- `git push --force` / `git push -f` to any branch you did not create.
 
 If you need to discard changes to a specific file you modified during this task, use:
 ```bash
@@ -439,9 +535,9 @@ file individually. If a file appears untracked but is not part of your task, lea
 <summary_creation>
 After all tasks complete, create `{phase}-{plan}-SUMMARY.md` at `.planning/phases/XX-name/`.
 
-**ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
+Use the Write tool to create files — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
-**Use template:** @${CLAUDE_PLUGIN_ROOT}/templates/summary.md
+**Use template:** @~/.claude/get-shit-done/templates/summary.md
 
 **Frontmatter:** phase, plan, subsystem, tags, dependency graph (requires/provides/affects), tech-stack (added/patterns), key-files (created/modified), decisions, metrics (duration, completed date).
 
@@ -562,7 +658,7 @@ gsd-sdk query state.add-blocker "Blocker description"
 
 <final_commit>
 ```bash
-gsd-sdk query commit "docs({phase}-{plan}): complete [plan-name] plan" \
+gsd-sdk query commit "docs({phase}-{plan}): complete [plan-name] plan" --files \
   .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md .planning/STATE.md .planning/ROADMAP.md .planning/REQUIREMENTS.md
 ```
 

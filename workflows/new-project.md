@@ -33,7 +33,7 @@ Check if `--auto` flag is present in $ARGUMENTS.
 **Document requirement:**
 Auto mode requires an idea document — either:
 
-- File reference: `/gsd:new-project --auto @prd.md`
+- File reference: `/gsd-new-project --auto @prd.md`
 - Pasted/written text in the prompt
 
 If no document content provided, error:
@@ -42,8 +42,8 @@ If no document content provided, error:
 Error: --auto requires an idea document.
 
 Usage:
-  /gsd:new-project --auto @your-idea.md
-  /gsd:new-project --auto [paste or write your idea here]
+  /gsd-new-project --auto @your-idea.md
+  /gsd-new-project --auto [paste or write your idea here]
 
 The document should describe what you want to build.
 ```
@@ -66,17 +66,7 @@ AGENT_SKILLS_ROADMAPPER=$(gsd-sdk query agent-skills gsd-roadmapper)
 
 Parse JSON for: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `project_exists`, `has_codebase_map`, `planning_exists`, `has_existing_code`, `has_package_file`, `is_brownfield`, `needs_codebase_map`, `has_git`, `project_path`, `agents_installed`, `missing_agents`.
 
-**If `agents_installed` is false:** First override the flag for plugin users — `gsd-sdk` looks in upstream's flat layout and reports false-negative for plugin installs (#PLUGIN-AGENTS-DIR):
-
-```bash
-if [ -n "$CLAUDE_PLUGIN_ROOT" ] && [ -f "$CLAUDE_PLUGIN_ROOT/agents/gsd-planner.md" ]; then
-  # Plugin user — bundled agents are present and dispatched via Claude Code's
-  # plugin agent registry; ignore the upstream-layout false-negative.
-  agents_installed=true
-fi
-```
-
-Only if `agents_installed` is still false after that override, display the warning:
+**If `agents_installed` is false:** Display a warning before proceeding:
 ```
 ⚠ GSD agents not installed. The following agents are missing from your agents directory:
   {missing_agents joined with newline}
@@ -85,10 +75,6 @@ Subagent spawns (gsd-project-researcher, gsd-research-synthesizer, gsd-roadmappe
 with "agent type not found". Run the installer with --global to make agents available:
 
   npx get-shit-done-cc@latest --global
-
-(If you installed the gsd-plugin via the Claude Code marketplace, this warning does NOT apply
-— agents are bundled and dispatched via the plugin agent registry. The CLAUDE_PLUGIN_ROOT
-override above should have caught this; if it didn't, your plugin install may be incomplete.)
 
 Proceeding without research subagents — roadmap will be generated inline.
 ```
@@ -117,7 +103,7 @@ if [ "$RUNTIME" = "codex" ]; then INSTRUCTION_FILE="AGENTS.md"; else INSTRUCTION
 
 All subsequent references to the project instruction file use `$INSTRUCTION_FILE`.
 
-**If `project_exists` is true:** Error — project already initialized. Use `/gsd:progress`.
+**If `project_exists` is true:** Error — project already initialized. Use `/gsd-progress`.
 
 **If `has_git` is false:** Initialize git:
 
@@ -138,13 +124,13 @@ Use AskUserQuestion:
 - header: "Codebase"
 - question: "I detected existing code in this directory. Would you like to map the codebase first?"
 - options:
-  - "Map codebase first" — Run /gsd:map-codebase to understand existing architecture (Recommended)
+  - "Map codebase first" — Run /gsd-map-codebase to understand existing architecture (Recommended)
   - "Skip mapping" — Proceed with project initialization
 
 **If "Map codebase first":**
 
 ```
-Run `/gsd:map-codebase` first, then return to `/gsd:new-project`
+Run `/gsd-map-codebase` first, then return to `/gsd-new-project`
 ```
 
 Exit command.
@@ -267,10 +253,10 @@ Check for existing spike and sketch work that should inform project setup:
 
 ```bash
 # Check for spike findings skill (project-local)
-SPIKE_SKILL=$(ls ./.claude/skills/spike-findings-*/SKILL.md 2>/dev/null | head -1)
+SPIKE_SKILL=$(ls ./.claude/skills/spike-findings-*/SKILL.md 2>/dev/null | head -1 || true)
 
 # Check for sketch findings skill (project-local)
-SKETCH_SKILL=$(ls ./.claude/skills/sketch-findings-*/SKILL.md 2>/dev/null | head -1)
+SKETCH_SKILL=$(ls ./.claude/skills/sketch-findings-*/SKILL.md 2>/dev/null | head -1 || true)
 
 # Check for raw spikes/sketches in .planning/
 HAS_SPIKES=$(ls .planning/spikes/MANIFEST.md 2>/dev/null)
@@ -283,8 +269,8 @@ If any of these exist, surface them before questioning:
 ⚡ Prior exploration detected:
 {if SPIKE_SKILL}  ✓ Spike findings skill: {path} — validated patterns from experiments
 {if SKETCH_SKILL}  ✓ Sketch findings skill: {path} — validated design decisions
-{if HAS_SPIKES && !SPIKE_SKILL}  ◆ Raw spikes in .planning/spikes/ — consider `/gsd:spike --wrap-up` to package findings
-{if HAS_SKETCHES && !SKETCH_SKILL}  ◆ Raw sketches in .planning/sketches/ — consider `/gsd:sketch --wrap-up` to package findings
+{if HAS_SPIKES && !SPIKE_SKILL}  ◆ Raw spikes in .planning/spikes/ — consider `/gsd-spike --wrap-up` to package findings
+{if HAS_SKETCHES && !SKETCH_SKILL}  ◆ Raw sketches in .planning/sketches/ — consider `/gsd-sketch --wrap-up` to package findings
 
 These findings will be incorporated into project context and available to planning agents.
 ```
@@ -448,7 +434,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Decisions to log? → Add to Key Decisions
 5. "What This Is" still accurate? → Update if drifted
 
-**After each milestone** (via `/gsd:complete-milestone`):
+**After each milestone** (via `/gsd-complete-milestone`):
 1. Full review of all sections
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
@@ -666,7 +652,7 @@ mkdir -p .planning
 gsd-sdk query config-new-project '{"mode":"[yolo|interactive]","granularity":"[selected]","parallelization":true|false,"commit_docs":true|false,"model_profile":"quality|balanced|budget|inherit","workflow":{"research":true|false,"plan_check":true|false,"verifier":true|false,"nyquist_validation":[false if granularity=coarse, true otherwise]}}'
 ```
 
-**Note:** Run `/gsd:settings` anytime to update model profile, workflow agents, branching strategy, and other preferences.
+**Note:** Run `/gsd-settings` anytime to update model profile, workflow agents, branching strategy, and other preferences.
 
 **If commit_docs = No:**
 
@@ -768,8 +754,8 @@ Display spawning indicator:
 
 Spawn 4 parallel gsd-project-researcher agents with path references:
 
-```
-Task(prompt="<research_type>
+```text
+Agent(prompt="<research_type>
 Project Research — Stack dimension for [domain].
 </research_type>
 
@@ -809,7 +795,7 @@ Use template: ~/.claude/get-shit-done/templates/research-project/STACK.md
 </output>
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Stack research")
 
-Task(prompt="<research_type>
+Agent(prompt="<research_type>
 Project Research — Features dimension for [domain].
 </research_type>
 
@@ -849,7 +835,7 @@ Use template: ~/.claude/get-shit-done/templates/research-project/FEATURES.md
 </output>
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Features research")
 
-Task(prompt="<research_type>
+Agent(prompt="<research_type>
 Project Research — Architecture dimension for [domain].
 </research_type>
 
@@ -889,7 +875,7 @@ Use template: ~/.claude/get-shit-done/templates/research-project/ARCHITECTURE.md
 </output>
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Architecture research")
 
-Task(prompt="<research_type>
+Agent(prompt="<research_type>
 Project Research — Pitfalls dimension for [domain].
 </research_type>
 
@@ -930,12 +916,12 @@ Use template: ~/.claude/get-shit-done/templates/research-project/PITFALLS.md
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Pitfalls research")
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all 4 researcher Task() calls above, do NOT read research files or synthesize content independently while the subagents are active. Wait for all 4 researchers to complete before spawning the synthesizer. This prevents duplicate work and wasted context.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all 4 researcher Agent() calls above, do NOT read research files or synthesize content independently while the subagents are active. Wait for all 4 researchers to complete before spawning the synthesizer. This prevents duplicate work and wasted context.
 
 After all 4 agents complete, spawn synthesizer to create SUMMARY.md:
 
-```
-Task(prompt="
+```text
+Agent(prompt="
 <task>
 Synthesize research outputs into SUMMARY.md.
 </task>
@@ -957,7 +943,7 @@ Commit after writing.
 ", subagent_type="gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 Display research complete banner and key findings:
 
@@ -1131,6 +1117,21 @@ If "adjust": Return to scoping.
 gsd-sdk query commit "docs: define v1 requirements" --files .planning/REQUIREMENTS.md
 ```
 
+## 7.5. Project Structure Mode
+
+**If auto mode:** Set `PROJECT_MODE=mvp` and skip this prompt.
+
+**Mode prompt: Vertical MVP vs Horizontal Layers.**
+
+Ask the user how they want to structure the project. Use `AskUserQuestion` with two options:
+
+- **Vertical MVP** — get a working app fast, add features slice by slice. Each phase delivers an end-to-end user capability. *(Recommended for new products and rapid-iteration MVPs.)*
+- **Horizontal Layers** — build complete technical layers (DB → API → UI → wiring) and assemble at the end. *(Better for infrastructure-heavy projects with multiple developers.)*
+
+Set `PROJECT_MODE=mvp` if the user picks Vertical MVP, otherwise `PROJECT_MODE=standard`.
+
+When `TEXT_MODE=true` (per the workflow's existing TEXT_MODE handling for non-Claude runtimes), present the same two options as a plain-text numbered list and ask the user to type their choice number.
+
 ## 8. Create Roadmap
 
 Display stage banner:
@@ -1143,10 +1144,27 @@ Display stage banner:
 ◆ Spawning roadmapper...
 ```
 
+**ROADMAP.md template — mode-aware emit.** When generating the initial ROADMAP.md:
+
+- If `PROJECT_MODE=mvp`: under each `### Phase N:` header, emit `**Mode:** mvp` on the line immediately following `**Goal:**`. This sets every initial phase to MVP mode (per Phase-4-Persistence decision: per-phase mode, not project-wide config).
+- If `PROJECT_MODE=standard`: emit the standard ROADMAP.md template with no `**Mode:**` lines (Horizontal Layers standard template — no behavioral change for users who pick Horizontal Layers).
+
+Example MVP-mode emit for Phase 1:
+
+```markdown
+### Phase 1: [Name]
+**Goal:** [Goal]
+**Mode:** mvp
+**Success Criteria**:
+1. [Criterion]
+```
+
+Pass `PROJECT_MODE` to the roadmapper so it applies the correct template.
+
 Spawn gsd-roadmapper agent with path references:
 
-```
-Task(prompt="
+```text
+Agent(prompt="
 <planning_context>
 
 <files_to_read>
@@ -1174,7 +1192,7 @@ Write files first, then return. This ensures artifacts persist even if context i
 ", subagent_type="gsd-roadmapper", model="{roadmapper_model}", description="Create roadmap")
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 **Handle roadmapper return:**
 
@@ -1244,8 +1262,8 @@ Use AskUserQuestion:
 - Get user's adjustment notes
 - Re-spawn roadmapper with revision context:
 
-  ```
-  Task(prompt="
+  ```text
+  Agent(prompt="
   <revision>
   User feedback on roadmap:
   [user's notes]
@@ -1262,7 +1280,7 @@ Use AskUserQuestion:
   ", subagent_type="gsd-roadmapper", model="{roadmapper_model}", description="Revise roadmap")
   ```
 
-  > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+  > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 - Present revised roadmap
 - Loop until user approves
@@ -1314,7 +1332,7 @@ Present completion summary:
 ╚══════════════════════════════════════════╝
 ```
 
-Exit skill and invoke SlashCommand("/gsd:discuss-phase 1 --auto")
+Exit skill and invoke SlashCommand("/gsd-discuss-phase 1 --auto")
 
 **If interactive mode:**
 
@@ -1336,13 +1354,13 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 
 /clear then:
 
-/gsd:discuss-phase 1 — gather context and clarify approach
+/gsd-discuss-phase 1 — gather context and clarify approach
 
 ---
 
 **Also available:**
-- /gsd:ui-phase 1 — generate UI design contract (recommended for frontend phases)
-- /gsd:plan-phase 1 — skip discussion, plan directly
+- /gsd-ui-phase 1 — generate UI design contract (recommended for frontend phases)
+- /gsd-plan-phase 1 — skip discussion, plan directly
 
 ───────────────────────────────────────────────────────────────
 ```
@@ -1358,12 +1376,12 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 
 /clear then:
 
-/gsd:discuss-phase 1 — gather context and clarify approach
+/gsd-discuss-phase 1 — gather context and clarify approach
 
 ---
 
 **Also available:**
-- /gsd:plan-phase 1 — skip discussion, plan directly
+- /gsd-plan-phase 1 — skip discussion, plan directly
 
 ───────────────────────────────────────────────────────────────
 ```
@@ -1406,7 +1424,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 - [ ] STATE.md initialized
 - [ ] REQUIREMENTS.md traceability updated
 - [ ] `$INSTRUCTION_FILE` generated with GSD workflow guidance (AGENTS.md for Codex, CLAUDE.md otherwise)
-- [ ] User knows next step is `/gsd:discuss-phase 1`
+- [ ] User knows next step is `/gsd-discuss-phase 1`
 
 **Atomic commits:** Each phase commits its artifacts immediately. If context is lost, artifacts persist.
 

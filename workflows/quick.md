@@ -126,26 +126,18 @@ If `$VALIDATE_MODE` only:
 
 ```bash
 if ! command -v gsd-sdk &>/dev/null; then
-  echo "⚠ gsd-sdk not found in PATH — /gsd:quick requires it."
+  echo "⚠ gsd-sdk not found in PATH — /gsd-quick requires it."
   echo ""
-  echo "Install the GSD SDK:"
-  echo "  npm install -g @gsd-build/sdk"
+  echo "Install the query-capable GSD SDK CLI:"
+  echo "  npm install -g get-shit-done-cc"
   echo ""
   echo "Or update GSD to get the latest packages:"
-  echo "  /gsd:update"
+  echo "  /gsd-update"
   exit 1
 fi
 ```
 
 ```bash
-# [PLUGIN PATCH #PLUGIN-AGENTS-DIR] Point gsd-sdk's getAgentsDir() at the
-# plugin's bundled agents/ when running under a plugin install. Without this,
-# gsd-sdk searches upstream's flat layout and reports agents_installed:false
-# even though the plugin ships them — triggering misleading install warnings.
-if [ -n "$CLAUDE_PLUGIN_ROOT" ] && [ -d "$CLAUDE_PLUGIN_ROOT/agents" ]; then
-  export GSD_AGENTS_DIR="$CLAUDE_PLUGIN_ROOT/agents"
-fi
-
 INIT=$(gsd-sdk query init.quick "$DESCRIPTION")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 AGENT_SKILLS_PLANNER=$(gsd-sdk query agent-skills gsd-planner)
@@ -178,7 +170,7 @@ fi
 
 Quick mode does not have a pre-declared `files_modified` list (the task is freeform), so use a fail-loud guard at commit time: when the executor stages files for the quick-task commit, if any staged path falls inside a `SUBMODULE_PATHS` entry, abort with a clear error explaining that worktree-isolated commits cannot safely span submodule boundaries — the user can re-run with `workflow.use_worktrees=false` to fall back to sequential execution on the main tree. If `SUBMODULE_PATHS` is empty (no `.gitmodules` in the repo), worktree isolation proceeds normally.
 
-**If `roadmap_exists` is false:** Error — Quick mode requires an active project with ROADMAP.md. Run `/gsd:new-project` first.
+**If `roadmap_exists` is false:** Error — Quick mode requires an active project with ROADMAP.md. Run `/gsd-new-project` first.
 
 Quick tasks can run mid-phase - validation only checks ROADMAP.md exists, not phase status.
 
@@ -410,7 +402,7 @@ Display banner:
 Spawn a single focused researcher (not 4 parallel researchers like full phases — quick tasks need targeted research, not broad domain surveys):
 
 ```
-Task(
+Agent(
   prompt="
 <research_context>
 
@@ -451,7 +443,7 @@ Return: ## RESEARCH COMPLETE with file path
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 After researcher returns:
 1. Verify research exists at `${QUICK_DIR}/${quick_id}-RESEARCH.md`
@@ -468,7 +460,7 @@ If research file not found, warn but continue: "Research agent did not produce o
 **If NOT `$VALIDATE_MODE`:** Use standard `quick` mode.
 
 ```
-Task(
+Agent(
   prompt="
 <planning_context>
 
@@ -509,7 +501,7 @@ Return: ## PLANNING COMPLETE with plan path
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 After planner returns:
 1. Verify plan exists at `${QUICK_DIR}/${quick_id}-PLAN.md`
@@ -567,7 +559,7 @@ ${DISCUSS_MODE ? '- Context compliance: Does the plan honor locked decisions fro
 ```
 
 ```
-Task(
+Agent(
   prompt=checker_prompt,
   subagent_type="gsd-plan-checker",
   model="{checker_model}",
@@ -575,7 +567,7 @@ Task(
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 **Handle checker return:**
 
@@ -614,7 +606,7 @@ Return what changed.
 ```
 
 ```
-Task(
+Agent(
   prompt=revision_prompt,
   subagent_type="gsd-planner",
   model="{planner_model}",
@@ -622,7 +614,7 @@ Task(
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 After planner returns → spawn checker again, increment iteration_count.
 
@@ -676,7 +668,7 @@ EXPECTED_BASE=$(git rev-parse HEAD)
 Spawn gsd-executor with plan reference:
 
 ```
-Task(
+Agent(
   prompt="
 Execute quick task ${quick_id}.
 
@@ -769,7 +761,7 @@ SUMMARY.md and stop — the user must rerun with worktrees disabled.
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 After executor returns:
 1. **Worktree cleanup:** If the executor ran with `isolation="worktree"`, merge the worktree branch back and clean up:
@@ -793,9 +785,6 @@ After executor returns:
        [ -f .planning/STATE.md ] && cp .planning/STATE.md "$STATE_BACKUP" || true
        [ -f .planning/ROADMAP.md ] && cp .planning/ROADMAP.md "$ROADMAP_BACKUP" || true
 
-       # Snapshot files on main to detect resurrections
-       PRE_MERGE_FILES=$(git ls-files .planning/)
-
        # Pre-merge deletion guard: block merges that delete tracked .planning/ files
        DELETIONS=$(git diff --diff-filter=D --name-only HEAD..."$WT_BRANCH" 2>/dev/null || true)
        if [ -n "$DELETIONS" ]; then
@@ -818,10 +807,17 @@ After executor returns:
        if [ -s "$ROADMAP_BACKUP" ]; then cp "$ROADMAP_BACKUP" .planning/ROADMAP.md; fi
        rm -f "$STATE_BACKUP" "$ROADMAP_BACKUP"
 
-       # Remove files deleted on main but re-added by worktree (--no-ff guarantees a merge commit so HEAD~1 is reliable)
+       # Detect files deleted on main but re-added by worktree merge
+       # (e.g., archived phase directories that were intentionally removed)
+       # A "resurrected" file must have a deletion event in main's ancestry —
+       # brand-new files (e.g. SUMMARY.md just created by the agent) have no
+       # such history and must NOT be removed (#2501, #3195).
        DELETED_FILES=$(git diff --diff-filter=A --name-only HEAD~1 -- .planning/ 2>/dev/null || true)
        for RESURRECTED in $DELETED_FILES; do
-         if ! echo "$PRE_MERGE_FILES" | grep -qxF "$RESURRECTED"; then
+         # Only delete if this file was previously tracked on main and then
+         # deliberately removed (has a deletion event in git history).
+         WAS_DELETED=$(git log --follow --diff-filter=D --name-only --format="" HEAD~1 -- "$RESURRECTED" 2>/dev/null | grep -c . || true)
+         if [ "${WAS_DELETED:-0}" -gt 0 ]; then
            git rm -f "$RESURRECTED" 2>/dev/null || true
          fi
        done
@@ -915,7 +911,7 @@ If `CHANGED_FILES` is empty, skip with "No source files changed — skipping cod
 
 **Invoke review:**
 ```
-Task(
+Agent(
   prompt="Review these files for bugs, security issues, and code quality.
   Files: ${CHANGED_FILES}
   Output: ${QUICK_DIR}/${quick_id}-REVIEW.md
@@ -925,7 +921,7 @@ Task(
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 If review produces findings, display advisory message. **Error handling:** Failures are non-blocking — catch and proceed.
 
@@ -945,7 +941,7 @@ Display banner:
 ```
 
 ```
-Task(
+Agent(
   prompt="Verify quick task goal achievement.
 Task directory: ${QUICK_DIR}
 Task goal: ${DESCRIPTION}
@@ -963,7 +959,7 @@ Check must_haves against actual codebase. Create VERIFICATION.md at ${QUICK_DIR}
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 Read verification status:
 ```bash
@@ -1084,7 +1080,7 @@ Commit: ${commit_hash}
 
 ---
 
-Ready for next task: /gsd:quick ${GSD_WS}
+Ready for next task: /gsd-quick ${GSD_WS}
 ```
 
 **If NOT `$VALIDATE_MODE`:**
@@ -1101,7 +1097,7 @@ Commit: ${commit_hash}
 
 ---
 
-Ready for next task: /gsd:quick ${GSD_WS}
+Ready for next task: /gsd-quick ${GSD_WS}
 ```
 
 </process>

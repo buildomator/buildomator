@@ -33,6 +33,9 @@ function routePhaseCommand({ phase, args, cwd, raw, error }) {
     }
     phase.cmdPhaseAddBatch(cwd, descriptions, raw);
   } else if (subcommand === 'insert') {
+    if (args.includes('--dry-run')) {
+      error('phase insert does not support --dry-run');
+    }
     phase.cmdPhaseInsert(cwd, args[2], args.slice(3).join(' '), raw);
   } else if (subcommand === 'remove') {
     const forceFlag = args.includes('--force');

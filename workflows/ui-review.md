@@ -42,7 +42,7 @@ UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
 UI_REVIEW_FILE=$(ls "${PHASE_DIR}"/*-UI-REVIEW.md 2>/dev/null | head -1)
 ```
 
-**If `SUMMARY_FILES` empty:** Exit — "Phase {N} not executed. Run /gsd:execute-phase {N} first."
+**If `SUMMARY_FILES` empty:** Exit — "Phase {N} not executed. Run /gsd-execute-phase {N} first."
 
 
 **Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Gemini CLI, etc.) where `AskUserQuestion` is not available.
@@ -99,7 +99,7 @@ padded_phase: {padded_phase}
 Omit null file paths.
 
 ```
-Task(
+Agent(
   prompt=ui_audit_prompt,
   subagent_type="gsd-ui-auditor",
   model="{UI_AUDITOR_MODEL}",
@@ -107,7 +107,7 @@ Task(
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 ## 4. Handle Return
 
@@ -144,11 +144,11 @@ Full review: {path to UI-REVIEW.md}
 
 `/clear` then one of:
 
-- `/gsd:verify-work {N}` — UAT testing
-- `/gsd:plan-phase {N+1}` — plan next phase
+- `/gsd-verify-work {N}` — UAT testing
+- `/gsd-plan-phase {N+1}` — plan next phase
 
-- `/gsd:verify-work {N}` — UAT testing
-- `/gsd:plan-phase {N+1}` — plan next phase
+- `/gsd-verify-work {N}` — UAT testing
+- `/gsd-plan-phase {N+1}` — plan next phase
 
 ───────────────────────────────────────────────────────────────
 ```

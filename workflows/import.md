@@ -32,7 +32,7 @@ Parse `$ARGUMENTS` to determine the execution mode:
 - If neither flag is found: display usage and exit:
 
 ```
-Usage: /gsd:import --from <path>
+Usage: /gsd-import --from <path>
 
   --from <path>   Import an external plan file into GSD format
 ```
@@ -192,13 +192,13 @@ Write the PLAN.md file to the target directory.
 Delegate validation to gsd-plan-checker:
 
 ```
-Task({
+Agent({
   subagent_type: "gsd-plan-checker",
   prompt: "Validate: .planning/phases/{phase}/{plan}-PLAN.md — check frontmatter completeness, task structure, and GSD conventions. Report any issues."
 })
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 If the checker returns errors:
 - Display the errors to the user

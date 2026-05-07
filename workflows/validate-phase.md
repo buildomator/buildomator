@@ -28,7 +28,7 @@ AUDITOR_MODEL=$(gsd-sdk query resolve-model gsd-nyquist-auditor --raw)
 NYQUIST_CFG=$(gsd-sdk query config-get workflow.nyquist_validation --raw)
 ```
 
-If `NYQUIST_CFG` is `false`: exit with "Nyquist validation is disabled. Enable via /gsd:settings."
+If `NYQUIST_CFG` is `false`: exit with "Nyquist validation is disabled. Enable via /gsd-settings."
 
 Display banner: `GSD > VALIDATE PHASE {N}: {name}`
 
@@ -41,7 +41,7 @@ SUMMARY_FILES=$(ls "${PHASE_DIR}"/*-SUMMARY.md 2>/dev/null)
 
 - **State A** (`VALIDATION_FILE` non-empty): Audit existing
 - **State B** (`VALIDATION_FILE` empty, `SUMMARY_FILES` non-empty): Reconstruct from artifacts
-- **State C** (`SUMMARY_FILES` empty): Exit — "Phase {N} not executed. Run /gsd:execute-phase {N} ${GSD_WS} first."
+- **State C** (`SUMMARY_FILES` empty): Exit — "Phase {N} not executed. Run /gsd-execute-phase {N} ${GSD_WS} first."
 
 ## 2. Discovery
 
@@ -93,7 +93,7 @@ Call AskUserQuestion with gap table and options:
 ## 5. Spawn gsd-nyquist-auditor
 
 ```
-Task(
+Agent(
   prompt="Read ~/.claude/agents/gsd-nyquist-auditor.md for instructions.\n\n" +
     "<files_to_read>{PLAN, SUMMARY, impl files, VALIDATION.md}</files_to_read>" +
     "<gaps>{gap list}</gaps>" +
@@ -106,7 +106,7 @@ Task(
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 Handle return:
 - `## GAPS FILLED` → record tests + map updates, Step 6
@@ -148,14 +148,14 @@ gsd-sdk query commit "docs(phase-${PHASE}): add/update validation strategy"
 ```
 GSD > PHASE {N} IS NYQUIST-COMPLIANT
 All requirements have automated verification.
-▶ Next: /gsd:audit-milestone ${GSD_WS}
+▶ Next: /gsd-audit-milestone ${GSD_WS}
 ```
 
 **Partial:**
 ```
 GSD > PHASE {N} VALIDATED (PARTIAL)
 {M} automated, {K} manual-only.
-▶ Retry: /gsd:validate-phase {N} ${GSD_WS}
+▶ Retry: /gsd-validate-phase {N} ${GSD_WS}
 ```
 
 Display `/clear` reminder.

@@ -36,6 +36,37 @@ function coerceTruthToString(t) {
   return '';
 }
 
+function countPhasePlansAndSummaries(phaseDir) {
+  const phaseFiles = fs.readdirSync(phaseDir);
+  // Canonical form: *-PLAN.md or PLAN.md.
+  // Extended form: {N}-PLAN-{NN}-{slug}.md — the layout gsd-plan-phase
+  // actually writes (e.g. 5-PLAN-01-setup.md). Mirrors the looksLikePlanFile
+  // logic in phase.cjs (#2893 / #3128).
+  const PLAN_OUTLINE_RE = /-PLAN-OUTLINE\.md$/i;
+  const PLAN_PRE_BOUNCE_RE = /-PLAN.*\.pre-bounce\.md$/i;
+  const isPlanFile = (f) =>
+    (f.endsWith('-PLAN.md') || f === 'PLAN.md') ||
+    (/\.md$/i.test(f) && /PLAN/i.test(f) && !PLAN_OUTLINE_RE.test(f) && !PLAN_PRE_BOUNCE_RE.test(f));
+  const rootPlans = phaseFiles.filter(isPlanFile);
+  const rootSummaries = phaseFiles.filter(f => f.endsWith('-SUMMARY.md') || f === 'SUMMARY.md');
+
+  let nestedPlans = [];
+  let nestedSummaries = [];
+  const plansDir = path.join(phaseDir, 'plans');
+  if (fs.existsSync(plansDir)) {
+    const planFiles = fs.readdirSync(plansDir);
+    nestedPlans = planFiles.filter(f => /^PLAN-\d+.*\.md$/i.test(f));
+    nestedSummaries = planFiles.filter(f => /^SUMMARY-\d+.*\.md$/i.test(f));
+  }
+
+  return {
+    planCount: rootPlans.length + nestedPlans.length,
+    summaryCount: rootSummaries.length + nestedSummaries.length,
+    hasContext: phaseFiles.some(f => f.endsWith('-CONTEXT.md') || f === 'CONTEXT.md'),
+    hasResearch: phaseFiles.some(f => f.endsWith('-RESEARCH.md') || f === 'RESEARCH.md'),
+  };
+}
+
 /**
  * Search for a phase header (and its section) within the given content string.
  * Returns a result object if found (either a full match or a malformed_roadmap
@@ -86,6 +117,11 @@ function searchPhaseInContent(content, escapedPhase, phaseNum) {
   const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
   const goal = goalMatch ? goalMatch[1].trim() : null;
 
+  // Mode: vertical-MVP slice mode flag. Lowercased + trimmed for canonical
+  // comparison; unrecognized values are preserved verbatim for forward-compat.
+  const modeMatch = section.match(/\*\*Mode(?::\*\*|\*\*:)\s*([^\n]+)/i);
+  const mode = modeMatch ? modeMatch[1].trim().toLowerCase() : null;
+
   // Extract success criteria as structured array
   const criteriaMatch = section.match(/\*\*Success Criteria\*\*[^\n]*:\s*\n((?:\s*\d+\.\s*[^\n]+\n?)+)/i);
   const success_criteria = criteriaMatch
@@ -97,6 +133,7 @@ function searchPhaseInContent(content, escapedPhase, phaseNum) {
     phase_number: phaseNum,
     phase_name: phaseName,
     goal,
+    mode,
     success_criteria,
     section,
   };
@@ -182,6 +219,9 @@ function cmdRoadmapAnalyze(cwd, raw) {
     const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
     const goal = goalMatch ? goalMatch[1].trim() : null;
 
+    const modeMatch = section.match(/\*\*Mode(?::\*\*|\*\*:)\s*([^\n]+)/i);
+    const mode = modeMatch ? modeMatch[1].trim().toLowerCase() : null;
+
     const dependsMatch = section.match(/\*\*Depends on(?::\*\*|\*\*:)\s*([^\n]+)/i);
     const depends_on = dependsMatch ? dependsMatch[1].trim() : null;
 
@@ -197,11 +237,11 @@ function cmdRoadmapAnalyze(cwd, raw) {
       const dirMatch = _phaseDirNames.find(d => phaseTokenMatches(d, normalized));
 
       if (dirMatch) {
-        const phaseFiles = fs.readdirSync(path.join(phasesDir, dirMatch));
-        planCount = phaseFiles.filter(f => f.endsWith('-PLAN.md') || f === 'PLAN.md').length;
-        summaryCount = phaseFiles.filter(f => f.endsWith('-SUMMARY.md') || f === 'SUMMARY.md').length;
-        hasContext = phaseFiles.some(f => f.endsWith('-CONTEXT.md') || f === 'CONTEXT.md');
-        hasResearch = phaseFiles.some(f => f.endsWith('-RESEARCH.md') || f === 'RESEARCH.md');
+        const counts = countPhasePlansAndSummaries(path.join(phasesDir, dirMatch));
+        planCount = counts.planCount;
+        summaryCount = counts.summaryCount;
+        hasContext = counts.hasContext;
+        hasResearch = counts.hasResearch;
 
         if (summaryCount >= planCount && planCount > 0) diskStatus = 'complete';
         else if (summaryCount > 0) diskStatus = 'partial';
@@ -228,6 +268,7 @@ function cmdRoadmapAnalyze(cwd, raw) {
       number: phaseNum,
       name: phaseName,
       goal,
+      mode,
       depends_on,
       plan_count: planCount,
       summary_count: summaryCount,

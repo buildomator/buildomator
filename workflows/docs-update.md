@@ -382,7 +382,7 @@ Use `run_in_background=true` for all three to enable parallel execution.
 **Agent 1: README**
 
 ```
-Task(
+Agent(
   subagent_type="gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
@@ -404,7 +404,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 **Agent 2: ARCHITECTURE**
 
 ```
-Task(
+Agent(
   subagent_type="gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
@@ -426,7 +426,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 **Agent 3: CONFIGURATION**
 
 ```
-Task(
+Agent(
   subagent_type="gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
@@ -448,7 +448,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 **CRITICAL:** Agent prompts must contain ONLY the `<doc_assignment>` block, the `${AGENT_SKILLS}` variable, and the return instruction. Do not include project planning context, workflow prose, or any internal tooling references in agent prompts.
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all Wave 1 Task() calls above with `run_in_background=true`, do NOT generate any documentation independently while the subagents are active. Wait for all Wave 1 agents to complete before proceeding. This prevents duplicate work and wasted context.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all Wave 1 Agent() calls above with `run_in_background=true`, do NOT generate any documentation independently while the subagents are active. Wait for all Wave 1 agents to complete before proceeding. This prevents duplicate work and wasted context.
 
 Continue to collect_wave_1.
 </step>
@@ -511,7 +511,7 @@ Use `run_in_background=true` for all Wave 2 agents to enable parallel execution 
 **Agent: GETTING-STARTED**
 
 ```
-Task(
+Agent(
   subagent_type="gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
@@ -537,7 +537,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 **Agent: DEVELOPMENT**
 
 ```
-Task(
+Agent(
   subagent_type="gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
@@ -563,7 +563,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 **Agent: TESTING**
 
 ```
-Task(
+Agent(
   subagent_type="gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
@@ -589,7 +589,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 **Conditional Agent: API** (only if `has_api_routes` was true — spawn only if API.md was queued)
 
 ```
-Task(
+Agent(
   subagent_type="gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
@@ -615,7 +615,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 **Conditional Agent: DEPLOYMENT** (only if `has_deploy_config` was true — spawn only if DEPLOYMENT.md was queued)
 
 ```
-Task(
+Agent(
   subagent_type="gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
@@ -642,7 +642,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 **Conditional Agent: CONTRIBUTING** (only if `is_open_source` was true — spawn only if CONTRIBUTING.md was queued)
 
 ```
-Task(
+Agent(
   subagent_type="gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
@@ -667,7 +667,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 **CRITICAL:** Agent prompts must contain ONLY the `<doc_assignment>` block, the `${AGENT_SKILLS}` variable, and the return instruction. Do not include project planning context, workflow prose, or any internal tooling references in agent prompts.
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all Wave 2 Task() calls above with `run_in_background=true`, do NOT generate any documentation independently while the subagents are active. Wait for all Wave 2 agents to complete before proceeding. This prevents duplicate work and wasted context.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all Wave 2 Agent() calls above with `run_in_background=true`, do NOT generate any documentation independently while the subagents are active. Wait for all Wave 2 agents to complete before proceeding. This prevents duplicate work and wasted context.
 
 Continue to collect_wave_2.
 </step>
@@ -731,7 +731,7 @@ Determine mode:
 Spawn a `gsd-doc-writer` agent with `run_in_background=true`:
 
 ```
-Task(
+Agent(
   subagent_type="gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
@@ -751,7 +751,7 @@ Write {package_dir}/README.md directly. Return confirmation only — do not retu
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all per-package Task() calls above with `run_in_background=true`, do NOT generate any package READMEs independently while the subagents are active. Wait for all agents to complete via TaskOutput before proceeding. This prevents duplicate work and wasted context.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all per-package Agent() calls above with `run_in_background=true`, do NOT generate any package READMEs independently while the subagents are active. Wait for all agents to complete via TaskOutput before proceeding. This prevents duplicate work and wasted context.
 
 Collect confirmations via TaskOutput for all package agents. Note failures in the final report.
 
@@ -994,8 +994,8 @@ Failed claims:
 
 Display note:
 ```
-To fix failures automatically: /gsd:docs-update (runs generation + fix loop)
-To regenerate all docs from scratch: /gsd:docs-update --force
+To fix failures automatically: /gsd-docs-update (runs generation + fix loop)
+To regenerate all docs from scratch: /gsd-docs-update --force
 ```
 
 Clean up temp files: remove `.planning/tmp/verify-*.json` files.
@@ -1030,7 +1030,7 @@ This would expose credentials if committed.
 Action required:
 1. Review the flagged lines above
 2. Remove any real secrets from the doc files
-3. Re-run /gsd:docs-update to regenerate clean docs
+3. Re-run /gsd-docs-update to regenerate clean docs
 ```
 
 Then confirm with AskUserQuestion:
@@ -1132,7 +1132,7 @@ All generated files committed.
 Remind the user they can fact-check generated docs:
 
 ```
-Run `/gsd:docs-update --verify-only` to fact-check generated docs against the codebase.
+Run `/gsd-docs-update --verify-only` to fact-check generated docs against the codebase.
 ```
 
 End workflow.

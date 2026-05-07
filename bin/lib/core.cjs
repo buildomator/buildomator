@@ -335,7 +335,7 @@ const CONFIG_DEFAULTS = {
   phase_naming: 'sequential', // 'sequential' (default, auto-increment) or 'custom' (arbitrary string IDs)
   project_code: null, // optional short prefix for phase dirs (e.g., 'CK' → 'CK-01-foundation')
   subagent_timeout: 300000, // 5 min default; increase for large codebases or slower models (ms)
-  security_enforcement: true, // workflow.security_enforcement — threat-model-anchored security verification via /gsd:secure-phase
+  security_enforcement: true, // workflow.security_enforcement — threat-model-anchored security verification via /gsd-secure-phase
   security_asvs_level: 1, // workflow.security_asvs_level — OWASP ASVS verification level (1=opportunistic, 2=standard, 3=comprehensive)
   security_block_on: 'high', // workflow.security_block_on — minimum severity that blocks phase advancement ('high' | 'medium' | 'low')
   post_planning_gaps: true, // workflow.post_planning_gaps — unified post-planning gap report (#2493): scan REQUIREMENTS.md + CONTEXT.md decisions vs all PLAN.md files
@@ -824,19 +824,13 @@ function parseWorktreePorcelain(porcelain) {
 }
 
 /**
- * Remove linked git worktrees whose branch has already been merged into the
- * current HEAD of the main worktree.  Also runs `git worktree prune` to clear
- * any stale references left by manually-deleted worktree directories.
+ * Clear stale worktree metadata references via `git worktree prune`.
  *
- * Safe guards:
- *  - Never removes the main worktree (first entry in --porcelain output).
- *  - Never removes the worktree at process.cwd().
- *  - Never removes a worktree whose branch has unmerged commits.
- *  - Skips detached-HEAD worktrees (no branch name).
+ * Destructive linked-worktree removal is disabled by default for safety.
  *
  * @param {string} repoRoot - absolute path to the main (or any) worktree of
  *   the repository; used as `cwd` for git commands.
- * @returns {string[]} list of worktree paths that were removed
+ * @returns {string[]} list of worktree paths that were removed (always empty)
  */
 function pruneOrphanedWorktrees(repoRoot) {
   const pruned = [];
@@ -853,37 +847,14 @@ function pruneOrphanedWorktrees(repoRoot) {
       return pruned;
     }
 
-    // 2. First entry is the main worktree — never touch it
-    const mainWorktreePath = worktrees[0].path;
-
-    // 3. Check each non-main worktree
-    for (let i = 1; i < worktrees.length; i++) {
-      const { path: wtPath, branch } = worktrees[i];
-
-      // Never remove the worktree for the current process directory
-      if (wtPath === cwd || cwd.startsWith(wtPath + path.sep)) continue;
-
-      // Check if the branch is fully merged into HEAD (main)
-      // git merge-base --is-ancestor <branch> HEAD exits 0 when merged
-      const ancestorCheck = execGit(repoRoot, [
-        'merge-base', '--is-ancestor', branch, 'HEAD',
-      ]);
-
-      if (ancestorCheck.exitCode !== 0) {
-        // Not yet merged — leave it alone
-        continue;
-      }
-
-      // Remove the worktree and delete the branch
-      const removeResult = execGit(repoRoot, ['worktree', 'remove', '--force', wtPath]);
-      if (removeResult.exitCode === 0) {
-        execGit(repoRoot, ['branch', '-D', branch]);
-        pruned.push(wtPath);
-      }
-    }
+    // Destructive removal of linked worktrees is intentionally disabled.
+    // Keep metadata cleanup only (git worktree prune), which clears stale refs
+    // for manually-deleted directories without removing active sibling worktrees.
+    void cwd;
+    void worktrees;
   } catch { /* never crash the caller */ }
 
-  // 4. Always run prune to clear stale references (e.g. manually-deleted dirs)
+  // Always run prune to clear stale references (e.g. manually-deleted dirs)
   execGit(repoRoot, ['worktree', 'prune']);
 
   return pruned;
@@ -982,6 +953,17 @@ function phaseTokenMatches(dirName, normalized) {
   return false;
 }
 
+function extractCanonicalPlanId(filename) {
+  const base = filename.replace(/-PLAN\.md$/i, '').replace(/-SUMMARY\.md$/i, '').replace(/\.md$/i, '');
+  const parts = base.split('-').filter(Boolean);
+  const tokenRe = /^\d+[A-Z]?(?:\.\d+)*$/i;
+  const phaseIdx = parts.findIndex(p => tokenRe.test(p));
+  if (phaseIdx >= 0 && phaseIdx + 1 < parts.length && tokenRe.test(parts[phaseIdx + 1])) {
+    return `${parts[phaseIdx]}-${parts[phaseIdx + 1]}`;
+  }
+  return base;
+}
+
 function searchPhaseInDir(baseDir, relBase, normalized) {
   try {
     const dirs = readSubdirectories(baseDir, true);
@@ -1002,11 +984,16 @@ function searchPhaseInDir(baseDir, relBase, normalized) {
     const summaries = unsortedSummaries.sort();
 
     const completedPlanIds = new Set(
-      summaries.map(s => s.replace('-SUMMARY.md', '').replace('SUMMARY.md', ''))
+      summaries.flatMap(s => {
+        const exact = s.replace('-SUMMARY.md', '').replace('SUMMARY.md', '');
+        const canonical = extractCanonicalPlanId(s);
+        return canonical === exact ? [exact] : [exact, canonical];
+      })
     );
     const incompletePlans = plans.filter(p => {
       const planId = p.replace('-PLAN.md', '').replace('PLAN.md', '');
-      return !completedPlanIds.has(planId);
+      const canonical = extractCanonicalPlanId(p);
+      return !completedPlanIds.has(planId) && !completedPlanIds.has(canonical);
     });
 
     return {
@@ -1939,10 +1926,62 @@ function getMilestoneInfo(cwd) {
  * to the current milestone based on ROADMAP.md phase headings.
  * If no ROADMAP exists or no phases are listed, returns a pass-all filter.
  */
-function getMilestonePhaseFilter(cwd) {
+function getMilestonePhaseFilter(cwd, versionOverride) {
   const milestonePhaseNums = new Set();
+  let missingExplicitVersion = false;
   try {
-    const roadmap = extractCurrentMilestone(fs.readFileSync(path.join(planningDir(cwd), 'ROADMAP.md'), 'utf-8'), cwd);
+    const roadmapPath = path.join(planningDir(cwd), 'ROADMAP.md');
+    const roadmapContent = fs.readFileSync(roadmapPath, 'utf-8');
+    let roadmap = extractCurrentMilestone(roadmapContent, cwd);
+
+    if (versionOverride) {
+      const escapedVersion = escapeRegex(versionOverride);
+      const sectionPattern = new RegExp(`(^#{1,3}\\s+.*${escapedVersion}[^\\n]*)`, 'mi');
+      const sectionMatch = roadmapContent.match(sectionPattern);
+      if (!sectionMatch) {
+        // Only treat this as an error case when the roadmap is milestone-versioned.
+        // Older/flat roadmap formats without vX.Y milestone headings should keep
+        // legacy pass-through behavior for milestone.complete.
+        const hasVersionedMilestones = /^#{1,3}\s+.*v\d+\.\d+/mi.test(roadmapContent);
+        if (hasVersionedMilestones) {
+          roadmap = '';
+          missingExplicitVersion = true;
+        }
+      } else {
+        const sectionStart = sectionMatch.index;
+        const headingLevel = sectionMatch[1].match(/^(#{1,3})\s/)[1].length;
+        const restContent = roadmapContent.slice(sectionStart + sectionMatch[0].length);
+        const nextMilestonePattern = new RegExp(`^#{1,${headingLevel}}\\s+(?!Phase\\s+\\S)(?:.*v\\d+\\.\\d+|✅|📋|🚧)`, 'i');
+
+        let sectionEnd = roadmapContent.length;
+        let fenceChar = null;
+        let fenceLen = 0;
+        let charOffset = 0;
+        for (const line of restContent.split('\n')) {
+          const fenceMatch = line.match(/^\s{0,3}((?:`{3,}|~{3,}))(.*)/);
+          if (fenceMatch) {
+            const char = fenceMatch[1][0];
+            const len = fenceMatch[1].length;
+            const trailing = fenceMatch[2] || '';
+            if (!fenceChar) {
+              fenceChar = char;
+              fenceLen = len;
+            } else if (char === fenceChar && len >= fenceLen && /^\s*$/.test(trailing)) {
+              fenceChar = null;
+              fenceLen = 0;
+            }
+          } else if (!fenceChar && nextMilestonePattern.test(line)) {
+            sectionEnd = sectionStart + sectionMatch[0].length + charOffset;
+            break;
+          }
+          charOffset += line.length + 1;
+        }
+
+        const currentSection = roadmapContent.slice(sectionStart, sectionEnd);
+        roadmap = currentSection;
+      }
+    }
+
     // Match both numeric phases (Phase 1:) and custom IDs (Phase PROJ-42:)
     const phasePattern = /#{2,4}\s*Phase\s+([\w][\w.-]*)\s*:/gi;
     let m;
@@ -1954,6 +1993,7 @@ function getMilestonePhaseFilter(cwd) {
   if (milestonePhaseNums.size === 0) {
     const passAll = () => true;
     passAll.phaseCount = 0;
+    passAll.missingExplicitVersion = missingExplicitVersion;
     return passAll;
   }
 
@@ -1971,6 +2011,7 @@ function getMilestonePhaseFilter(cwd) {
     return false;
   }
   isDirInMilestone.phaseCount = milestonePhaseNums.size;
+  isDirInMilestone.missingExplicitVersion = missingExplicitVersion;
   return isDirInMilestone;
 }
 
@@ -2077,6 +2118,9 @@ function timeAgo(date) {
 }
 
 module.exports = {
+  resolveGsdRoot,
+  resolveGsdDataDir,
+  resolveGsdAsset,
   output,
   error,
   ERROR_REASON,
@@ -2137,7 +2181,4 @@ module.exports = {
   atomicWriteFileSync,
   timeAgo,
   pruneOrphanedWorktrees,
-  resolveGsdRoot,
-  resolveGsdDataDir,
-  resolveGsdAsset,
 };

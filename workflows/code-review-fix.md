@@ -36,7 +36,7 @@ fi
 **Phase validation (before config gate):**
 If `phase_found` is false, report error and exit:
 ```
-Error: Phase ${PHASE_ARG} not found. Run /gsd:progress to see available phases.
+Error: Phase ${PHASE_ARG} not found. Run /gsd-progress to see available phases.
 ```
 
 This runs BEFORE config gate check so user errors are surfaced immediately regardless of config state.
@@ -93,7 +93,7 @@ Verify that REVIEW.md exists:
 
 ```bash
 if [ ! -f "${REVIEW_PATH}" ]; then
-  echo "Error: No REVIEW.md found for Phase ${PHASE_ARG}. Run /gsd:code-review ${PHASE_ARG} first."
+  echo "Error: No REVIEW.md found for Phase ${PHASE_ARG}. Run /gsd-code-review ${PHASE_ARG} first."
   exit 1
 fi
 ```
@@ -186,10 +186,10 @@ echo "Applying fixes from ${REVIEW_PATH}..."
 echo "Fix scope: ${FIX_SCOPE}"
 ```
 
-Use Task() to spawn agent:
+Use Agent() to spawn agent:
 
-```
-Task(subagent_type="gsd-code-fixer", prompt="
+```text
+Agent(subagent_type="gsd-code-fixer", prompt="
 <files_to_read>
 ${REVIEW_PATH}
 </files_to_read>
@@ -207,11 +207,11 @@ Read REVIEW.md findings, apply fixes, commit each atomically, write REVIEW-FIX.m
 ")
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 **Agent failure handling:**
 
-If Task() fails:
+If Agent() fails:
 ```
 Error: Code fix agent failed: ${error_message}
 ```
@@ -223,7 +223,7 @@ Check if FIX_REPORT_PATH exists:
 Either way:
 ```
 Some fix commits may already exist in git history — check git log for fix(${PADDED_PHASE}) commits.
-You can retry with /gsd:code-review ${PHASE_ARG} --fix.
+You can retry with /gsd-code-review ${PHASE_ARG} --fix.
 ```
 
 Exit workflow (skip auto loop).
@@ -272,7 +272,7 @@ if [ "$AUTO_MODE" = "true" ]; then
     
     # Spawn gsd-code-reviewer agent to re-review
     # (This overwrites REVIEW_PATH with latest review state)
-    Task(subagent_type="gsd-code-reviewer", prompt="
+    Agent(subagent_type="gsd-code-reviewer", prompt="
 <config>
 depth: ${REVIEW_DEPTH}
 phase_dir: ${PHASE_DIR}
@@ -283,7 +283,7 @@ ${FILES_CONFIG}
 Re-review the phase at ${REVIEW_DEPTH} depth. Write findings to ${REVIEW_PATH}.
 Do NOT commit the output — the orchestrator handles that.
 ")
-    # ORCHESTRATOR RULE — CODEX RUNTIME: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result before proceeding.
+    # ORCHESTRATOR RULE — CODEX RUNTIME: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result before proceeding.
     
     # Check new REVIEW.md status
     NEW_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
@@ -306,7 +306,7 @@ Do NOT commit the output — the orchestrator handles that.
     # Still has issues — spawn fixer again
     echo "Issues remain. Applying fixes for iteration ${ITERATION}..."
     
-    Task(subagent_type="gsd-code-fixer", prompt="
+    Agent(subagent_type="gsd-code-fixer", prompt="
 <files_to_read>
 ${REVIEW_PATH}
 </files_to_read>
@@ -322,7 +322,7 @@ iteration: ${ITERATION}
 
 Read REVIEW.md findings, apply fixes, commit each atomically, write REVIEW-FIX.md (overwrite previous). Do NOT commit REVIEW-FIX.md.
 ")
-    # ORCHESTRATOR RULE — CODEX RUNTIME: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result before proceeding.
+    # ORCHESTRATOR RULE — CODEX RUNTIME: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result before proceeding.
     
     # Check if fixer succeeded
     if [ ! -f "${FIX_REPORT_PATH}" ]; then
@@ -398,7 +398,7 @@ if [ ! -f "${FIX_REPORT_PATH}" ]; then
   echo "The fixer agent may have failed before completing."
   echo "Check git log for any fix(${PADDED_PHASE}) commits."
   echo ""
-  echo "Retry: /gsd:code-review ${PHASE_ARG} --fix"
+  echo "Retry: /gsd-code-review ${PHASE_ARG} --fix"
   echo ""
   echo "═══════════════════════════════════════════════════════════════"
   exit 1
@@ -455,7 +455,7 @@ if [ "$FIX_STATUS" = "all_fixed" ]; then
   echo "Full report: ${FIX_REPORT_PATH}"
   echo ""
   echo "Next step:"
-  echo "  /gsd:verify-work  — Verify phase completion"
+  echo "  /gsd-verify-work  — Verify phase completion"
   echo ""
 fi
 ```
@@ -469,8 +469,8 @@ if [ "$FIX_STATUS" = "partial" ] || [ "$FIX_STATUS" = "none_fixed" ]; then
   echo ""
   echo "Next steps:"
   echo "  cat ${FIX_REPORT_PATH}                     — View fix report"
-  echo "  /gsd:code-review ${PHASE_NUMBER}           — Re-review code"
-  echo "  /gsd:verify-work                           — Verify phase completion"
+  echo "  /gsd-code-review ${PHASE_NUMBER}           — Re-review code"
+  echo "  /gsd-verify-work                           — Verify phase completion"
   echo ""
 fi
 ```

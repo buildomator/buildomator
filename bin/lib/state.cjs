@@ -1032,87 +1032,113 @@ function cmdStateBeginPhase(cwd, phaseNumber, phaseName, planCount, raw) {
   const updated = [];
 
   readModifyWriteStateMd(statePath, (content) => {
+    // Idempotency guard (#3127): if the phase is already mid-flight, do NOT
+    // overwrite execution-progress fields (Current Plan, plan body line,
+    // Last Activity Description). Only update fields that are safe to
+    // refresh on resume (Last Activity date, Status if inconsistent).
+    // A phase is considered mid-flight when Status contains 'Executing Phase N'
+    // for the current phase number.
+    const currentStatus = stateExtractField(content, 'Status') || '';
+    const isAlreadyExecuting = new RegExp(`Executing Phase\\s+${escapeRegex(String(phaseNumber))}\\b`, 'i').test(currentStatus);
+
     // Update Status field
     const statusValue = `Executing Phase ${phaseNumber}`;
     let result = stateReplaceField(content, 'Status', statusValue);
     if (result) { content = result; updated.push('Status'); }
 
-    // Update Last Activity
+    // Update Last Activity (safe to update on resume — tracks when execute-phase ran)
     result = stateReplaceField(content, 'Last Activity', today);
     if (result) { content = result; updated.push('Last Activity'); }
 
-    // Update Last Activity Description if it exists
-    const activityDesc = `Phase ${phaseNumber} execution started`;
-    result = stateReplaceField(content, 'Last Activity Description', activityDesc);
-    if (result) { content = result; updated.push('Last Activity Description'); }
+    if (!isAlreadyExecuting) {
+      // First-time execution: set all progress fields
 
-    // Update Current Phase
-    result = stateReplaceField(content, 'Current Phase', String(phaseNumber));
-    if (result) { content = result; updated.push('Current Phase'); }
+      // Update Last Activity Description
+      const activityDesc = `Phase ${phaseNumber} execution started`;
+      result = stateReplaceField(content, 'Last Activity Description', activityDesc);
+      if (result) { content = result; updated.push('Last Activity Description'); }
 
-    // Update Current Phase Name
-    if (phaseName) {
-      result = stateReplaceField(content, 'Current Phase Name', phaseName);
-      if (result) { content = result; updated.push('Current Phase Name'); }
-    }
+      // Update Current Phase
+      result = stateReplaceField(content, 'Current Phase', String(phaseNumber));
+      if (result) { content = result; updated.push('Current Phase'); }
 
-    // Update Current Plan to 1 (starting from the first plan)
-    result = stateReplaceField(content, 'Current Plan', '1');
-    if (result) { content = result; updated.push('Current Plan'); }
-
-    // Update Total Plans in Phase
-    if (planCount) {
-      result = stateReplaceField(content, 'Total Plans in Phase', String(planCount));
-      if (result) { content = result; updated.push('Total Plans in Phase'); }
-    }
-
-    // Update **Current focus:** body text line (#1104)
-    const focusLabel = phaseName ? `Phase ${phaseNumber} — ${phaseName}` : `Phase ${phaseNumber}`;
-    const focusPattern = /(\*\*Current focus:\*\*\s*).*/i;
-    if (focusPattern.test(content)) {
-      content = content.replace(focusPattern, (_match, prefix) => `${prefix}${focusLabel}`);
-      updated.push('Current focus');
-    }
-
-    // Update ## Current Position section (#1104, #1365)
-    // Update individual fields within Current Position instead of replacing the
-    // entire section, so that Status, Last activity, and Progress are preserved.
-    const positionPattern = /(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i;
-    const positionMatch = content.match(positionPattern);
-    if (positionMatch) {
-      const header = positionMatch[1];
-      let posBody = positionMatch[2];
-
-      // Update or insert Phase line
-      const newPhase = `Phase: ${phaseNumber}${phaseName ? ` (${phaseName})` : ''} — EXECUTING`;
-      if (/^Phase:/m.test(posBody)) {
-        posBody = posBody.replace(/^Phase:.*$/m, newPhase);
-      } else {
-        posBody = newPhase + '\n' + posBody;
+      // Update Current Phase Name
+      if (phaseName) {
+        result = stateReplaceField(content, 'Current Phase Name', phaseName);
+        if (result) { content = result; updated.push('Current Phase Name'); }
       }
 
-      // Update or insert Plan line
-      const newPlan = `Plan: 1 of ${planCount || '?'}`;
-      if (/^Plan:/m.test(posBody)) {
-        posBody = posBody.replace(/^Plan:.*$/m, newPlan);
-      } else {
-        posBody = posBody.replace(/^(Phase:.*$)/m, `$1\n${newPlan}`);
+      // Update Current Plan to 1 (starting from the first plan)
+      result = stateReplaceField(content, 'Current Plan', '1');
+      if (result) { content = result; updated.push('Current Plan'); }
+
+      // Update Total Plans in Phase
+      if (planCount) {
+        result = stateReplaceField(content, 'Total Plans in Phase', String(planCount));
+        if (result) { content = result; updated.push('Total Plans in Phase'); }
       }
 
-      // Update Status line if present
-      const newStatus = `Status: Executing Phase ${phaseNumber}`;
-      if (/^Status:/m.test(posBody)) {
-        posBody = posBody.replace(/^Status:.*$/m, newStatus);
+      // Update **Current focus:** body text line (#1104)
+      const focusLabel = phaseName ? `Phase ${phaseNumber} — ${phaseName}` : `Phase ${phaseNumber}`;
+      const focusPattern = /(\*\*Current focus:\*\*\s*).*/i;
+      if (focusPattern.test(content)) {
+        content = content.replace(focusPattern, (_match, prefix) => `${prefix}${focusLabel}`);
+        updated.push('Current focus');
       }
 
-      // Update Last activity line if present
-      const newActivity = `Last activity: ${today} -- Phase ${phaseNumber} execution started`;
-      if (/^Last activity:/im.test(posBody)) {
-        posBody = posBody.replace(/^Last activity:.*$/im, newActivity);
-      }
+      // Update ## Current Position section (#1104, #1365)
+      const positionPattern = /(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i;
+      const positionMatch = content.match(positionPattern);
+      if (positionMatch) {
+        const header = positionMatch[1];
+        let posBody = positionMatch[2];
 
-      content = content.replace(positionPattern, `${header}${posBody}`);
-      updated.push('Current Position');
+        // Update or insert Phase line
+        const newPhase = `Phase: ${phaseNumber}${phaseName ? ` (${phaseName})` : ''} — EXECUTING`;
+        if (/^Phase:/m.test(posBody)) {
+          posBody = posBody.replace(/^Phase:.*$/m, newPhase);
+        } else {
+          posBody = newPhase + '\n' + posBody;
+        }
+
+        // Update or insert Plan line
+        const newPlan = `Plan: 1 of ${planCount || '?'}`;
+        if (/^Plan:/m.test(posBody)) {
+          posBody = posBody.replace(/^Plan:.*$/m, newPlan);
+        } else {
+          posBody = posBody.replace(/^(Phase:.*$)/m, `$1\n${newPlan}`);
+        }
+
+        // Update Status line if present
+        const newStatus = `Status: Executing Phase ${phaseNumber}`;
+        if (/^Status:/m.test(posBody)) {
+          posBody = posBody.replace(/^Status:.*$/m, newStatus);
+        }
+
+        // Update Last activity line if present
+        const newActivity = `Last activity: ${today} -- Phase ${phaseNumber} execution started`;
+        if (/^Last activity:/im.test(posBody)) {
+          posBody = posBody.replace(/^Last activity:.*$/im, newActivity);
+        }
+
+        content = content.replace(positionPattern, `${header}${posBody}`);
+        updated.push('Current Position');
+      }
+    } else {
+      // Resume path: only update Last activity timestamp in Current Position
+      // (do not touch Plan:, stopped_at, progress.percent, or plan counter)
+      const positionPattern = /(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i;
+      const positionMatch = content.match(positionPattern);
+      if (positionMatch) {
+        const header = positionMatch[1];
+        let posBody = positionMatch[2];
+        const resumeActivity = `Last activity: ${today} -- Phase ${phaseNumber} execution resumed (wave continue)`;
+        if (/^Last activity:/im.test(posBody)) {
+          posBody = posBody.replace(/^Last activity:.*$/im, resumeActivity);
+          content = content.replace(positionPattern, `${header}${posBody}`);
+          updated.push('Last activity (resume)');
+        }
+      }
     }
 
     return content;
@@ -1690,32 +1716,36 @@ function cmdStatePrune(cwd, options, raw) {
  * that the phase execution is finished and the project is ready for the next phase.
  * Implements the `gsd state complete-phase` subcommand (issue #2735).
  */
-function cmdStateCompletePhase(cwd, raw) {
+function resolvePhaseIdForCompletePhase(content, overridePhase) {
+  const candidate = overridePhase ||
+    stateExtractField(content, 'Current Phase') ||
+    stateExtractField(content, 'Phase') ||
+    '';
+
+  // Accept canonical phase token only (e.g. 3, 03, 3A, 3.3, 10.2)
+  const phaseMatch = String(candidate).match(/(\d+[A-Z]?(?:\.\d+)*)/i);
+  return phaseMatch ? phaseMatch[1] : null;
+}
+
+function cmdStateCompletePhase(cwd, raw, overridePhase) {
   const statePath = planningPaths(cwd).state;
   if (!fs.existsSync(statePath)) {
     output({ error: 'STATE.md not found' }, raw);
     return;
   }
 
+  const content = fs.readFileSync(statePath, 'utf-8');
+  const resolvedPhase = resolvePhaseIdForCompletePhase(content, overridePhase);
+  if (!resolvedPhase || /^phase$/i.test(resolvedPhase)) {
+    output({ error: 'Unable to resolve current phase. Pass an explicit phase: state complete-phase --phase <N>' }, raw);
+    return;
+  }
+
   const today = new Date().toISOString().split('T')[0];
   const updated = [];
-  let resolvedPhase = '?';
 
   readModifyWriteStateMd(statePath, (content) => {
-    // Read the current phase number for descriptive messages.
-    //
-    // The 'Phase' fallback can match the decorated body line under
-    // `## Current Position` (e.g. `Phase: 01 (Foo) — EXECUTING`), which would
-    // flow downstream into messy `Status: Phase 01 (Foo) — EXECUTING complete`
-    // output. Strip everything past the leading numeric/decimal token so the
-    // fallback path produces a clean phase identifier matching the canonical
-    // `Current Phase` field. CodeRabbit nitpick on PR #2761.
-    const rawPhase = stateExtractField(content, 'Current Phase') ||
-                     stateExtractField(content, 'Phase') ||
-                     '';
-    const phaseToken = rawPhase.match(/^\s*([\w.-]+)/);
-    const currentPhase = phaseToken ? phaseToken[1] : '?';
-    resolvedPhase = currentPhase;
+    const currentPhase = resolvedPhase;
 
     // Update Status field
     const statusValue = `Phase ${currentPhase} complete`;
