@@ -29,3 +29,14 @@ jobs:
         run: npm ci
       - name: Validate HANDOFF schema
         run: node bin/maintenance/check-handoff-schema.cjs
+
+  mcp-stdio-framing:
+    name: MCP stdio framing (regression for #3)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run MCP stdio ndjson framing regression test
+        run: node tests/mcp-stdio-framing.test.cjs
