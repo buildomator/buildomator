@@ -8,6 +8,17 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.40.2] - 2026-05-07
+
+Hotfix — restores the bundled MCP server's stdio transport so `claude mcp list` reports `gsd: ✓ Connected` and the eight `gsd_*` MCP tools become reachable.
+
+### Fixed
+- **`mcp/server.cjs`** (#3) — switched the stdio transport to newline-delimited JSON, which is what the MCP spec and current Claude Code MCP clients send and expect. The previous LSP-style `Content-Length:` framing silently dropped every request: the reader required `\r\n\r\n` that ndjson never produces, and the writer emitted headers ndjson clients won't parse as a response boundary. Reader now tries ndjson first and falls back to Content-Length framing only when a complete LSP header block arrives before the next newline (safe for any legacy transport still emitting it). Verified locally: `initialize` returns 176 bytes, `tools/list` returns all 8 tools.
+
+### Notes
+- Reported and patched by @Sovereigntymind (the project's first external contributor!) and confirmed on macOS / 2.40.1 by @jesse-smith. The fix is the contributor's tested patch applied verbatim, with the LSP path kept as a fallback rather than removed.
+- Slash commands were unaffected by this bug because they read `.planning/` files directly and don't go through the MCP server.
+
 ## [2.40.1] - 2026-05-06
 
 Hotfix — suppresses a false-positive "GSD subagents are not installed" warning that appeared after `/gsd:new-project` and `/gsd:new-milestone` for plugin users.
