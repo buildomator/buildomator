@@ -16,7 +16,7 @@ Extract structured learnings from completed phase artifacts (PLAN.md, SUMMARY.md
 </objective>
 
 <execution_context>
-@${CLAUDE_PLUGIN_ROOT}/workflows/extract_learnings.md
+@${CLAUDE_PLUGIN_ROOT}/workflows/extract-learnings.md
 </execution_context>
 
-Execute the extract-learnings workflow from @${CLAUDE_PLUGIN_ROOT}/workflows/extract_learnings.md end-to-end.
+Execute the extract-learnings workflow from @${CLAUDE_PLUGIN_ROOT}/workflows/extract-learnings.md end-to-end.
