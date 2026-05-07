@@ -8,6 +8,18 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.42.1] - 2026-05-07
+
+Hotfix that completes v2.42.0's "no external prereq" promise. v2.42.0 shipped `sdk/dist/cli.js` (~3 KB tsc shim) without the ~81 MB of runtime npm dependencies it imports (`ws`, `@anthropic-ai/claude-agent-sdk`, transitives). On a truly fresh box (no prior `npx get-shit-done-cc`) the bundled `gsd-sdk` failed at module-resolution time. **Caught by smoke-testing v2.42.0 on a fresh Debian 13 box** (`192.168.1.170`) — the user's existing macOS/laptop installs had an external `gsd-sdk` already on `PATH` so the bug was invisible there.
+
+### Fixed
+- **`sdk/dist/cli.js`** — switched the SDK build from plain `tsc` to `tsc && esbuild --bundle --platform=node --format=esm --outfile=dist/cli.js --allow-overwrite`, with a `createRequire` shim banner so CJS deps (ws's transitive `require()` calls) work inside the ESM output. Result: `dist/cli.js` is now a single 1.5 MB self-contained file with all runtime deps inlined. No `node_modules` needed at plugin runtime. Verified against 6 test scenarios on fresh Debian 13 with no prior GSD install: `--version`, PATH-based resolution, `query state.load`, `query commands`, MCP regression test, and workflow-style callsite simulation. All pass.
+- **`sdk/package.json`** — added `bundle` script and updated `build` to chain it after `tsc`. Added `esbuild ^0.28.0` as devDependency (build-time only, not shipped).
+
+### Notes
+- Plugin tree size grew by ~+1.5 MB (the bundled `cli.js`). Total cost is still ~80 MB less than committing `node_modules/` would have been.
+- v2.42.0 is being **superseded immediately** rather than left in the wild. Anyone who already pulled v2.42.0 should run `/plugin marketplace update gsd-plugin` to surface this fix.
+
 ## [2.42.0] - 2026-05-07
 
 **No more `gsd-sdk` prerequisite.** The plugin now bundles the GSD SDK inside its own tree, so `/plugin install gsd@gsd-plugin` is genuinely the only install step. Closes [#4](https://github.com/jnuyens/gsd-plugin/issues/4) at the architectural level (v2.41.1's README fix corrected the documentation; this release removes the requirement that documentation was trying to describe).
