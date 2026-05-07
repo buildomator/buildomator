@@ -1,0 +1,1 @@
+{"version":3,"file":"query-fallback-policy.d.ts","sourceRoot":"","sources":["../../src/query/query-fallback-policy.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,mBAAmB;IAClC,kBAAkB,EAAE,OAAO,CAAC;CAC7B;AAED,wBAAgB,8BAA8B,IAAI,MAAM,CAEvD;AAED,wBAAgB,iBAAiB,CAAC,MAAM,EAAE,mBAAmB,GAAG,OAAO,CAEtE"}
