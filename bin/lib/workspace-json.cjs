@@ -13,6 +13,12 @@ const MAX_FILES_CONFIG_KEY = 'gsd.workspace_json_max_files';
 
 const SUPPORTED_VERSIONS = ['0.1', '1.0'];
 
+// DoS guards — cap input sizes before materialising arrays in memory.
+const MAX_INDEX_ENTRIES = 10000;
+const MAX_MANIFEST_ENTRIES = 100;
+const MAX_FRAGILE_FILES = 500;
+const MAX_CO_CHANGE_PATTERNS = 200;
+
 // Returns null if absent, malformed, or unreadable — never throws.
 function readWorkspaceJson(cwd) {
   for (const segments of [CANONICAL_PATH, LEGACY_PATH]) {
@@ -61,6 +67,8 @@ function readWorkspaceJson(cwd) {
 function buildContextString(workspaceJson, options) {
   if (!workspaceJson) return '';
 
+  const { sanitizeForPrompt } = require('./security.cjs');
+
   const rawMax = options && options.maxFiles;
   const maxFiles = (typeof rawMax === 'number' && rawMax >= 0) ? rawMax : DEFAULT_MAX_FILES;
   const sections = [];
@@ -71,8 +79,13 @@ function buildContextString(workspaceJson, options) {
 
     if (Array.isArray(generated.frameworkManifest)) {
       const frameworks = generated.frameworkManifest
+        .slice(0, MAX_MANIFEST_ENTRIES)
         .filter(f => f && typeof f.name === 'string' && (f.confidence == null || f.confidence >= FRAMEWORK_CONFIDENCE_THRESHOLD))
-        .map(f => `${f.name}@${typeof f.version === 'string' ? f.version : 'unknown'}`)
+        .map(f => {
+          const name = sanitizeForPrompt(f.name);
+          const version = typeof f.version === 'string' ? sanitizeForPrompt(f.version) : 'unknown';
+          return `${name}@${version}`;
+        })
         .join(', ');
       if (frameworks) {
         parts.push(`Detected stack: ${frameworks}.`);
@@ -80,7 +93,12 @@ function buildContextString(workspaceJson, options) {
     }
 
     if (generated.fileIndex && typeof generated.fileIndex === 'object' && !Array.isArray(generated.fileIndex)) {
-      const fragileFromIndex = Object.entries(generated.fileIndex)
+      const allEntries = Object.entries(generated.fileIndex);
+      if (allEntries.length > MAX_INDEX_ENTRIES) {
+        process.stderr.write(`GSD: workspace.json fileIndex has ${allEntries.length} entries; processing first ${MAX_INDEX_ENTRIES}.\n`);
+      }
+      const fragileFromIndex = allEntries
+        .slice(0, MAX_INDEX_ENTRIES)
         .filter(([, data]) => data && typeof data.fragility === 'number' && data.fragility >= FRAGILITY_THRESHOLD)
         .sort((a, b) => b[1].fragility - a[1].fragility)
         .slice(0, maxFiles);
@@ -91,7 +109,7 @@ function buildContextString(workspaceJson, options) {
             const score = data.fragility.toFixed(2);
             const aiCount = data.aiModificationCount || 0;
             const humanCount = data.humanModificationCount || 0;
-            return `${file} (fragility ${score}, ${aiCount} AI / ${humanCount} human modifications)`;
+            return `${sanitizeForPrompt(file)} (fragility ${score}, ${aiCount} AI / ${humanCount} human modifications)`;
           })
           .join('; ');
         parts.push(`Empirically fragile files: ${list}.`);
@@ -106,9 +124,10 @@ function buildContextString(workspaceJson, options) {
   const manual = workspaceJson.manual;
   if (manual && typeof manual === 'object' && Array.isArray(manual.fragileFiles) && manual.fragileFiles.length > 0) {
     const list = manual.fragileFiles
+      .slice(0, MAX_FRAGILE_FILES)
       .map(f => {
         if (f && typeof f === 'object' && typeof f.path === 'string' && typeof f.reason === 'string') {
-          return `${f.path} (${f.reason})`;
+          return `${sanitizeForPrompt(f.path)} (${sanitizeForPrompt(f.reason)})`;
         }
         return null;
       })
@@ -121,12 +140,14 @@ function buildContextString(workspaceJson, options) {
 
   if (manual && typeof manual === 'object' && Array.isArray(manual.coChangePatterns) && manual.coChangePatterns.length > 0) {
     const list = manual.coChangePatterns
+      .slice(0, MAX_CO_CHANGE_PATTERNS)
       .map(p => {
         if (!p || !Array.isArray(p.files)) return null;
-        const stringFiles = p.files.filter(x => typeof x === 'string');
+        const stringFiles = p.files.filter(x => typeof x === 'string').map(x => sanitizeForPrompt(x));
         if (stringFiles.length === 0) return null;
         const filesPart = stringFiles.join(' ↔ ');
-        return (typeof p.note === 'string' && p.note) ? `${filesPart} (${p.note})` : filesPart;
+        const note = typeof p.note === 'string' && p.note ? sanitizeForPrompt(p.note) : null;
+        return note ? `${filesPart} (${note})` : filesPart;
       })
       .filter(Boolean)
       .join('; ');
