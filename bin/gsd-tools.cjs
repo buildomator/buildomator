@@ -1234,11 +1234,16 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
             if (workspaceJson) {
               let maxFiles = DEFAULT_MAX_FILES;
               try {
-                const cfgPath = path.join(planningPaths(cwd).planning, 'config.json');
+                const { planningPaths: _pp } = require('./lib/core.cjs');
+                const cfgPath = path.join(_pp(cwd).planning, 'config.json');
                 const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf-8'));
                 const raw = cfg && cfg[MAX_FILES_CONFIG_KEY];
                 if (typeof raw === 'number' && raw >= 0) maxFiles = raw;
-              } catch { /* absent or unreadable config — use default */ }
+              } catch (cfgErr) {
+                if (cfgErr && cfgErr.code !== 'ENOENT') {
+                  process.stderr.write(`GSD: workspace.json config read failed (${cfgErr.code || cfgErr.message}). Using default.\n`);
+                }
+              }
               const contextString = buildContextString(workspaceJson, { maxFiles });
               if (contextString) {
                 process.stdout.write('\n\n' + contextString);
