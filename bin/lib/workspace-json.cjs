@@ -11,7 +11,7 @@ const FRAMEWORK_CONFIDENCE_THRESHOLD = 0.7;
 const DEFAULT_MAX_FILES = 5;
 const MAX_FILES_CONFIG_KEY = 'gsd.workspace_json_max_files';
 
-const SUPPORTED_VERSIONS = ['0.1', '1.0'];
+const SUPPORTED_VERSIONS = ['0.1'];
 
 // DoS guards — cap input sizes before materialising arrays in memory.
 const MAX_INDEX_ENTRIES = 10000;

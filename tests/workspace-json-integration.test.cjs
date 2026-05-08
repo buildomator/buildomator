@@ -81,7 +81,7 @@ check('malformed file does not crash hook', () => withTempRepo(dir => {
 // Test 3: valid canonical-path file injects expected fragile files
 check('canonical-path file injects fragility intelligence', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: {
       version: '1.0',
       fileIndex: {
@@ -105,7 +105,7 @@ check('canonical-path file injects fragility intelligence', () => withTempRepo(d
 // Test 4: legacy-path file is also read
 check('legacy-path file is read when canonical absent', () => withTempRepo(dir => {
   writeLegacyWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: {
       version: '1.0',
       fileIndex: {
@@ -126,7 +126,7 @@ check('legacy-path file is read when canonical absent', () => withTempRepo(dir =
 // Test 5: canonical wins when both present
 check('canonical path wins when both present', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: {
       version: '1.0',
       fileIndex: {
@@ -135,7 +135,7 @@ check('canonical path wins when both present', () => withTempRepo(dir => {
     },
   });
   writeLegacyWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: {
       version: '1.0',
       fileIndex: {
@@ -155,7 +155,7 @@ check('canonical path wins when both present', () => withTempRepo(dir => {
 // Test 6: framework manifest with low confidence is filtered
 check('framework manifest filters low-confidence entries', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: {
       version: '1.0',
       frameworkManifest: [
@@ -176,7 +176,7 @@ check('framework manifest filters low-confidence entries', () => withTempRepo(di
 // Test 7: fragility threshold of 0.7 is enforced (per spec section 3.5)
 check('files below 0.7 fragility threshold are not injected', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: {
       version: '1.0',
       fileIndex: {
@@ -197,7 +197,7 @@ check('files below 0.7 fragility threshold are not injected', () => withTempRepo
 // Test 8: manual.fragileFiles injection works (spec shape: { path, reason })
 check('manual.fragileFiles are injected', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     manual: {
       fragileFiles: [
         { path: 'packages/auth/src/index.ts', reason: 'Single point of failure for all authentication. High blast radius.' },
@@ -216,7 +216,7 @@ check('manual.fragileFiles are injected', () => withTempRepo(dir => {
 // Test 9: coChangePatterns are injected (spec shape: { files, note })
 check('coChangePatterns are injected', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     manual: {
       coChangePatterns: [
         {
@@ -250,7 +250,7 @@ check('HANDOFF.json and workspace.json both inject into the same output', () => 
     })
   );
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: {
       version: '1.0',
       fileIndex: {
@@ -278,7 +278,7 @@ check('DEFAULT_MAX_FILES cap is enforced (8 files in, top 5 by fragility out)', 
     };
   }
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: { version: '1.0', fileIndex },
   });
   const result = runHook(dir);
@@ -301,7 +301,7 @@ check('DEFAULT_MAX_FILES cap is enforced (8 files in, top 5 by fragility out)', 
 // Test 12: fragility boundary at exactly 0.7 is included (spec: >= 0.7)
 check('file at exactly 0.7 fragility is included (boundary condition)', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: {
       version: '1.0',
       fileIndex: {
@@ -322,7 +322,7 @@ check('file at exactly 0.7 fragility is included (boundary condition)', () => wi
 // Test 13: mixed manual.fragileFiles — valid entries inject, invalid entries are skipped
 check('mixed manual.fragileFiles skips invalid entries without crashing', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     manual: {
       fragileFiles: [
         { path: 'src/valid.ts', reason: 'Known fragile.' },
@@ -348,7 +348,7 @@ check('mixed manual.fragileFiles skips invalid entries without crashing', () => 
 // Test 14: source 'compact' also triggers injection (supported alongside 'startup')
 check('source compact triggers workspace.json injection', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: {
       version: '1.0',
       fileIndex: {
@@ -365,7 +365,7 @@ check('source compact triggers workspace.json injection', () => withTempRepo(dir
 // Test 15: non-startup/compact source does not inject workspace.json context
 check('source other-than-startup/compact produces no workspace.json injection', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: {
       version: '1.0',
       fileIndex: {
@@ -420,7 +420,7 @@ check('unsupported major version refuses to load', () => withTempRepo(dir => {
 // Test 17b: same major, higher minor version loads successfully (forward-compat within major)
 check('same major different minor version loads successfully', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.5',
+    version: '0.5',
     generated: {
       version: '1.0',
       fileIndex: {
@@ -437,7 +437,7 @@ check('same major different minor version loads successfully', () => withTempRep
 // Test 18: framework confidence boundary at exactly 0.7 is included (>= threshold)
 check('framework at exactly 0.7 confidence is included (boundary condition)', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     generated: {
       version: '1.0',
       frameworkManifest: [
@@ -458,7 +458,7 @@ check('framework at exactly 0.7 confidence is included (boundary condition)', ()
 // Test 19: coChangePatterns without note field renders just file paths (no parenthetical)
 check('coChangePatterns without note renders files only', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     manual: {
       coChangePatterns: [
         { files: ['src/schema.ts', 'src/api.ts'] },
@@ -477,7 +477,7 @@ check('coChangePatterns without note renders files only', () => withTempRepo(dir
 // Test 20: mixed invalid coChangePatterns entries are skipped, valid ones inject
 check('mixed invalid coChangePatterns skips invalid entries without crashing', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
-    version: '1.0',
+    version: '0.1',
     manual: {
       coChangePatterns: [
         { files: ['src/valid-a.ts', 'src/valid-b.ts'], note: 'Must change together.' },
@@ -511,7 +511,7 @@ check('gsd.workspace_json_max_files config key is respected', () => withTempRepo
   for (let i = 1; i <= 5; i++) {
     fileIndex[`src/cfg${i}.ts`] = { fragility: 0.70 + (i * 0.01), aiModificationCount: i, humanModificationCount: 1 };
   }
-  writeCanonicalWorkspaceJson(dir, { version: '1.0', generated: { version: '1.0', fileIndex } });
+  writeCanonicalWorkspaceJson(dir, { version: '0.1', generated: { version: '1.0', fileIndex } });
   const result = runHook(dir);
   let injectedCount = 0;
   for (let i = 1; i <= 5; i++) {
