@@ -13,6 +13,19 @@ function makeTempRepo() {
   return dir;
 }
 
+// Always cleans up dir even when the test body throws.
+function withTempRepo(fn, opts) {
+  const legacy = opts && opts.legacy;
+  const dir = legacy
+    ? fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-workspace-legacy-'))
+    : makeTempRepo();
+  try {
+    fn(dir);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 function writeCanonicalWorkspaceJson(dir, content) {
   fs.writeFileSync(
     path.join(dir, '.agents', 'agents.workspace.json'),
@@ -49,29 +62,24 @@ function check(name, fn) {
 }
 
 // Test 1: absent file produces zero workspace.json output
-check('absent file produces no workspace.json injection', () => {
-  const dir = makeTempRepo();
+check('absent file produces no workspace.json injection', () => withTempRepo(dir => {
   const result = runHook(dir);
   if (result.stdout.includes('workspace.json')) {
     throw new Error('Hook injected workspace.json context when file was absent');
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}));
 
 // Test 2: malformed file fails soft
-check('malformed file does not crash hook', () => {
-  const dir = makeTempRepo();
+check('malformed file does not crash hook', () => withTempRepo(dir => {
   fs.writeFileSync(path.join(dir, '.agents', 'agents.workspace.json'), '{not valid json');
   const result = runHook(dir);
   if (result.status !== 0) {
     throw new Error(`Hook exited with status ${result.status} on malformed file`);
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}));
 
 // Test 3: valid canonical-path file injects expected fragile files
-check('canonical-path file injects fragility intelligence', () => {
-  const dir = makeTempRepo();
+check('canonical-path file injects fragility intelligence', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
     version: '1.0',
     generated: {
@@ -92,12 +100,10 @@ check('canonical-path file injects fragility intelligence', () => {
   if (!result.stdout.includes('0.91')) {
     throw new Error('Hook did not inject fragility score');
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}));
 
 // Test 4: legacy-path file is also read
-check('legacy-path file is read when canonical absent', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-workspace-legacy-'));
+check('legacy-path file is read when canonical absent', () => withTempRepo(dir => {
   writeLegacyWorkspaceJson(dir, {
     version: '1.0',
     generated: {
@@ -115,12 +121,10 @@ check('legacy-path file is read when canonical absent', () => {
   if (!result.stdout.includes('src/legacy.ts')) {
     throw new Error('Legacy-path workspace.json was not read');
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}, { legacy: true }));
 
 // Test 5: canonical wins when both present
-check('canonical path wins when both present', () => {
-  const dir = makeTempRepo();
+check('canonical path wins when both present', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
     version: '1.0',
     generated: {
@@ -146,12 +150,10 @@ check('canonical path wins when both present', () => {
   if (result.stdout.includes('src/legacy.ts')) {
     throw new Error('Legacy file should not be read when canonical exists');
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}));
 
 // Test 6: framework manifest with low confidence is filtered
-check('framework manifest filters low-confidence entries', () => {
-  const dir = makeTempRepo();
+check('framework manifest filters low-confidence entries', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
     version: '1.0',
     generated: {
@@ -169,12 +171,10 @@ check('framework manifest filters low-confidence entries', () => {
   if (result.stdout.includes('unknown-framework')) {
     throw new Error('Low-confidence framework should have been filtered');
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}));
 
 // Test 7: fragility threshold of 0.7 is enforced (per spec section 3.5)
-check('files below 0.7 fragility threshold are not injected', () => {
-  const dir = makeTempRepo();
+check('files below 0.7 fragility threshold are not injected', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
     version: '1.0',
     generated: {
@@ -192,12 +192,10 @@ check('files below 0.7 fragility threshold are not injected', () => {
   if (result.stdout.includes('src/low.ts')) {
     throw new Error('Below-threshold file should have been filtered per spec section 3.5');
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}));
 
 // Test 8: manual.fragileFiles injection works (spec shape: { path, reason })
-check('manual.fragileFiles are injected', () => {
-  const dir = makeTempRepo();
+check('manual.fragileFiles are injected', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
     version: '1.0',
     manual: {
@@ -213,12 +211,10 @@ check('manual.fragileFiles are injected', () => {
   if (!result.stdout.includes('Single point of failure')) {
     throw new Error('Manual fragile file reason not injected');
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}));
 
 // Test 9: coChangePatterns are injected (spec shape: { files, note })
-check('coChangePatterns are injected', () => {
-  const dir = makeTempRepo();
+check('coChangePatterns are injected', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
     version: '1.0',
     manual: {
@@ -237,12 +233,10 @@ check('coChangePatterns are injected', () => {
   if (!result.stdout.includes('Schema changes')) {
     throw new Error('coChangePattern note not injected');
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}));
 
 // Test 10: HANDOFF.json read is unaffected by workspace.json presence
-check('HANDOFF.json injection still works alongside workspace.json', () => {
-  const dir = makeTempRepo();
+check('HANDOFF.json injection still works alongside workspace.json', () => withTempRepo(dir => {
   fs.mkdirSync(path.join(dir, '.planning'), { recursive: true });
   fs.writeFileSync(
     path.join(dir, '.planning', 'HANDOFF.json'),
@@ -260,12 +254,10 @@ check('HANDOFF.json injection still works alongside workspace.json', () => {
   if (!result.stdout.includes('Phase 4')) {
     throw new Error('HANDOFF.json injection regressed');
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}));
 
 // Test 11: DEFAULT_MAX_FILES cap enforced — 8 files above threshold, only 5 in output
-check('DEFAULT_MAX_FILES cap is enforced (8 files in, 5 out)', () => {
-  const dir = makeTempRepo();
+check('DEFAULT_MAX_FILES cap is enforced (8 files in, 5 out)', () => withTempRepo(dir => {
   const fileIndex = {};
   for (let i = 1; i <= 8; i++) {
     fileIndex[`src/file${i}.ts`] = {
@@ -286,12 +278,10 @@ check('DEFAULT_MAX_FILES cap is enforced (8 files in, 5 out)', () => {
   if (injectedCount !== 5) {
     throw new Error(`Expected 5 files injected (DEFAULT_MAX_FILES), got ${injectedCount}`);
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}));
 
 // Test 12: mixed manual.fragileFiles — valid entries inject, invalid entries are skipped
-check('mixed manual.fragileFiles skips invalid entries without crashing', () => {
-  const dir = makeTempRepo();
+check('mixed manual.fragileFiles skips invalid entries without crashing', () => withTempRepo(dir => {
   writeCanonicalWorkspaceJson(dir, {
     version: '1.0',
     manual: {
@@ -314,8 +304,7 @@ check('mixed manual.fragileFiles skips invalid entries without crashing', () => 
   if (result.stdout.includes('bare string entry') || result.stdout.includes('missing-reason') || result.stdout.includes('missing path')) {
     throw new Error('Invalid fragileFiles entry leaked into output');
   }
-  fs.rmSync(dir, { recursive: true, force: true });
-});
+}));
 
 // Report
 let failures = 0;
