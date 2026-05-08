@@ -13,12 +13,7 @@ const MAX_FILES_CONFIG_KEY = 'gsd.workspace_json_max_files';
 
 const SUPPORTED_VERSIONS = ['0.1', '1.0'];
 
-/**
- * Reads agents.workspace.json from the given cwd if present.
- * Searches canonical path first (.agents/agents.workspace.json),
- * then legacy fallback (agents.workspace.json at repo root).
- * Returns null if absent, malformed, or unreadable — never throws.
- */
+// Returns null if absent, malformed, or unreadable — never throws.
 function readWorkspaceJson(cwd) {
   const canonicalFilePath = path.join(cwd, ...CANONICAL_PATH);
   const legacyFilePath = path.join(cwd, ...LEGACY_PATH);
@@ -38,10 +33,9 @@ function readWorkspaceJson(cwd) {
     const raw = fs.readFileSync(filePath, 'utf-8');
     const parsed = JSON.parse(raw);
 
-    const version = parsed.version;
-    if (version && !SUPPORTED_VERSIONS.some(v => String(version).startsWith(v))) {
+    if (parsed.version && !SUPPORTED_VERSIONS.some(v => String(parsed.version).startsWith(v))) {
       process.stderr.write(
-        `GSD: workspace.json version ${version} is newer than supported. ` +
+        `GSD: workspace.json version ${parsed.version} is newer than supported. ` +
         `Reading what we can. Consider upgrading gsd-plugin.\n`
       );
     }
@@ -55,18 +49,11 @@ function readWorkspaceJson(cwd) {
   }
 }
 
-/**
- * Builds the injected context string from workspace.json data.
- * Returns empty string if no relevant data is present.
- *
- * Scoped to: generated section (entire), manual.fragileFiles,
- * manual.coChangePatterns — per issue #5 agreement.
- */
+// Scoped to generated + manual.fragileFiles + manual.coChangePatterns per issue #5.
 function buildContextString(workspaceJson, options) {
   if (!workspaceJson) return '';
 
-  const opts = options || {};
-  const maxFiles = opts.maxFiles || DEFAULT_MAX_FILES;
+  const maxFiles = (options && options.maxFiles) || DEFAULT_MAX_FILES;
   const sections = [];
 
   const generated = workspaceJson.generated;
