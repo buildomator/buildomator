@@ -3,7 +3,7 @@ Interactive configuration of GSD power-user knobs — plan bounce, node repair, 
 inline plan threshold, cross-AI execution, base branch, branch templates, response language,
 context window, gitignored search, graphify build timeout, and runtime model tier overrides.
 
-This is a companion to `/gsd:settings` — the common-case prompt there covers model profile,
+This is a companion to `/gsd-settings` — the common-case prompt there covers model profile,
 research/plan_check/verifier toggles, branching strategy, UI/AI phase gates, and worktree
 isolation. This advanced command covers everything else that is user-settable, grouped into
 seven sections so each prompt batch stays cognitively scoped. Every answer pre-selects the
@@ -349,6 +349,7 @@ Built-in tier defaults by runtime:
 | `qwen`     | `qwen3-max-2026-01-23`        | `qwen3-coder-plus`              | `qwen3-coder-next`            |
 | `opencode` | `anthropic/claude-opus-4-7`   | `anthropic/claude-sonnet-4-6`   | `anthropic/claude-haiku-4-5`  |
 | `copilot`  | `claude-opus-4-7`             | `claude-sonnet-4-6`             | `claude-haiku-4-5`            |
+| `hermes`   | `anthropic/claude-opus-4-7`   | `anthropic/claude-sonnet-4-6`   | `anthropic/claude-haiku-4-5`  |
 | Group B (`kilo`, `cline`, `cursor`, `windsurf`, `augment`, `trae`, `codebuddy`, `antigravity`) | (no built-in default — your runtime handles model selection) | | |
 
 Display a table to the user showing the effective configuration:
@@ -552,11 +553,11 @@ Display:
 | model_profile_overrides.<runtime>.sonnet   | {model/built-in/null} |
 | model_profile_overrides.<runtime>.haiku    | {model/built-in/null} |
 
-These settings apply to future /gsd:plan-phase, /gsd:execute-phase, /gsd:discuss-phase,
-and /gsd:ship runs.
+These settings apply to future /gsd-plan-phase, /gsd-execute-phase, /gsd-discuss-phase,
+and /gsd-ship runs.
 
 For common-case toggles (model profile, research/plan_check/verifier, branching strategy,
-UI/AI phase gates), use /gsd:settings.
+UI/AI phase gates), use /gsd-settings.
 ```
 </step>
 

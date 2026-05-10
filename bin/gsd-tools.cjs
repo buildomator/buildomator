@@ -241,7 +241,7 @@ function parseMultiwordArg(args, flag) {
 // ─── CLI Router ───────────────────────────────────────────────────────────────
 
 async function main() {
-  const args = process.argv.slice(2);
+  let args = process.argv.slice(2);
 
   // Optional cwd override for sandboxed subagents running outside project root.
   let cwd = process.cwd();
@@ -339,7 +339,30 @@ async function main() {
     args.splice(defaultIdx, 2);
   }
 
-  const command = args[0];
+  let command = args[0];
+
+  // #3243: accept dotted canonical form (e.g. `state.update`) as well as the
+  // spaced form (`state update`). Workflow files and stale SDK binaries pass
+  // the dotted canonical form directly; any caller that bypasses the SDK
+  // client-side split hit "Unknown command" before this shim.
+  //
+  // Split on the FIRST dot only — `check.decision-coverage-plan` becomes
+  // command='check', args=['check','decision-coverage-plan',...rest].
+  // Parallel to dottedCommandToCjsArgv in sdk/src/query/query-fallback-bridge-adapter.ts;
+  // kept separate here to avoid SDK coupling (see TODO: extract to shared helper).
+  //
+  // Guard: head and rest must both be non-empty (rejects leading-dot args like
+  // ".hidden" and bare-dot ".").
+  const originalCommand = command; // preserved for "Unknown command" suggestion
+  if (typeof command === 'string' && command.includes('.')) {
+    const dotIdx = command.indexOf('.');
+    const head = command.slice(0, dotIdx);
+    const rest = command.slice(dotIdx + 1);
+    if (head && rest) {
+      command = head;
+      args = [head, rest, ...args.slice(1)];
+    }
+  }
 
   // Top-level usage string — emitted by `gsd-tools` (no args) and by
   // `gsd-tools --help` / any `--help` request below.
@@ -424,7 +447,7 @@ async function main() {
       }
     };
     try {
-      await runCommand(command, args, cwd, raw, defaultValue);
+      await runCommand(command, args, cwd, raw, defaultValue, originalCommand);
       cleanup();
     } catch (e) {
       fs.writeSync = origWriteSync;
@@ -445,7 +468,7 @@ async function main() {
     return origWriteSync2.call(fs, fd, data, ...rest);
   };
   try {
-    await runCommand(command, args, cwd, raw, defaultValue);
+    await runCommand(command, args, cwd, raw, defaultValue, originalCommand);
   } finally {
     fs.writeSync = origWriteSync2;
   }
@@ -479,7 +502,7 @@ function extractField(obj, fieldPath) {
   return current;
 }
 
-async function runCommand(command, args, cwd, raw, defaultValue) {
+async function runCommand(command, args, cwd, raw, defaultValue, originalCommand) {
   switch (command) {
     case 'state': {
       routeStateCommand({
@@ -1163,7 +1186,11 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
       break;
     }
 
-    // ─── Phase Memory ──────────────────────────────────────────────────
+    // ─── [PLUGIN PATCHES] ─────────────────────────────────────────────
+    // The four cases below (`write-phase-memory`, `checkpoint`, `hook`,
+    // `migrate`) are plugin-only — they are NOT in upstream gsd-tools.cjs.
+    // Preserve verbatim across upstream syncs.
+    // See: feedback_plugin_patches_inventory.md
 
     case 'write-phase-memory': {
       const memory = require('./lib/memory.cjs');
@@ -1339,8 +1366,25 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
       break;
     }
 
-    default:
-      error(`Unknown command: ${command}`);
+    default: {
+      // #3243: if the caller passed a dotted form (e.g. "foo.bar"), the shim
+      // above split it so `command` here is the head ("foo"). Use
+      // originalCommand to reconstruct the original dotted form and suggest
+      // the spaced equivalent — surfacing a useful diagnostic instead of just
+      // "Unknown command: foo".
+      const wasDotted =
+        typeof originalCommand === 'string' &&
+        originalCommand !== command &&
+        originalCommand.includes('.');
+      let suggestion = '';
+      if (wasDotted) {
+        const dotIdx = originalCommand.indexOf('.');
+        const head = originalCommand.slice(0, dotIdx);
+        const rest = originalCommand.slice(dotIdx + 1);
+        suggestion = ` — did you mean: "${head} ${rest}"?`;
+      }
+      error(`Unknown command: ${command}${suggestion}`);
+    }
   }
 }
 

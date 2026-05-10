@@ -35,7 +35,7 @@ fi
 **Phase validation (before config gate):**
 If `phase_found` is false, report error and exit:
 ```
-Error: Phase ${PHASE_ARG} not found. Run /gsd:progress to see available phases.
+Error: Phase ${PHASE_ARG} not found. Run /gsd-progress to see available phases.
 ```
 
 This runs BEFORE config gate check so user errors are surfaced immediately regardless of config state.
@@ -172,9 +172,15 @@ if [ -z "$FILES_OVERRIDE" ]; then
         for (const line of yaml.split('\n')) {
           if (/^\s+created:/.test(line)) { inSection = 'created'; continue; }
           if (/^\s+modified:/.test(line)) { inSection = 'modified'; continue; }
-          if (/^\s*\w+:/.test(line) && !/^\s*-/.test(line)) { inSection = null; continue; }
+          if (/^\s*[\w-]+:/.test(line) && !/^\s*-/.test(line)) { inSection = null; continue; }
           if (inSection && /^\s+-\s+(.+)/.test(line)) {
-            files.push(line.match(/^\s+-\s+(.+)/)[1].trim());
+            let raw = line.match(/^\s+-\s+(.+)/)[1].trim();
+            raw = raw.replace(/^['"]|['"]$/g, '');
+            raw = raw.replace(/\s+\([^)]*\)\s*$/, '');
+            raw = raw.split(/\s+—\s/)[0].trim();
+            if (/\//.test(raw) && /\.[A-Za-z0-9]+$/.test(raw)) {
+              files.push(raw);
+            }
           }
         }
         if (files.length) console.log(files.join('\n'));
@@ -227,7 +233,7 @@ if [ ${#REVIEW_FILES[@]} -eq 0 ]; then
   else
     # Fail closed — no reliable diff base found. Do not use arbitrary HEAD~N.
     echo "Warning: No phase commits found for '${PADDED_PHASE}'. Cannot determine reliable diff scope."
-    echo "Use --files flag to specify files explicitly: /gsd:code-review ${PHASE_ARG} --files=file1,file2,..."
+    echo "Use --files flag to specify files explicitly: /gsd-code-review ${PHASE_ARG} --files=file1,file2,..."
   fi
 fi
 ```
@@ -374,7 +380,7 @@ If the Agent() call fails (agent error, timeout, or exception):
 ```
 Error: Code review agent failed: ${error_message}
 
-No REVIEW.md created. You can retry with /gsd:code-review ${PHASE_ARG} or check agent logs.
+No REVIEW.md created. You can retry with /gsd-code-review ${PHASE_ARG} or check agent logs.
 ```
 
 Do NOT proceed to commit_review step. Do NOT create a partial or empty REVIEW.md. Exit workflow.
@@ -407,7 +413,7 @@ if [ -f "${REVIEW_PATH}" ]; then
   fi
 else
   echo "Warning: Agent completed but REVIEW.md not found at ${REVIEW_PATH}. This may indicate an agent issue."
-  echo "No REVIEW.md to commit. Please retry with /gsd:code-review ${PHASE_ARG}"
+  echo "No REVIEW.md to commit. Please retry with /gsd-code-review ${PHASE_ARG}"
 fi
 ```
 </step>
@@ -429,7 +435,7 @@ FRONTMATTER=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
 # Parse fields from frontmatter only (not full file)
 STATUS=$(echo "$FRONTMATTER" | grep "^status:" | cut -d: -f2 | xargs)
 FILES_REVIEWED=$(echo "$FRONTMATTER" | grep "^files_reviewed:" | cut -d: -f2 | xargs)
-CRITICAL=$(echo "$FRONTMATTER" | grep "critical:" | head -1 | cut -d: -f2 | xargs)
+CRITICAL=$(echo "$FRONTMATTER" | grep -E "^[[:space:]]*(critical|blocker):" | head -1 | cut -d: -f2 | xargs)
 WARNING=$(echo "$FRONTMATTER" | grep "warning:" | head -1 | cut -d: -f2 | xargs)
 INFO=$(echo "$FRONTMATTER" | grep "info:" | head -1 | cut -d: -f2 | xargs)
 TOTAL=$(echo "$FRONTMATTER" | grep "total:" | head -1 | cut -d: -f2 | xargs)
@@ -471,14 +477,14 @@ If total findings > 0:
 Full report: ${REVIEW_PATH}
 
 Next steps:
-  /gsd:code-review ${PHASE_NUMBER} --fix  — Auto-fix issues
+  /gsd-code-review ${PHASE_NUMBER} --fix  — Auto-fix issues
   cat ${REVIEW_PATH}                     — View full report
 ```
 
 If critical > 0 or warning > 0, list top 3 issues inline:
 ```bash
 echo "Top issues:"
-grep -A 3 "^### CR-\|^### WR-" "${REVIEW_PATH}" | head -n 12
+grep -A 3 "^### CR-\|^### BL-\|^### WR-" "${REVIEW_PATH}" | head -n 12
 ```
 
 **Note on tests:** Automated tests for this command and workflow are planned for Phase 4 (Pipeline Integration & Testing, requirement INFR-03). Phase 2 focuses on correct implementation; Phase 4 adds regression coverage across platforms.
