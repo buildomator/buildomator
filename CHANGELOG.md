@@ -8,6 +8,47 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.42.2] - 2026-05-10  (based on upstream GSD 1.41.1)
+
+Upstream patch sync — picks up GSD 1.41.1 (released 2026-05-09). Plugin-only patches in `bin/lib/core.cjs` (CLAUDE_PLUGIN_ROOT path resolution helpers + agent-dir override) and `bin/gsd-tools.cjs` (`migrate` / `write-phase-memory` / `checkpoint` / `hook` cases) preserved via 3-way merge. One new plugin patch in `bin/lib/model-catalog.cjs` for the flat plugin layout — same fallback pattern as `getAgentsDir()`.
+
+### Added
+- **`bin/lib/model-catalog.cjs`** + **`sdk/shared/model-catalog.json`** ([upstream #3230](https://github.com/gsd-build/get-shit-done/pull/3230)) — shared model catalog as the single source of truth for agent profiles and runtime tier defaults. Replaces four drifting truths (CJS `model-profiles`, SDK `config-query`, `settings-advanced.md`, session-runner) with a JSON file consumed by both packages via thin adapters. `resolve-model` now covers all 33 shipped agents; unknown-agent fallback is profile-semantic (`quality→opus`, `budget→haiku`, `balanced/adaptive→sonnet`) instead of hardcoded sonnet.
+- See full upstream release notes: <https://github.com/gsd-build/get-shit-done/releases/tag/v1.41.1>.
+
+### Changed
+- **Version bump** — plugin `2.42.1 → 2.42.2`.
+- **`bin/lib/{config-schema,model-profiles,phase,state}.cjs`** refreshed wholesale. `model-profiles.cjs` thinned by ~95 lines as it now reads from the shared catalog.
+- **`bin/lib/core.cjs`** got 87 lines smaller (-95/+8) — a chunk migrated into `model-catalog.cjs`. Plugin patches re-applied.
+- **`bin/gsd-tools.cjs`** picked up the dotted-canonical-form shim ([#3243](https://github.com/gsd-build/get-shit-done/pull/3243)) — callers using `state.update` (dotted) now resolve correctly. Plugin's 4 patched cases unaffected.
+- **`agents/{gsd-code-fixer,gsd-code-reviewer}.md`** — `BL-` / `blocker:` accepted as Critical-tier; macOS BSD-grep portability fix.
+- **`workflows/{code-review,execute-phase,plant-seed,settings-advanced}.md`** refreshed.
+
+### Fixed
+Upstream bug fixes flowing through automatically:
+- **Wave 0 plans no longer collapse into wave 1** ([#3276](https://github.com/gsd-build/get-shit-done/pull/3276)) — `phase-plan-index` switched from trusting the `wave:` frontmatter to a Kahn topological sort over `depends_on`. Plus a parsed `wave: 0` is preserved instead of being coerced by `parseInt(...) || 1`.
+- **`execute-phase` step 5.5 documents the cross-wave-deviation cleanup tail** ([#3273](https://github.com/gsd-build/get-shit-done/pull/3273)) — deviation cleanup is no longer silently skipped between waves.
+- **`state snapshot` prefers YAML frontmatter for canonical fields** ([#3275](https://github.com/gsd-build/get-shit-done/pull/3275)) — body table cells like `**Status:** to ✅ COMPLETE` no longer override the correct frontmatter value.
+- **`state.update` on body-only changes preserves curated `progress.*` frontmatter** ([#3252](https://github.com/gsd-build/get-shit-done/pull/3252)).
+- **`phase.add` honors `--dry-run` and rejects unknown flags** ([#3246](https://github.com/gsd-build/get-shit-done/pull/3246)).
+- **Native `--help` is non-mutating** ([#3272](https://github.com/gsd-build/get-shit-done/pull/3272)) — dispatcher-level guard short-circuits to a help stub on `--help` / `-h`.
+- **CJS dispatcher accepts the canonical dotted command form** ([#3248](https://github.com/gsd-build/get-shit-done/pull/3248)).
+- **`extractFrontmatter` is anchored at file start** ([#3247](https://github.com/gsd-build/get-shit-done/pull/3247)).
+- **`code-review` SUMMARY parser hardened** ([#3274](https://github.com/gsd-build/get-shit-done/pull/3274)) — `BL-` / `blocker:` accepted as Critical-tier-equivalent to `CR-*`.
+- **`/gsd:capture --seed` one-shot contract restored** ([#3250](https://github.com/gsd-build/get-shit-done/pull/3250)).
+- **Codex install accepts TOML float values** ([#3254](https://github.com/gsd-build/get-shit-done/pull/3254)).
+- **`✓ GSD SDK ready` only prints once SDK is genuinely reachable** ([#3249](https://github.com/gsd-build/get-shit-done/pull/3249)).
+- **`config-set model_overrides.<agent-id>` accepted** ([#3253](https://github.com/gsd-build/get-shit-done/pull/3253)).
+
+### Plugin patches preserved + 1 new
+- **`bin/lib/core.cjs`** — `resolveGsdRoot` / `resolveGsdDataDir` / `resolveGsdAsset` + the patched `getAgentsDir` reading `GSD_AGENTS_DIR`. Reapplied.
+- **`bin/gsd-tools.cjs`** — `migrate` / `write-phase-memory` / `checkpoint` / `hook` cases. Reapplied.
+- **`bin/lib/model-catalog.cjs`** (NEW patch — `#PLUGIN-MODEL-CATALOG-PATH`) — upstream's `../../../sdk/shared/model-catalog.json` traversal lands one level too high in the plugin's flat layout. Patched to try `../../sdk/shared/` first, fall back to `../../../sdk/shared/` for upstream installs. Same fallback pattern as `getAgentsDir()`.
+
+### Notes
+- Bundled SDK at `sdk/dist/cli.js` still reports `v1.50.0-canary.0`; upstream is at canary.2 but the canary line is separate from the GA line. Will refresh when v1.50.0 stabilises (or v1.42.0 GA arrives, expected in 3-5 days).
+- Install-smoke CI ran green on this commit in `debian:trixie` container.
+
 ## [2.42.1] - 2026-05-07
 
 Hotfix that completes v2.42.0's "no external prereq" promise. v2.42.0 shipped `sdk/dist/cli.js` (~3 KB tsc shim) without the ~81 MB of runtime npm dependencies it imports (`ws`, `@anthropic-ai/claude-agent-sdk`, transitives). On a truly fresh box (no prior `npx get-shit-done-cc`) the bundled `gsd-sdk` failed at module-resolution time. **Caught by smoke-testing v2.42.0 on a fresh Debian 13 box** (`192.168.1.170`) — the user's existing macOS/laptop installs had an external `gsd-sdk` already on `PATH` so the bug was invisible there.
