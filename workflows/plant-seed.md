@@ -1,6 +1,6 @@
 <purpose>
 Capture a forward-looking idea as a structured seed file with trigger conditions.
-Seeds auto-surface during /gsd-new-milestone when trigger conditions match the
+Seeds auto-surface during /gsd:new-milestone when trigger conditions match the
 new milestone's scope.
 
 Seeds beat deferred items because they:
@@ -88,7 +88,7 @@ _To be filled in. Run `/gsd-capture --seed --enrich SEED-{PADDED}` to add contex
 
 **Trigger:** when relevant
 
-This seed will surface during `/gsd-new-milestone` when the milestone scope matches.
+This seed will surface during `/gsd:new-milestone` when the milestone scope matches.
 
 ## Scope Estimate
 
@@ -149,7 +149,7 @@ File: .planning/seeds/SEED-{PADDED}-{slug}.md
 Trigger and scope are set to defaults. Run `/gsd-capture --seed --enrich SEED-{PADDED}`
 to add trigger conditions, rationale, and scope estimate at your convenience.
 
-This seed will surface automatically when you run /gsd-new-milestone.
+This seed will surface automatically when you run /gsd:new-milestone.
 ```
 </step>
 
