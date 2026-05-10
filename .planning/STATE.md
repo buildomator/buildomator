@@ -4,8 +4,8 @@ milestone: v1.2
 milestone_name: Upstream Resilience
 status: shipped
 stopped_at: v1.2 archived 2026-04-24 — milestone shipped; tags v1.2 + v2.38.4 created
-last_updated: "2026-05-07T20:00:00Z"
-last_activity: 2026-05-07
+last_updated: "2026-05-10T18:55:00Z"
+last_activity: 2026-05-10
 progress:
   total_phases: 3
   completed_phases: 3
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-11)
 Milestone: v1.2 shipped (2026-04-24) — all 9 requirements satisfied, tagged, archived.
 Phase: none active. v1.2 phase artifacts moved to `.planning/milestones/v1.2-phases/`.
 Next action: `/gsd:new-milestone` to scope v1.3.
-Last activity: 2026-05-07 — Executed quick task 260507-esn: synced upstream GSD 1.41.0 (plugin v2.41.0); MCP stdio framing fix landed in 2.40.2 with regression test wired into CI
+Last activity: 2026-05-10 — Synced upstream GSD 1.41.1 hotfix (plugin v2.42.2); picks up wave-0 plan-index fix, shared model-catalog convergence, and code-review pipeline hardening. New plugin patch in bin/lib/model-catalog.cjs for flat layout
 
 ```
 v1.2 shipped: [==========] 100%
@@ -115,6 +115,7 @@ None.
 | 260502-rx0 | Surface rate-limit fallback example (/exit + gsd-resume-at HH:MM) at 3 surfaces: new Stop hook in gsd-tools.cjs that tails transcript and prints bordered hint on rate-limit pattern, /exit-first example added to resume-at SKILL.md No-token fallback callout, same example added to gsd-resume-at wrapper head comment + usage() — drift gates clean | 2026-05-02 | 364ae58 |  | [260502-rx0-surface-rate-limit-fallback-example-for-](./quick/260502-rx0-surface-rate-limit-fallback-example-for-/) |
 | 260503-ier | Sync upstream GSD v1.40.0 + bump plugin to v2.40.0 | 2026-05-03 | 8af38a3 |  | [260503-ier-1-40-0-is-release-upstream-update-gsd-pl](./quick/260503-ier-1-40-0-is-release-upstream-update-gsd-pl/) |
 | 260507-esn | Sync upstream GSD v1.41.0 + bump plugin to v2.41.0 (incl. MVP-phase workflow, 8 new MVP/SPIDR refs, runtime-homes helper, extract_learnings rename); MCP stdio framing fix released as v2.40.2 with regression test in CI (closes #3) | 2026-05-07 | 69e3843 | Verified | [260507-esn-there-is-a-new-upstream-version-see-what](./quick/260507-esn-there-is-a-new-upstream-version-see-what/) |
+| 260510-141 | Sync upstream GSD v1.41.1 + bump plugin to v2.42.2 (wave-0 plan-index fix, shared model-catalog convergence #3230, code-review pipeline hardening, dotted-command-form shim, install fixes); new plugin patch in bin/lib/model-catalog.cjs for flat layout (#PLUGIN-MODEL-CATALOG-PATH) | 2026-05-10 | b1425b1 | Verified | (no quick dir — inline sync) |
 
 ## Session Continuity
 
