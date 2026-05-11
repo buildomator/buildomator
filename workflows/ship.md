@@ -42,8 +42,8 @@ Verify the work is ready to ship:
    ```bash
    VERIFICATION=$(cat ${PHASE_DIR}/*-VERIFICATION.md 2>/dev/null)
    ```
-   Check for `status: passed` or `status: human_needed` (with human approval).
-   If no VERIFICATION.md or status is `gaps_found`: warn and ask user to confirm.
+   Check for `status: pass` or `status: passed`.
+   If no VERIFICATION.md or status is anything other than `pass` / `passed` (including `human_needed` / `gaps_found`): block with `PHASE_VERIFICATION_INCOMPLETE`; complete or formally re-run verification before shipping.
 
 2. **Clean working tree?**
    ```bash
@@ -276,8 +276,8 @@ Requirements: {N} REQ-IDs addressed
 Next steps:
 - Review/approve PR
 - Merge when CI passes
-- /gsd:complete-milestone (if last phase in milestone)
-- /gsd:progress (to see what's next)
+- /gsd-complete-milestone (if last phase in milestone)
+- /gsd-progress (to see what's next)
 
 ───────────────────────────────────────────────────────────────
 ```
@@ -288,9 +288,9 @@ Next steps:
 <offer_next>
 After shipping:
 
-- /gsd:complete-milestone — if all phases in milestone are done
-- /gsd:progress — see overall project state
-- /gsd:execute-phase {next} — continue to next phase
+- /gsd-complete-milestone — if all phases in milestone are done
+- /gsd-progress — see overall project state
+- /gsd-execute-phase {next} — continue to next phase
 </offer_next>
 
 <success_criteria>
