@@ -8,6 +8,24 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.42.5] - 2026-05-11
+
+Hotfix — restores the *"GSD agents not installed"* false-positive suppression that was supposed to land in v2.40.1 and got partially undone by subsequent upstream syncs. Reported via `/gsd:new-project` from a fresh project tree: the SDK warned to run `npx get-shit-done-cc@latest --global` even though the plugin already ships all 33 agents.
+
+### Fixed
+- **`bin/gsd-sdk` + `bin/gsd-sdk.cmd`** (`#PLUGIN-WRAPPER-ENV-EXPORT`) — both wrappers now `export CLAUDE_PLUGIN_ROOT` and `GSD_AGENTS_DIR` (when unset) before exec'ing `node`. Root cause: the bundled SDK's `resolveAgentsDir()` in `sdk/src/query/helpers.ts` checks `GSD_AGENTS_DIR` or runtime-config-dir paths — never `CLAUDE_PLUGIN_ROOT`. And Claude Code does NOT set `CLAUDE_PLUGIN_ROOT` in Bash tool environments (only in skill/agent dispatch envs). So the SDK couldn't locate the bundled `<plugin_root>/agents/` from a Bash subprocess. The wrappers already self-derived the plugin root to find `sdk/dist/cli.js`; they just weren't propagating it. Caller-set values for either env var are still respected (the patch only exports when the variable is unset).
+- This is the workflow-layer companion to the v2.40.1 `bin/lib/core.cjs::getAgentsDir()` patch. Two layers of defense now cover the plugin-flat-layout case for any caller that goes through the wrapper.
+
+### Verified
+- `gsd-sdk query init.new-project` returns `agents_installed: true` from any cwd, with no env vars set
+- Caller-set `GSD_AGENTS_DIR` is respected (not overridden)
+- MCP regression test (issue #3) passes
+- workspace.json integration test (issue #5/PR #6) 22/22 passes
+
+### Notes
+- Earlier in this session we verified that Claude Code's Bash tool environment lacks `CLAUDE_PLUGIN_ROOT`. That property is the load-bearing reason this patch is necessary. If Claude Code starts setting `CLAUDE_PLUGIN_ROOT` for Bash tool calls in a future version, this patch becomes redundant but stays harmless.
+- Adds `#PLUGIN-WRAPPER-ENV-EXPORT` to the plugin patches inventory.
+
 ## [2.42.4] - 2026-05-11  (based on upstream GSD 1.41.2)
 
 Upstream patch sync — picks up GSD 1.41.2 (released 2026-05-10). Plugin patches in `bin/lib/core.cjs` and `bin/gsd-tools.cjs` untouched upstream this cycle (regression-grep verified intact). The `#PLUGIN-MODEL-CATALOG-PATH` patch shape evolved — upstream replaced the single-path require with a 3-candidate resolver; folded the plugin's flat-layout path into upstream's candidate list as the new first entry.
