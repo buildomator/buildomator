@@ -8,6 +8,38 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.42.6] - 2026-05-13  (based on upstream GSD 1.41.2)
+
+Pull 8 upstream hook scripts (security and correctness defense-in-depth) into the plugin's `hooks/` tree. First ship is soft-warn: all guards either no-op silently or emit advisory `additionalContext` without blocking the tool call. The conventional-commits validator is the lone exception (blocks on bad commit messages) and is opt-in via `.planning/config.json` `{"hooks":{"community":true}}`. The plugin's existing 5 dispatcher entries (SessionStart auto-resume, PreToolUse Edit|Write, PostToolUse periodic checkpoint, PreCompact, Stop rate-limit nudge) are preserved unchanged: hybrid hook architecture per design.
+
+### Added
+- **`hooks/gsd-prompt-guard.js`** (PreToolUse Write|Edit). Scans content destined for `.planning/` files for prompt-injection patterns and invisible Unicode. Advisory only. Always on.
+- **`hooks/gsd-workflow-guard.js`** (PreToolUse Write|Edit). Warns when files are edited outside a GSD command context. Opt-in via `.planning/config.json` `{"hooks":{"workflow_guard":true}}` (default off).
+- **`hooks/gsd-read-guard.js`** (PreToolUse Write|Edit). Read-before-edit advisory for sub-runtimes. Auto-no-ops in Claude Code (which natively enforces read-before-edit), so this hook is dormant by default for plugin users. Included as defense for cross-runtime configurations.
+- **`hooks/gsd-read-injection-scanner.js`** (PostToolUse Read). Scans file content returned by the Read tool for injection patterns plus summarisation-survival patterns. Severity-tagged (LOW/HIGH) advisory. Always on.
+- **`hooks/gsd-validate-commit.sh`** (PreToolUse Bash). Enforces Conventional Commits format on `git commit -m '...'` invocations. Blocks (exit 2) with typed code (`CONVENTIONAL_COMMITS_VIOLATION` / `COMMIT_SUBJECT_TOO_LONG`) on violation. Opt-in via `.planning/config.json` `{"hooks":{"community":true}}`.
+- **`hooks/gsd-phase-boundary.sh`** (PostToolUse Write|Edit|MultiEdit). Emits `additionalContext` reminder when `.planning/` files are modified, suggesting STATE.md should be reviewed. Opt-in via `hooks.community: true`.
+- **`hooks/gsd-context-monitor.js`** (PostToolUse broad matcher). Reads statusline-bridge metrics from `/tmp/claude-ctx-${session_id}.json` and injects context-usage warnings (<=35% remaining: WARNING, <=25% remaining: CRITICAL). On CRITICAL with active GSD project, spawns `gsd-tools.cjs state record-session` as a fire-and-forget breadcrumb for `/gsd:resume-work`. Always on unless `.planning/config.json` `{"hooks":{"context_warnings":false}}`.
+- **`hooks/gsd-session-state.sh`** (SessionStart). Injects STATE.md head as `additionalContext` on session start. Opt-in via `hooks.community: true`.
+- **`hooks/lib/git-cmd.js`**, token-walk git subcommand classifier (required by `gsd-validate-commit.sh`, handles env-prefix, `-C path`, full-path git invocations).
+
+### Plugin patch
+- `#PLUGIN-HOOK-CONTEXT-MONITOR` (`hooks/gsd-context-monitor.js`). Upstream resolves `gsd-tools.cjs` via `path.join(__dirname, '..', 'get-shit-done', 'bin', 'gsd-tools.cjs')` (assumes the upstream `<runtime-config>/get-shit-done/` layout). Plugin layout is flat (`hooks/` and `bin/` are siblings), so the patch drops the `'get-shit-done'` segment and additionally honors `GSD_TOOLS_PATH` env override for testing.
+- Added to `feedback_plugin_patches_inventory.md` alongside the existing `#PLUGIN-AGENTS-DIR`, `#PLUGIN-MODEL-CATALOG-PATH`, and `#PLUGIN-WRAPPER-ENV-EXPORT` patches.
+
+### Architecture (hybrid hooks)
+- Cross-cutting events (SessionStart auto-resume + migration check, PreCompact checkpoint, PostToolUse periodic checkpoint, Stop rate-limit nudge) continue routing through `bin/gsd-tools.cjs hook <type>`. These share helper imports and would duplicate state if split.
+- Tool-specific guards run as individual scripts. Each script is single-responsibility, self-contained, and uses the same plugin-path-stale Node resolver as the dispatcher (so a mid-session plugin upgrade doesn't break in-flight hooks).
+- Both `SessionStart` and `PreToolUse Edit|Write` events now have multiple registered hooks (existing dispatcher + new individual scripts). All run independently per Claude Code's hook contract.
+
+### Excluded from this pass
+- **`gsd-check-update.js`** (upstream), not pulled in. Its `detectConfigDir()` looks for `get-shit-done/VERSION` which does not exist in the plugin's flat layout, and it duplicates the `/plugin marketplace update` flow that's already the plugin's canonical update mechanism. Decision deferred indefinitely.
+- `gsd-statusline.js`, `gsd-update-banner.js`. UI surfaces, separate concern. Can be evaluated for a future release once the statusline contract aligns.
+
+### Tests
+- New: `tests/hooks-smoke.test.cjs`, spawn-based smoke test for all 8 hooks. Verifies each script parses, handles a representative event payload without crashing, and produces the expected JSON envelope (or silence) for advisory-on vs. advisory-off cases. Layout patch on `gsd-context-monitor.js` verified by inline grep.
+- Regression fence: `tests/mcp-stdio-framing.test.cjs` and `tests/workspace-json-integration.test.cjs` still pass unchanged.
+
 ## [2.42.5] - 2026-05-11
 
 Hotfix — restores the *"GSD agents not installed"* false-positive suppression that was supposed to land in v2.40.1 and got partially undone by subsequent upstream syncs. Reported via `/gsd:new-project` from a fresh project tree: the SDK warned to run `npx get-shit-done-cc@latest --global` even though the plugin already ships all 33 agents.
