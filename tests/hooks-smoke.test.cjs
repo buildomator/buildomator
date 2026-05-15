@@ -253,6 +253,61 @@ test('gsd-session-state: emits Project State Reminder when enabled', async () =>
   }
 });
 
+// 8a. gsd-shadowing-sdk-detector.js — silent when plugin wrapper is first in PATH
+test('gsd-shadowing-sdk-detector: silent when no shadowing global', async () => {
+  const pluginRoot = path.resolve(__dirname, '..');
+  const r = await runHook(path.join(HOOKS, 'gsd-shadowing-sdk-detector.js'), '', {
+    env: {
+      ...process.env,
+      PATH: path.join(pluginRoot, 'bin') + ':/usr/bin:/bin',
+      CLAUDE_PLUGIN_ROOT: pluginRoot,
+    },
+  });
+  if (r.code !== 0) throw new Error('expected exit 0, got ' + r.code + '; stderr=' + r.stderr);
+  if (r.stdout.trim() !== '') {
+    throw new Error('expected silent (no stdout), got: ' + JSON.stringify(r.stdout));
+  }
+});
+
+// 8b. gsd-shadowing-sdk-detector.js — warns when shadowing gsd-sdk is first in PATH
+test('gsd-shadowing-sdk-detector: warns when shadowing global is present', async () => {
+  const pluginRoot = path.resolve(__dirname, '..');
+  const fakeDir = mkTmp('fake-shadow');
+  fs.writeFileSync(path.join(fakeDir, 'gsd-sdk'), '#!/bin/sh\necho fake\n');
+  fs.chmodSync(path.join(fakeDir, 'gsd-sdk'), 0o755);
+  const r = await runHook(path.join(HOOKS, 'gsd-shadowing-sdk-detector.js'), '', {
+    env: {
+      ...process.env,
+      PATH: fakeDir + ':' + path.join(pluginRoot, 'bin') + ':/usr/bin:/bin',
+      CLAUDE_PLUGIN_ROOT: pluginRoot,
+    },
+  });
+  if (r.code !== 0) throw new Error('expected exit 0, got ' + r.code + '; stderr=' + r.stderr);
+  let parsed;
+  try { parsed = JSON.parse(r.stdout); }
+  catch { throw new Error('expected JSON output, got: ' + JSON.stringify(r.stdout)); }
+  if (parsed.hookSpecificOutput?.hookEventName !== 'SessionStart') {
+    throw new Error('expected hookEventName=SessionStart, got: ' + JSON.stringify(parsed));
+  }
+  if (!/shadowing/i.test(parsed.hookSpecificOutput?.additionalContext || '')) {
+    throw new Error('expected "shadowing" in additionalContext, got: ' + JSON.stringify(parsed));
+  }
+  if (!/npm uninstall/i.test(parsed.hookSpecificOutput?.additionalContext || '')) {
+    throw new Error('expected "npm uninstall" guidance in additionalContext');
+  }
+});
+
+// 8c. gsd-shadowing-sdk-detector.js — silent when nothing in PATH
+test('gsd-shadowing-sdk-detector: silent when no gsd-sdk anywhere', async () => {
+  const r = await runHook(path.join(HOOKS, 'gsd-shadowing-sdk-detector.js'), '', {
+    env: { PATH: '/usr/bin:/bin', CLAUDE_PLUGIN_ROOT: path.resolve(__dirname, '..') },
+  });
+  if (r.code !== 0) throw new Error('expected exit 0, got ' + r.code + '; stderr=' + r.stderr);
+  if (r.stdout.trim() !== '') {
+    throw new Error('expected silent (no stdout), got: ' + JSON.stringify(r.stdout));
+  }
+});
+
 (async () => {
   let pass = 0;
   let fail = 0;
