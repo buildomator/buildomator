@@ -520,7 +520,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
    DISPATCH_TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
    EXPECTED_BRANCH=$(git rev-parse --abbrev-ref HEAD)
    if [ "${USE_WORKTREES_FOR_PLAN:-true}" != "false" ] && [ -z "${WAVE_WORKTREE_MANIFEST:-}" ]; then
-     WAVE_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/gsd-worktree-wave-XXXXXX.json")
+     WAVE_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/gsd:worktree-wave-XXXXXX.json")
      printf '{"worktrees":[]}\n' > "$WAVE_WORKTREE_MANIFEST"
      export WAVE_WORKTREE_MANIFEST
    fi
@@ -761,7 +761,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
      gsd-sdk query worktree.cleanup-wave --manifest "$WAVE_WORKTREE_MANIFEST" || exit 1
    else
      echo "WARN: gsd-sdk unavailable; using manifest-scoped shell fallback (#3384)." >&2
-   WT_PATHS_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd-worktree-paths-XXXXXX")
+   WT_PATHS_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd:worktree-paths-XXXXXX")
    node -e 'const fs=require("fs");const p=process.env.WAVE_WORKTREE_MANIFEST;try{if(!p)throw new Error("WAVE_WORKTREE_MANIFEST is unset");if(!fs.existsSync(p))throw new Error("manifest does not exist");const s=fs.readFileSync(p,"utf8");if(!s.trim())throw new Error("manifest is empty");const j=JSON.parse(s);for(const w of j.worktrees||[])if(w.worktree_path)console.log(w.worktree_path)}catch(e){console.error(`ERROR: cannot read worktree manifest ${p||"(unset)"}: ${e.message}`);process.exit(1)}' > "$WT_PATHS_FILE" || { echo "BLOCKED: cannot read WAVE_WORKTREE_MANIFEST; refusing cleanup (#3384)." >&2; exit 1; }
    while IFS= read -r WT; do
      [ -z "$WT" ] && continue
@@ -867,7 +867,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
    if [ -n "$PRIMARY_WT" ] && [ "$(pwd -P 2>/dev/null)" != "$(cd "$PRIMARY_WT" 2>/dev/null && pwd -P)" ]; then echo "⚠ Orchestrator CWD drifted to $(pwd) — pinning to $PRIMARY_WT before cleanup-tail (#3174)"; cd "$PRIMARY_WT" || { echo "FATAL: cannot cd to primary worktree $PRIMARY_WT" >&2; exit 1; }; fi
    # Cleanup-tail: remove residual agent worktrees after a cross-wave-dependency deviation.
    # Uses only the current wave manifest to avoid touching unrelated active agents (#3384).
-   WT_PATHS_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd-worktree-paths-XXXXXX")
+   WT_PATHS_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd:worktree-paths-XXXXXX")
    node -e 'const fs=require("fs");const p=process.env.WAVE_WORKTREE_MANIFEST;try{if(!p)throw new Error("WAVE_WORKTREE_MANIFEST is unset");if(!fs.existsSync(p))throw new Error("manifest does not exist");const s=fs.readFileSync(p,"utf8");if(!s.trim())throw new Error("manifest is empty");const j=JSON.parse(s);for(const w of j.worktrees||[])if(w.worktree_path)console.log(w.worktree_path)}catch(e){console.error(`ERROR: cannot read worktree manifest ${p||"(unset)"}: ${e.message}`);process.exit(1)}' > "$WT_PATHS_FILE" || { echo "BLOCKED: cannot read WAVE_WORKTREE_MANIFEST; refusing cleanup (#3384)." >&2; exit 1; }
    while IFS= read -r WT; do
      [ -z "$WT" ] && continue
@@ -1124,7 +1124,7 @@ Include in the next-steps routing output:
 If `SECURITY_CFG` is `true` AND SECURITY.md exists: check frontmatter `threats_open`. If > 0:
 ```
 ⚠ Security gate: {threats_open} threats open
-  /gsd:secure-phase {PHASE} — resolve before advancing
+  /gsd:secure-phase {PHASE}, resolve before advancing
 ```
 </step>
 
@@ -1546,7 +1546,7 @@ All automated checks passed. {N} items need human testing:
 
 {From VERIFICATION.md human_verification section}
 
-Items saved to `{phase_num}-HUMAN-UAT.md` — they will appear in `/gsd:progress` and `/gsd:audit-uat`.
+Items saved to `{phase_num}-HUMAN-UAT.md`, they will appear in `/gsd:progress` and `/gsd:audit-uat`.
 
 "approved" → continue | Report issues → gap closure
 ```
@@ -1573,7 +1573,7 @@ Items saved to `{phase_num}-HUMAN-UAT.md` — they will appear in `/gsd:progress
 `/gsd:plan-phase {X} --gaps ${GSD_WS}`
 
 Also: `cat {phase_dir}/{phase_num}-VERIFICATION.md` — full report
-Also: `/gsd:verify-work {X} ${GSD_WS}` — manual testing first
+Also: `/gsd:verify-work {X} ${GSD_WS}`, manual testing first
 ```
 
 Gap closure cycle: `/gsd:plan-phase {X} --gaps ${GSD_WS}` reads VERIFICATION.md → creates gap plans with `gap_closure: true` → user runs `/gsd:execute-phase {X} --gaps-only ${GSD_WS}` → verifier re-runs.
@@ -1689,7 +1689,7 @@ gsd-sdk query commit "docs(phase-{X}): evolve PROJECT.md after phase completion"
 
 <step name="offer_next">
 
-**Exception:** If `gaps_found`, the `verify_phase_goal` step already presents the gap-closure path (`/gsd:plan-phase {X} --gaps`). No additional routing needed — skip auto-advance.
+**Exception:** If `gaps_found`, the `verify_phase_goal` step already presents the gap-closure path (`/gsd:plan-phase {X} --gaps`). No additional routing needed, skip auto-advance.
 
 **No-transition check (spawned by auto-advance chain):**
 
@@ -1739,7 +1739,7 @@ Read and follow `~/.claude/get-shit-done/workflows/transition.md`, passing throu
 
 **STOP. Do not auto-advance. Do not execute transition. Do not plan next phase. Present options to the user and wait.**
 
-**IMPORTANT: There is NO `/gsd-transition` command. Never suggest it. The transition workflow is internal only.**
+**IMPORTANT: There is NO `/gsd:transition` command. Never suggest it. The transition workflow is internal only.**
 
 Check whether CONTEXT.md already exists for the next phase:
 
@@ -1752,10 +1752,10 @@ If CONTEXT.md does **not** exist for the next phase, present:
 ```
 ## ✓ Phase {X}: {Name} Complete
 
-/gsd:progress ${GSD_WS} — see updated roadmap
-/gsd:discuss-phase {next} ${GSD_WS} — start here: discuss next phase before planning  ← recommended
-/gsd:plan-phase {next} ${GSD_WS} — plan next phase (skip discuss)
-/gsd:execute-phase {next} ${GSD_WS} — execute next phase (skip discuss and plan)
+/gsd:progress ${GSD_WS}, see updated roadmap
+/gsd:discuss-phase {next} ${GSD_WS}, start here: discuss next phase before planning  ← recommended
+/gsd:plan-phase {next} ${GSD_WS}, plan next phase (skip discuss)
+/gsd:execute-phase {next} ${GSD_WS}, execute next phase (skip discuss and plan)
 ```
 
 If CONTEXT.md **exists** for the next phase, present:
@@ -1763,10 +1763,10 @@ If CONTEXT.md **exists** for the next phase, present:
 ```
 ## ✓ Phase {X}: {Name} Complete
 
-/gsd:progress ${GSD_WS} — see updated roadmap
-/gsd:plan-phase {next} ${GSD_WS} — start here: plan next phase (CONTEXT.md already present)  ← recommended
-/gsd:discuss-phase {next} ${GSD_WS} — re-discuss next phase
-/gsd:execute-phase {next} ${GSD_WS} — execute next phase (skip planning)
+/gsd:progress ${GSD_WS}, see updated roadmap
+/gsd:plan-phase {next} ${GSD_WS}, start here: plan next phase (CONTEXT.md already present)  ← recommended
+/gsd:discuss-phase {next} ${GSD_WS}, re-discuss next phase
+/gsd:execute-phase {next} ${GSD_WS}, execute next phase (skip planning)
 ```
 
 Only suggest the commands listed above. Do not invent or hallucinate command names.

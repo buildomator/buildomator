@@ -470,11 +470,11 @@ CUSTOM_COUNT=$(echo "$CUSTOM_JSON" | node -e "process.stdin.resume();let d='';pr
 
 **If `CUSTOM_COUNT` > 0:**
 
-Back up each custom file to `$RUNTIME_DIR/gsd-user-files-backup/` before the
+Back up each custom file to `$RUNTIME_DIR/gsd:user-files-backup/` before the
 installer wipes the directories:
 
 ```bash
-BACKUP_DIR="$RUNTIME_DIR/gsd-user-files-backup"
+BACKUP_DIR="$RUNTIME_DIR/gsd:user-files-backup"
 mkdir -p "$BACKUP_DIR"
 
 # Parse custom_files array from CUSTOM_JSON and copy each file
@@ -577,19 +577,19 @@ fi
 
 for dir in "${CACHE_DIRS[@]}"; do
   if [ -n "$dir" ]; then
-    rm -f "$dir/cache/gsd-update-check.json"
+    rm -f "$dir/cache/gsd:update-check.json"
   fi
 done
 
 for dir in .claude .config/opencode .opencode .gemini .config/kilo .kilo .codex; do
-  rm -f "./$dir/cache/gsd-update-check.json"
-  rm -f "$HOME/$dir/cache/gsd-update-check.json"
+  rm -f "./$dir/cache/gsd:update-check.json"
+  rm -f "$HOME/$dir/cache/gsd:update-check.json"
 done
 
 # Clear the shared tool-agnostic cache written by gsd-check-update.js hook (#2784).
-# The hook uses ~/.cache/gsd/gsd-update-check.json regardless of runtime; clear it
+# The hook uses ~/.cache/gsd/gsd:update-check.json regardless of runtime; clear it
 # so the statusline stops showing the stale "⬆ /gsd:update" indicator after update.
-rm -f "$HOME/.cache/gsd/gsd-update-check.json"
+rm -f "$HOME/.cache/gsd/gsd:update-check.json"
 ```
 
 The SessionStart hook (`gsd-check-update.js`) writes to the detected runtime's cache directory, so preferred/env-derived paths and default paths must all be cleared to prevent stale update indicators.
@@ -605,7 +605,7 @@ Format completion message (changelog was already shown in confirmation step):
 
 ⚠️  Restart your runtime to pick up the new commands.
 
-[View full changelog](https://github.com/gsd-build/get-shit-done/blob/main/CHANGELOG.md)
+[View full changelog](https://github.com/gsd:build/get-shit-done/blob/main/CHANGELOG.md)
 ```
 </step>
 

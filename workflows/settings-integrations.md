@@ -6,7 +6,7 @@ agent-skill injection (`agent_skills.<agent-type>`). Writes to
 preserved, never clobbered.
 
 This command is deliberately separate from `/gsd:settings` (workflow toggles)
-and any `/gsd-settings-advanced` tuning surface. It exists because API keys and
+and any `/gsd:settings-advanced` tuning surface. It exists because API keys and
 cross-tool routing are *connectivity* concerns, not workflow or tuning knobs.
 </purpose>
 
@@ -264,8 +264,8 @@ Notes:
   and not displayed in error messages.
 
 Quick commands:
-- /gsd:settings — workflow toggles and model profile
-- /gsd-set-profile <profile> — switch model profile
+- /gsd:settings, workflow toggles and model profile
+- /gsd:set-profile <profile>, switch model profile
 ```
 </step>
 

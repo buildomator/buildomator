@@ -196,7 +196,7 @@ Example configured sections:
 Create the PR using the generated body. Write the body to a temp file first so large generated PRD sections do not hit shell argument limits:
 
 ```bash
-PR_BODY_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd-pr-body.XXXXXX.md")
+PR_BODY_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd:pr-body.XXXXXX.md")
 trap 'rm -f "${PR_BODY_FILE:-}"' EXIT
 printf '%s\n' "${PR_BODY}" > "${PR_BODY_FILE}"
 
@@ -341,9 +341,9 @@ Next steps:
 <offer_next>
 After shipping:
 
-- /gsd:complete-milestone — if all phases in milestone are done
-- /gsd:progress — see overall project state
-- /gsd:execute-phase {next} — continue to next phase
+- /gsd:complete-milestone, if all phases in milestone are done
+- /gsd:progress, see overall project state
+- /gsd:execute-phase {next}, continue to next phase
 </offer_next>
 
 <success_criteria>

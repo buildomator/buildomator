@@ -14,17 +14,17 @@ Parse the command arguments:
 - Optional flag: --force (allow editing in_progress/completed phases)
 
 Examples:
-  `/gsd-edit-phase 5`       → phase = 5, force = false
-  `/gsd-edit-phase 5 --force` → phase = 5, force = true
-  `/gsd-edit-phase 12.1`    → phase = 12.1, force = false
+  `/gsd:edit-phase 5`       → phase = 5, force = false
+  `/gsd:edit-phase 5 --force` → phase = 5, force = true
+  `/gsd:edit-phase 12.1`    → phase = 12.1, force = false
 
 If no argument provided:
 
 ```
 ERROR: Phase number required
-Usage: /gsd-edit-phase <phase-number> [--force]
-Example: /gsd-edit-phase 5
-Example: /gsd-edit-phase 5 --force
+Usage: /gsd:edit-phase <phase-number> [--force]
+Example: /gsd:edit-phase 5
+Example: /gsd:edit-phase 5 --force
 ```
 
 Exit.
@@ -96,7 +96,7 @@ ERROR: Cannot edit Phase {target} — status is {status}
 Editing an in-progress or completed phase may invalidate executed plans.
 
 To edit anyway, run:
-  /gsd-edit-phase {target} --force
+  /gsd:edit-phase {target} --force
 ```
 
 Exit.
@@ -258,9 +258,9 @@ Fields changed: {changed_field_list}
 
 ## What's Next
 
-- `/gsd:progress` — view updated roadmap
-- `/gsd:plan-phase {target}` — re-plan this phase (if needed)
-- `/gsd:discuss-phase {target}` — discuss implementation approach
+- `/gsd:progress`, view updated roadmap
+- `/gsd:plan-phase {target}`, re-plan this phase (if needed)
+- `/gsd:discuss-phase {target}`, discuss implementation approach
 
 ---
 ```

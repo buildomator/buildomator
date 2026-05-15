@@ -24,55 +24,55 @@ PATCHES_DIR=""
 
 # Env overrides first — covers custom config directories used with --config-dir
 if [ -n "$KILO_CONFIG_DIR" ]; then
-  candidate="$(expand_home "$KILO_CONFIG_DIR")/gsd-local-patches"
+  candidate="$(expand_home "$KILO_CONFIG_DIR")/gsd:local-patches"
   if [ -d "$candidate" ]; then
     PATCHES_DIR="$candidate"
   fi
 elif [ -n "$KILO_CONFIG" ]; then
-  candidate="$(dirname "$(expand_home "$KILO_CONFIG")")/gsd-local-patches"
+  candidate="$(dirname "$(expand_home "$KILO_CONFIG")")/gsd:local-patches"
   if [ -d "$candidate" ]; then
     PATCHES_DIR="$candidate"
   fi
 elif [ -n "$XDG_CONFIG_HOME" ]; then
-  candidate="$(expand_home "$XDG_CONFIG_HOME")/kilo/gsd-local-patches"
+  candidate="$(expand_home "$XDG_CONFIG_HOME")/kilo/gsd:local-patches"
   if [ -d "$candidate" ]; then
     PATCHES_DIR="$candidate"
   fi
 fi
 
 if [ -z "$PATCHES_DIR" ] && [ -n "$OPENCODE_CONFIG_DIR" ]; then
-  candidate="$(expand_home "$OPENCODE_CONFIG_DIR")/gsd-local-patches"
+  candidate="$(expand_home "$OPENCODE_CONFIG_DIR")/gsd:local-patches"
   if [ -d "$candidate" ]; then
     PATCHES_DIR="$candidate"
   fi
 elif [ -z "$PATCHES_DIR" ] && [ -n "$OPENCODE_CONFIG" ]; then
-  candidate="$(dirname "$(expand_home "$OPENCODE_CONFIG")")/gsd-local-patches"
+  candidate="$(dirname "$(expand_home "$OPENCODE_CONFIG")")/gsd:local-patches"
   if [ -d "$candidate" ]; then
     PATCHES_DIR="$candidate"
   fi
 elif [ -z "$PATCHES_DIR" ] && [ -n "$XDG_CONFIG_HOME" ]; then
-  candidate="$(expand_home "$XDG_CONFIG_HOME")/opencode/gsd-local-patches"
+  candidate="$(expand_home "$XDG_CONFIG_HOME")/opencode/gsd:local-patches"
   if [ -d "$candidate" ]; then
     PATCHES_DIR="$candidate"
   fi
 fi
 
 if [ -z "$PATCHES_DIR" ] && [ -n "$GEMINI_CONFIG_DIR" ]; then
-  candidate="$(expand_home "$GEMINI_CONFIG_DIR")/gsd-local-patches"
+  candidate="$(expand_home "$GEMINI_CONFIG_DIR")/gsd:local-patches"
   if [ -d "$candidate" ]; then
     PATCHES_DIR="$candidate"
   fi
 fi
 
 if [ -z "$PATCHES_DIR" ] && [ -n "$CODEX_HOME" ]; then
-  candidate="$(expand_home "$CODEX_HOME")/gsd-local-patches"
+  candidate="$(expand_home "$CODEX_HOME")/gsd:local-patches"
   if [ -d "$candidate" ]; then
     PATCHES_DIR="$candidate"
   fi
 fi
 
 if [ -z "$PATCHES_DIR" ] && [ -n "$CLAUDE_CONFIG_DIR" ]; then
-  candidate="$(expand_home "$CLAUDE_CONFIG_DIR")/gsd-local-patches"
+  candidate="$(expand_home "$CLAUDE_CONFIG_DIR")/gsd:local-patches"
   if [ -d "$candidate" ]; then
     PATCHES_DIR="$candidate"
   fi
@@ -80,25 +80,25 @@ fi
 
 # Global install — detect runtime config directory defaults
 if [ -z "$PATCHES_DIR" ]; then
-  if [ -d "$HOME/.config/kilo/gsd-local-patches" ]; then
-    PATCHES_DIR="$HOME/.config/kilo/gsd-local-patches"
-  elif [ -d "$HOME/.config/opencode/gsd-local-patches" ]; then
-    PATCHES_DIR="$HOME/.config/opencode/gsd-local-patches"
-  elif [ -d "$HOME/.opencode/gsd-local-patches" ]; then
-    PATCHES_DIR="$HOME/.opencode/gsd-local-patches"
-  elif [ -d "$HOME/.gemini/gsd-local-patches" ]; then
-    PATCHES_DIR="$HOME/.gemini/gsd-local-patches"
-  elif [ -d "$HOME/.codex/gsd-local-patches" ]; then
-    PATCHES_DIR="$HOME/.codex/gsd-local-patches"
+  if [ -d "$HOME/.config/kilo/gsd:local-patches" ]; then
+    PATCHES_DIR="$HOME/.config/kilo/gsd:local-patches"
+  elif [ -d "$HOME/.config/opencode/gsd:local-patches" ]; then
+    PATCHES_DIR="$HOME/.config/opencode/gsd:local-patches"
+  elif [ -d "$HOME/.opencode/gsd:local-patches" ]; then
+    PATCHES_DIR="$HOME/.opencode/gsd:local-patches"
+  elif [ -d "$HOME/.gemini/gsd:local-patches" ]; then
+    PATCHES_DIR="$HOME/.gemini/gsd:local-patches"
+  elif [ -d "$HOME/.codex/gsd:local-patches" ]; then
+    PATCHES_DIR="$HOME/.codex/gsd:local-patches"
   else
-    PATCHES_DIR="$HOME/.claude/gsd-local-patches"
+    PATCHES_DIR="$HOME/.claude/gsd:local-patches"
   fi
 fi
 # Local install fallback — check all runtime directories
 if [ ! -d "$PATCHES_DIR" ]; then
   for dir in .config/kilo .kilo .config/opencode .opencode .gemini .codex .claude; do
-    if [ -d "./$dir/gsd-local-patches" ]; then
-      PATCHES_DIR="./$dir/gsd-local-patches"
+    if [ -d "./$dir/gsd:local-patches" ]; then
+      PATCHES_DIR="./$dir/gsd:local-patches"
       break
     fi
   done
@@ -165,7 +165,7 @@ git -C "$CONFIG_DIR" show "${BASELINE_COMMIT}:${file_path}"
 ### Option B: Pristine snapshot directory
 Check if a `gsd-pristine/` directory exists alongside `gsd-local-patches/`:
 ```bash
-PRISTINE_DIR="$CONFIG_DIR/gsd-pristine"
+PRISTINE_DIR="$CONFIG_DIR/gsd:pristine"
 ```
 If it exists, the installer saved pristine copies at install time. Use these as the baseline.
 
@@ -278,7 +278,7 @@ Run the deterministic verifier script. Do NOT rely solely on the free-text `veri
 Run the verifier as a child process (the gsd-tools binary directory is not required — the script ships under `get-shit-done/bin/` in the source repo and is installed to `${GSD_HOME}/get-shit-done/bin/`; it is also exposed via the SDK at `sdk/dist/cli.js verify-reapply` when present):
 
 ```bash
-PRISTINE_DIR="${CONFIG_DIR}/gsd-pristine"
+PRISTINE_DIR="${CONFIG_DIR}/gsd:pristine"
 
 # Build args as a bash array so paths with spaces survive expansion intact
 # (string-concat + unquoted expansion would split incorrectly on whitespace).

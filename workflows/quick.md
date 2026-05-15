@@ -126,7 +126,7 @@ If `$VALIDATE_MODE` only:
 
 ```bash
 if ! command -v gsd-sdk &>/dev/null; then
-  echo "⚠ gsd-sdk not found in PATH — /gsd:quick requires it."
+  echo "⚠ gsd-sdk not found in PATH, /gsd:quick requires it."
   echo ""
   echo "Install the query-capable GSD SDK CLI:"
   echo "  npm install -g get-shit-done-cc"
@@ -170,7 +170,7 @@ fi
 
 Quick mode does not have a pre-declared `files_modified` list (the task is freeform), so use a fail-loud guard at commit time: when the executor stages files for the quick-task commit, if any staged path falls inside a `SUBMODULE_PATHS` entry, abort with a clear error explaining that worktree-isolated commits cannot safely span submodule boundaries — the user can re-run with `workflow.use_worktrees=false` to fall back to sequential execution on the main tree. If `SUBMODULE_PATHS` is empty (no `.gitmodules` in the repo), worktree isolation proceeds normally.
 
-**If `roadmap_exists` is false:** Error — Quick mode requires an active project with ROADMAP.md. Run `/gsd:new-project` first.
+**If `roadmap_exists` is false:** Error, Quick mode requires an active project with ROADMAP.md. Run `/gsd:new-project` first.
 
 Quick tasks can run mid-phase - validation only checks ROADMAP.md exists, not phase status.
 
@@ -664,7 +664,7 @@ Capture current HEAD before spawning (used for worktree branch check):
 ```bash
 EXPECTED_BASE=$(git rev-parse HEAD)
 if [ "${USE_WORKTREES:-true}" != "false" ]; then
-  QUICK_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/gsd-quick-worktree-XXXXXX.json")
+  QUICK_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/gsd:quick-worktree-XXXXXX.json")
   printf '{"worktrees":[]}\n' > "$QUICK_WORKTREE_MANIFEST"
   export QUICK_WORKTREE_MANIFEST
 fi
@@ -795,7 +795,7 @@ After executor returns:
    # setups, and the cross-drive Windows case where `git worktree list` reports the
    # registry path on a different drive than `$(pwd)`).
    # Read line-by-line so worktree paths containing whitespace are preserved (#2774).
-   WT_PATHS_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd-worktree-paths-XXXXXX")
+   WT_PATHS_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd:worktree-paths-XXXXXX")
    node -e 'const fs=require("fs");const p=process.env.QUICK_WORKTREE_MANIFEST||process.env.WAVE_WORKTREE_MANIFEST;try{if(!p)throw new Error("QUICK_WORKTREE_MANIFEST is unset");if(!fs.existsSync(p))throw new Error("manifest does not exist");const s=fs.readFileSync(p,"utf8");if(!s.trim())throw new Error("manifest is empty");const j=JSON.parse(s);for(const w of j.worktrees||[])if(w.worktree_path)console.log(w.worktree_path)}catch(e){console.error(`ERROR: cannot read worktree manifest ${p||"(unset)"}: ${e.message}`);process.exit(1)}' > "$WT_PATHS_FILE" || { echo "BLOCKED: cannot read QUICK_WORKTREE_MANIFEST; refusing cleanup (#3384)." >&2; exit 1; }
    while IFS= read -r WT; do
      [ -z "$WT" ] && continue

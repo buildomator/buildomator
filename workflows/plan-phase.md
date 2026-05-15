@@ -51,13 +51,13 @@ Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_
 
 **File paths (for <files_to_read> blocks):** `state_path`, `roadmap_path`, `requirements_path`, `context_path`, `research_path`, `verification_path`, `uat_path`, `reviews_path`. These are null if files don't exist.
 
-**If `planning_exists` is false:** Error — run `/gsd:new-project` first.
+**If `planning_exists` is false:** Error, run `/gsd:new-project` first.
 
 ## 2. Parse and Normalize Arguments
 
 Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--research-phase <N>`, `--gaps`, `--skip-verify`, `--skip-ui`, `--prd <filepath>`, `--ingest <path-or-glob>`, `--ingest-format <auto|nygard|madr|narrative>`, `--reviews`, `--text`, `--bounce`, `--skip-bounce`, `--chunked`, `--mvp`).
 
-**`--research-phase <N>` — research-only mode (#3042 + #3044).** When this flag is present, parse `<N>` as the phase number (overrides any positional phase argument), set `RESEARCH_ONLY=true`, and treat the rest of this workflow as a research-dispatch only — the planner spawn (step 8), plan-checker, verification, gaps, bounce, and post-planning-gaps blocks all skip on `RESEARCH_ONLY`. Use this for cross-phase research, doc review before committing to a planning approach, and correction-without-replanning loops. Replaces the deleted `/gsd-research-phase` command.
+**`--research-phase <N>`, research-only mode (#3042 + #3044).** When this flag is present, parse `<N>` as the phase number (overrides any positional phase argument), set `RESEARCH_ONLY=true`, and treat the rest of this workflow as a research-dispatch only, the planner spawn (step 8), plan-checker, verification, gaps, bounce, and post-planning-gaps blocks all skip on `RESEARCH_ONLY`. Use this for cross-phase research, doc review before committing to a planning approach, and correction-without-replanning loops. Replaces the deleted `/gsd:research-phase` command.
 
 In research-only mode, two modifiers control behavior when `RESEARCH.md` already exists:
 
@@ -353,12 +353,12 @@ echo "${phase_goal}" | grep -qi "agent\|llm\|rag\|chatbot\|embedding\|langchain\
   - Research its docs and best practices
   - Design an evaluation strategy
 
-  Continue planning without AI-SPEC? (non-blocking — /gsd:ai-integration-phase can be run after)
+  Continue planning without AI-SPEC? (non-blocking, /gsd:ai-integration-phase can be run after)
 ```
 
 Use AskUserQuestion with options:
 - "Continue — plan without AI-SPEC"
-- "Stop — I'll run /gsd:ai-integration-phase {N} first"
+- "Stop, I'll run /gsd:ai-integration-phase {N} first"
 
 If "Stop": Exit with `/gsd:ai-integration-phase {N}` reminder.
 If "Continue": Proceed. (Non-blocking — planner will note AI-SPEC is absent.)
@@ -381,7 +381,7 @@ Three branches in research-only mode (`--research-phase <N>`):
 
 1. **`--view`** (or user picks "View" in the prompt below): print `RESEARCH.md` to stdout, no spawn, exit. If `RESEARCH.md` is missing, error with: `--view requires an existing RESEARCH.md; drop --view to spawn the researcher.`
 2. **`--research`** (force-refresh): re-spawn researcher unconditionally — fall through to "Spawn gsd-phase-researcher" below.
-3. **Neither flag AND `has_research=true`:** emit `RESEARCH.md already exists for Phase ${PHASE}.` and prompt the user with three choices: `1. Update — re-spawn researcher and refresh RESEARCH.md`, `2. View — print existing RESEARCH.md and exit (no spawn)`, `3. Skip — exit without spawning or printing`. Map "Update" → fall through to spawn, "View" → set `VIEW_ONLY=true` and emit RESEARCH.md as in (1), "Skip" → exit cleanly. Mirrors the deleted `/gsd-research-phase` standalone's existing-artifact menu (#3042 parity).
+3. **Neither flag AND `has_research=true`:** emit `RESEARCH.md already exists for Phase ${PHASE}.` and prompt the user with three choices: `1. Update, re-spawn researcher and refresh RESEARCH.md`, `2. View, print existing RESEARCH.md and exit (no spawn)`, `3. Skip, exit without spawning or printing`. Map "Update" → fall through to spawn, "View" → set `VIEW_ONLY=true` and emit RESEARCH.md as in (1), "Skip" → exit cleanly. Mirrors the deleted `/gsd:research-phase` standalone's existing-artifact menu (#3042 parity).
 
 ```bash
 if [[ "$VIEW_ONLY" == "true" ]]; then
@@ -621,10 +621,10 @@ Output this markdown directly (not as a code block):
 ```
 ## ⚠ UI-SPEC.md missing for Phase {N}
 ▶ Recommended next step:
-`/gsd:ui-phase {N} ${GSD_WS}` — generate UI design contract before planning
+`/gsd:ui-phase {N} ${GSD_WS}`, generate UI design contract before planning
 ───────────────────────────────────────────────
 Also available:
-- `/gsd:plan-phase {N} --skip-ui ${GSD_WS}` — plan without UI-SPEC (not recommended for frontend phases)
+- `/gsd:plan-phase {N} --skip-ui ${GSD_WS}`, plan without UI-SPEC (not recommended for frontend phases)
 ```
 
 **Exit the plan-phase workflow. Do not continue.**
@@ -1084,7 +1084,7 @@ arrived). Display:
 Offer 3 options:
 1. **Accept plans** — treat as `## PLANNING COMPLETE` and continue through step 9 `## PLANNING COMPLETE` handling (so `--skip-verify` / `plan_checker_enabled=false` are honored — may skip to step 13 rather than step 10)
 2. **Retry planner** — re-spawn the planner with the same prompt (return to step 8)
-3. **Stop** — exit; user can re-run `/gsd:plan-phase {N}` to resume
+3. **Stop**, exit; user can re-run `/gsd:plan-phase {N}` to resume
 
 **If `DISK_PLANS` is 0 and no marker:** The planner produced no output. Treat as
 `## PLANNING INCONCLUSIVE` and handle accordingly.
@@ -1244,7 +1244,7 @@ Windows stdio hang pattern — the subagent finished but the return never arrive
 Offer 3 options:
 1. **Accept verification** — treat as `## VERIFICATION PASSED` and continue to step 13
 2. **Retry checker** — re-spawn the checker with the same prompt (return to step 10)
-3. **Stop** — exit; user can re-run `/gsd:plan-phase {N}` to resume
+3. **Stop**, exit; user can re-run `/gsd:plan-phase {N}` to resume
 
 **If `DISK_PLANS` is 0:** No plans on disk — something is seriously wrong. Display error and stop.
 
@@ -1693,9 +1693,9 @@ Verification: {Passed | Passed with override | Skipped}
 
 **Also available:**
 - cat .planning/phases/{phase-dir}/*-PLAN.md — review plans
-- /gsd:plan-phase {X} --research — re-research first
-- /gsd:review --phase {X} --all — peer review plans with external AIs
-- /gsd:plan-phase {X} --reviews — replan incorporating review feedback
+- /gsd:plan-phase {X} --research, re-research first
+- /gsd:review --phase {X} --all, peer review plans with external AIs
+- /gsd:plan-phase {X} --reviews, replan incorporating review feedback
 
 ───────────────────────────────────────────────────────────────
 </offer_next>

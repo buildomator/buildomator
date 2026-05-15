@@ -2,15 +2,15 @@
 
 **This is an INTERNAL workflow — NOT a user-facing command.**
 
-There is no `/gsd-transition` command. This workflow is invoked automatically by
+There is no `/gsd:transition` command. This workflow is invoked automatically by
 `execute-phase` during auto-advance, or inline by the orchestrator after phase
-verification. Users should never be told to run `/gsd-transition`.
+verification. Users should never be told to run `/gsd:transition`.
 
 **Valid user commands for phase progression:**
-- `/gsd:discuss-phase {N}` — discuss a phase before planning
-- `/gsd:plan-phase {N}` — plan a phase
-- `/gsd:execute-phase {N}` — execute a phase
-- `/gsd:progress` — see roadmap progress
+- `/gsd:discuss-phase {N}`, discuss a phase before planning
+- `/gsd:plan-phase {N}`, plan a phase
+- `/gsd:execute-phase {N}`, execute a phase
+- `/gsd:progress`, see roadmap progress
 
 </internal_workflow>
 
@@ -499,13 +499,13 @@ Exit skill and invoke SlashCommand("/gsd:discuss-phase [X+1] --auto ${GSD_WS}")
 
 `/clear` then:
 
-`/gsd:discuss-phase [X+1] ${GSD_WS}` — gather context and clarify approach
+`/gsd:discuss-phase [X+1] ${GSD_WS}`, gather context and clarify approach
 
 ---
 
 **Also available:**
-- `/gsd:plan-phase [X+1] ${GSD_WS}` — skip discussion, plan directly
-- `/gsd:plan-phase --research-phase [X+1] ${GSD_WS}` — investigate unknowns
+- `/gsd:plan-phase [X+1] ${GSD_WS}`, skip discussion, plan directly
+- `/gsd:plan-phase --research-phase [X+1] ${GSD_WS}`, investigate unknowns
 
 ---
 ```
@@ -529,8 +529,8 @@ Exit skill and invoke SlashCommand("/gsd:discuss-phase [X+1] --auto ${GSD_WS}")
 ---
 
 **Also available:**
-- `/gsd:discuss-phase [X+1] ${GSD_WS}` — revisit context
-- `/gsd:plan-phase --research-phase [X+1] ${GSD_WS}` — investigate unknowns
+- `/gsd:discuss-phase [X+1] ${GSD_WS}`, revisit context
+- `/gsd:plan-phase --research-phase [X+1] ${GSD_WS}`, investigate unknowns
 
 ---
 ```

@@ -30,7 +30,7 @@ If the flag is absent, keep the current behavior of continuing phase numbering f
 - Read PROJECT.md (existing project, validated requirements, decisions)
 - Read MILESTONES.md (what shipped previously)
 - Read STATE.md (pending todos, blockers)
-- Check for MILESTONE-CONTEXT.md (from /gsd-discuss-milestone)
+- Check for MILESTONE-CONTEXT.md (from /gsd:discuss-milestone)
 
 ## 2. Gather Milestone Goals
 
@@ -157,7 +157,7 @@ Ensure the `## Evolution` section exists in PROJECT.md. If missing (projects cre
 
 This document evolves at phase transitions and milestone boundaries.
 
-**After each phase transition** (via `/gsd-transition`):
+**After each phase transition** (via `/gsd:transition`):
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
 3. New requirements emerged? → Add to Active
@@ -607,9 +607,9 @@ Print a summary:
 
 `/clear` then:
 
-`/gsd:discuss-phase [N] ${GSD_WS}` — gather context and clarify approach
+`/gsd:discuss-phase [N] ${GSD_WS}`, gather context and clarify approach
 
-Also: `/gsd:plan-phase [N] ${GSD_WS}` — skip discussion, plan directly
+Also: `/gsd:plan-phase [N] ${GSD_WS}`, skip discussion, plan directly
 ```
 
 </process>

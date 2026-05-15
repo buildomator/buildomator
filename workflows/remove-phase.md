@@ -11,15 +11,15 @@ Read all files referenced by the invoking prompt's execution_context before star
 <step name="parse_arguments">
 Parse the command arguments:
 - Argument is the phase number to remove (integer or decimal)
-- Example: `/gsd-remove-phase 17` → phase = 17
-- Example: `/gsd-remove-phase 16.1` → phase = 16.1
+- Example: `/gsd:remove-phase 17` → phase = 17
+- Example: `/gsd:remove-phase 16.1` → phase = 16.1
 
 If no argument provided:
 
 ```
 ERROR: Phase number required
-Usage: /gsd-remove-phase <phase-number>
-Example: /gsd-remove-phase 17
+Usage: /gsd:remove-phase <phase-number>
+Example: /gsd:remove-phase 17
 ```
 
 Exit.
@@ -126,7 +126,7 @@ Changes:
 ## What's Next
 
 Would you like to:
-- `/gsd:progress` — see updated roadmap status
+- `/gsd:progress`, see updated roadmap status
 - Continue with current phase
 - Review roadmap
 
