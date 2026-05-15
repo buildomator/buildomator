@@ -10,6 +10,7 @@ const GSD_MANAGED_DIRS = [
     'agents',
     join('commands', 'gsd'),
     'hooks',
+    'skills',
 ];
 function walkDir(dir, baseDir) {
     const results = [];

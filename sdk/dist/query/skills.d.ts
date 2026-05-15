@@ -5,7 +5,9 @@
  * Ports `buildAgentSkillsBlock` semantics from
  * `get-shit-done/bin/lib/init.cjs` so the SDK path honors
  * `config.agent_skills[agentType]` the same way the legacy
- * `gsd-tools.cjs agent-skills <type>` path does. Fixes #2555.
+ * `gsd-tools.cjs agent-skills <type>` path does. Project-relative skills stay
+ * project-root validated; `global:<name>` now resolves through runtime-aware
+ * global skills dir policy rather than a Claude-only hardcoded path. Fixes #2555.
  *
  * @example
  * ```typescript

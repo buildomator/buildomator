@@ -21,46 +21,9 @@ import { GSDError, ErrorClassification } from '../errors.js';
 import { loadConfig } from '../config.js';
 import { planningPaths } from './helpers.js';
 import { maskIfSecret } from './secrets.js';
-// ─── MODEL_PROFILES ─────────────────────────────────────────────────────────
-/**
- * Mapping of GSD agent type to model alias for each profile tier.
- *
- * Ported from get-shit-done/bin/lib/model-profiles.cjs.
- */
-export const MODEL_PROFILES = {
-    'gsd-planner': { quality: 'opus', balanced: 'opus', budget: 'sonnet', adaptive: 'opus' },
-    'gsd-roadmapper': { quality: 'opus', balanced: 'sonnet', budget: 'sonnet', adaptive: 'sonnet' },
-    'gsd-executor': { quality: 'opus', balanced: 'sonnet', budget: 'sonnet', adaptive: 'sonnet' },
-    'gsd-phase-researcher': { quality: 'opus', balanced: 'sonnet', budget: 'haiku', adaptive: 'sonnet' },
-    'gsd-project-researcher': { quality: 'opus', balanced: 'sonnet', budget: 'haiku', adaptive: 'sonnet' },
-    'gsd-research-synthesizer': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku', adaptive: 'haiku' },
-    'gsd-debugger': { quality: 'opus', balanced: 'sonnet', budget: 'sonnet', adaptive: 'opus' },
-    'gsd-codebase-mapper': { quality: 'sonnet', balanced: 'haiku', budget: 'haiku', adaptive: 'haiku' },
-    'gsd-verifier': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku', adaptive: 'sonnet' },
-    'gsd-plan-checker': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku', adaptive: 'haiku' },
-    'gsd-integration-checker': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku', adaptive: 'haiku' },
-    'gsd-nyquist-auditor': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku', adaptive: 'haiku' },
-    'gsd-pattern-mapper': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku', adaptive: 'haiku' },
-    'gsd-ui-researcher': { quality: 'opus', balanced: 'sonnet', budget: 'haiku', adaptive: 'sonnet' },
-    'gsd-ui-checker': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku', adaptive: 'haiku' },
-    'gsd-ui-auditor': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku', adaptive: 'haiku' },
-    'gsd-doc-writer': { quality: 'opus', balanced: 'sonnet', budget: 'haiku', adaptive: 'sonnet' },
-    'gsd-doc-verifier': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku', adaptive: 'haiku' },
-};
-/** Valid model profile names. */
-export const VALID_PROFILES = Object.keys(MODEL_PROFILES['gsd-planner']);
-/**
- * Flat map of agent name → model alias for one profile tier (matches `model-profiles.cjs`).
- */
-export function getAgentToModelMapForProfile(normalizedProfile) {
-    const profile = VALID_PROFILES.includes(normalizedProfile) ? normalizedProfile : 'balanced';
-    const agentToModelMap = {};
-    for (const [agent, profileToModelMap] of Object.entries(MODEL_PROFILES)) {
-        const mapped = profileToModelMap[profile] ?? profileToModelMap.balanced;
-        agentToModelMap[agent] = mapped ?? 'sonnet';
-    }
-    return agentToModelMap;
-}
+export { MODEL_PROFILES, VALID_PROFILES, getAgentToModelMapForProfile } from '../model-catalog.js';
+import { AGENT_TO_PHASE_TYPE, MODEL_PROFILES, resolveRuntimeTierDefault, runtimesWithReasoningEffort, } from '../model-catalog.js';
+const RUNTIMES_WITH_REASONING_EFFORT = runtimesWithReasoningEffort();
 // ─── configGet ──────────────────────────────────────────────────────────────
 /**
  * Query handler for config-get command.
@@ -142,7 +105,35 @@ export const configPath = async (_args, projectDir, workstream) => {
     const paths = planningPaths(projectDir, workstream);
     return { data: { path: paths.config } };
 };
-// ─── resolveModel ───────────────────────────────────────────────────────────
+function isRuntimeTierName(value) {
+    return value === 'opus' || value === 'sonnet' || value === 'haiku';
+}
+function normalizeRuntimeTierEntry(entry) {
+    if (typeof entry === 'string')
+        return { model: entry };
+    if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+        return entry;
+    }
+    return null;
+}
+function resolveRuntimeTier(config, tier) {
+    if (!isRuntimeTierName(tier))
+        return null;
+    const runtime = typeof config.runtime === 'string' ? config.runtime : '';
+    if (!runtime || runtime === 'claude')
+        return null;
+    const builtin = resolveRuntimeTierDefault(runtime, tier);
+    const profileOverrides = config.model_profile_overrides;
+    const runtimeOverrides = profileOverrides?.[runtime];
+    const userEntry = normalizeRuntimeTierEntry(runtimeOverrides?.[tier]);
+    if (!builtin && !userEntry)
+        return null;
+    const merged = { ...(builtin ?? {}), ...(userEntry ?? {}) };
+    if (!RUNTIMES_WITH_REASONING_EFFORT.has(runtime)) {
+        delete merged.reasoning_effort;
+    }
+    return merged;
+}
 /**
  * Query handler for resolve-model command.
  *
@@ -175,24 +166,43 @@ export const resolveModel = async (args, projectDir, workstream) => {
             : { model: override, profile, unknown_agent: true };
         return { data: result };
     }
-    // No project config (or explicit omit policy) -> return empty model id (CJS parity)
+    const agentModels = MODEL_PROFILES[agentType];
+    // No project config -> return empty model id (CJS parity)
     const resolveModelIds = config.resolve_model_ids;
-    if (!configExists || resolveModelIds === 'omit') {
-        const agentModels = MODEL_PROFILES[agentType];
+    if (!configExists) {
         const result = agentModels
             ? { model: '', profile }
             : { model: '', profile, unknown_agent: true };
         return { data: result };
     }
     // Fall back to profile lookup
-    const agentModels = MODEL_PROFILES[agentType];
     if (!agentModels) {
-        return { data: { model: 'sonnet', profile, unknown_agent: true } };
+        const semanticFallback = profile === 'quality' ? 'opus'
+            : profile === 'budget' ? 'haiku'
+                : profile === 'inherit' ? 'inherit'
+                    : 'sonnet';
+        return { data: { model: semanticFallback, profile, unknown_agent: true } };
     }
     if (profile === 'inherit') {
         return { data: { model: 'inherit', profile } };
     }
     const alias = agentModels[profile] || agentModels['balanced'] || 'sonnet';
+    const phaseType = AGENT_TO_PHASE_TYPE[agentType];
+    const phaseTier = phaseType && typeof config.models === 'object'
+        ? config.models[phaseType]
+        : undefined;
+    const tier = typeof phaseTier === 'string' ? phaseTier : alias;
+    const runtimeTier = resolveRuntimeTier(config, tier);
+    if (runtimeTier?.model) {
+        const result = { model: runtimeTier.model, profile };
+        if (runtimeTier.reasoning_effort) {
+            result.reasoning_effort = runtimeTier.reasoning_effort;
+        }
+        return { data: result };
+    }
+    if (resolveModelIds === 'omit') {
+        return { data: { model: '', profile } };
+    }
     return { data: { model: alias, profile } };
 };
 //# sourceMappingURL=config-query.js.map

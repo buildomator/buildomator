@@ -30,6 +30,7 @@ Configuration options for `.planning/` directory behavior.
 | `search_gitignored` | `false` | Add `--no-ignore` to broad rg searches |
 | `git.branching_strategy` | `"none"` | Git branching approach: `"none"`, `"phase"`, or `"milestone"` |
 | `git.base_branch` | `null` (auto-detect) | Target branch for PRs and merges (e.g. `"master"`, `"develop"`). When `null`, auto-detects from `git symbolic-ref refs/remotes/origin/HEAD`, falling back to `"main"`. |
+| `git.create_tag` | `true` | Create git tags on milestone completion |
 | `git.phase_branch_template` | `"gsd/phase-{phase}-{slug}"` | Branch template for phase strategy |
 | `git.milestone_branch_template` | `"gsd/{milestone}-{slug}"` | Branch template for milestone strategy |
 | `git.quick_branch_template` | `null` | Optional branch template for quick-task runs |
@@ -270,6 +271,14 @@ Set via `workflow.*` namespace in config.json (e.g., `"workflow": { "research": 
 | `workflow.security_block_on` | string | `"high"` | `"high"`, `"medium"`, `"low"` | Minimum severity that blocks phase advancement |
 | `workflow.post_planning_gaps` | boolean | `true` | `true`, `false` | Post-planning gap report (#2493). After plans are generated, scans REQUIREMENTS.md and CONTEXT.md `<decisions>` against all PLAN.md files and emits a unified `Source \| Item \| Status` table. Non-blocking. Set to `false` to skip Step 13e of plan-phase. _Alias:_ `post_planning_gaps` is the flat-key form used in `CONFIG_DEFAULTS`; `workflow.post_planning_gaps` is the canonical namespaced form. |
 
+### Ship Fields
+
+Set via `ship.*` namespace in config.json. These fields affect `/gsd:ship` PRD-style pull request body composition only.
+
+| Key | Type | Default | Allowed Values | Description |
+|-----|------|---------|----------------|-------------|
+| `ship.pr_body_sections` | array | `[]` | Array of section objects | Append-only project-specific PR body sections. Each entry has `heading`, optional `enabled`, and one or more of `source`, `template`, or `fallback`. Disabled entries remain in onboarding config but do not render. Core sections remain required and cannot be removed or replaced. |
+
 ### Git Fields
 
 Set via `git.*` namespace (e.g., `"git": { "branching_strategy": "phase" }`).
@@ -278,6 +287,7 @@ Set via `git.*` namespace (e.g., `"git": { "branching_strategy": "phase" }`).
 |-----|------|---------|----------------|-------------|
 | `git.branching_strategy` | string | `"none"` | `"none"`, `"phase"`, `"milestone"` | Git branching approach for phase/milestone isolation |
 | `git.base_branch` | string\|null | `null` (auto-detect) | Any branch name | Target branch for PRs and merges; auto-detects from `origin/HEAD` when `null` |
+| `git.create_tag` | boolean | `true` | `true`, `false` | Create git tags on milestone completion |
 | `git.phase_branch_template` | string | `"gsd/phase-{phase}-{slug}"` | Template with `{phase}`, `{slug}` | Branch naming template for `phase` strategy |
 | `git.milestone_branch_template` | string | `"gsd/{milestone}-{slug}"` | Template with `{milestone}`, `{slug}` | Branch naming template for `milestone` strategy |
 | `git.quick_branch_template` | string\|null | `null` | Template with `{slug}` | Optional branch template for quick-task runs |
@@ -319,11 +329,11 @@ Set via `learnings.*` namespace (e.g., `"learnings": { "max_inject": 5 }`). Used
 
 ### Intel Fields
 
-Set via `intel.*` namespace (e.g., `"intel": { "enabled": true }`). Controls the queryable codebase intelligence system consumed by `/gsd:intel`.
+Set via `intel.*` namespace (e.g., `"intel": { "enabled": true }`). Controls the queryable codebase intelligence system consumed by `/gsd:map-codebase --query`.
 
 | Key | Type | Default | Allowed Values | Description |
 |-----|------|---------|----------------|-------------|
-| `intel.enabled` | boolean | `false` | `true`, `false` | Enable queryable codebase intelligence system. When `true`, `/gsd:intel` commands build and query a JSON index in `.planning/intel/`. |
+| `intel.enabled` | boolean | `false` | `true`, `false` | Enable queryable codebase intelligence system. When `true`, `/gsd:map-codebase --query` builds and queries a JSON index in `.planning/intel/`. |
 
 ### Manager Fields
 

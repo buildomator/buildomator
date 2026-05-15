@@ -16,18 +16,7 @@
  * ```
  */
 import type { QueryHandler } from './utils.js';
-/**
- * Mapping of GSD agent type to model alias for each profile tier.
- *
- * Ported from get-shit-done/bin/lib/model-profiles.cjs.
- */
-export declare const MODEL_PROFILES: Record<string, Record<string, string>>;
-/** Valid model profile names. */
-export declare const VALID_PROFILES: string[];
-/**
- * Flat map of agent name → model alias for one profile tier (matches `model-profiles.cjs`).
- */
-export declare function getAgentToModelMapForProfile(normalizedProfile: string): Record<string, string>;
+export { MODEL_PROFILES, VALID_PROFILES, getAgentToModelMapForProfile } from '../model-catalog.js';
 /**
  * Query handler for config-get command.
  *

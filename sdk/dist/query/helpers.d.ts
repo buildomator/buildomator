@@ -16,11 +16,10 @@
  * // { planning: '/project/.planning', state: '/project/.planning/STATE.md', ... }
  * ```
  */
-/**
- * Supported GSD runtimes. Kept in sync with `bin/install.js:getGlobalDir()`.
- */
-export declare const SUPPORTED_RUNTIMES: readonly ["claude", "opencode", "kilo", "gemini", "codex", "copilot", "antigravity", "cursor", "windsurf", "augment", "trae", "qwen", "codebuddy", "cline"];
-export type Runtime = (typeof SUPPORTED_RUNTIMES)[number];
+export { SUPPORTED_RUNTIMES, type Runtime } from '../model-catalog.js';
+import { type Runtime } from '../model-catalog.js';
+import { type PlanningPaths } from './workspace.js';
+export { stateExtractField } from './state-document.js';
 /**
  * Resolve the per-runtime config directory, mirroring
  * `bin/install.js:getGlobalDir()`. Agents live at `<configDir>/agents`.
@@ -49,16 +48,30 @@ export declare function detectRuntime(config?: {
  * (see `init-runner.ts`, which is Claude-only by design).
  */
 export declare function resolveAgentsDir(runtime?: Runtime): string;
+/**
+ * Resolve the runtime-global skills base directory.
+ *
+ * Most runtimes store global skills under `<configDir>/skills`.
+ * `cline` is rules-based and has no global skills directory.
+ */
+export declare function resolveGlobalSkillsBase(runtime: Runtime): string | null;
+/**
+ * Render a human-readable runtime-global skills base path.
+ * Uses `~` when the path lives under the current home dir.
+ * Returns a displayable string for unsupported runtimes (never null).
+ */
+export declare function renderGlobalSkillsBaseDisplayPath(runtime: Runtime): string;
+/** Resolve one runtime-global skill directory, or `null` when unsupported. */
+export declare function resolveGlobalSkillDir(runtime: Runtime, skillName: string): string | null;
+/** Resolve the canonical SKILL.md path for one runtime-global skill. */
+export declare function resolveGlobalSkillMarkdownPath(runtime: Runtime, skillName: string): string | null;
+/**
+ * Render a human-readable global skill path for warnings.
+ * Uses `~` when the path lives under the current home dir.
+ */
+export declare function renderGlobalSkillDisplayPath(runtime: Runtime, skillName: string): string;
 /** Paths to common .planning files. */
-export interface PlanningPaths {
-    planning: string;
-    state: string;
-    roadmap: string;
-    project: string;
-    config: string;
-    phases: string;
-    requirements: string;
-}
+export type { PlanningPaths } from './workspace.js';
 /**
  * Escape regex special characters in a string.
  *
@@ -114,16 +127,6 @@ export declare function phaseTokenMatches(dirName: string, normalized: string): 
  */
 export declare function toPosixPath(p: string): string;
 /**
- * Extract a field value from STATE.md content.
- *
- * Supports both **bold:** and plain: formats, case-insensitive.
- *
- * @param content - STATE.md content string
- * @param fieldName - Field name to extract
- * @returns The field value, or null if not found
- */
-export declare function stateExtractField(content: string, fieldName: string): string | null;
-/**
  * Normalize markdown content for consistent formatting.
  *
  * Port of `normalizeMd` from core.cjs lines 434-529.
@@ -142,7 +145,7 @@ export declare function normalizeMd(content: string): string;
  * All paths returned in POSIX format.
  *
  * @param projectDir - Root project directory
- * @param workstream - Optional workstream name (see relPlanningPath)
+ * @param workstream - Optional workstream name
  * @returns Object with paths to common .planning files
  */
 export declare function planningPaths(projectDir: string, workstream?: string): PlanningPaths;

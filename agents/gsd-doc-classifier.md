@@ -110,7 +110,7 @@ Regardless of type, extract:
 </step>
 
 <step name="write_output">
-Write to `{OUTPUT_DIR}/{slug}.json` where `slug` is the filename without extension (replace non-alphanumerics with `-`).
+Write to `{OUTPUT_DIR}/{slug}-{source_hash}.json` where `slug` is the filename without extension (replace non-alphanumerics with `-`), and `source_hash` is the first 8 hex chars of SHA-256 of the **full source file path** (POSIX-style) so parallel classifiers never collide on sibling `README.md` files.
 
 JSON schema:
 

@@ -17,8 +17,8 @@ These files live directly at `.planning/` — not inside phase subdirectories.
 | `STATE.md` | `state.md` | `/gsd:new-project`, `/gsd:health --repair` | Current session state, active phase, last activity |
 | `REQUIREMENTS.md` | `requirements.md` | `/gsd:new-milestone` | Functional requirements with traceability |
 | `MILESTONES.md` | `milestone.md` | `/gsd:complete-milestone` | Log of completed milestones with accomplishments |
-| `BACKLOG.md` | *(inline)* | `/gsd:add-backlog` | Pending ideas and deferred work |
-| `LEARNINGS.md` | *(inline)* | `/gsd-extract-learnings`, `/gsd:execute-phase` | Phase retrospective learnings for future plans |
+| `BACKLOG.md` | *(inline)* | `/gsd-add-backlog` | Pending ideas and deferred work |
+| `LEARNINGS.md` | *(inline)* | `/gsd:extract-learnings`, `/gsd:execute-phase` | Phase retrospective learnings for future plans |
 | `THREADS.md` | *(inline)* | `/gsd:thread` | Persistent discussion threads |
 | `config.json` | `config.json` | `/gsd:new-project`, `/gsd:health --repair` | Project-specific GSD configuration |
 | `CLAUDE.md` | `claude-md.md` | `/gsd-profile` | Auto-assembled Claude Code context file |

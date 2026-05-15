@@ -38,9 +38,12 @@ export declare function extractFrontmatterLeading(content: string): Record<strin
  * - Nested objects via indentation
  * - Inline arrays: key: [a, b, c]
  * - Dash arrays with auto-conversion from empty objects
- * - Multiple stacked blocks (uses the LAST match)
  * - CRLF line endings
  * - Quoted value stripping
+ *
+ * Anchored at the start of the file — only the leading `---...---` block is
+ * considered canonical frontmatter. Body `---` separators and embedded YAML
+ * examples inside fenced code blocks are never picked up.
  *
  * @param content - File content potentially containing frontmatter
  * @returns Parsed frontmatter as a record, or empty object if none found

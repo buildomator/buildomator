@@ -30,7 +30,6 @@ import {
   phaseTokenMatches,
   toPosixPath,
   planningPaths,
-  stateExtractField,
 } from './helpers.js';
 import { extractFrontmatter } from './frontmatter.js';
 import { extractCurrentMilestone } from './roadmap.js';
@@ -41,144 +40,33 @@ import {
   releaseStateLock,
   stateReplaceField,
 } from './state-mutation.js';
+import { stateExtractField, stateReplaceFieldWithFallback } from './state-document.js';
 import type { QueryHandler } from './utils.js';
+import {
+  assertNoNullBytes,
+  assertSafePhaseDirName,
+  assertSafeProjectCode,
+  buildPhaseRoadmapEntry,
+  collectDecimalSuffixesFromDirNames,
+  collectDecimalSuffixesFromRoadmap,
+  computeNextDecimalPhase,
+  computeNextSequentialPhaseId,
+  computePhaseDirectory,
+  extractOneLinerFromBody,
+  generatePhaseSlug,
+  parseMultiwordArg,
+} from './phase-lifecycle-policy.js';
+import {
+  archiveDirectories,
+  ensureDirectoryWithGitkeep,
+  listDirectories,
+} from './phase-filesystem-adapter.js';
+import {
+  readModifyWriteRoadmapMd,
+  replaceInCurrentMilestone,
+} from './phase-roadmap-mutation.js';
 
-// ─── Null byte validation ────────────────────────────────────────────────
-
-/** Reject strings containing null bytes (path traversal defense). */
-function assertNoNullBytes(value: string, label: string): void {
-  if (value.includes('\0')) {
-    throw new GSDError(`${label} contains null byte`, ErrorClassification.Validation);
-  }
-}
-
-/** Reject `..` or path separators in phase directory names. */
-function assertSafePhaseDirName(dirName: string, label = 'phase directory'): void {
-  if (/[/\\]|\.\./.test(dirName)) {
-    throw new GSDError(`${label} contains invalid path segments`, ErrorClassification.Validation);
-  }
-}
-
-function assertSafeProjectCode(code: string): void {
-  if (code && /[/\\]|\.\./.test(code)) {
-    throw new GSDError('project_code contains invalid characters', ErrorClassification.Validation);
-  }
-}
-
-// ─── Slug generation (inline) ────────────────────────────────────────────
-
-/** Generate kebab-case slug from description. Port of generateSlugInternal. */
-function generateSlugInternal(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .substring(0, 60);
-}
-
-// ─── replaceInCurrentMilestone ──────────────────────────────────────────
-
-/**
- * Replace a pattern only in the current milestone section of ROADMAP.md.
- *
- * Port of replaceInCurrentMilestone from core.cjs line 1197-1206.
- * If no `</details>` blocks exist, replaces in the entire content.
- * Otherwise, only replaces in content after the last `</details>` close tag.
- *
- * Edge case: when the active milestone is itself wrapped in a `<details>` block
- * (e.g. collapsed before it is fully shipped), the last `</details>` belongs to
- * the active milestone and the `after` slice is empty. In that case the function
- * falls back to searching the full content with all complete `<details>` blocks
- * stripped, so archived milestones are never touched.
- *
- * @param content - Full ROADMAP.md content
- * @param pattern - Regex or string pattern to match
- * @param replacement - Replacement string
- * @returns Modified content
- */
-export function replaceInCurrentMilestone(
-  content: string,
-  pattern: string | RegExp,
-  replacement: string,
-): string {
-  const lastDetailsClose = content.lastIndexOf('</details>');
-  if (lastDetailsClose === -1) {
-    return content.replace(pattern, replacement);
-  }
-  const offset = lastDetailsClose + '</details>'.length;
-  const before = content.slice(0, offset);
-  const after = content.slice(offset);
-
-  // Fast path: the current milestone is not inside a <details> block — the
-  // pattern lives in the plain text after the last </details>.
-  const replacedAfter = after.replace(pattern, replacement);
-  if (replacedAfter !== after) {
-    return before + replacedAfter;
-  }
-
-  // Slow path: the active milestone is inside the last <details> block.
-  // Strip every complete <details>…</details> block except the last one, then
-  // apply the replacement inside that last block while leaving the stripped
-  // (archived) blocks untouched.
-  //
-  // Strategy:
-  //   1. Collect all complete <details>…</details> spans.
-  //   2. Replace only inside the LAST span; leave earlier spans unchanged.
-  const detailsBlockRe = /<details>[\s\S]*?<\/details>/gi;
-  const spans: { start: number; end: number; text: string }[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = detailsBlockRe.exec(content)) !== null) {
-    spans.push({ start: m.index, end: m.index + m[0].length, text: m[0] });
-  }
-
-  if (spans.length === 0) {
-    // No complete blocks found — fall back to full-content replace.
-    return content.replace(pattern, replacement);
-  }
-
-  const lastSpan = spans[spans.length - 1];
-  const updatedLastBlock = lastSpan.text.replace(pattern, replacement);
-  return (
-    content.slice(0, lastSpan.start) +
-    updatedLastBlock +
-    content.slice(lastSpan.end)
-  );
-}
-
-// ─── readModifyWriteRoadmapMd ───────────────────────────────────────────
-
-/**
- * Atomic read-modify-write for ROADMAP.md.
- *
- * Holds a lockfile across the entire read -> transform -> write cycle.
- * Uses the same acquireStateLock/releaseStateLock mechanism as STATE.md
- * but with a ROADMAP.md-specific lock path.
- *
- * @param projectDir - Project root directory
- * @param modifier - Function to transform ROADMAP.md content
- * @returns The final written content
- */
-export async function readModifyWriteRoadmapMd(
-  projectDir: string,
-  modifier: (content: string) => string | Promise<string>,
-  workstream?: string,
-): Promise<string> {
-  const roadmapPath = planningPaths(projectDir, workstream).roadmap;
-  const lockPath = await acquireStateLock(roadmapPath);
-  try {
-    let content: string;
-    try {
-      content = await readFile(roadmapPath, 'utf-8');
-    } catch {
-      content = '';
-    }
-    const modified = await modifier(content);
-    await writeFile(roadmapPath, modified, 'utf-8');
-    return modified;
-  } finally {
-    await releaseStateLock(lockPath);
-  }
-}
+export { readModifyWriteRoadmapMd, replaceInCurrentMilestone };
 
 // ─── phaseAdd handler ───────────────────────────────────────────────────
 
@@ -189,12 +77,36 @@ export async function readModifyWriteRoadmapMd(
  * Creates a new phase directory with .gitkeep, appends a phase section
  * to ROADMAP.md before the last "---" separator.
  *
- * @param args - args[0]: description (required), args[1]: customId (optional)
+ * @param args - description (required), optional customId, optional --dry-run flag.
+ *   Recognized flags: --dry-run (compute result without writing to disk).
+ *   Any other --flag argument is rejected with a validation error.
  * @param projectDir - Project root directory
  * @returns QueryResult with { phase_number, padded, name, slug, directory, naming_mode }
+ *   In --dry-run mode also includes { dry_run: true, roadmap_entry: string }
  */
 export const phaseAdd: QueryHandler = async (args, projectDir, workstream) => {
-  const description = args[0];
+  // ── Flag parsing ────────────────────────────────────────────────────────
+  // Separate recognized flags from positional args. Any unrecognized --flag
+  // is rejected immediately so it is never silently absorbed into positional slots.
+  const RECOGNIZED_FLAGS = new Set(['--dry-run']);
+  let dryRun = false;
+  const positional: string[] = [];
+
+  for (const arg of args) {
+    if (arg.startsWith('--')) {
+      if (!RECOGNIZED_FLAGS.has(arg)) {
+        throw new GSDError(
+          `Unknown flag ${arg} for phase.add`,
+          ErrorClassification.Validation,
+        );
+      }
+      if (arg === '--dry-run') dryRun = true;
+    } else {
+      positional.push(arg);
+    }
+  }
+
+  const description = positional[0];
   if (!description) {
     throw new GSDError('description required for phase add', ErrorClassification.Validation);
   }
@@ -206,96 +118,86 @@ export const phaseAdd: QueryHandler = async (args, projectDir, workstream) => {
     config = JSON.parse(await readFile(configPath, 'utf-8'));
   } catch { /* use defaults */ }
 
-  const slug = generateSlugInternal(description);
-  const customId = args[1] || null;
+  const slug = generatePhaseSlug(description);
+  // positional[1] is the optional customId — flags are already stripped
+  const customId = positional[1] || null;
 
   // Optional project code prefix (e.g., 'CK' -> 'CK-01-foundation')
   const projectCode = (config.project_code as string) || '';
   assertSafeProjectCode(projectCode);
   const prefix = projectCode ? `${projectCode}-` : '';
 
+  // ── Helper: compute newPhaseId / dirName / computedPhaseEntry from raw ROADMAP content ──
+  // Extracted as a local async function so it can be called both inside the
+  // roadmap lock (non-dry-run) and outside (dry-run, where no write occurs and
+  // there is no race condition to guard against).
+  const computePhaseFields = async (rawRoadmapContent: string) => {
+    const milestoneContent = await extractCurrentMilestone(rawRoadmapContent, projectDir);
+    const phasesDir = planningPaths(projectDir, workstream).phases;
+    const dirNames = await listDirectories(phasesDir);
+
+    const nextSequentialPhaseId = computeNextSequentialPhaseId(milestoneContent, dirNames);
+    const { phaseId: resolvedPhaseId, dirName: resolvedDirName } = computePhaseDirectory(
+      config.phase_naming,
+      slug,
+      prefix,
+      nextSequentialPhaseId,
+      customId || undefined,
+    );
+
+    if (!resolvedDirName) {
+      throw new GSDError('Phase directory name was not computed', ErrorClassification.Execution);
+    }
+    if (resolvedPhaseId === '') {
+      throw new GSDError('Phase ID was not computed', ErrorClassification.Execution);
+    }
+
+    const resolvedEntry = buildPhaseRoadmapEntry(resolvedPhaseId, description, config.phase_naming);
+
+    return { resolvedPhaseId, resolvedDirName, resolvedEntry };
+  };
+
   let newPhaseId: number | string = '';
   let dirName = '';
+  let computedPhaseEntry = '';
 
-  await readModifyWriteRoadmapMd(projectDir, async (rawContent) => {
-    const content = await extractCurrentMilestone(rawContent, projectDir);
+  if (dryRun) {
+    // Dry-run: no write, no race condition — compute outside the lock.
+    const roadmapPath = planningPaths(projectDir, workstream).roadmap;
+    let rawRoadmapContent = '';
+    try {
+      rawRoadmapContent = await readFile(roadmapPath, 'utf-8');
+    } catch { /* ROADMAP.md may not exist yet */ }
 
-    if (customId || config.phase_naming === 'custom') {
-      // Custom phase naming
-      newPhaseId = customId || slug.toUpperCase().replace(/-/g, '_');
-      if (!newPhaseId) {
-        throw new GSDError('--id required when phase_naming is "custom"', ErrorClassification.Validation);
+    const { resolvedPhaseId, resolvedDirName, resolvedEntry } = await computePhaseFields(rawRoadmapContent);
+    newPhaseId = resolvedPhaseId;
+    dirName = resolvedDirName;
+    computedPhaseEntry = resolvedEntry;
+  } else {
+    // Real write path: hold the roadmap lock across the entire read → compute → write
+    // cycle so that two concurrent phase.add calls cannot both observe the same
+    // maxPhase and produce duplicate phase IDs.
+    await readModifyWriteRoadmapMd(projectDir, async (roadmapRaw) => {
+      const { resolvedPhaseId, resolvedDirName, resolvedEntry } = await computePhaseFields(roadmapRaw);
+      newPhaseId = resolvedPhaseId;
+      dirName = resolvedDirName;
+      computedPhaseEntry = resolvedEntry;
+
+      const dirPath = join(planningPaths(projectDir, workstream).phases, dirName);
+
+      // Create directory with .gitkeep so git tracks empty folders
+      await ensureDirectoryWithGitkeep(dirPath);
+
+      // Find insertion point: before last "---" or at end
+      const lastSeparator = roadmapRaw.lastIndexOf('\n---');
+      if (lastSeparator > 0) {
+        return roadmapRaw.slice(0, lastSeparator) + computedPhaseEntry + roadmapRaw.slice(lastSeparator);
       }
-      assertSafePhaseDirName(String(newPhaseId), 'custom phase id');
-      dirName = `${prefix}${newPhaseId}-${slug}`;
-    } else {
-      // Sequential mode: find highest integer phase number (in current milestone only)
-      // Skip 999.x backlog phases — they live outside the active sequence
-      // Matches heading (## Phase N:), bullet checklist (- [x] Phase N:), and bold (**Phase N:**)
-      const phasePattern = /(?:^|\n)\s*(?:[-*]\s*(?:\[[x ]\]\s*)?|#{2,4}\s*|\*{1,2}\s*)Phase\s+(\d+)[A-Z]?(?:\.\d+)*:/gi;
-      let maxPhase = 0;
-      let m: RegExpExecArray | null;
-      while ((m = phasePattern.exec(content)) !== null) {
-        const num = parseInt(m[1], 10);
-        if (num >= 999) continue; // backlog phases use 999.x numbering
-        if (num > maxPhase) maxPhase = num;
-      }
-
-      // Belt-and-suspenders: if ROADMAP scan found nothing, fall back to scanning
-      // .planning/phases/ directory names as the canonical source of truth
-      if (maxPhase === 0) {
-        const phasesDir = planningPaths(projectDir, workstream).phases;
-        try {
-          const entries = await readdir(phasesDir, { withFileTypes: true });
-          for (const entry of entries) {
-            if (!entry.isDirectory()) continue;
-            const dirMatch = /^(?:[A-Z][A-Z0-9]*-)?(\d+)[A-Z]?(?:\.\d+)*-/i.exec(entry.name);
-            if (dirMatch) {
-              const num = parseInt(dirMatch[1], 10);
-              if (num >= 999) continue;
-              if (num > maxPhase) maxPhase = num;
-            }
-          }
-        } catch {
-          // phases dir may not exist yet — leave maxPhase as 0
-        }
-      }
-
-      newPhaseId = maxPhase + 1;
-      const paddedNum = String(newPhaseId).padStart(2, '0');
-      dirName = `${prefix}${paddedNum}-${slug}`;
-    }
-
-    assertSafePhaseDirName(dirName);
-
-    const dirPath = join(planningPaths(projectDir, workstream).phases, dirName);
-
-    // Create directory with .gitkeep so git tracks empty folders
-    await mkdir(dirPath, { recursive: true });
-    await writeFile(join(dirPath, '.gitkeep'), '', 'utf-8');
-
-    // Build phase entry
-    const dependsOn = config.phase_naming === 'custom'
-      ? ''
-      : `\n**Depends on:** Phase ${typeof newPhaseId === 'number' ? newPhaseId - 1 : 'TBD'}`;
-    const phaseEntry = `\n### Phase ${newPhaseId}: ${description}\n\n**Goal:** [To be planned]\n**Requirements**: TBD${dependsOn}\n**Plans:** 0 plans\n\nPlans:\n- [ ] TBD (run /gsd-plan-phase ${newPhaseId} to break down)\n`;
-
-    // Find insertion point: before last "---" or at end
-    const lastSeparator = rawContent.lastIndexOf('\n---');
-    if (lastSeparator > 0) {
-      return rawContent.slice(0, lastSeparator) + phaseEntry + rawContent.slice(lastSeparator);
-    }
-    return rawContent + phaseEntry;
-  }, workstream);
-
-  if (!dirName) {
-    throw new GSDError('Phase directory name was not computed', ErrorClassification.Execution);
-  }
-  if (newPhaseId === '') {
-    throw new GSDError('Phase ID was not computed', ErrorClassification.Execution);
+      return roadmapRaw + computedPhaseEntry;
+    }, workstream);
   }
 
-  const result = {
+  const result: Record<string, unknown> = {
     phase_number: typeof newPhaseId === 'number' ? newPhaseId : String(newPhaseId),
     padded: typeof newPhaseId === 'number' ? String(newPhaseId).padStart(2, '0') : String(newPhaseId),
     name: description,
@@ -303,6 +205,11 @@ export const phaseAdd: QueryHandler = async (args, projectDir, workstream) => {
     directory: toPosixPath(relative(projectDir, join(planningPaths(projectDir, workstream).phases, dirName))),
     naming_mode: config.phase_naming || 'sequential',
   };
+
+  if (dryRun) {
+    result.dry_run = true;
+    result.roadmap_entry = computedPhaseEntry;
+  }
 
   return { data: result };
 };
@@ -375,31 +282,13 @@ export const phaseAddBatch: QueryHandler = async (args, projectDir, workstream) 
     let maxPhase = 0;
 
     if (config.phase_naming !== 'custom') {
-      const phasePattern = /#{2,4}\s*Phase\s+(\d+)[A-Z]?(?:\.\d+)*:/gi;
-      let m: RegExpExecArray | null;
-      while ((m = phasePattern.exec(content)) !== null) {
-        const num = parseInt(m[1], 10);
-        if (num >= 999) continue;
-        if (num > maxPhase) maxPhase = num;
-      }
-
       const phasesOnDisk = planningPaths(projectDir, workstream).phases;
-      if (existsSync(phasesOnDisk)) {
-        const entries = await readdir(phasesOnDisk, { withFileTypes: true });
-        const dirNumPattern = /^(?:[A-Z][A-Z0-9]*-)?(\d+)-/;
-        for (const entry of entries) {
-          if (!entry.isDirectory()) continue;
-          const match = entry.name.match(dirNumPattern);
-          if (!match) continue;
-          const num = parseInt(match[1], 10);
-          if (num >= 999) continue;
-          if (num > maxPhase) maxPhase = num;
-        }
-      }
+      const dirNames = await listDirectories(phasesOnDisk);
+      maxPhase = computeNextSequentialPhaseId(content, dirNames) - 1;
     }
 
     for (const description of descriptions) {
-      const slug = generateSlugInternal(description);
+      const slug = generatePhaseSlug(description);
       let newPhaseId: number | string;
       let dirName: string;
 
@@ -415,14 +304,10 @@ export const phaseAddBatch: QueryHandler = async (args, projectDir, workstream) 
 
       assertSafePhaseDirName(dirName);
       const dirPath = join(planningPaths(projectDir, workstream).phases, dirName);
-      await mkdir(dirPath, { recursive: true });
-      await writeFile(join(dirPath, '.gitkeep'), '', 'utf-8');
+      await ensureDirectoryWithGitkeep(dirPath);
 
-      const dependsOn =
-        config.phase_naming === 'custom'
-          ? ''
-          : `\n**Depends on:** Phase ${typeof newPhaseId === 'number' ? newPhaseId - 1 : 'TBD'}`;
-      const phaseEntry = `\n### Phase ${newPhaseId}: ${description}\n\n**Goal:** [To be planned]\n**Requirements**: TBD${dependsOn}\n**Plans:** 0 plans\n\nPlans:\n- [ ] TBD (run /gsd-plan-phase ${newPhaseId} to break down)\n`;
+      const phaseEntry =
+        buildPhaseRoadmapEntry(newPhaseId, description, config.phase_naming);
 
       const lastSeparator = rawContent.lastIndexOf('\n---');
       rawContent =
@@ -469,7 +354,7 @@ export const phaseInsert: QueryHandler = async (args, projectDir, workstream) =>
   assertNoNullBytes(afterPhase, 'afterPhase');
   assertNoNullBytes(description, 'description');
 
-  const slug = generateSlugInternal(description);
+  const slug = generatePhaseSlug(description);
   let decimalPhase = '';
   let dirName = '';
 
@@ -491,26 +376,17 @@ export const phaseInsert: QueryHandler = async (args, projectDir, workstream) =>
     const decimalSet = new Set<number>();
 
     try {
-      const entries = await readdir(phasesDir, { withFileTypes: true });
-      const dirs = entries.filter(e => e.isDirectory()).map(e => e.name);
-      const decimalPattern = new RegExp(`^(?:[A-Z]{1,6}-)?${escapeRegex(normalizedBase)}\\.(\\d+)`);
-      for (const dir of dirs) {
-        const dm = dir.match(decimalPattern);
-        if (dm) decimalSet.add(parseInt(dm[1], 10));
+      const dirs = await listDirectories(phasesDir);
+      for (const suffix of collectDecimalSuffixesFromDirNames(normalizedBase, dirs)) {
+        decimalSet.add(suffix);
       }
     } catch { /* intentionally empty */ }
 
     // Also scan ROADMAP.md content for decimal entries
-    const rmPhasePattern = new RegExp(
-      `#{2,4}\\s*Phase\\s+0*${escapeRegex(normalizedBase)}\\.(\\d+)\\s*:`, 'gi'
-    );
-    let rmMatch: RegExpExecArray | null;
-    while ((rmMatch = rmPhasePattern.exec(rawContent)) !== null) {
-      decimalSet.add(parseInt(rmMatch[1], 10));
+    for (const suffix of collectDecimalSuffixesFromRoadmap(normalizedBase, rawContent)) {
+      decimalSet.add(suffix);
     }
-
-    const nextDecimal = decimalSet.size === 0 ? 1 : Math.max(...decimalSet) + 1;
-    decimalPhase = `${normalizedBase}.${nextDecimal}`;
+    decimalPhase = computeNextDecimalPhase(normalizedBase, decimalSet).next;
 
     // Optional project code prefix
     let insertConfig: Record<string, unknown> = {};
@@ -525,8 +401,7 @@ export const phaseInsert: QueryHandler = async (args, projectDir, workstream) =>
     const dirPath = join(phasesDir, dirName);
 
     // Create directory with .gitkeep
-    await mkdir(dirPath, { recursive: true });
-    await writeFile(join(dirPath, '.gitkeep'), '', 'utf-8');
+    await ensureDirectoryWithGitkeep(dirPath);
 
     // Build phase entry
     const phaseEntry = `\n### Phase ${decimalPhase}: ${description} (INSERTED)\n\n**Goal:** [Urgent work - to be planned]\n**Requirements**: TBD\n**Depends on:** Phase ${afterPhase}\n**Plans:** 0 plans\n\nPlans:\n- [ ] TBD (run /gsd-plan-phase ${decimalPhase} to break down)\n`;
@@ -584,25 +459,19 @@ async function findPhaseDir(
 ): Promise<{ dirPath: string; dirName: string; phaseName: string | null } | null> {
   const phasesDir = planningPaths(projectDir, workstream).phases;
   const normalized = normalizePhaseName(phase);
+  const dirs = await listDirectories(phasesDir);
+  const match = dirs.find((d) => phaseTokenMatches(d, normalized));
+  if (!match) return null;
 
-  try {
-    const entries = await readdir(phasesDir, { withFileTypes: true });
-    const dirs = entries.filter(e => e.isDirectory()).map(e => e.name);
-    const match = dirs.find(d => phaseTokenMatches(d, normalized));
-    if (!match) return null;
+  // Extract phase name from directory
+  const dirMatch = match.match(/^(?:[A-Z]{1,6}-)?\d+[A-Z]?(?:\.\d+)*-(.+)/i);
+  const phaseName = dirMatch ? dirMatch[1] : null;
 
-    // Extract phase name from directory
-    const dirMatch = match.match(/^(?:[A-Z]{1,6}-)?\d+[A-Z]?(?:\.\d+)*-(.+)/i);
-    const phaseName = dirMatch ? dirMatch[1] : null;
-
-    return {
-      dirPath: join(phasesDir, match),
-      dirName: match,
-      phaseName,
-    };
-  } catch {
-    return null;
-  }
+  return {
+    dirPath: join(phasesDir, match),
+    dirName: match,
+    phaseName,
+  };
 }
 
 /**
@@ -669,14 +538,21 @@ export const phaseScaffold: QueryHandler = async (args, projectDir, workstream) 
     if (!phase || !name) {
       throw new GSDError('phase and name required for phase-dir scaffold', ErrorClassification.Validation);
     }
-    const slug = generateSlugInternal(name);
-    const dirNameNew = `${padded}-${slug}`;
+    const slug = generatePhaseSlug(name);
+    // #3287: apply project_code prefix to stay consistent with phase.add/phase.insert
+    let scaffoldConfig: Record<string, unknown> = {};
+    try {
+      scaffoldConfig = JSON.parse(await readFile(planningPaths(projectDir, workstream).config, 'utf-8'));
+    } catch { /* use defaults */ }
+    const scaffoldProjectCode = (scaffoldConfig.project_code as string) || '';
+    assertSafeProjectCode(scaffoldProjectCode);
+    const scaffoldPrefix = scaffoldProjectCode ? `${scaffoldProjectCode}-` : '';
+    const dirNameNew = `${scaffoldPrefix}${padded}-${slug}`;
     assertSafePhaseDirName(dirNameNew, 'scaffold phase directory');
     const phasesParent = planningPaths(projectDir, workstream).phases;
     await mkdir(phasesParent, { recursive: true });
     const dirPath = join(phasesParent, dirNameNew);
-    await mkdir(dirPath, { recursive: true });
-    await writeFile(join(dirPath, '.gitkeep'), '', 'utf-8');
+    await ensureDirectoryWithGitkeep(dirPath);
     return {
       data: {
         created: true,
@@ -966,7 +842,24 @@ async function updateRoadmapAfterPhaseRemoval(
  * @returns QueryResult with { removed, directory_deleted, renamed_directories, renamed_files, roadmap_updated, state_updated }
  */
 export const phaseRemove: QueryHandler = async (args, projectDir, workstream) => {
-  const targetPhase = args[0];
+  let force = false;
+  const positional: string[] = [];
+  for (const token of args) {
+    if (token === '--force') {
+      force = true;
+      continue;
+    }
+    if (token.startsWith('--')) {
+      throw new GSDError(`phase remove does not support ${token}`, ErrorClassification.Validation);
+    }
+    positional.push(token);
+  }
+
+  if (positional.length > 1) {
+    throw new GSDError('phase remove accepts exactly one phase number', ErrorClassification.Validation);
+  }
+
+  const targetPhase = positional[0];
   if (!targetPhase) {
     throw new GSDError('phase number required for phase remove', ErrorClassification.Validation);
   }
@@ -981,15 +874,17 @@ export const phaseRemove: QueryHandler = async (args, projectDir, workstream) =>
 
   const normalized = normalizePhaseName(targetPhase);
   const isDecimal = targetPhase.includes('.');
-  const force = args[1] === '--force';
 
   // Find target directory
   const entries = await readdir(phasesDir, { withFileTypes: true });
   const dirs = entries.filter(e => e.isDirectory()).map(e => e.name);
   const targetDir = dirs.find(d => phaseTokenMatches(d, normalized)) ?? null;
+  if (!targetDir) {
+    throw new GSDError(`Phase ${targetPhase} not found`, ErrorClassification.Validation);
+  }
 
   // Guard against removing executed work
-  if (targetDir && !force) {
+  if (!force) {
     const files = await readdir(join(phasesDir, targetDir));
     const summaries = files.filter(f => f.endsWith('-SUMMARY.md') || f === 'SUMMARY.md');
     if (summaries.length > 0) {
@@ -1001,9 +896,7 @@ export const phaseRemove: QueryHandler = async (args, projectDir, workstream) =>
   }
 
   // Delete directory
-  if (targetDir) {
-    await rm(join(phasesDir, targetDir), { recursive: true, force: true });
-  }
+  await rm(join(phasesDir, targetDir), { recursive: true, force: true });
 
   // Renumber subsequent phases on disk
   let renamedDirs: Array<{ from: string; to: string }> = [];
@@ -1082,29 +975,6 @@ export const phaseRemove: QueryHandler = async (args, projectDir, workstream) =>
     },
   };
 };
-
-// ─── stateReplaceFieldWithFallback (inline) ────────────────────────────────
-
-/**
- * Replace a field with fallback field name support.
- *
- * Tries primary first, then fallback. Returns content unchanged if neither matches.
- * Reimplemented here because state-mutation.ts keeps it module-private.
- */
-function stateReplaceFieldWithFallback(
-  content: string,
-  primary: string,
-  fallback: string | null,
-  value: string,
-): string {
-  let result = stateReplaceField(content, primary, value);
-  if (result) return result;
-  if (fallback) {
-    result = stateReplaceField(content, fallback, value);
-    if (result) return result;
-  }
-  return content;
-}
 
 // ─── updatePerformanceMetricsSection ───────────────────────────────────────
 
@@ -1425,28 +1295,127 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
       // Update Performance Metrics section (operates on body only)
       body = updatePerformanceMetricsSection(body, phaseNum, planCount, summaryCount);
 
-      // Update frontmatter fields separately
-      // Increment completed_phases
-      const completedFmMatch = frontmatter.match(/completed_phases:\s*(\d+)/);
-      if (completedFmMatch) {
-        const newCompleted = parseInt(completedFmMatch[1], 10) + 1;
+      // ── Root cause 1 fix: derive completed_phases from ROADMAP, not blind increment ──
+      // Read the freshly-updated ROADMAP (after Step C) to count Complete rows.
+      // This makes phase.complete idempotent: running it twice on the same phase
+      // produces the same completed_phases value.
+      let derivedCompletedPhases: number | null = null;
+      let derivedTotalPhases: number | null = null;
+      let derivedTotalPlans: number | null = null;
+      if (existsSync(paths.roadmap)) {
+        try {
+          const freshRoadmap = await readFile(paths.roadmap, 'utf-8');
+          // Count Complete rows in the progress table (Status column = "Complete")
+          const tableCompletePattern = /\|\s*\d+[A-Z]?\S*\s*\|[^|]*\|\s*Complete\s*\|/gi;
+          const completeMatches = freshRoadmap.match(tableCompletePattern);
+          derivedCompletedPhases = completeMatches ? completeMatches.length : null;
+
+          // Count total phase rows in progress table (header + separator + data rows)
+          // Identify the progress table by looking for Phase|Plans|Status|Completed header
+          const progressTableMatch = freshRoadmap.match(
+            /\|\s*Phase\s*\|\s*Plans\s*\|\s*Status\s*\|\s*Completed\s*\|(.*\n)*?(?:\n|$)/i,
+          );
+          if (progressTableMatch) {
+            const tableText = progressTableMatch[0];
+            const dataRowPattern = /^\|\s*\d+[A-Z]?\S*\s*\|/gm;
+            const dataRows = tableText.match(dataRowPattern);
+            derivedTotalPhases = dataRows ? dataRows.length : null;
+          }
+
+          // Sum plan counts from M/N or 0/N columns in the progress table
+          let totalPlansSum = 0;
+          const planCellPattern = /\|\s*\d+[A-Z]?\S*\s*\|\s*(\d+)\/(\d+)\s*\|/gi;
+          let pm: RegExpExecArray | null;
+          while ((pm = planCellPattern.exec(freshRoadmap)) !== null) {
+            totalPlansSum += parseInt(pm[2], 10);
+          }
+          if (totalPlansSum > 0) derivedTotalPlans = totalPlansSum;
+        } catch { /* intentionally empty — fall through to existing values */ }
+      }
+
+      // Count completed plans from all SUMMARY files across phase dirs
+      let derivedCompletedPlans: number | null = null;
+      try {
+        const phaseEntries = await readdir(paths.phases, { withFileTypes: true });
+        let summaryTotal = 0;
+        for (const entry of phaseEntries) {
+          if (!entry.isDirectory()) continue;
+          try {
+            const files = await readdir(join(paths.phases, entry.name));
+            summaryTotal += files.filter(f => f.endsWith('-SUMMARY.md') || f === 'SUMMARY.md').length;
+          } catch { /* intentionally empty */ }
+        }
+        derivedCompletedPlans = summaryTotal;
+      } catch { /* intentionally empty */ }
+
+      // ── Root cause 2 fix: update all stale frontmatter fields ──
+
+      // completed_phases — derived from ROADMAP (idempotent)
+      if (derivedCompletedPhases !== null && frontmatter.includes('completed_phases:')) {
         frontmatter = frontmatter.replace(
           /completed_phases:\s*\d+/,
-          `completed_phases: ${newCompleted}`,
+          `completed_phases: ${derivedCompletedPhases}`,
         );
+      }
 
-        // Recalculate percent
-        const totalFmMatch = frontmatter.match(/total_phases:\s*(\d+)/);
-        if (totalFmMatch) {
-          const totalPhases = parseInt(totalFmMatch[1], 10);
-          if (totalPhases > 0) {
-            const newPercent = Math.round((newCompleted / totalPhases) * 100);
-            frontmatter = frontmatter.replace(
-              /(percent:\s*)\d+/,
-              `$1${newPercent}`,
-            );
-          }
-        }
+      // total_phases — keep in sync with ROADMAP
+      if (derivedTotalPhases !== null && frontmatter.includes('total_phases:')) {
+        frontmatter = frontmatter.replace(
+          /total_phases:\s*\d+/,
+          `total_phases: ${derivedTotalPhases}`,
+        );
+      }
+
+      // total_plans — derived from ROADMAP plan column sums
+      if (derivedTotalPlans !== null && frontmatter.includes('total_plans:')) {
+        frontmatter = frontmatter.replace(
+          /total_plans:\s*\d+/,
+          `total_plans: ${derivedTotalPlans}`,
+        );
+      }
+
+      // completed_plans — count of SUMMARY files on disk
+      if (derivedCompletedPlans !== null && frontmatter.includes('completed_plans:')) {
+        frontmatter = frontmatter.replace(
+          /completed_plans:\s*\d+/,
+          `completed_plans: ${derivedCompletedPlans}`,
+        );
+      }
+
+      // percent — recompute from fresh derived values
+      const effectiveCompleted = derivedCompletedPhases ?? parseInt(frontmatter.match(/completed_phases:\s*(\d+)/)?.[1] ?? '0', 10);
+      const effectiveTotal = derivedTotalPhases ?? parseInt(frontmatter.match(/total_phases:\s*(\d+)/)?.[1] ?? '0', 10);
+      if (effectiveTotal > 0 && frontmatter.includes('percent:')) {
+        const newPercent = Math.round((effectiveCompleted / effectiveTotal) * 100);
+        frontmatter = frontmatter.replace(/(percent:\s*)\d+/, `$1${newPercent}`);
+      }
+
+      // last_updated — refresh to current timestamp
+      const nowIso = new Date().toISOString();
+      if (frontmatter.includes('last_updated:')) {
+        frontmatter = frontmatter.replace(/last_updated:\s*\S+/, `last_updated: ${nowIso}`);
+      }
+
+      // stopped_at — set to phase completion message
+      const stoppedAtValue = isLastPhase
+        ? `Milestone complete (Phase ${phaseNum} was final phase)`
+        : `Phase ${phaseNum} complete (${summaryCount}/${planCount}) — ready to discuss Phase ${nextPhaseNum}`;
+      if (frontmatter.includes('stopped_at:')) {
+        frontmatter = frontmatter.replace(/stopped_at:\s*.+/, `stopped_at: ${stoppedAtValue}`);
+      } else {
+        // Insert stopped_at before closing ---
+        frontmatter = frontmatter.replace(/(---\s*)$/, `stopped_at: ${stoppedAtValue}\n$1`);
+      }
+
+      // ── Root cause 2 fix: update body Current focus ──
+      const focusValue = isLastPhase
+        ? 'Milestone complete'
+        : (nextPhaseName
+          ? `Phase ${nextPhaseNum} — ${nextPhaseName.replace(/-/g, ' ')}`
+          : `Phase ${nextPhaseNum}`);
+      const focusPattern = /(\*\*Current focus:\*\*\s*).*/i;
+      if (focusPattern.test(body)) {
+        body = body.replace(focusPattern, (_m: string, prefix: string) => `${prefix}${focusValue}`);
       }
 
       // Update frontmatter status field
@@ -1611,39 +1580,23 @@ export const phaseNextDecimal: QueryHandler = async (args, projectDir, workstrea
   const decimalSet = new Set<number>();
   let baseExists = false;
 
-  if (existsSync(phasesDir)) {
-    const entries = await readdir(phasesDir, { withFileTypes: true });
-    const dirNames = entries.filter(e => e.isDirectory()).map(e => e.name);
-    baseExists = dirNames.some(d => phaseTokenMatches(d, normalized));
-
-    const dirPattern = new RegExp(`^(?:[A-Z]{1,6}-)?${escapeRegex(normalized)}\\.(\\d+)`);
-    for (const dir of dirNames) {
-      const match = dir.match(dirPattern);
-      if (match) decimalSet.add(parseInt(match[1], 10));
-    }
+  const dirNames = await listDirectories(phasesDir);
+  baseExists = dirNames.some((d) => phaseTokenMatches(d, normalized));
+  for (const suffix of collectDecimalSuffixesFromDirNames(normalized, dirNames)) {
+    decimalSet.add(suffix);
   }
 
   const roadmapPath = paths.roadmap;
   if (existsSync(roadmapPath)) {
     try {
       const roadmapContent = await readFile(roadmapPath, 'utf-8');
-      const phasePattern = new RegExp(
-        `#{2,4}\\s*Phase\\s+0*${escapeRegex(normalized)}\\.(\\d+)\\s*:`, 'gi',
-      );
-      let pm;
-      while ((pm = phasePattern.exec(roadmapContent)) !== null) {
-        decimalSet.add(parseInt(pm[1], 10));
+      for (const suffix of collectDecimalSuffixesFromRoadmap(normalized, roadmapContent)) {
+        decimalSet.add(suffix);
       }
     } catch { /* ROADMAP.md read failure is non-fatal */ }
   }
 
-  const existingDecimals = Array.from(decimalSet)
-    .sort((a, b) => a - b)
-    .map(n => `${normalized}.${n}`);
-
-  const nextDecimal = decimalSet.size === 0
-    ? `${normalized}.1`
-    : `${normalized}.${Math.max(...decimalSet) + 1}`;
+  const { next: nextDecimal, existing: existingDecimals } = computeNextDecimalPhase(normalized, decimalSet);
 
   return {
     data: {
@@ -1667,19 +1620,7 @@ export const phasesArchive: QueryHandler = async (args, projectDir, workstream) 
   const isDirInMilestone = await getMilestonePhaseFilter(projectDir, workstream);
 
   const archiveDir = join(paths.planning, 'milestones', `${version}-phases`);
-  await mkdir(archiveDir, { recursive: true });
-
-  let archivedCount = 0;
-  if (existsSync(phasesDir)) {
-    const entries = await readdir(phasesDir, { withFileTypes: true });
-    const phaseDirNames = entries.filter(e => e.isDirectory()).map(e => e.name);
-
-    for (const dir of phaseDirNames) {
-      if (!isDirInMilestone(dir)) continue;
-      await rename(join(phasesDir, dir), join(archiveDir, dir));
-      archivedCount++;
-    }
-  }
+  const archivedCount = await archiveDirectories(phasesDir, archiveDir, (dirName) => isDirInMilestone(dirName));
 
   return {
     data: {
@@ -1692,26 +1633,6 @@ export const phasesArchive: QueryHandler = async (args, projectDir, workstream) 
 
 // ─── milestoneComplete ────────────────────────────────────────────────────
 
-/** Port of `parseMultiwordArg` in `gsd-tools.cjs`. */
-function parseMultiwordArg(args: string[], flag: string): string | null {
-  const idx = args.indexOf(`--${flag}`);
-  if (idx === -1) return null;
-  const tokens: string[] = [];
-  for (let i = idx + 1; i < args.length; i++) {
-    if (args[i]!.startsWith('--')) break;
-    tokens.push(args[i]!);
-  }
-  return tokens.length > 0 ? tokens.join(' ') : null;
-}
-
-/** Port of `extractOneLinerFromBody` from `core.cjs` / `summary.ts`. */
-function extractOneLinerFromBody(content: string): string | null {
-  if (!content) return null;
-  const body = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n*/, '');
-  const match = body.match(/^#[^\n]*\n+\*\*([^*]+)\*\*/m);
-  return match ? match[1]!.trim() : null;
-}
-
 /**
  * Query handler for `milestone.complete` — port of `cmdMilestoneComplete` from `milestone.cjs`.
  */
@@ -1719,6 +1640,14 @@ export const milestoneComplete: QueryHandler = async (args, projectDir, workstre
   const version = args[0];
   if (!version) {
     throw new GSDError('version required for milestone complete (e.g., v1.0)', ErrorClassification.Validation);
+  }
+  // #3259: defense-in-depth — reject --help / -h as a version value before
+  // any disk write, regardless of whether the dispatcher guard intercepted first.
+  if (version === '--help' || version === '-h') {
+    throw new GSDError(
+      `"${version}" is not a valid milestone version; see \`gsd-sdk query --help\` for command list`,
+      ErrorClassification.Validation,
+    );
   }
   assertNoNullBytes(version, 'version');
 
@@ -1745,8 +1674,7 @@ export const milestoneComplete: QueryHandler = async (args, projectDir, workstre
   const accomplishments: string[] = [];
 
   try {
-    const entries = await readdir(phasesDir, { withFileTypes: true });
-    const dirs = entries.filter((e) => e.isDirectory()).map((e) => e.name).sort();
+    const dirs = (await listDirectories(phasesDir)).sort();
 
     for (const dir of dirs) {
       if (!isDirInMilestone(dir)) continue;
@@ -1872,16 +1800,11 @@ export const milestoneComplete: QueryHandler = async (args, projectDir, workstre
   if (archivePhases) {
     try {
       const phaseArchiveDir = join(archiveDir, `${version}-phases`);
-      await mkdir(phaseArchiveDir, { recursive: true });
-
-      const phaseEntries = await readdir(phasesDir, { withFileTypes: true });
-      const phaseDirNames = phaseEntries.filter((e) => e.isDirectory()).map((e) => e.name);
-      let archivedCount = 0;
-      for (const dir of phaseDirNames) {
-        if (!isDirInMilestone(dir)) continue;
-        await rename(join(phasesDir, dir), join(phaseArchiveDir, dir));
-        archivedCount++;
-      }
+      const archivedCount = await archiveDirectories(
+        phasesDir,
+        phaseArchiveDir,
+        (dirName) => isDirInMilestone(dirName),
+      );
       phasesArchived = archivedCount > 0;
     } catch {
       /* intentionally empty */

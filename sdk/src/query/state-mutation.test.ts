@@ -244,6 +244,131 @@ describe('stateUpdate', () => {
     expect(data.updated).toBe(false);
   });
 
+  it('preserves curated progress frontmatter during body-only updates', async () => {
+    const stateContent = `---
+gsd_state_version: 1.0
+milestone: v3.0
+milestone_name: SDK-First Migration
+status: executing
+progress:
+  total_phases: 12
+  completed_phases: 6
+  total_plans: 22
+  completed_plans: 22
+  percent: 50
+---
+
+# Project State
+
+## Current Position
+
+Status: Executing
+Last Activity: 2026-01-01
+Progress: [█████░░░░░] 50%
+`;
+    await setupTestProject(tmpDir, stateContent);
+
+    const { stateUpdate } = await import('./state-mutation.js');
+    const { stateJson } = await import('./state.js');
+
+    const result = await stateUpdate(['Last Activity', '2026-05-07'], tmpDir);
+    expect((result.data as Record<string, unknown>).updated).toBe(true);
+
+    const loaded = await stateJson([], tmpDir);
+    const progress = (loaded.data as Record<string, unknown>).progress as Record<string, unknown>;
+    expect(Number(progress.total_phases)).toBe(12);
+    expect(Number(progress.completed_phases)).toBe(6);
+    expect(Number(progress.total_plans)).toBe(22);
+    expect(Number(progress.completed_plans)).toBe(22);
+    expect(Number(progress.percent)).toBe(50);
+
+    const after = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    expect(after).toContain('Last Activity: 2026-05-07');
+  });
+
+  it('resyncs progress frontmatter when updating the Progress body field', async () => {
+    const stateContent = `---
+gsd_state_version: 1.0
+milestone: v3.0
+milestone_name: SDK-First Migration
+status: executing
+progress:
+  total_phases: 12
+  completed_phases: 6
+  total_plans: 22
+  completed_plans: 22
+  percent: 50
+---
+
+# Project State
+
+## Current Position
+
+Status: Executing
+Progress: [█████░░░░░] 50%
+`;
+    await setupTestProject(tmpDir, stateContent);
+    await rm(join(tmpDir, '.planning', 'ROADMAP.md'), { force: true });
+
+    const { stateUpdate } = await import('./state-mutation.js');
+    await stateUpdate(['Progress', '[████████░░] 80%'], tmpDir);
+
+    const after = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    const { extractFrontmatter } = await import('./frontmatter.js');
+    const fm = extractFrontmatter(after);
+    const progress = fm.progress as Record<string, unknown>;
+    expect(Number(progress.percent)).toBe(80);
+  });
+
+  it('syncs full-file workstream STATE.md frontmatter from the selected workstream', async () => {
+    const planningDir = join(tmpDir, '.planning');
+    const wsDir = join(planningDir, 'workstreams', 'feature');
+    await mkdir(join(wsDir, 'phases'), { recursive: true });
+
+    await writeFile(
+      join(planningDir, 'STATE.md'),
+      [
+        '---',
+        'milestone: v0.1',
+        'milestone_name: Root Milestone',
+        '---',
+        '',
+        '# Root State',
+        '',
+        'Status: Root',
+        '',
+      ].join('\n'),
+      'utf-8',
+    );
+    await writeFile(join(planningDir, 'ROADMAP.md'), '# Roadmap\n\n## v0.1 Root Milestone\n', 'utf-8');
+    await writeFile(
+      join(wsDir, 'STATE.md'),
+      [
+        '---',
+        'milestone: v2.0',
+        'milestone_name: Feature Milestone',
+        '---',
+        '',
+        '# Workstream State',
+        '',
+        'Status: Executing',
+        '',
+      ].join('\n'),
+      'utf-8',
+    );
+    await writeFile(join(wsDir, 'ROADMAP.md'), '# Roadmap\n\n## v2.0 Feature Milestone\n', 'utf-8');
+
+    const { readModifyWriteStateMdFull } = await import('./state-mutation.js');
+    await readModifyWriteStateMdFull(tmpDir, content => content.replace('Status: Executing', 'Status: Complete'), 'feature');
+
+    const after = await readFile(join(wsDir, 'STATE.md'), 'utf-8');
+    const { extractFrontmatter } = await import('./frontmatter.js');
+    const fm = extractFrontmatter(after);
+    expect(fm.milestone).toBe('v2.0');
+    expect(fm.milestone_name).toBe('Feature Milestone');
+    expect(fm.status).toBe('completed');
+  });
+
   it('throws on missing args', async () => {
     const { stateUpdate } = await import('./state-mutation.js');
 
@@ -276,6 +401,45 @@ describe('statePatch', () => {
     // Verify file was updated
     const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
     expect(content).toContain('done');
+  });
+
+  it('preserves curated progress frontmatter when patching body-only fields', async () => {
+    const stateContent = `---
+gsd_state_version: 1.0
+milestone: v3.0
+milestone_name: SDK-First Migration
+status: executing
+progress:
+  total_phases: 12
+  completed_phases: 6
+  total_plans: 22
+  completed_plans: 22
+  percent: 50
+---
+
+# Project State
+
+## Current Position
+
+Status: Executing
+Last Activity: 2026-01-01
+Progress: [█████░░░░░] 50%
+`;
+    await setupTestProject(tmpDir, stateContent);
+
+    const { statePatch } = await import('./state-mutation.js');
+    await statePatch([JSON.stringify({ 'Last Activity': '2026-05-07' })], tmpDir);
+
+    const after = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    const { extractFrontmatter } = await import('./frontmatter.js');
+    const fm = extractFrontmatter(after);
+    const progress = fm.progress as Record<string, unknown>;
+    expect(Number(progress.total_phases)).toBe(12);
+    expect(Number(progress.completed_phases)).toBe(6);
+    expect(Number(progress.total_plans)).toBe(22);
+    expect(Number(progress.completed_plans)).toBe(22);
+    expect(Number(progress.percent)).toBe(50);
+    expect(after).toContain('Last Activity: 2026-05-07');
   });
 });
 
@@ -369,6 +533,21 @@ describe('stateBeginPhase', () => {
     const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
     expect(content).toContain('Plan: 1 of 3');
   });
+
+  it('preserves literal dollar amounts in Current Position body', async () => {
+    const { stateBeginPhase } = await import('./state-mutation.js');
+    const withBudget = MINIMAL_STATE.replace(
+      'Last activity: 2026-04-08 -- Phase 10 execution started',
+      'Last activity: 2026-04-08 -- Phase 10 execution started\nBudget: $2,500 max test',
+    );
+    await setupTestProject(tmpDir, withBudget);
+
+    await stateBeginPhase(['11', 'State Mutations', '3'], tmpDir);
+
+    const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    expect(content).toContain('Budget: $2,500 max test');
+    expect((content.match(/^Budget:/gm) || []).length).toBe(1);
+  });
 });
 
 // ─── stateAdvancePlan ───────────────────────────────────────────────────────
@@ -392,6 +571,23 @@ describe('stateAdvancePlan', () => {
     const data = result.data as Record<string, unknown>;
     expect(data.advanced).toBe(true);
     expect(data.current_plan).toBe(3);
+  });
+
+  it('keeps literal dollar amounts stable after multiple updates', async () => {
+    const { stateAdvancePlan } = await import('./state-mutation.js');
+    const withBudget = MINIMAL_STATE.replace(
+      'Last activity: 2026-04-08 -- Phase 10 execution started',
+      'Last activity: 2026-04-08 -- Phase 10 execution started\nBudget: $2,500 max test',
+    ).replace('Plan: 2 of 3', 'Plan: 1 of 20');
+    await setupTestProject(tmpDir, withBudget);
+
+    for (let i = 0; i < 8; i += 1) {
+      await stateAdvancePlan([], tmpDir);
+    }
+
+    const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    expect(content).toContain('Budget: $2,500 max test');
+    expect((content.match(/^Budget:/gm) || []).length).toBe(1);
   });
 });
 
@@ -937,5 +1133,66 @@ Last activity: 2026-04-20 -- v1.0 shipped
     const result = await stateMilestoneSwitch([], tmpDir);
     const data = result.data as Record<string, unknown>;
     expect(data.error).toBeDefined();
+  });
+});
+
+describe('statePrune current phase extraction (#3471)', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'gsd-sdk-stateprune-'));
+  });
+
+  afterEach(async () => {
+    if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('uses frontmatter progress.completed_phases when body Current Phase field is absent', async () => {
+    const stateContent = `---
+gsd_state_version: 1.0
+milestone: v1.1
+status: executing
+progress:
+  total_phases: 21
+  completed_phases: 12
+  total_plans: 79
+  completed_plans: 75
+  percent: 95
+---
+
+# Session State
+
+## Current Position
+
+Phase 12 execution in progress.
+`;
+    await setupTestProject(tmpDir, stateContent);
+    const { statePrune } = await import('./state-mutation.js');
+    const result = await statePrune(['--keep-recent', '3', '--dry-run'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data.pruned).toBe(false);
+    expect(data.dry_run).toBe(true);
+    expect(data.cutoff_phase).toBe(9);
+    expect(data.reason).toBeUndefined();
+  });
+
+  it('returns a targeted reason when no current phase source can be parsed', async () => {
+    const stateContent = `---
+gsd_state_version: 1.0
+milestone: v1.1
+status: executing
+---
+
+# Session State
+`;
+    await setupTestProject(tmpDir, stateContent);
+    const { statePrune } = await import('./state-mutation.js');
+    const result = await statePrune(['--keep-recent', '3', '--dry-run'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data.pruned).toBe(false);
+    expect(typeof data.reason).toBe('string');
+    expect(String(data.reason)).toContain('Could not determine current phase');
   });
 });

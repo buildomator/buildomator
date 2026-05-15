@@ -155,8 +155,36 @@ describe('stateJson', () => {
     expect(progress.completed_plans).toBe(4);
     // Phase 09 complete (3/3), phase 10 incomplete (1/3), phase 11 incomplete (0/1)
     expect(progress.completed_phases).toBe(1);
-    // 4/7 = 57%
-    expect(progress.percent).toBe(57);
+    // min(plan fraction 4/7, phase fraction 1/3) = 33%
+    expect(progress.percent).toBe(33);
+  });
+
+  it('preserves wider curated progress when disk scan only sees a realized subset', async () => {
+    const stateContent = `---
+gsd_state_version: 1.0
+milestone: v3.0
+milestone_name: SDK-First Migration
+status: executing
+progress:
+  total_phases: 12
+  completed_phases: 6
+  total_plans: 22
+  completed_plans: 22
+  percent: 50
+---
+
+${STATE_BODY}`;
+    await writeFile(join(tmpDir, '.planning', 'STATE.md'), stateContent);
+
+    const result = await stateJson([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    const progress = data.progress as Record<string, unknown>;
+
+    expect(progress.total_phases).toBe(12);
+    expect(progress.completed_phases).toBe(6);
+    expect(progress.total_plans).toBe(22);
+    expect(progress.completed_plans).toBe(22);
+    expect(progress.percent).toBe(50);
   });
 
   it('preserves stopped_at from existing frontmatter', async () => {
@@ -232,8 +260,8 @@ Progress: [░░░░░░░░░░] 0%
     const data = result.data as Record<string, unknown>;
     const progress = data.progress as Record<string, unknown>;
 
-    // Disk should override the body's 0%
-    expect(progress.percent).toBe(57);
+    // Disk should override the body's 0%; phase fraction caps plan-only progress.
+    expect(progress.percent).toBe(33);
   });
 });
 
@@ -346,6 +374,126 @@ describe('stateSnapshot', () => {
   });
 });
 
+// ─── Regression: #3265 — frontmatter wins over bold-body cell ─────────────
+
+describe('stateSnapshot — bug #3265 frontmatter precedence', () => {
+  it('returns frontmatter status, not **Status:** value embedded in a body table cell', async () => {
+    // Reproduce the collision: frontmatter says "executing", but the body
+    // contains a Markdown table cell with "**Status:** to ✅ COMPLETE ..."
+    // which stateExtractField (bold pattern) would match before the YAML line.
+    const stateContent = [
+      '---',
+      'gsd_state_version: 1.0',
+      'status: executing',
+      'current_plan: 19.5-05',
+      '---',
+      '',
+      '# Project State',
+      '',
+      '## Recent Quick Tasks',
+      '',
+      '| Date | Task | Notes |',
+      '|------|------|-------|',
+      '| 2026-05-01 | Reopened Plan 19.5-05. **Status:** to ✅ COMPLETE | done |',
+      '',
+      '**Current Phase:** 19',
+      '**Current Plan:** archived-lane',
+      '',
+    ].join('\n');
+
+    const localDir = await mkdtemp(join(tmpdir(), 'gsd-3265-'));
+    await mkdir(join(localDir, '.planning'), { recursive: true });
+    await writeFile(join(localDir, '.planning', 'STATE.md'), stateContent);
+
+    const result = await stateSnapshot([], localDir);
+    const data = result.data as Record<string, unknown>;
+
+    // Frontmatter status must win
+    expect(data.status).toBe('executing');
+
+    await rm(localDir, { recursive: true, force: true });
+  });
+
+  it('returns frontmatter current_plan, not bold body value when both present', async () => {
+    const stateContent = [
+      '---',
+      'gsd_state_version: 1.0',
+      'status: executing',
+      'current_plan: 19.5-05',
+      '---',
+      '',
+      '# Project State',
+      '',
+      '**Current Phase:** 19',
+      '**Current Plan:** archived-lane',
+      '',
+    ].join('\n');
+
+    const localDir = await mkdtemp(join(tmpdir(), 'gsd-3265b-'));
+    await mkdir(join(localDir, '.planning'), { recursive: true });
+    await writeFile(join(localDir, '.planning', 'STATE.md'), stateContent);
+
+    const result = await stateSnapshot([], localDir);
+    const data = result.data as Record<string, unknown>;
+
+    // Frontmatter current_plan must win over body bold value
+    expect(data.current_plan).toBe('19.5-05');
+
+    await rm(localDir, { recursive: true, force: true });
+  });
+
+  it('falls back to body extraction when no frontmatter block is present', async () => {
+    const stateContent = [
+      '# Project State',
+      '',
+      '**Current Phase:** 07',
+      '**Status:** paused',
+      '',
+    ].join('\n');
+
+    const localDir = await mkdtemp(join(tmpdir(), 'gsd-3265c-'));
+    await mkdir(join(localDir, '.planning'), { recursive: true });
+    await writeFile(join(localDir, '.planning', 'STATE.md'), stateContent);
+
+    const result = await stateSnapshot([], localDir);
+    const data = result.data as Record<string, unknown>;
+
+    // No frontmatter — body extraction must still work
+    expect(data.status).toBe('paused');
+    expect(data.current_phase).toBe('07');
+
+    await rm(localDir, { recursive: true, force: true });
+  });
+
+  it('falls back to body extractor for a field absent from frontmatter', async () => {
+    // Frontmatter has status but no current_plan — snapshot must body-extract current_plan
+    const stateContent = [
+      '---',
+      'gsd_state_version: 1.0',
+      'status: planning',
+      '---',
+      '',
+      '# Project State',
+      '',
+      '**Current Plan:** 05-03',
+      '',
+    ].join('\n');
+
+    const localDir = await mkdtemp(join(tmpdir(), 'gsd-3265d-'));
+    await mkdir(join(localDir, '.planning'), { recursive: true });
+    await writeFile(join(localDir, '.planning', 'STATE.md'), stateContent);
+
+    const result = await stateSnapshot([], localDir);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data.status).toBe('planning');
+    // current_plan absent from frontmatter — must come from body
+    expect(data.current_plan).toBe('05-03');
+
+    await rm(localDir, { recursive: true, force: true });
+  });
+});
+
 // ─── Regression: --ws propagation (#2618 gap 1) ────────────────────────────
 
 describe('stateJson with --ws workstream', () => {
@@ -377,5 +525,92 @@ Status: planning
     expect(data.milestone).toBe('ws-1.0');
     expect(data.milestone_name).toBe('Workstream Marker');
     expect(data.status).toBe('planning');
+  });
+});
+
+// ─── Regression: #3275 CR — fmScalar handles numeric/boolean YAML scalars ───
+
+describe('stateSnapshot — CR #3275 fmScalar non-string scalar coercion', () => {
+  it('treats numeric current_phase as string "19", not missing', async () => {
+    // A real YAML parser (e.g. js-yaml) would parse `current_phase: 19` as
+    // the number 19, not the string "19".  fmScalar must coerce it so the
+    // frontmatter value wins over the body's bold field.
+    const stateContent = [
+      '---',
+      'gsd_state_version: 1.0',
+      'current_phase: 19',
+      '---',
+      '',
+      '# Project State',
+      '',
+      '**Current Phase:** 03',
+      '**Status:** executing',
+      '',
+    ].join('\n');
+
+    const localDir = await mkdtemp(join(tmpdir(), 'gsd-3275a-'));
+    await mkdir(join(localDir, '.planning'), { recursive: true });
+    await writeFile(join(localDir, '.planning', 'STATE.md'), stateContent);
+
+    const result = await stateSnapshot([], localDir);
+    const data = result.data as Record<string, unknown>;
+
+    // Frontmatter wins: current_phase must be "19", not "03" (from body)
+    expect(data.current_phase).toBe('19');
+
+    await rm(localDir, { recursive: true, force: true });
+  });
+
+  it('treats numeric total_phases in frontmatter as string, not missing', async () => {
+    const stateContent = [
+      '---',
+      'gsd_state_version: 1.0',
+      'total_phases: 7',
+      '---',
+      '',
+      '# Project State',
+      '',
+      '**Total Phases:** 3',
+      '**Status:** executing',
+      '',
+    ].join('\n');
+
+    const localDir = await mkdtemp(join(tmpdir(), 'gsd-3275b-'));
+    await mkdir(join(localDir, '.planning'), { recursive: true });
+    await writeFile(join(localDir, '.planning', 'STATE.md'), stateContent);
+
+    const result = await stateSnapshot([], localDir);
+    const data = result.data as Record<string, unknown>;
+
+    // total_phases is parsed as int downstream: frontmatter 7 must win over body 3
+    expect(data.total_phases).toBe(7);
+
+    await rm(localDir, { recursive: true, force: true });
+  });
+
+  it('treats numeric total_plans_in_phase in frontmatter as string, not missing', async () => {
+    const stateContent = [
+      '---',
+      'gsd_state_version: 1.0',
+      'total_plans_in_phase: 5',
+      '---',
+      '',
+      '# Project State',
+      '',
+      '**Total Plans in Phase:** 2',
+      '**Status:** executing',
+      '',
+    ].join('\n');
+
+    const localDir = await mkdtemp(join(tmpdir(), 'gsd-3275c-'));
+    await mkdir(join(localDir, '.planning'), { recursive: true });
+    await writeFile(join(localDir, '.planning', 'STATE.md'), stateContent);
+
+    const result = await stateSnapshot([], localDir);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data.total_plans_in_phase).toBe(5);
+
+    await rm(localDir, { recursive: true, force: true });
   });
 });

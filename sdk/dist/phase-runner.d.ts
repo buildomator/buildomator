@@ -19,7 +19,7 @@ export declare class PhaseRunnerError extends Error {
     readonly cause?: Error | undefined;
     constructor(message: string, phaseNumber: string, step: PhaseStepType, cause?: Error | undefined);
 }
-export type VerificationOutcome = 'passed' | 'human_needed' | 'gaps_found';
+export type VerificationOutcome = 'passed' | 'human_needed' | 'gaps_found' | 'architectural_debt' | 'status_unreadable';
 export interface PhaseRunnerDeps {
     projectDir: string;
     tools: GSDTools;
@@ -109,6 +109,25 @@ export declare class PhaseRunner {
      * Falls back to session result if VERIFICATION.md can't be parsed.
      */
     private parseVerificationOutcome;
+    private verificationErrorForOutcome;
+    /**
+     * Block phase completion when source files changed by this phase still contain
+     * unresolved TBD/FIXME/XXX comments. Markers are allowed only when the same
+     * line references tracked follow-up work (issue/PR number or DEF-* id).
+     *
+     * The debt scan is intentionally scoped to literal source paths declared in
+     * phase plan frontmatter `files_modified` and task `files`. Glob patterns are
+     * not expanded, and files modified during execution but omitted from the plan
+     * are not scanned; git-diff-based coverage would be a separate enhancement.
+     */
+    private checkArchitecturalDebt;
+    private listPhasePlanPaths;
+    private extractPlanFiles;
+    private shouldScanForArchitecturalDebt;
+    private findUnresolvedDebtMarkers;
+    private hasFormalDebtReference;
+    private resolveProjectPath;
+    private realpathForBoundary;
     /**
      * Check RESEARCH.md for unresolved open questions (#1602).
      * Returns the gate result — pass means safe to proceed to planning.

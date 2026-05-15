@@ -34,7 +34,9 @@ export declare function getMilestonePhaseFilter(projectDir: string, workstream?:
  * Port of buildStateFrontmatter from state.cjs lines 650-760.
  * HIGH complexity: extracts fields, scans disk, computes progress.
  */
-export declare function buildStateFrontmatter(bodyContent: string, projectDir: string, workstream?: string): Promise<Record<string, unknown>>;
+export declare function buildStateFrontmatter(bodyContent: string, projectDir: string, workstream?: string, options?: {
+    preserveExistingProgress?: boolean;
+}): Promise<Record<string, unknown>>;
 /**
  * Query handler for `state json` / `state.json` (CJS `cmdStateJson`).
  *

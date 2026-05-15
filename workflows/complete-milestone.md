@@ -724,9 +724,16 @@ fi
 
 <step name="git_tag">
 
+<config-check>
+Read `git.create_tag` via `gsd-sdk query config-get git.create_tag 2>/dev/null || echo "true"`.
+If the result is `false` → skip this step entirely and proceed to `git_commit_milestone`.
+</config-check>
+
 Create git tag:
 
 ```bash
+# Pre-check: skip if tag already exists (prevents silent failure on retry)
+if git rev-parse "v[X.Y]" >/dev/null 2>&1; then echo "Tag v[X.Y] already exists, skipping"; exit 0; fi
 git tag -a v[X.Y] -m "v[X.Y] [Name]
 
 Delivered: [One sentence]
@@ -835,7 +842,7 @@ Milestone completion is successful when:
 - [ ] Safety commit made (archive files + updated ROADMAP.md) BEFORE deleting REQUIREMENTS.md
 - [ ] REQUIREMENTS.md removed via `git rm` (fresh for next milestone, history preserved)
 - [ ] STATE.md updated with fresh project reference
-- [ ] Git tag created (v[X.Y])
+- [ ] Git tag created (v[X.Y]) (if `git.create_tag` enabled)
 - [ ] Milestone commit made (includes archive files and deletion)
 - [ ] Requirements completion checked against REQUIREMENTS.md traceability table
 - [ ] Incomplete requirements surfaced with proceed/audit/abort options

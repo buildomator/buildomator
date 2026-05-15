@@ -8,8 +8,9 @@
 import { PhaseStepType, PhaseType, GSDEventType } from './types.js';
 import { runPhaseStepSession } from './session-runner.js';
 import { parsePlanFile } from './plan-parser.js';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { realpathSync } from 'node:fs';
+import { readdir, readFile } from 'node:fs/promises';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { checkResearchGate } from './research-gate.js';
 // ─── Error type ──────────────────────────────────────────────────────────────
 export class PhaseRunnerError extends Error {
@@ -711,6 +712,20 @@ export class PhaseRunner {
             // Parse verification outcome from VERIFICATION.md (not just session exit code)
             outcome = await this.parseVerificationOutcome(lastResult, phaseNumber);
             if (outcome === 'passed') {
+                const debtCheck = await this.checkArchitecturalDebt(phaseNumber);
+                if (!debtCheck.pass) {
+                    const message = debtCheck.reason === 'scan_error'
+                        ? `Verification blocked because architectural debt scan could not complete for phase ${phaseNumber}`
+                        : `Verification blocked by unresolved architectural debt markers in phase ${phaseNumber}`;
+                    this.logger?.warn(message, {
+                        phase: phaseNumber,
+                        reason: debtCheck.reason,
+                        findingCount: debtCheck.findings.length,
+                        findings: debtCheck.findings.map(({ file, line, marker }) => ({ file, line, marker })),
+                    });
+                    outcome = 'architectural_debt';
+                    break;
+                }
                 break;
             }
             if (outcome === 'human_needed') {
@@ -722,8 +737,7 @@ export class PhaseRunner {
                     planResults: allPlanResults,
                 });
                 if (decision === 'accept') {
-                    outcome = 'passed';
-                    break; // Treat as passed
+                    break; // Acknowledged by caller, but still pending human verification.
                 }
                 else if (decision === 'retry' && gapRetryCount < maxGapRetries) {
                     gapRetryCount++;
@@ -750,6 +764,9 @@ export class PhaseRunner {
                         planResults: allPlanResults,
                     };
                 }
+            }
+            if (outcome === 'status_unreadable') {
+                break;
             }
             if (outcome === 'gaps_found') {
                 if (gapRetryCount < maxGapRetries) {
@@ -803,14 +820,14 @@ export class PhaseRunner {
             step: PhaseStepType.Verify,
             success: verifySuccess,
             durationMs,
-            ...(!verifySuccess && { error: `verification_${outcome}` }),
+            ...(!verifySuccess && { error: this.verificationErrorForOutcome(outcome) }),
         });
         return {
             step: PhaseStepType.Verify,
             success: verifySuccess,
             durationMs,
             planResults: allPlanResults,
-            ...(!verifySuccess && { error: `verification_${outcome}` }),
+            ...(!verifySuccess && { error: this.verificationErrorForOutcome(outcome) }),
         };
     }
     /**
@@ -941,20 +958,191 @@ export class PhaseRunner {
             const status = (data?.status ?? '').toLowerCase();
             if (status === 'pass' || status === 'passed')
                 return 'passed';
+            if (status === 'human_needed')
+                return 'human_needed';
             if (status === 'fail' || status === 'gaps_found')
                 return 'gaps_found';
             if (status === 'missing') {
-                // VERIFICATION.md doesn't exist yet — treat session success as passed
-                return 'passed';
+                return 'gaps_found';
             }
             // Unknown status — log and treat as gaps_found to be safe
             this.logger?.warn(`Unknown verification status '${status}' for phase ${phaseNumber}, treating as gaps_found`);
             return 'gaps_found';
         }
         catch (err) {
-            // Can't parse VERIFICATION.md — fall back to session result
+            // Can't parse VERIFICATION.md — fail closed so a missing/broken status check never completes the phase.
             this.logger?.warn(`Could not check verification status for phase ${phaseNumber}: ${err instanceof Error ? err.message : String(err)}`);
-            return 'passed';
+            return 'status_unreadable';
+        }
+    }
+    verificationErrorForOutcome(outcome) {
+        if (outcome === 'status_unreadable' || outcome === 'architectural_debt')
+            return 'verification_gaps_found';
+        return `verification_${outcome}`;
+    }
+    /**
+     * Block phase completion when source files changed by this phase still contain
+     * unresolved TBD/FIXME/XXX comments. Markers are allowed only when the same
+     * line references tracked follow-up work (issue/PR number or DEF-* id).
+     *
+     * The debt scan is intentionally scoped to literal source paths declared in
+     * phase plan frontmatter `files_modified` and task `files`. Glob patterns are
+     * not expanded, and files modified during execution but omitted from the plan
+     * are not scanned; git-diff-based coverage would be a separate enhancement.
+     */
+    async checkArchitecturalDebt(phaseNumber) {
+        let phaseOp;
+        try {
+            phaseOp = await this.tools.initPhaseOp(phaseNumber);
+        }
+        catch (err) {
+            this.logger?.warn(`Could not initialize phase ${phaseNumber} for architectural debt check: ${err instanceof Error ? err.message : String(err)}`);
+            return { pass: false, findings: [], reason: 'scan_error' };
+        }
+        let planPaths;
+        try {
+            planPaths = await this.listPhasePlanPaths(phaseOp.phase_dir);
+        }
+        catch {
+            return { pass: false, findings: [], reason: 'scan_error' };
+        }
+        if (phaseOp.has_plans && planPaths.length === 0) {
+            this.logger?.warn(`No phase plans found for architectural debt check in phase ${phaseNumber}`);
+            return { pass: false, findings: [], reason: 'scan_error' };
+        }
+        const filesToScan = new Set();
+        for (const planPath of planPaths) {
+            try {
+                const parsedPlan = await parsePlanFile(planPath);
+                for (const file of this.extractPlanFiles(parsedPlan)) {
+                    if (this.shouldScanForArchitecturalDebt(file)) {
+                        filesToScan.add(file);
+                    }
+                }
+            }
+            catch (err) {
+                this.logger?.warn(`Could not parse plan for architectural debt check (${planPath}): ${err instanceof Error ? err.message : String(err)}`);
+                return { pass: false, findings: [], reason: 'scan_error' };
+            }
+        }
+        const findings = [];
+        for (const file of filesToScan) {
+            const absolutePath = this.resolveProjectPath(file);
+            if (!absolutePath) {
+                findings.push({ file, line: 0, marker: 'path', text: 'File is outside the project root' });
+                continue;
+            }
+            try {
+                const content = await readFile(absolutePath, 'utf-8');
+                findings.push(...this.findUnresolvedDebtMarkers(file, content));
+            }
+            catch (err) {
+                const code = typeof err === 'object' && err !== null && 'code' in err ? err.code : undefined;
+                if (code === 'ENOENT') {
+                    continue;
+                }
+                findings.push({
+                    file,
+                    line: 0,
+                    marker: 'read',
+                    text: err instanceof Error ? err.message : String(err),
+                });
+            }
+        }
+        const hasDebtMarkers = findings.some(({ marker }) => marker !== 'path' && marker !== 'read');
+        return {
+            pass: findings.length === 0,
+            findings,
+            reason: findings.length === 0 ? undefined : hasDebtMarkers ? 'markers_found' : 'scan_error',
+        };
+    }
+    async listPhasePlanPaths(phaseDir) {
+        const absolutePhaseDir = this.resolveProjectPath(phaseDir);
+        if (!absolutePhaseDir) {
+            const err = new Error(`Phase directory is outside the project root: ${phaseDir}`);
+            this.logger?.warn(err.message);
+            throw err;
+        }
+        try {
+            const entries = await readdir(absolutePhaseDir, { withFileTypes: true });
+            return entries
+                .filter((entry) => entry.isFile() && (entry.name === 'PLAN.md' || entry.name.endsWith('-PLAN.md')))
+                .map((entry) => join(absolutePhaseDir, entry.name));
+        }
+        catch (err) {
+            this.logger?.warn(`Could not list phase plans for architectural debt check (${phaseDir}): ${err instanceof Error ? err.message : String(err)}`);
+            throw err;
+        }
+    }
+    extractPlanFiles(parsedPlan) {
+        const files = new Set();
+        for (const file of parsedPlan.frontmatter.files_modified ?? []) {
+            files.add(file);
+        }
+        for (const task of parsedPlan.tasks ?? []) {
+            for (const file of task.files ?? []) {
+                files.add(file);
+            }
+        }
+        return [...files];
+    }
+    shouldScanForArchitecturalDebt(file) {
+        return !/\.(md|markdown)$/i.test(file);
+    }
+    findUnresolvedDebtMarkers(file, content) {
+        const findings = [];
+        const markerPattern = /(?:^|[^\w.])(TBD|FIXME|XXX)(?=\b(?:\.(?:\s|$)|[^\w.]|$))/i;
+        const lines = content.split(/\r?\n/);
+        lines.forEach((line, index) => {
+            const match = markerPattern.exec(line);
+            if (match) {
+                const markerSegment = line.slice(match.index);
+                if (this.hasFormalDebtReference(markerSegment))
+                    return;
+                findings.push({
+                    file,
+                    line: index + 1,
+                    marker: match[1].toUpperCase(),
+                    text: line.trim(),
+                });
+            }
+        });
+        return findings;
+    }
+    hasFormalDebtReference(line) {
+        return /\bDEF-[A-Z0-9-]+\b/i.test(line) || /\b(?:issue|issues|pr|pull request)\s+#?\d+\b/i.test(line) || /(?:^|\s)#\d+\b/.test(line);
+    }
+    resolveProjectPath(pathValue) {
+        const root = this.realpathForBoundary(resolve(this.projectDir));
+        if (!root)
+            return undefined;
+        const absolutePath = isAbsolute(pathValue) ? resolve(pathValue) : resolve(this.projectDir, pathValue);
+        const canonicalPath = this.realpathForBoundary(absolutePath);
+        if (!canonicalPath)
+            return undefined;
+        const relativePath = relative(root, canonicalPath);
+        if (relativePath === '' || (!relativePath.startsWith('..') && !isAbsolute(relativePath))) {
+            return canonicalPath;
+        }
+        return undefined;
+    }
+    realpathForBoundary(pathValue) {
+        const missingSegments = [];
+        let currentPath = pathValue;
+        while (true) {
+            try {
+                return join(realpathSync(currentPath), ...missingSegments.reverse());
+            }
+            catch (err) {
+                const code = typeof err === 'object' && err !== null && 'code' in err ? err.code : undefined;
+                if (code !== 'ENOENT')
+                    return undefined;
+                const parent = dirname(currentPath);
+                if (parent === currentPath)
+                    return undefined;
+                missingSegments.push(basename(currentPath));
+                currentPath = parent;
+            }
         }
     }
     /**
@@ -1010,8 +1198,8 @@ export class PhaseRunner {
             return 'accept';
         }
         catch (err) {
-            this.logger?.warn(`Verification callback threw, auto-accepting: ${err instanceof Error ? err.message : String(err)}`);
-            return 'accept'; // Auto-approve on error
+            this.logger?.warn(`Verification callback threw, keeping human verification pending: ${err instanceof Error ? err.message : String(err)}`);
+            return 'accept'; // Treat as acknowledged; caller remains pending.
         }
     }
 }

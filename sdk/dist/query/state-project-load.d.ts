@@ -10,6 +10,7 @@
  * `cmdStateJson` (rebuilt frontmatter only).
  */
 import type { QueryHandler } from './utils.js';
+export declare const PLUGIN_ROOT_FROM_ENV_STATE_LOAD: string | undefined;
 /**
  * Query handler for `state load` / bare `state` (normalize → `state.load`).
  *

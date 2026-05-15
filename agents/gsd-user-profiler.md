@@ -38,7 +38,7 @@ Key characteristics of the input:
 </input>
 
 <reference>
-@${CLAUDE_PLUGIN_ROOT}/references/user-profiling.md
+@~/.claude/get-shit-done/references/user-profiling.md
 
 This is the detection heuristics rubric. Read it in full before analyzing any messages. It defines:
 - The 8 dimensions and their rating spectrums

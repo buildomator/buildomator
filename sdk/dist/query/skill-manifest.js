@@ -10,6 +10,8 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { extractFrontmatterLeading } from './frontmatter.js';
+import { resolveGlobalSkillsBase, renderGlobalSkillsBaseDisplayPath } from './helpers.js';
+import { resolveLegacySkillsDir } from '../sdk-package-compatibility.js';
 /**
  * Scan canonical skill roots and build manifest JSON (same shape as gsd-tools.cjs).
  */
@@ -28,11 +30,11 @@ export function buildSkillManifest(cwd, skillsDir = null) {
             { root: '.cursor/skills', path: join(cwd, '.cursor', 'skills'), scope: 'project', kind: 'skills' },
             { root: '.github/skills', path: join(cwd, '.github', 'skills'), scope: 'project', kind: 'skills' },
             { root: '.codex/skills', path: join(cwd, '.codex', 'skills'), scope: 'project', kind: 'skills' },
-            { root: '~/.claude/skills', path: join(homedir(), '.claude', 'skills'), scope: 'global', kind: 'skills' },
-            { root: '~/.codex/skills', path: join(homedir(), '.codex', 'skills'), scope: 'global', kind: 'skills' },
+            { root: renderGlobalSkillsBaseDisplayPath('claude'), path: resolveGlobalSkillsBase('claude'), scope: 'global', kind: 'skills' },
+            { root: renderGlobalSkillsBaseDisplayPath('codex'), path: resolveGlobalSkillsBase('codex'), scope: 'global', kind: 'skills' },
             {
                 root: '.claude/get-shit-done/skills',
-                path: join(homedir(), '.claude', 'get-shit-done', 'skills'),
+                path: resolveLegacySkillsDir(),
                 scope: 'import-only',
                 kind: 'skills',
                 deprecated: true,

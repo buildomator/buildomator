@@ -20,6 +20,7 @@ import { existsSync } from 'node:fs';
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { GSDError, ErrorClassification } from '../errors.js';
+import { resolveGsdToolsPath } from '../sdk-package-compatibility.js';
 import { escapeRegex, normalizePhaseName, phaseTokenMatches, planningPaths, } from './helpers.js';
 // ─── Exported helpers ─────────────────────────────────────────────────────
 /**
@@ -262,9 +263,54 @@ export async function extractCurrentMilestone(content, projectDir, workstream) {
         sectionEnd = sectionStart + sectionMatch[0].length + m.index;
         break;
     }
+    // Issue #3493: a generic, non-version-prefixed `## Phase Details` (or
+    // `### Phase Details`) heading sometimes sits AFTER a planned-milestone
+    // sibling (e.g. `### 📋 v2.1+ (Planned)`) in document order but holds the
+    // detail bodies (`### Phase N: ...`) for the *active* milestone. Issue #2422
+    // / PR #2455 handled the version-prefixed variant `## v2.0 Phase Details`
+    // via the same-version `continue` above; this branch handles the generic-
+    // label variant. When such a heading is found after the initial sectionEnd,
+    // append the Phase Details block to the returned slice (skipping the
+    // intervening planned-milestone content so it does not leak in), stopping
+    // at the next real milestone boundary (version-bearing or milestone-emoji-
+    // bearing heading) or EOF.
+    //
+    // Bounded to a single append so a malformed roadmap can't loop. Only
+    // matches the literal `Phase Details` label (canonical per GSD ROADMAP
+    // template); anything else continues to terminate the slice.
+    let phaseDetailsTail = '';
+    if (sectionEnd < content.length) {
+        const afterEnd = content.slice(sectionEnd);
+        const genericPhaseDetailsRegex = /^(#{1,3})\s+Phase\s+Details\b[^\n]*$/im;
+        const phaseDetailsMatch = afterEnd.match(genericPhaseDetailsRegex);
+        if (phaseDetailsMatch && phaseDetailsMatch.index !== undefined) {
+            const pdStart = sectionEnd + phaseDetailsMatch.index;
+            const pdHeadingLen = phaseDetailsMatch[0].length;
+            const pdLevel = phaseDetailsMatch[1].length;
+            // Scan from after the Phase Details heading for the next real milestone
+            // boundary (different version OR milestone emoji). Reuses the same
+            // (?!Phase\s+\S) phase-heading guard from #2619, plus a
+            // (?!Phase\s+Details\b) guard so a sibling Phase Details heading
+            // doesn't terminate the block prematurely.
+            const afterPdHeading = content.slice(pdStart + pdHeadingLen);
+            const nextRealMilestoneRegex = new RegExp(`^#{1,${pdLevel}}\\s+(?!Phase\\s+\\S)(?!Phase\\s+Details\\b)(?:.*v(\\d+(?:\\.\\d+)+)[^\\n]*|.*(?:✅|📋|🚧|🟡))`, 'gmi');
+            let pdEnd = content.length;
+            let mm;
+            while ((mm = nextRealMilestoneRegex.exec(afterPdHeading)) !== null) {
+                const mv = mm[1];
+                if (mv && currentVersionStr && mv === currentVersionStr)
+                    continue;
+                pdEnd = pdStart + pdHeadingLen + mm.index;
+                break;
+            }
+            phaseDetailsTail = '\n' + content.slice(pdStart, pdEnd);
+        }
+    }
     // Return only the current milestone section — never include the preamble, which
-    // may contain ## Backlog and other non-current-milestone phases.
-    return content.slice(sectionStart, sectionEnd);
+    // may contain ## Backlog and other non-current-milestone phases. Append any
+    // generic Phase Details block discovered above (#3493) so detail-section
+    // lookups for the active milestone succeed.
+    return content.slice(sectionStart, sectionEnd) + phaseDetailsTail;
 }
 /**
  * Extract phase entries from an arbitrary ROADMAP milestone section.
@@ -615,8 +661,7 @@ export const roadmapAnnotateDependencies = async (args, projectDir) => {
         return { data: { updated: false, reason: 'phase argument required' } };
     }
     const { spawnSync } = await import('node:child_process');
-    const { fileURLToPath } = await import('node:url');
-    const toolsPath = fileURLToPath(new URL('../../../get-shit-done/bin/gsd-tools.cjs', import.meta.url));
+    const toolsPath = resolveGsdToolsPath(projectDir);
     const result = spawnSync(process.execPath, [toolsPath, 'roadmap', 'annotate-dependencies', phase], {
         cwd: projectDir,
         encoding: 'utf-8',

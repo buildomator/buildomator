@@ -15,15 +15,23 @@
  */
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { MODEL_PROFILES } from './config-query.js';
 import { GSDError, ErrorClassification } from '../errors.js';
 import { extractFrontmatter, parseMustHavesBlock } from './frontmatter.js';
 import { escapeRegex, normalizePhaseName, planningPaths, resolvePathUnderProject } from './helpers.js';
+import { resolveBundledAgentsDir } from '../sdk-package-compatibility.js';
 /** Max length for key_links regex patterns (ReDoS mitigation). */
 const MAX_KEY_LINK_PATTERN_LEN = 512;
+/**
+ * Canonical plan stem used for PLAN/SUMMARY matching.
+ * Example: `68-01-scaffolding` -> `68-01`.
+ */
+function canonicalPlanStem(stem) {
+    const m = stem.match(/^(\d+[A-Z]?(?:\.\d+)*-\d+)/i);
+    return m ? m[1] : stem;
+}
 /**
  * Build a RegExp for must_haves key_links pattern matching.
  * Long or nested-quantifier patterns fall back to a literal match via escapeRegex.
@@ -498,7 +506,7 @@ export const validateHealth = async (args, projectDir, workstream) => {
     try {
         const entries = await readdir(phasesDir, { withFileTypes: true });
         for (const e of entries) {
-            if (e.isDirectory() && !e.name.match(/^\d{2}(?:\.\d+)*-[\w-]+$/)) {
+            if (e.isDirectory() && !e.name.match(/^\d{2,}(?:\.\d+)*-[\w-]+$/)) {
                 addIssue('warning', 'W005', `Phase directory "${e.name}" doesn't follow NN-name format`, 'Rename to match pattern (e.g., 01-setup)');
             }
         }
@@ -513,10 +521,16 @@ export const validateHealth = async (args, projectDir, workstream) => {
             const phaseFiles = await readdir(join(phasesDir, e.name));
             const plans = phaseFiles.filter(f => f.endsWith('-PLAN.md') || f === 'PLAN.md');
             const summaries = phaseFiles.filter(f => f.endsWith('-SUMMARY.md') || f === 'SUMMARY.md');
-            const summaryBases = new Set(summaries.map(s => s.replace('-SUMMARY.md', '').replace('SUMMARY.md', '')));
+            const summaryBases = new Set();
+            for (const summary of summaries) {
+                const summaryBase = summary.replace('-SUMMARY.md', '').replace('SUMMARY.md', '');
+                summaryBases.add(summaryBase);
+                summaryBases.add(canonicalPlanStem(summaryBase));
+            }
             for (const plan of plans) {
                 const planBase2 = plan.replace('-PLAN.md', '').replace('PLAN.md', '');
-                if (!summaryBases.has(planBase2)) {
+                const canonicalBase = canonicalPlanStem(planBase2);
+                if (!summaryBases.has(planBase2) && !summaryBases.has(canonicalBase)) {
                     addIssue('info', 'I001', `${e.name}/${plan} has no SUMMARY.md`, 'May be in progress');
                 }
             }
@@ -563,6 +577,24 @@ export const validateHealth = async (args, projectDir, workstream) => {
                 for (const e of entries) {
                     if (e.isDirectory()) {
                         const dm = e.name.match(/^(\d+[A-Z]?(?:\.\d+)*)/i);
+                        if (dm)
+                            diskPhases.add(dm[1]);
+                    }
+                }
+            }
+            catch { /* intentionally empty */ }
+            // Include archived milestone phase directories as valid on-disk locations
+            // for historical ROADMAP phases.
+            try {
+                const milestoneEntries = await readdir(join(planBase, 'milestones'), { withFileTypes: true });
+                for (const milestoneEntry of milestoneEntries) {
+                    if (!milestoneEntry.isDirectory() || !/-phases$/i.test(milestoneEntry.name))
+                        continue;
+                    const archivedPhaseEntries = await readdir(join(planBase, 'milestones', milestoneEntry.name), { withFileTypes: true });
+                    for (const archivedPhase of archivedPhaseEntries) {
+                        if (!archivedPhase.isDirectory())
+                            continue;
+                        const dm = archivedPhase.name.match(/^(\d+[A-Z]?(?:\.\d+)*)/i);
                         if (dm)
                             diskPhases.add(dm[1]);
                     }
@@ -750,8 +782,7 @@ export const validateHealth = async (args, projectDir, workstream) => {
 function getAgentsDirForValidateAgents() {
     if (process.env.GSD_AGENTS_DIR)
         return process.env.GSD_AGENTS_DIR;
-    const here = dirname(fileURLToPath(import.meta.url));
-    return resolve(here, '..', '..', '..', 'agents');
+    return resolveBundledAgentsDir();
 }
 /**
  * Validate GSD agent file installation under the managed agents directory.

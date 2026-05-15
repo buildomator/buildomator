@@ -56,7 +56,7 @@ Enable it with:
 
   gsd config-set workflow.plan_review_convergence true
 
-Then re-run: /gsd-plan-review-convergence {PHASE}
+Then re-run: /gsd:plan-review-convergence {PHASE}
 ```
 
 ## 2. Initialize
@@ -281,7 +281,7 @@ If "Manual review":
 Review the concerns in: {REVIEWS_FILE}
 
 To replan manually:  /gsd:plan-phase {PHASE} --reviews
-To restart loop:     /gsd-plan-review-convergence {PHASE} {REVIEWER_FLAGS}
+To restart loop:     /gsd:plan-review-convergence {PHASE} {REVIEWER_FLAGS}
 ```
 Exit workflow.
 

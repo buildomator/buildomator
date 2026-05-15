@@ -59,14 +59,15 @@ export const checkShipReady = async (args, projectDir) => {
     try {
         const verRes = await checkVerificationStatus([raw], projectDir);
         const vdata = verRes.data;
-        verification_passed = vdata.status !== 'fail';
+        const status = String(vdata.status ?? '').toLowerCase();
+        verification_passed = status === 'pass' || status === 'passed';
     }
     catch {
         verification_passed = false;
     }
     // Collect blockers
     if (!verification_passed)
-        blockers.push('verification status is fail or missing');
+        blockers.push('verification status is not passed');
     if (!clean_tree)
         blockers.push('working tree is not clean (uncommitted changes)');
     if (!on_feature_branch)

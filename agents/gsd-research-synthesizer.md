@@ -112,7 +112,7 @@ This is the most important section. Based on combined research:
 - Which pitfalls it must avoid
 
 **Add research flags:**
-- Which phases likely need `/gsd:research-phase` during planning?
+- Which phases likely need `/gsd-research-phase` during planning?
 - Which phases have well-documented patterns (skip research)?
 
 ## Step 5: Assess Confidence
@@ -139,7 +139,7 @@ Write to `.planning/research/SUMMARY.md`
 The 4 parallel researcher agents write files but do NOT commit. You commit everything together.
 
 ```bash
-gsd-sdk query commit "docs: complete project research" .planning/research/
+gsd-sdk query commit "docs: complete project research" --files .planning/research/
 ```
 
 ## Step 8: Return Summary

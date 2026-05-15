@@ -48,14 +48,14 @@ Evaluate `$ARGUMENTS` against these routing rules. Apply the **first matching** 
 | Wrapping up sketches, "package the designs", "consolidate sketch findings" | `/gsd:sketch --wrap-up` | Package sketch findings into reusable skill |
 | Exploring, researching, comparing, or "how does X work" | `/gsd:explore` | Socratic ideation and idea routing |
 | Discussing vision, "how should X look", brainstorming | `/gsd:discuss-phase` | Needs context gathering |
-| A complex task: refactoring, migration, multi-file architecture, system redesign | `/gsd-phase` | Needs a full phase with plan/build cycle |
+| A complex task: refactoring, migration, multi-file architecture, system redesign | `/gsd:phase` | Needs a full phase with plan/build cycle |
 | Planning a specific phase or "plan phase N" | `/gsd:plan-phase` | Direct planning request |
 | Executing a phase or "build phase N", "run phase N" | `/gsd:execute-phase` | Direct execution request |
 | Running all remaining phases automatically | `/gsd:autonomous` | Full autonomous execution |
 | A review or quality concern about existing work | `/gsd:verify-work` | Needs verification |
 | Checking progress, status, "where am I" | `/gsd:progress` | Status check |
 | Resuming work, "pick up where I left off" | `/gsd:resume-work` | Session restoration |
-| A note, idea, or "remember to..." | `/gsd-capture` | Capture for later |
+| A note, idea, or "remember to..." | `/gsd:capture` | Capture for later |
 | Adding tests, "write tests", "test coverage" | `/gsd:add-tests` | Test generation |
 | Completing a milestone, shipping, releasing | `/gsd:complete-milestone` | Milestone lifecycle |
 | A specific, actionable, small task (add feature, fix typo, update config) | `/gsd:quick` | Self-contained, single executor |
@@ -66,7 +66,7 @@ Evaluate `$ARGUMENTS` against these routing rules. Apply the **first matching** 
 
 ```
 "Refactor the authentication system" could be:
-1. /gsd-phase — Full planning cycle (recommended for multi-file refactors)
+1. /gsd:phase — Full planning cycle (recommended for multi-file refactors)
 2. /gsd:quick — Quick execution (if scope is small and clear)
 
 Which approach fits better?

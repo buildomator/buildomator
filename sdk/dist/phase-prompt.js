@@ -8,11 +8,11 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { homedir } from 'node:os';
 import { PhaseType } from './types.js';
 import { buildExecutorPrompt } from './prompt-builder.js';
 import { PHASE_AGENT_MAP } from './tool-scoping.js';
 import { sanitizePrompt } from './prompt-sanitizer.js';
+import { resolveLegacyInstallDir } from './sdk-package-compatibility.js';
 // ─── Workflow file mapping ───────────────────────────────────────────────────
 /**
  * Maps phase types to their workflow file names.
@@ -68,9 +68,9 @@ export class PromptFactory {
     sdkPromptsDir;
     projectDir;
     constructor(options) {
-        const gsdInstallDir = options?.gsdInstallDir ?? join(homedir(), '.claude', 'get-shit-done');
+        const gsdInstallDir = options?.gsdInstallDir ?? resolveLegacyInstallDir();
         this.workflowsDir = join(gsdInstallDir, 'workflows');
-        this.agentsDir = options?.agentsDir ?? join(homedir(), '.claude', 'agents');
+        this.agentsDir = options?.agentsDir ?? join(gsdInstallDir, '..', 'agents');
         this.projectAgentsDir = options?.projectAgentsDir;
         this.projectDir = options?.projectDir;
         // SDK prompts dir: explicit override → package-relative default via import.meta.url

@@ -10,15 +10,15 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { GSDEventType, PhaseStepType } from './types.js';
 import { loadConfig } from './config.js';
 import { runPhaseStepSession } from './session-runner.js';
 import { sanitizePrompt } from './prompt-sanitizer.js';
 import { resolveAgentsDir } from './query/helpers.js';
+import { resolveLegacyTemplatesDir } from './sdk-package-compatibility.js';
 // ─── Constants ───────────────────────────────────────────────────────────────
-const GSD_TEMPLATES_DIR = join(homedir(), '.claude', 'get-shit-done', 'templates');
+const GSD_TEMPLATES_DIR = resolveLegacyTemplatesDir();
 const GSD_AGENTS_DIR = resolveAgentsDir();
 const RESEARCH_TYPES = ['STACK', 'FEATURES', 'ARCHITECTURE', 'PITFALLS'];
 const RESEARCH_STEP_MAP = {

@@ -4,8 +4,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const { escapeRegex, normalizePhaseName, output, error, findPhaseInternal, stripShippedMilestones, extractCurrentMilestone, replaceInCurrentMilestone, phaseTokenMatches, atomicWriteFileSync } = require('./core.cjs');
+const { escapeRegex, normalizePhaseName, phaseMarkdownRegexSource, output, error, findPhaseInternal, stripShippedMilestones, extractCurrentMilestone, replaceInCurrentMilestone, phaseTokenMatches } = require('./core.cjs');
+const { platformWriteSync } = require('./shell-command-projection.cjs');
 const { planningPaths, withPlanningLock } = require('./planning-workspace.cjs');
+const scanPhasePlans = require('./plan-scan.cjs');
 
 /**
  * Coerce an arbitrary YAML scalar/object into a string for cross-cutting
@@ -37,35 +39,21 @@ function coerceTruthToString(t) {
 }
 
 function countPhasePlansAndSummaries(phaseDir) {
-  const phaseFiles = fs.readdirSync(phaseDir);
-  // Canonical form: *-PLAN.md or PLAN.md.
-  // Extended form: {N}-PLAN-{NN}-{slug}.md — the layout gsd-plan-phase
-  // actually writes (e.g. 5-PLAN-01-setup.md). Mirrors the looksLikePlanFile
-  // logic in phase.cjs (#2893 / #3128).
-  const PLAN_OUTLINE_RE = /-PLAN-OUTLINE\.md$/i;
-  const PLAN_PRE_BOUNCE_RE = /-PLAN.*\.pre-bounce\.md$/i;
-  const isPlanFile = (f) =>
-    (f.endsWith('-PLAN.md') || f === 'PLAN.md') ||
-    (/\.md$/i.test(f) && /PLAN/i.test(f) && !PLAN_OUTLINE_RE.test(f) && !PLAN_PRE_BOUNCE_RE.test(f));
-  const rootPlans = phaseFiles.filter(isPlanFile);
-  const rootSummaries = phaseFiles.filter(f => f.endsWith('-SUMMARY.md') || f === 'SUMMARY.md');
-
-  let nestedPlans = [];
-  let nestedSummaries = [];
-  const plansDir = path.join(phaseDir, 'plans');
-  if (fs.existsSync(plansDir)) {
-    const planFiles = fs.readdirSync(plansDir);
-    nestedPlans = planFiles.filter(f => /^PLAN-\d+.*\.md$/i.test(f));
-    nestedSummaries = planFiles.filter(f => /^SUMMARY-\d+.*\.md$/i.test(f));
-  }
-
+  const { planCount, summaryCount } = scanPhasePlans(phaseDir);
+  // hasContext and hasResearch are not plan-scan concerns — read the directory
+  // once for the non-plan metadata that cmdRoadmapAnalyze needs.
+  let phaseFiles = [];
+  try { phaseFiles = fs.readdirSync(phaseDir); } catch { /* empty */ }
   return {
-    planCount: rootPlans.length + nestedPlans.length,
-    summaryCount: rootSummaries.length + nestedSummaries.length,
+    planCount,
+    summaryCount,
     hasContext: phaseFiles.some(f => f.endsWith('-CONTEXT.md') || f === 'CONTEXT.md'),
     hasResearch: phaseFiles.some(f => f.endsWith('-RESEARCH.md') || f === 'RESEARCH.md'),
   };
 }
+
+// `phaseMarkdownRegexSource` moved to core.cjs (#3537) so phase.cjs and
+// core.cjs itself can consume it without circular deps. Imported above.
 
 /**
  * Search for a phase header (and its section) within the given content string.
@@ -151,8 +139,9 @@ function cmdRoadmapGetPhase(cwd, phaseNum, raw) {
     const rawContent = fs.readFileSync(roadmapPath, 'utf-8');
     const milestoneContent = extractCurrentMilestone(rawContent, cwd);
 
-    // Escape special regex chars in phase number, handle decimal
-    const escapedPhase = escapeRegex(phaseNum);
+    // #3537: padding-tolerant fragment so callers passing `02.7` still match
+    // un-padded ROADMAP prose (`### Phase 2.7:`).
+    const escapedPhase = phaseMarkdownRegexSource(phaseNum);
 
     // Search the current milestone slice first, then fall back to full roadmap.
     // A malformed_roadmap result (checklist-only) from the milestone should not
@@ -252,8 +241,11 @@ function cmdRoadmapAnalyze(cwd, raw) {
       }
     } catch { /* intentionally empty */ }
 
-    // Check ROADMAP checkbox status
-    const checkboxPattern = new RegExp(`-\\s*\\[(x| )\\]\\s*.*Phase\\s+${escapeRegex(phaseNum)}[:\\s]`, 'i');
+    // Check ROADMAP checkbox status.
+    // #3537: padding-tolerant fragment — the heading discovered above may use
+    // a different padding than the summary-bullet checkbox below it (mixed
+    // padding inside one ROADMAP is legal and seen in real projects).
+    const checkboxPattern = new RegExp(`-\\s*\\[(x| )\\]\\s*.*Phase\\s+${phaseMarkdownRegexSource(phaseNum)}[:\\s]`, 'i');
     const checkboxMatch = content.match(checkboxPattern);
     const roadmapComplete = checkboxMatch ? checkboxMatch[1] === 'x' : false;
 
@@ -357,11 +349,11 @@ function cmdRoadmapUpdatePlanProgress(cwd, phaseNum, raw) {
   // Wrap entire read-modify-write in lock to prevent concurrent corruption
   withPlanningLock(cwd, () => {
     let roadmapContent = fs.readFileSync(roadmapPath, 'utf-8');
-    const phaseEscaped = escapeRegex(phaseNum);
+    const phasePattern = phaseMarkdownRegexSource(phaseNum);
 
     // Progress table row: update Plans/Status/Date columns (handles 4 or 5 column tables)
     const tableRowPattern = new RegExp(
-      `^(\\|\\s*${phaseEscaped}\\.?\\s[^|]*(?:\\|[^\\n]*))$`,
+      `^(\\|\\s*${phasePattern}\\.?\\s[^|]*(?:\\|[^\\n]*))$`,
       'im'
     );
     const dateField = isComplete ? ` ${today} ` : '  ';
@@ -383,7 +375,7 @@ function cmdRoadmapUpdatePlanProgress(cwd, phaseNum, raw) {
 
     // Update plan count in phase detail section
     const planCountPattern = new RegExp(
-      `(#{2,4}\\s*Phase\\s+${phaseEscaped}[\\s\\S]*?\\*\\*Plans:\\*\\*\\s*)[^\\n]+`,
+      `(#{2,4}\\s*Phase\\s+${phasePattern}(?=[:\\s])[\\s\\S]*?\\*\\*Plans:\\*\\*\\s*)[^\\n]+`,
       'i'
     );
     const planCountText = isComplete
@@ -394,7 +386,7 @@ function cmdRoadmapUpdatePlanProgress(cwd, phaseNum, raw) {
     // If complete: check checkbox
     if (isComplete) {
       const checkboxPattern = new RegExp(
-        `(-\\s*\\[)[ ](\\]\\s*.*Phase\\s+${phaseEscaped}[:\\s][^\\n]*)`,
+        `(-\\s*\\[)[ ](\\]\\s*.*Phase\\s+${phasePattern}[:\\s][^\\n]*)`,
         'i'
       );
       roadmapContent = replaceInCurrentMilestone(roadmapContent, checkboxPattern, `$1x$2 (completed ${today})`);
@@ -412,7 +404,7 @@ function cmdRoadmapUpdatePlanProgress(cwd, phaseNum, raw) {
       roadmapContent = roadmapContent.replace(planCheckboxPattern, '$1x$2');
     }
 
-    atomicWriteFileSync(roadmapPath, roadmapContent, 'utf-8');
+    platformWriteSync(roadmapPath, roadmapContent);
   });
   output({
     updated: true,
@@ -515,8 +507,10 @@ function cmdRoadmapAnnotateDependencies(cwd, phaseNum, raw) {
   withPlanningLock(cwd, () => {
     let content = fs.readFileSync(roadmapPath, 'utf-8');
 
-    // Find the phase section
-    const phaseEscaped = escapeRegex(phaseNum);
+    // Find the phase section.
+    // #3537: padding-tolerant fragment so the caller's resolved padded id
+    // matches un-padded ROADMAP headings.
+    const phaseEscaped = phaseMarkdownRegexSource(phaseNum);
     const phaseHeaderPattern = new RegExp(`(#{2,4}\\s*Phase\\s+${phaseEscaped}:[^\\n]*)`, 'i');
     const phaseMatch = content.match(phaseHeaderPattern);
     if (!phaseMatch) return;
@@ -585,7 +579,7 @@ function cmdRoadmapAnnotateDependencies(cwd, phaseNum, raw) {
 
     const nextContent = content.slice(0, phaseStart) + newPhaseSection + content.slice(phaseEnd);
     if (nextContent === content) return;
-    atomicWriteFileSync(roadmapPath, nextContent);
+    platformWriteSync(roadmapPath, nextContent);
     updated = true;
   });
 

@@ -107,9 +107,9 @@ Handlers for `**state.signal-waiting`**, `**state.signal-resume**`, `**state.val
 **`state.json` vs `state.load` (different CJS commands):**
 
 - **`state.json`** / `state json` — port of **`cmdStateJson`** (`state.ts` `stateJson`): rebuilt STATE.md frontmatter JSON. Read-only golden: `read-only-parity.integration.test.ts` compares to CJS `state json` with **`last_updated`** stripped.
-- **`state.load`** / `state load` — port of **`cmdStateLoad`** (`state-project-load.ts` `stateProjectLoad`): `{ config, state_raw, state_exists, roadmap_exists, config_exists }`; **`config`** comes from **`get-shit-done/bin/lib/core.cjs`** `loadConfig` (resolved via the same candidate paths as a normal GSD install). Read-only golden: full `toEqual` vs `state load`. If `core.cjs` cannot be resolved, dispatch throws **`GSDError`** (document for minimal `@gsd-build/sdk`-only installs).
+- **`state.load`** / `state load` — port of **`cmdStateLoad`** (`state-project-load.ts` `stateProjectLoad`): `{ config, state_raw, state_exists, roadmap_exists, config_exists }`; **`config`** comes from **`get-shit-done/bin/lib/core.cjs`** `loadConfig`, but discovery now routes through the **SDK Package Seam Module** (`sdk-package-compatibility.ts`) so install-layout probing stays behind one compatibility Adapter. Read-only golden: full `toEqual` vs `state load`. If `core.cjs` cannot be resolved, dispatch throws **`GSDError`** with the checked probe list (document for minimal `@gsd-build/sdk`-only installs).
 
-`stateExtractField` in `helpers.ts` uses **horizontal whitespace only** after `Field:` so YAML keys such as lowercase `progress:` in frontmatter are not mistaken for the body `Progress:` line (see `get-shit-done/bin/lib/state.cjs` — same rule).
+`stateExtractField` in `state-document.ts` (re-exported by `helpers.ts`) uses **horizontal whitespace only** after `Field:` so YAML keys such as lowercase `progress:` in frontmatter are not mistaken for the body `Progress:` line (see `get-shit-done/bin/lib/state-document.cjs` — same rule).
 
 ## Golden parity: coverage and exceptions
 
@@ -155,7 +155,7 @@ From `read-only-parity.integration.test.ts` (full `toEqual` on this repo):
 
 | SDK dispatch (canonical) | Notes |
 | ------------------------ | ----- |
-| `resolve-model` | Args e.g. `gsd-planner`. |
+| `resolve-model` | Args e.g. `gsd-planner`; returns `reasoning_effort` when the selected runtime tier defines one. |
 | `phase-plan-index` | Phase number arg. |
 | `roadmap.get-phase` | Phase number arg. |
 | `list.todos` | No args. |
@@ -176,8 +176,9 @@ From `read-only-parity.integration.test.ts` (full `toEqual` on this repo):
 | `summary.extract` | Fixture `sdk/src/golden/fixtures/summary-extract-sample.md`; uses `extractFrontmatterLeading` (first `---` block) for parity with `frontmatter.cjs`. |
 | `history.digest` | No args; aggregate over `.planning/phases` + archived milestone phase dirs (`commands.cjs` `cmdHistoryDigest`). |
 | `audit-uat` | No args; full JSON parity with `uat.cjs` `cmdAuditUat` (`results`, `summary` with `by_category` / `by_phase`). |
-| `skill-manifest` | No args; full manifest parity with `init.cjs` `buildSkillManifest` / `cmdSkillManifest`. Handler uses `extractFrontmatterLeading` (first `---` block) like CJS `frontmatter.cjs` `extractFrontmatter` — not TS `extractFrontmatter` (last block), so skills with multiple `---` sections match CJS. |
+| `skill-manifest` | No args; full manifest parity with `init.cjs` `buildSkillManifest` / `cmdSkillManifest`. Handler uses `extractFrontmatterLeading` (first `---` block) like CJS `frontmatter.cjs` `extractFrontmatter` — not TS `extractFrontmatter` (last block), so skills with multiple `---` sections match CJS. Runtime-global skill roots now route through the **Runtime-Global Skills Policy Module**; legacy import-only skill root discovery (`~/.claude/get-shit-done/skills`) routes through the **SDK Package Seam Module**. |
 | `validate.agents` | No args; `agents_dir` matches `core.cjs` `getAgentsDir` (`GSD_AGENTS_DIR` or `sdk/dist/query/../../../agents` in this monorepo — same absolute path as CLI). `MODEL_PROFILES` / `expected` list stays aligned with `get-shit-done/bin/lib/model-profiles.cjs`. |
+| `agent-skills` | Reads `config.agent_skills[agentType]` and emits raw `<agent_skills>` XML. Project-relative entries stay project-root validated; `global:<name>` resolves through the **Runtime-Global Skills Policy Module** instead of a Claude-only path. |
 | `state.get` | Dedicated tests: no args → full `{ content }` vs `state get`; one field (`milestone`) → `{ milestone: "…" }` vs `state get milestone` (frontmatter line match). |
 | `state.json` | `state json` vs SDK; **`last_updated`** stripped before `toEqual` (volatile). |
 | `state.load` | `state load` vs SDK; full **`cmdStateLoad`** object graph (`config`, `state_raw`, existence flags). |
@@ -297,7 +298,7 @@ Disposition: **Registered** = handled in `createRegistry()` under the listed SDK
 | `state` (subcommands)                                                                                                                   | `state.load`, `state.json`, `state.get`, `state.update`, `state.patch`, … | Registered              | Dotted and `state …` space aliases in `index.ts`.                         |
 | `resolve-model`                                                                                                                         | `resolve-model`                                                           | Registered              |                                                                           |
 | `find-phase`                                                                                                                            | `find-phase`                                                              | Registered              | Golden: subset parity (see above).                                        |
-| `commit`, `check-commit`, `commit-to-subrepo`                                                                                           | `commit`, `check-commit`, `commit-to-subrepo`                             | Registered              |                                                                           |
+| `commit`, `check-commit`, `commit-to-subrepo`                                                                                           | `commit`, `check-commit`, `commit-to-subrepo`                             | Registered              | `commit`: `--files` re-stages full files by default; use `--respect-staged` to skip `git add` and commit only what is already staged within the pathspec (#3522). |
 | `verify-summary`                                                                                                                        | `verify-summary`, `verify.summary`, `verify summary`                      | Registered              |                                                                           |
 | `template`                                                                                                                              | `template.fill`, `template.select`, …                                     | Registered              |                                                                           |
 | `frontmatter`                                                                                                                           | `frontmatter.get`, `frontmatter.set`, …                                   | Registered              |                                                                           |
@@ -346,4 +347,3 @@ Disposition: **Registered** = handled in `createRegistry()` under the listed SDK
 
 - `**detect-custom-files`**: requires `--config-dir <path>`; scans installer manifest vs GSD-managed dirs (`detect-custom-files.ts`).
 - `**docs-init**`: docs-update workflow payload (`docs-init.ts`), aligned with `docs.cjs`. Golden tests omit `**agents_installed**` / `**missing_agents**` when comparing SDK vs CLI because the subprocess may resolve `~/.claude/...` differently than in-process checks.
-

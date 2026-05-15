@@ -207,7 +207,7 @@ updated: {today ISO date}
 - Lighter weight than /gsd:pause-work — no phase state, no plan context
 - The value is in Context and Next Steps — a cold-start session can pick up immediately
 - Threads can be promoted to phases or backlog items when they mature:
-  /gsd:add-phase or /gsd:add-backlog with context from the thread
+  /gsd-add-phase or /gsd-add-backlog with context from the thread
 - Thread files live in .planning/threads/ — no collision with phases or other GSD structures
 - Thread status values: `open`, `in_progress`, `resolved`
 </notes>

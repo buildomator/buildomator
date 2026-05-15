@@ -265,7 +265,7 @@ Notes:
 
 Quick commands:
 - /gsd:settings — workflow toggles and model profile
-- /gsd:set-profile <profile> — switch model profile
+- /gsd-set-profile <profile> — switch model profile
 ```
 </step>
 

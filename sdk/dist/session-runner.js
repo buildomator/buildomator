@@ -9,6 +9,7 @@ import { GSDEventType, PhaseType } from './types.js';
 import { buildExecutorPrompt, parseAgentTools, DEFAULT_ALLOWED_TOOLS } from './prompt-builder.js';
 import { getToolsForPhase } from './tool-scoping.js';
 import { detectRuntime } from './query/helpers.js';
+import { resolveRuntimeTierDefault } from './model-catalog.js';
 // ─── Model resolution ────────────────────────────────────────────────────────
 /**
  * Resolve model identifier from options or config profile.
@@ -41,12 +42,16 @@ function resolveModel(options, config) {
         return undefined;
     }
     if (config?.model_profile) {
-        const profileMap = {
-            balanced: 'claude-sonnet-4-6',
-            quality: 'claude-opus-4-6',
-            speed: 'claude-haiku-4-5',
-        };
-        return profileMap[config.model_profile] ?? config.model_profile;
+        const profile = String(config.model_profile).toLowerCase();
+        if (profile === 'inherit')
+            return undefined;
+        const tier = profile === 'quality' ? 'opus'
+            : (profile === 'budget' || profile === 'speed') ? 'haiku'
+                : (profile === 'balanced' || profile === 'adaptive') ? 'sonnet'
+                    : null;
+        if (!tier)
+            return config.model_profile;
+        return resolveRuntimeTierDefault('claude', tier)?.model;
     }
     return undefined; // Let SDK use its default
 }

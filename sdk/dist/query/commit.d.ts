@@ -48,7 +48,19 @@ export declare function sanitizeCommitMessage(text: string): string;
  * Checks commit_docs config (unless --force), sanitizes message,
  * stages specified files (or all .planning/), and commits.
  *
- * @param args - args[0]=message, remaining=file paths or flags (--force, --amend, --no-verify)
+ * By default, `--files <paths>` runs `git add -- <path>` for each named file
+ * before committing. This means any per-hunk staging set up via `git add -p`
+ * is **overwritten** by a full re-stage of the file's working-tree content.
+ *
+ * Pass `--respect-staged` to skip the `git add` step entirely. The handler
+ * will commit only what is already staged within the requested pathspec. If
+ * nothing is staged within that scope, the handler returns
+ * `{ committed: false, reason: 'nothing staged' }` without error. The #3061
+ * leak-prevention invariant still holds: the trailing `-- <paths>` pathspec
+ * on the commit ensures files staged outside `--files <paths>` are excluded.
+ *
+ * @param args - args[0]=message, remaining=file paths or flags
+ *               (--force, --amend, --no-verify, --respect-staged)
  * @param projectDir - Project root directory
  * @returns QueryResult with commit result
  */

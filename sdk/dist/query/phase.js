@@ -210,6 +210,14 @@ export const phasePlanIndex = async (args, projectDir, workstream) => {
     }
     catch { /* phases dir doesn't exist */ }
     if (!phaseDir) {
+        const found = await findPhase([phase], projectDir, workstream);
+        const foundData = found.data;
+        const relDir = foundData?.directory;
+        if (foundData?.found && typeof relDir === 'string' && relDir.trim() !== '') {
+            phaseDir = join(projectDir, relDir);
+        }
+    }
+    if (!phaseDir) {
         return {
             data: {
                 phase: normalized,
@@ -225,16 +233,16 @@ export const phasePlanIndex = async (args, projectDir, workstream) => {
     const phaseFiles = await readdir(phaseDir);
     const planFiles = phaseFiles.filter(f => f.endsWith('-PLAN.md') || f === 'PLAN.md').sort();
     const summaryFiles = phaseFiles.filter(f => f.endsWith('-SUMMARY.md') || f === 'SUMMARY.md');
+    const nonCanonicalPlanFiles = phaseFiles.filter((f) => (f.toLowerCase().endsWith('.md')
+        && /(^|-)plan(-|\.)/i.test(f)
+        && !(f.endsWith('-PLAN.md') || f === 'PLAN.md'))).sort();
     // Build set of plan IDs with summaries — match the planId derivation logic
     const completedPlanIds = new Set(summaryFiles.flatMap((s) => {
         const exact = s === 'SUMMARY.md' ? 'PLAN' : s.replace('-SUMMARY.md', '');
         const canonical = extractCanonicalPlanId(s);
         return canonical === exact ? [exact] : [exact, canonical];
     }));
-    const plans = [];
-    const waves = {};
-    const incomplete = [];
-    let hasCheckpoints = false;
+    const rawPlans = [];
     for (const planFile of planFiles) {
         // For named plans (01-01-PLAN.md): strip suffix to get '01-01'
         // For bare PLAN.md: use the filename itself as the ID
@@ -246,15 +254,24 @@ export const phasePlanIndex = async (args, projectDir, workstream) => {
         const xmlTasks = content.match(/<task[\s>]/gi) || [];
         const mdTasks = content.match(/##\s*Task\s*\d+/gi) || [];
         const taskCount = xmlTasks.length || mdTasks.length;
-        // Parse wave as integer
-        const wave = parseInt(String(fm.wave), 10) || 1;
+        // Parse wave as integer — use nullish handling so wave: 0 is preserved.
+        // parseInt returns NaN for missing/non-numeric values; fall back to null
+        // (meaning "no declared wave") so downstream can apply the topo default.
+        const parsedWave = parseInt(String(fm.wave), 10);
+        const declaredWave = Number.isNaN(parsedWave) ? null : parsedWave;
+        // Parse depends_on — normalise to string[]
+        let dependsOn = [];
+        const fmDeps = fm['depends_on'];
+        if (Array.isArray(fmDeps)) {
+            dependsOn = fmDeps.map(String);
+        }
+        else if (typeof fmDeps === 'string' && fmDeps.trim() !== '') {
+            dependsOn = [fmDeps];
+        }
         // Parse autonomous (default true if not specified)
         let autonomous = true;
         if (fm.autonomous !== undefined) {
             autonomous = fm.autonomous === 'true' || fm.autonomous === true;
-        }
-        if (!autonomous) {
-            hasCheckpoints = true;
         }
         // Parse files_modified
         let filesModified = [];
@@ -263,34 +280,172 @@ export const phasePlanIndex = async (args, projectDir, workstream) => {
             filesModified = Array.isArray(fmFiles) ? fmFiles : [fmFiles];
         }
         const hasSummary = completedPlanIds.has(planId) || completedPlanIds.has(extractCanonicalPlanId(planFile));
-        if (!hasSummary) {
-            incomplete.push(planId);
-        }
-        const plan = {
+        rawPlans.push({
             id: planId,
-            wave,
+            declaredWave,
+            dependsOn,
             autonomous,
             objective: extractObjective(content) || fm.objective || null,
-            files_modified: filesModified,
-            task_count: taskCount,
-            has_summary: hasSummary,
+            filesModified,
+            taskCount,
+            hasSummary,
+        });
+    }
+    // ── Pass 2: topological level assignment via depends_on DAG ──────────────
+    // Build a map from plan ID → RawPlan for fast lookup.
+    // Deps that reference plans outside this phase are silently ignored (treated
+    // as already-satisfied external deps — the plan becomes a source node).
+    const planMap = new Map(rawPlans.map(p => [p.id, p]));
+    // Secondary index: canonical prefix → full plan ID, so depends_on: ['03-01'] resolves
+    // to '03-01-auth-hardening-PLAN.md'-derived ID '03-01-auth-hardening' (k015).
+    const canonicalToId = new Map(rawPlans.map(p => [extractCanonicalPlanId(p.id), p.id]));
+    // Tertiary index: same-phase short-form ('01') → full plan ID, derived from each plan's
+    // canonical '<phase>-<plan>' by splitting on the LAST '-'. The phase segment may
+    // contain dots (e.g. '99.9') or letters (e.g. '02A'); only the trailing '-NN' is the
+    // short form. Same-phase plans share a phase prefix so '01' is unambiguous within a
+    // single phase-plan-index call. (#3488)
+    const shortFormToId = new Map();
+    for (const p of rawPlans) {
+        const canonical = extractCanonicalPlanId(p.id);
+        const lastDash = canonical.lastIndexOf('-');
+        if (lastDash > 0 && lastDash < canonical.length - 1) {
+            const shortForm = canonical.slice(lastDash + 1);
+            // First write wins — preserve deterministic ordering from sorted planFiles.
+            if (!shortFormToId.has(shortForm)) {
+                shortFormToId.set(shortForm, p.id);
+            }
+        }
+    }
+    // Kahn's algorithm — compute in-degree and adjacency for plans in this phase only.
+    const level = new Map();
+    const inDeg = new Map();
+    const adj = new Map(); // dep → [dependents]
+    const unresolvedDeps = [];
+    for (const p of rawPlans) {
+        if (!inDeg.has(p.id))
+            inDeg.set(p.id, 0);
+        if (!adj.has(p.id))
+            adj.set(p.id, []);
+        for (const dep of p.dependsOn) {
+            // Accept full-stem ('03-01-auth-hardening'), canonical-prefix ('03-01'),
+            // and same-phase short-form ('01') forms. The short-form lookup (#3488)
+            // is keyed off the plan-id suffix so it works for integer ('99'), letter
+            // ('02A'), and decimal ('99.9') phase IDs alike.
+            let resolvedDep;
+            if (planMap.has(dep)) {
+                resolvedDep = dep;
+            }
+            else if (canonicalToId.has(dep)) {
+                resolvedDep = canonicalToId.get(dep);
+            }
+            else if (shortFormToId.has(dep)) {
+                resolvedDep = shortFormToId.get(dep);
+            }
+            if (!resolvedDep) {
+                // Looks like an in-phase short-form / canonical reference that didn't resolve.
+                // Distinguish from genuinely-external deps: if the dep matches the shape
+                // of an in-phase reference (no slash, matches NN / NN-NN / NN-NN-slug),
+                // record it for a dedicated warning so downstream users aren't misled
+                // by the wave-mismatch warning fired against the dropped edge.
+                unresolvedDeps.push({ planId: p.id, dep });
+                continue;
+            }
+            if (!adj.has(resolvedDep))
+                adj.set(resolvedDep, []);
+            adj.get(resolvedDep).push(p.id);
+            inDeg.set(p.id, (inDeg.get(p.id) ?? 0) + 1);
+        }
+    }
+    // Start with nodes that have no in-phase dependencies.
+    const queue = [];
+    for (const p of rawPlans) {
+        if ((inDeg.get(p.id) ?? 0) === 0) {
+            queue.push(p.id);
+            level.set(p.id, 0);
+        }
+    }
+    let visited = 0;
+    while (queue.length > 0) {
+        const cur = queue.shift();
+        visited++;
+        const curLevel = level.get(cur);
+        for (const dep of (adj.get(cur) ?? [])) {
+            const newLevel = curLevel + 1;
+            if (newLevel > (level.get(dep) ?? -1)) {
+                level.set(dep, newLevel);
+            }
+            inDeg.set(dep, inDeg.get(dep) - 1);
+            if (inDeg.get(dep) === 0) {
+                queue.push(dep);
+            }
+        }
+    }
+    // Cycle detection — any node not visited has a cycle.
+    if (visited < rawPlans.length) {
+        const cycleNodes = rawPlans.filter(p => !level.has(p.id)).map(p => p.id);
+        throw new GSDError(`depends_on cycle detected in phase ${normalized} — cycle involves: ${cycleNodes.join(', ')}`, ErrorClassification.Execution);
+    }
+    // ── Pass 3: determine lowest bucket key and build output ─────────────────
+    // If any plan has declared wave: 0, the lowest level maps to "0"; otherwise "1".
+    const anyWaveZero = rawPlans.some(p => p.declaredWave === 0);
+    const levelOffset = anyWaveZero ? 0 : 1;
+    const plans = [];
+    const waves = {};
+    const incomplete = [];
+    let hasCheckpoints = false;
+    const warnings = [];
+    if (nonCanonicalPlanFiles.length > 0) {
+        warnings.push(`Ignored noncanonical plan files: ${nonCanonicalPlanFiles.join(', ')}`);
+    }
+    // Surface unresolved depends_on references from Pass 2 — without this, a dropped
+    // short-form edge silently collapses the dependent plan into wave 1 and the only
+    // signal is a misleading "declared wave: N but depends_on DAG places it in wave 1"
+    // warning that points at the wave declaration rather than the broken reference. (#3488)
+    for (const { planId, dep } of unresolvedDeps) {
+        warnings.push(`Plan ${planId}: unresolved depends_on reference '${dep}' — no matching plan in phase`);
+    }
+    for (const raw of rawPlans) {
+        if (!raw.autonomous) {
+            hasCheckpoints = true;
+        }
+        if (!raw.hasSummary) {
+            incomplete.push(raw.id);
+        }
+        // Computed wave = topological level + offset (so lowest level → 0 or 1).
+        const computedWave = (level.get(raw.id) ?? 0) + levelOffset;
+        // The effective wave used for bucketing is always the computed topo level.
+        // If the plan declared a wave that disagrees, emit a non-fatal warning.
+        const effectiveWave = computedWave;
+        if (raw.declaredWave !== null && raw.declaredWave !== computedWave) {
+            warnings.push(`Plan ${raw.id}: declared wave: ${raw.declaredWave} but depends_on DAG places it in wave ${computedWave}`);
+        }
+        const plan = {
+            id: raw.id,
+            wave: effectiveWave,
+            depends_on: raw.dependsOn,
+            autonomous: raw.autonomous,
+            objective: raw.objective,
+            files_modified: raw.filesModified,
+            task_count: raw.taskCount,
+            has_summary: raw.hasSummary,
         };
         plans.push(plan);
-        // Group by wave
-        const waveKey = String(wave);
+        const waveKey = String(effectiveWave);
         if (!waves[waveKey]) {
             waves[waveKey] = [];
         }
-        waves[waveKey].push(planId);
+        waves[waveKey].push(raw.id);
     }
-    return {
-        data: {
-            phase: normalized,
-            plans,
-            waves,
-            incomplete,
-            has_checkpoints: hasCheckpoints,
-        },
+    const result = {
+        phase: normalized,
+        plans,
+        waves,
+        incomplete,
+        has_checkpoints: hasCheckpoints,
     };
+    if (warnings.length > 0) {
+        result['warnings'] = warnings;
+    }
+    return { data: result };
 };
 //# sourceMappingURL=phase.js.map

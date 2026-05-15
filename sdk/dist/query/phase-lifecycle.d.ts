@@ -18,37 +18,8 @@
  * ```
  */
 import type { QueryHandler } from './utils.js';
-/**
- * Replace a pattern only in the current milestone section of ROADMAP.md.
- *
- * Port of replaceInCurrentMilestone from core.cjs line 1197-1206.
- * If no `</details>` blocks exist, replaces in the entire content.
- * Otherwise, only replaces in content after the last `</details>` close tag.
- *
- * Edge case: when the active milestone is itself wrapped in a `<details>` block
- * (e.g. collapsed before it is fully shipped), the last `</details>` belongs to
- * the active milestone and the `after` slice is empty. In that case the function
- * falls back to searching the full content with all complete `<details>` blocks
- * stripped, so archived milestones are never touched.
- *
- * @param content - Full ROADMAP.md content
- * @param pattern - Regex or string pattern to match
- * @param replacement - Replacement string
- * @returns Modified content
- */
-export declare function replaceInCurrentMilestone(content: string, pattern: string | RegExp, replacement: string): string;
-/**
- * Atomic read-modify-write for ROADMAP.md.
- *
- * Holds a lockfile across the entire read -> transform -> write cycle.
- * Uses the same acquireStateLock/releaseStateLock mechanism as STATE.md
- * but with a ROADMAP.md-specific lock path.
- *
- * @param projectDir - Project root directory
- * @param modifier - Function to transform ROADMAP.md content
- * @returns The final written content
- */
-export declare function readModifyWriteRoadmapMd(projectDir: string, modifier: (content: string) => string | Promise<string>, workstream?: string): Promise<string>;
+import { readModifyWriteRoadmapMd, replaceInCurrentMilestone } from './phase-roadmap-mutation.js';
+export { readModifyWriteRoadmapMd, replaceInCurrentMilestone };
 /**
  * Query handler for phase.add.
  *
@@ -56,9 +27,12 @@ export declare function readModifyWriteRoadmapMd(projectDir: string, modifier: (
  * Creates a new phase directory with .gitkeep, appends a phase section
  * to ROADMAP.md before the last "---" separator.
  *
- * @param args - args[0]: description (required), args[1]: customId (optional)
+ * @param args - description (required), optional customId, optional --dry-run flag.
+ *   Recognized flags: --dry-run (compute result without writing to disk).
+ *   Any other --flag argument is rejected with a validation error.
  * @param projectDir - Project root directory
  * @returns QueryResult with { phase_number, padded, name, slug, directory, naming_mode }
+ *   In --dry-run mode also includes { dry_run: true, roadmap_entry: string }
  */
 export declare const phaseAdd: QueryHandler;
 /**

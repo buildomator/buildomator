@@ -22,7 +22,8 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { extractFrontmatter, stripFrontmatter } from './frontmatter.js';
-import { stateExtractField, planningPaths, escapeRegex } from './helpers.js';
+import { planningPaths, escapeRegex } from './helpers.js';
+import { computeProgressPercent, normalizeProgressNumbers, normalizeStateStatus, shouldPreserveExistingProgress, stateExtractField, } from './state-document.js';
 import { getMilestoneInfo, extractCurrentMilestone } from './roadmap.js';
 // ─── Internal helpers ──────────────────────────────────────────────────────
 /**
@@ -69,7 +70,7 @@ export async function getMilestonePhaseFilter(projectDir, workstream) {
  * Port of buildStateFrontmatter from state.cjs lines 650-760.
  * HIGH complexity: extracts fields, scans disk, computes progress.
  */
-export async function buildStateFrontmatter(bodyContent, projectDir, workstream) {
+export async function buildStateFrontmatter(bodyContent, projectDir, workstream, options = {}) {
     const currentPhase = stateExtractField(bodyContent, 'Current Phase');
     const currentPhaseName = stateExtractField(bodyContent, 'Current Phase Name');
     const currentPlan = stateExtractField(bodyContent, 'Current Plan');
@@ -134,39 +135,14 @@ export async function buildStateFrontmatter(bodyContent, projectDir, workstream)
     }
     catch { /* intentionally empty */ }
     // Derive percent from disk counts (ground truth)
-    let progressPercent = null;
-    if (totalPlans !== null && totalPlans > 0 && completedPlans !== null) {
-        progressPercent = Math.min(100, Math.round(completedPlans / totalPlans * 100));
-    }
-    else if (progressRaw) {
+    let progressPercent = computeProgressPercent(completedPlans, totalPlans, completedPhases, totalPhases);
+    if (progressPercent === null && progressRaw) {
         const pctMatch = progressRaw.match(/(\d+)%/);
         if (pctMatch)
             progressPercent = parseInt(pctMatch[1], 10);
     }
     // Normalize status
-    let normalizedStatus = status || 'unknown';
-    const statusLower = (status || '').toLowerCase();
-    if (statusLower.includes('paused') || statusLower.includes('stopped') || pausedAt) {
-        normalizedStatus = 'paused';
-    }
-    else if (statusLower.includes('executing') || statusLower.includes('in progress')) {
-        normalizedStatus = 'executing';
-    }
-    else if (statusLower.includes('planning') || statusLower.includes('ready to plan')) {
-        normalizedStatus = 'planning';
-    }
-    else if (statusLower.includes('discussing')) {
-        normalizedStatus = 'discussing';
-    }
-    else if (statusLower.includes('verif')) {
-        normalizedStatus = 'verifying';
-    }
-    else if (statusLower.includes('complete') || statusLower.includes('done')) {
-        normalizedStatus = 'completed';
-    }
-    else if (statusLower.includes('ready to execute')) {
-        normalizedStatus = 'executing';
-    }
+    let normalizedStatus = normalizeStateStatus(status, pausedAt);
     // Bug #2613: status preservation — if body has no Status field and existing
     // frontmatter has a non-unknown status, prefer existing.
     if (normalizedStatus === 'unknown' && typeof existingFm.status === 'string' && existingFm.status && existingFm.status !== 'unknown') {
@@ -209,12 +185,12 @@ export async function buildStateFrontmatter(bodyContent, projectDir, workstream)
     // prefer existing. Legitimate mid-milestone updates see non-zero disk counts
     // and fall through, keeping disk as ground truth.
     const existingProgress = existingFm.progress;
-    if (existingProgress && typeof existingProgress === 'object') {
+    if (options.preserveExistingProgress !== false && existingProgress && typeof existingProgress === 'object') {
         const derivedTotalPlans = Number(progress.total_plans ?? 0);
         const derivedCompletedPlans = Number(progress.completed_plans ?? 0);
         const existingTotalPlans = Number(existingProgress.total_plans ?? 0);
         if (derivedTotalPlans === 0 && derivedCompletedPlans === 0 && existingTotalPlans > 0) {
-            fm.progress = existingProgress;
+            fm.progress = normalizeProgressNumbers(existingProgress);
         }
     }
     return fm;
@@ -255,6 +231,12 @@ export const stateJson = async (_args, projectDir, workstream) => {
     // Preserve existing non-unknown status when body-derived is 'unknown'
     if (built.status === 'unknown' && existingFm && existingFm.status && existingFm.status !== 'unknown') {
         built.status = existingFm.status;
+    }
+    // Read-side projection: preserve curated cross-milestone aggregates when the
+    // disk scan sees only a narrower realized subset (#3242 Bug A). Mutation sync
+    // remains disk-authoritative when it sees non-zero counts.
+    if (existingFm && shouldPreserveExistingProgress(existingFm.progress, built.progress)) {
+        built.progress = normalizeProgressNumbers(existingFm.progress);
     }
     return { data: built };
 };
@@ -324,17 +306,39 @@ export const stateSnapshot = async (_args, projectDir, workstream) => {
     catch {
         return { data: { error: 'STATE.md not found' } };
     }
-    // Extract basic fields
-    const currentPhase = stateExtractField(content, 'Current Phase');
-    const currentPhaseName = stateExtractField(content, 'Current Phase Name');
-    const totalPhasesRaw = stateExtractField(content, 'Total Phases');
-    const currentPlan = stateExtractField(content, 'Current Plan');
-    const totalPlansRaw = stateExtractField(content, 'Total Plans in Phase');
-    const status = stateExtractField(content, 'Status');
-    const progressRaw = stateExtractField(content, 'Progress');
-    const lastActivity = stateExtractField(content, 'Last Activity');
-    const lastActivityDesc = stateExtractField(content, 'Last Activity Description');
-    const pausedAt = stateExtractField(content, 'Paused At');
+    // Bug #3265: prefer YAML frontmatter for canonical scalar fields so that a
+    // body table cell containing **Status:** Y cannot shadow the authoritative
+    // frontmatter value.  Matches the precedent set by buildStateFrontmatter
+    // (see state.ts:92 Bug #2613 comment).
+    const fm = extractFrontmatter(content);
+    const body = stripFrontmatter(content);
+    // Helper: return frontmatter scalar value when present and non-empty.
+    // Accepts strings, numbers, and booleans — coercing non-string primitives to
+    // their string representation so callers always receive string | null.
+    // Returns null for missing, null/undefined, or empty-after-trim values so
+    // the caller falls back to body extractor (covers STATE.md files that have
+    // no frontmatter at all, or frontmatter that lacks the specific key).
+    const fmScalar = (key) => {
+        const v = fm[key];
+        if (v === null || v === undefined)
+            return null;
+        if (typeof v === 'string')
+            return v.trim() || null;
+        if (typeof v === 'number' || typeof v === 'boolean')
+            return String(v);
+        return null;
+    };
+    // Extract basic fields — frontmatter keys take precedence over body
+    const currentPhase = fmScalar('current_phase') ?? stateExtractField(body, 'Current Phase');
+    const currentPhaseName = fmScalar('current_phase_name') ?? stateExtractField(body, 'Current Phase Name');
+    const totalPhasesRaw = fmScalar('total_phases') ?? stateExtractField(body, 'Total Phases');
+    const currentPlan = fmScalar('current_plan') ?? stateExtractField(body, 'Current Plan');
+    const totalPlansRaw = fmScalar('total_plans_in_phase') ?? stateExtractField(body, 'Total Plans in Phase');
+    const status = fmScalar('status') ?? stateExtractField(body, 'Status');
+    const progressRaw = fmScalar('progress') ?? stateExtractField(body, 'Progress');
+    const lastActivity = fmScalar('last_activity') ?? stateExtractField(body, 'Last Activity');
+    const lastActivityDesc = fmScalar('last_activity_desc') ?? stateExtractField(body, 'Last Activity Description');
+    const pausedAt = fmScalar('paused_at') ?? stateExtractField(body, 'Paused At');
     // Parse numeric fields
     const totalPhases = totalPhasesRaw ? parseInt(totalPhasesRaw, 10) : null;
     const totalPlansInPhase = totalPlansRaw ? parseInt(totalPlansRaw, 10) : null;
@@ -346,7 +350,7 @@ export const stateSnapshot = async (_args, projectDir, workstream) => {
     }
     // Extract decisions table
     const decisions = [];
-    const decisionsMatch = content.match(/##\s*Decisions Made[\s\S]*?\n\|[^\n]+\n\|[-|\s]+\n([\s\S]*?)(?=\n##|\n$|$)/i);
+    const decisionsMatch = body.match(/##\s*Decisions Made[\s\S]*?\n\|[^\n]+\n\|[-|\s]+\n([\s\S]*?)(?=\n##|\n$|$)/i);
     if (decisionsMatch) {
         const tableBody = decisionsMatch[1];
         const rows = tableBody.trim().split('\n').filter(r => r.includes('|'));
@@ -363,7 +367,7 @@ export const stateSnapshot = async (_args, projectDir, workstream) => {
     }
     // Extract blockers list
     const blockers = [];
-    const blockersMatch = content.match(/##\s*Blockers\s*\n([\s\S]*?)(?=\n##|$)/i);
+    const blockersMatch = body.match(/##\s*Blockers\s*\n([\s\S]*?)(?=\n##|$)/i);
     if (blockersMatch) {
         const blockersSection = blockersMatch[1];
         const items = blockersSection.match(/^-\s+(.+)$/gm) || [];
@@ -377,7 +381,7 @@ export const stateSnapshot = async (_args, projectDir, workstream) => {
         stopped_at: null,
         resume_file: null,
     };
-    const sessionMatch = content.match(/##\s*Session\s*\n([\s\S]*?)(?=\n##|$)/i);
+    const sessionMatch = body.match(/##\s*Session\s*\n([\s\S]*?)(?=\n##|$)/i);
     if (sessionMatch) {
         const sessionSection = sessionMatch[1];
         const lastDateMatch = sessionSection.match(/\*\*Last Date:\*\*\s*(.+)/i)

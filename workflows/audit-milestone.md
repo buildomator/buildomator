@@ -281,7 +281,7 @@ per group of related gaps) using the standard phase chain:
 
 /clear then:
 
-/gsd-phase --insert <N> "Close gap: <REQ-ID> — <description>"
+/gsd:phase --insert <N> "Close gap: <REQ-ID> — <description>"
 /gsd:discuss-phase <N>
 /gsd:plan-phase <N>
 /gsd:execute-phase <N>
@@ -332,7 +332,7 @@ Insert a closure phase using the standard chain:
 
 /clear then:
 
-/gsd-phase --insert <N> "Address tech debt: <area>"
+/gsd:phase --insert <N> "Address tech debt: <area>"
 /gsd:discuss-phase <N>
 /gsd:plan-phase <N>
 /gsd:execute-phase <N>

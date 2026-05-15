@@ -1,5 +1,5 @@
 import { GSDError, exitCodeFor } from '../errors.js';
-import { GSDToolsError } from '../gsd-tools.js';
+import { GSDToolsError } from '../gsd-tools-error.js';
 export function buildQueryCliOutputFromDispatch(out) {
     const stderrLines = [...out.stderr];
     const stdoutChunks = [];

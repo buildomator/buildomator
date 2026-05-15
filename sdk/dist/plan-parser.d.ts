@@ -13,6 +13,10 @@ import type { PlanTask, ParsedPlan } from './types.js';
  * Uses a stack-based parser that handles nested objects, inline arrays,
  * multi-line arrays, and boolean/numeric coercion. Ported from the CJS
  * reference implementation with the same edge-case coverage.
+ *
+ * Anchored at the start of the file — only the leading `---...---` block is
+ * considered canonical frontmatter. Body `---` separators and embedded YAML
+ * inside fenced code blocks are never picked up.
  */
 export declare function extractFrontmatter(content: string): Record<string, unknown>;
 /**

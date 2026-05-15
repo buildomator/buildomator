@@ -5,7 +5,8 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { safeReadFile, loadConfig, normalizePhaseName, escapeRegex, execGit, findPhaseInternal, getMilestoneInfo, stripShippedMilestones, extractCurrentMilestone, output, error, checkAgentsInstalled, CONFIG_DEFAULTS } = require('./core.cjs');
+const { loadConfig, normalizePhaseName, escapeRegex, findPhaseInternal, getMilestoneInfo, stripShippedMilestones, extractCurrentMilestone, output, error, checkAgentsInstalled, CONFIG_DEFAULTS, inspectWorktreeHealth } = require('./core.cjs');
+const { execGit, platformReadSync: safeReadFile, platformWriteSync } = require('./shell-command-projection.cjs');
 const { planningDir } = require('./planning-workspace.cjs');
 const { extractFrontmatter, parseMustHavesBlock } = require('./frontmatter.cjs');
 const { writeStateMd } = require('./state.cjs');
@@ -68,8 +69,8 @@ function cmdVerifySummary(cwd, summaryPath, checkFileCount, raw) {
   let commitsExist = false;
   if (hashes.length > 0) {
     for (const hash of hashes.slice(0, 3)) {
-      const result = execGit(cwd, ['cat-file', '-t', hash]);
-      if (result.exitCode === 0 && result.stdout === 'commit') {
+      const result = execGit(['cat-file', '-t', hash], { cwd });
+      if (result.exitCode === 0 && result.stdout.trim() === 'commit') {
         commitsExist = true;
         break;
       }
@@ -265,7 +266,7 @@ function cmdVerifyCommits(cwd, hashes, raw) {
   const valid = [];
   const invalid = [];
   for (const hash of hashes) {
-    const result = execGit(cwd, ['cat-file', '-t', hash]);
+    const result = execGit(['cat-file', '-t', hash], { cwd });
     if (result.exitCode === 0 && result.stdout.trim() === 'commit') {
       valid.push(hash);
     } else {
@@ -908,33 +909,39 @@ function cmdValidateHealth(cwd, options, raw) {
 
   // ─── Check 11: Stale / orphan git worktrees (#2167) ────────────────────────
   try {
-    const worktreeResult = execGit(cwd, ['worktree', 'list', '--porcelain']);
-    if (worktreeResult.exitCode === 0 && worktreeResult.stdout) {
-      const blocks = worktreeResult.stdout.split('\n\n').filter(Boolean);
-      // Skip the first block — it is always the main worktree
-      for (let i = 1; i < blocks.length; i++) {
-        const lines = blocks[i].split('\n');
-        const wtLine = lines.find(l => l.startsWith('worktree '));
-        if (!wtLine) continue;
-        const wtPath = wtLine.slice('worktree '.length);
-
-        if (!fs.existsSync(wtPath)) {
-          // Orphan: path no longer exists on disk
+    const worktreeHealth = inspectWorktreeHealth(
+      cwd,
+      { staleAfterMs: 60 * 60 * 1000 },
+      { execGit, existsSync: fs.existsSync, statSync: fs.statSync }
+    );
+    if (!worktreeHealth.ok) {
+      // AC2 / AC3: surface degraded-git state as a structured warning instead
+      // of silently suppressing it (PRED.k302 — error-swallowing-empty-sentinel).
+      if (worktreeHealth.reason === 'git_timed_out') {
+        addIssue('warning', 'W020',
+          'Worktree health check degraded: git worktree list timed out after 10s — orphan/stale worktrees could not be inspected',
+          'Run: git worktree list --porcelain to diagnose; check for .git/index.lock or a hung git process');
+      }
+      if (worktreeHealth.reason === 'git_list_failed') {
+        addIssue('warning', 'W020',
+          'Worktree health check degraded: git worktree list failed — orphan/stale worktrees could not be inspected',
+          'Run: git worktree list --porcelain to diagnose; check git repository state and permissions');
+      }
+      // Other non-ok reasons (not_a_git_repo) are silent — not meaningful for
+      // users who have no git repo.
+    } else {
+      for (const finding of worktreeHealth.findings) {
+        if (finding.kind === 'orphan') {
           addIssue('warning', 'W017',
-            `Orphan git worktree: ${wtPath} (path no longer exists on disk)`,
+            `Orphan git worktree: ${finding.path} (path no longer exists on disk)`,
             'Run: git worktree prune');
-        } else {
-          // Check if stale (older than 1 hour)
-          try {
-            const stat = fs.statSync(wtPath);
-            const ageMs = Date.now() - stat.mtimeMs;
-            const ONE_HOUR = 60 * 60 * 1000;
-            if (ageMs > ONE_HOUR) {
-              addIssue('warning', 'W017',
-                `Stale git worktree: ${wtPath} (last modified ${Math.round(ageMs / 60000)} minutes ago)`,
-                `Run: git worktree remove ${wtPath} --force`);
-            }
-          } catch { /* stat failed — skip */ }
+          continue;
+        }
+
+        if (finding.kind === 'stale') {
+          addIssue('warning', 'W017',
+            `Stale git worktree: ${finding.path} (last modified ${finding.ageMinutes} minutes ago)`,
+            `Run: git worktree remove ${finding.path} --force`);
         }
       }
     }
@@ -1013,7 +1020,7 @@ function cmdValidateHealth(cwd, options, raw) {
               parallelization: CONFIG_DEFAULTS.parallelization,
               brave_search: CONFIG_DEFAULTS.brave_search,
             };
-            fs.writeFileSync(configPath, JSON.stringify(defaults, null, 2), 'utf-8');
+            platformWriteSync(configPath, JSON.stringify(defaults, null, 2));
             repairActions.push({ action: repair, success: true, path: 'config.json' });
             break;
           }
@@ -1051,7 +1058,7 @@ function cmdValidateHealth(cwd, options, raw) {
                 if (!configParsed.workflow) configParsed.workflow = {};
                 if (configParsed.workflow.nyquist_validation === undefined) {
                   configParsed.workflow.nyquist_validation = true;
-                  fs.writeFileSync(configPath, JSON.stringify(configParsed, null, 2), 'utf-8');
+                  platformWriteSync(configPath, JSON.stringify(configParsed, null, 2));
                 }
                 repairActions.push({ action: repair, success: true, path: 'config.json' });
               } catch (err) {
@@ -1068,7 +1075,7 @@ function cmdValidateHealth(cwd, options, raw) {
                 if (!configParsed.workflow) configParsed.workflow = {};
                 if (configParsed.workflow.ai_integration_phase === undefined) {
                   configParsed.workflow.ai_integration_phase = true;
-                  fs.writeFileSync(configPath, JSON.stringify(configParsed, null, 2), 'utf-8');
+                  platformWriteSync(configPath, JSON.stringify(configParsed, null, 2));
                 }
                 repairActions.push({ action: repair, success: true, path: 'config.json' });
               } catch (err) {
@@ -1084,7 +1091,7 @@ function cmdValidateHealth(cwd, options, raw) {
             for (const ver of missingFromRegistry) {
               try {
                 const snapshotPath = path.join(milestonesArchiveDir, `${ver}-ROADMAP.md`);
-                const snapshot = fs.existsSync(snapshotPath) ? fs.readFileSync(snapshotPath, 'utf-8') : null;
+                const snapshot = safeReadFile(snapshotPath);
                 // Build minimal entry from snapshot title or version
                 const titleMatch = snapshot && snapshot.match(/^#\s+(.+)$/m);
                 const milestoneName = titleMatch ? titleMatch[1].replace(/^Milestone\s+/i, '').replace(/^v[\d.]+\s*/, '').trim() : ver;
@@ -1093,15 +1100,15 @@ function cmdValidateHealth(cwd, options, raw) {
                   ? fs.readFileSync(milestonesPath, 'utf-8')
                   : '';
                 if (!milestonesContent.trim()) {
-                  fs.writeFileSync(milestonesPath, `# Milestones\n\n${entry}`, 'utf-8');
+                  platformWriteSync(milestonesPath, `# Milestones\n\n${entry}`);
                 } else {
                   const headerMatch = milestonesContent.match(/^(#{1,3}\s+[^\n]*\n\n?)/);
                   if (headerMatch) {
                     const header = headerMatch[1];
                     const rest = milestonesContent.slice(header.length);
-                    fs.writeFileSync(milestonesPath, header + entry + rest, 'utf-8');
+                    platformWriteSync(milestonesPath, header + entry + rest);
                   } else {
-                    fs.writeFileSync(milestonesPath, entry + milestonesContent, 'utf-8');
+                    platformWriteSync(milestonesPath, entry + milestonesContent);
                   }
                 }
                 backfilled++;
@@ -1220,7 +1227,7 @@ function cmdVerifySchemaDrift(cwd, phaseArg, skipFlag, raw) {
   }
 
   // Also check git commit messages for push evidence
-  const gitLog = execGit(cwd, ['log', '--oneline', '--all', '-50']);
+  const gitLog = execGit(['log', '--oneline', '--all', '-50'], { cwd });
   if (gitLog.exitCode === 0) {
     executionLog += '\n' + gitLog.stdout;
   }
@@ -1282,7 +1289,7 @@ function cmdVerifyCodebaseDrift(cwd, raw) {
     const lastMapped = drift.readMappedCommit(structurePath);
 
     // Verify we're inside a git repo and resolve the diff range.
-    const revProbe = execGit(cwd, ['rev-parse', 'HEAD']);
+    const revProbe = execGit(['rev-parse', 'HEAD'], { cwd });
     if (revProbe.exitCode !== 0) {
       emit({
         skipped: true,
@@ -1301,11 +1308,11 @@ function cmdVerifyCodebaseDrift(cwd, raw) {
       base = EMPTY_TREE;
     } else {
       // Verify the commit is reachable; if not, fall back to EMPTY_TREE.
-      const verify = execGit(cwd, ['cat-file', '-t', base]);
+      const verify = execGit(['cat-file', '-t', base], { cwd });
       if (verify.exitCode !== 0) base = EMPTY_TREE;
     }
 
-    const diff = execGit(cwd, ['diff', '--name-status', base, 'HEAD']);
+    const diff = execGit(['diff', '--name-status', base, 'HEAD'], { cwd });
     if (diff.exitCode !== 0) {
       emit({
         skipped: true,

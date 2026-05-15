@@ -20,7 +20,9 @@
  */
 import { join } from 'node:path';
 import { GSDError, ErrorClassification } from '../errors.js';
-import { toPosixPath } from './helpers.js';
+function toPosixPath(p) {
+    return p.split('\\').join('/');
+}
 // ─── Validation ────────────────────────────────────────────────────────────
 /**
  * Validate a workspace or project name.
@@ -64,7 +66,7 @@ export function resolveWorkspaceContext() {
  * Return PlanningPaths scoped to the active workspace or project.
  *
  * When context has a workstream set: base = .planning/workstreams/<ws>/
- * When context has a project set: base = .planning/projects/<project>/
+ * When context has a project set: base = .planning/<project>/
  * When context is null or empty: base = .planning/ (default)
  *
  * Workspace and project names are validated before path construction.
@@ -82,7 +84,9 @@ export function workspacePlanningPaths(projectDir, context) {
     }
     else if (context?.project != null) {
         validateWorkspaceName(context.project, 'project');
-        base = join(projectDir, '.planning', 'projects', context.project);
+        // Match CJS planningDir() policy: project scopes under `.planning/<project>/`
+        // (not `.planning/projects/<project>/`).
+        base = join(projectDir, '.planning', context.project);
     }
     else {
         base = join(projectDir, '.planning');

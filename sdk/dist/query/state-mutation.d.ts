@@ -17,24 +17,14 @@
  * await stateBeginPhase(['11', 'State Mutations', '3'], '/project');
  * ```
  */
+import { stateReplaceField } from './state-document.js';
 import type { QueryHandler } from './utils.js';
 /**
  * Module-level set tracking held locks for process.on('exit') cleanup.
  * Exported for test access only.
  */
 export declare const _heldStateLocks: Set<string>;
-/**
- * Replace a field value in STATE.md content.
- *
- * Uses separate regex instances (no g flag) to avoid lastIndex persistence.
- * Supports both **bold:** and plain: formats.
- *
- * @param content - STATE.md content
- * @param fieldName - Field name to replace
- * @param newValue - New value to set
- * @returns Updated content, or null if field not found
- */
-export declare function stateReplaceField(content: string, fieldName: string, newValue: string): string | null;
+export { stateReplaceField };
 /**
  * Acquire a lockfile for STATE.md operations.
  *

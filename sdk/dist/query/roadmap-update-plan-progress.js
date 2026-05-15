@@ -7,10 +7,20 @@
  * for atomic writes (same pattern as `phase.complete`).
  */
 import { findPhase } from './phase.js';
-import { readModifyWriteRoadmapMd, replaceInCurrentMilestone } from './phase-lifecycle.js';
+import { readModifyWriteRoadmapMd, replaceInCurrentMilestone } from './phase-roadmap-mutation.js';
 import { existsSync } from 'node:fs';
 import { escapeRegex, planningPaths } from './helpers.js';
 import { GSDError, ErrorClassification } from '../errors.js';
+function phaseMarkdownRegexSource(phaseNum) {
+    const stripped = String(phaseNum).replace(/^[A-Z]{1,6}-(?=\d)/i, '');
+    const match = stripped.match(/^0*(\d+)([A-Z])?((?:\.\d+)*)$/i);
+    if (!match)
+        return escapeRegex(phaseNum);
+    const integer = match[1].replace(/^0+/, '') || '0';
+    const letter = match[2] ? escapeRegex(match[2]) : '';
+    const decimal = match[3] ? escapeRegex(match[3]) : '';
+    return `0*${escapeRegex(integer)}${letter}${decimal}`;
+}
 export const roadmapUpdatePlanProgress = async (args, projectDir, workstream) => {
     // Support --phase <N> flag form in addition to positional (fixes #2796).
     // execute-phase.md:228 passes --phase so positional-only parsing silently
@@ -63,8 +73,8 @@ export const roadmapUpdatePlanProgress = async (args, projectDir, workstream) =>
         };
     }
     await readModifyWriteRoadmapMd(projectDir, (roadmapContent) => {
-        const phaseEscaped = escapeRegex(phaseNum);
-        const tableRowPattern = new RegExp(`^(\\|\\s*${phaseEscaped}\\.?\\s[^|]*(?:\\|[^\\n]*))$`, 'im');
+        const phasePattern = phaseMarkdownRegexSource(phaseNum);
+        const tableRowPattern = new RegExp(`^(\\|\\s*${phasePattern}\\.?\\s[^|]*(?:\\|[^\\n]*))$`, 'im');
         const dateField = isComplete ? ` ${today} ` : '  ';
         roadmapContent = roadmapContent.replace(tableRowPattern, (fullRow) => {
             const cells = fullRow.split('|').slice(1, -1);
@@ -80,13 +90,13 @@ export const roadmapUpdatePlanProgress = async (args, projectDir, workstream) =>
             }
             return '|' + cells.join('|') + '|';
         });
-        const planCountPattern = new RegExp(`(#{2,4}\\s*Phase\\s+${phaseEscaped}(?:(?!\\n#{2,4})[\\s\\S])*?\\*\\*Plans:\\*\\*[ \\t]*)[^\\n]+`, 'i');
+        const planCountPattern = new RegExp(`(#{2,4}\\s*Phase\\s+${phasePattern}(?=[:\\s])(?:(?!\\n#{2,4})[\\s\\S])*?\\*\\*Plans:\\*\\*[ \\t]*)[^\\n]+`, 'i');
         const planCountText = isComplete
             ? `${summaryCount}/${planCount} plans complete`
             : `${summaryCount}/${planCount} plans executed`;
         roadmapContent = replaceInCurrentMilestone(roadmapContent, planCountPattern, `$1${planCountText}`);
         if (isComplete) {
-            const checkboxPattern = new RegExp(`(-\\s*\\[)[ ](\\]\\s*.*Phase\\s+${phaseEscaped}[:\\s][^\\n]*)`, 'i');
+            const checkboxPattern = new RegExp(`(-\\s*\\[)[ ](\\]\\s*.*Phase\\s+${phasePattern}[:\\s][^\\n]*)`, 'i');
             roadmapContent = replaceInCurrentMilestone(roadmapContent, checkboxPattern, `$1x$2 (completed ${today})`);
         }
         const summaries = info.summaries;

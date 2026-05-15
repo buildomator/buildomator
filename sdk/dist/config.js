@@ -28,6 +28,7 @@ export const CONFIG_DEFAULTS = {
         verifier: true,
         nyquist_validation: true,
         tdd_mode: false,
+        human_verify_mode: 'end-of-phase',
         auto_advance: false,
         node_repair: true,
         node_repair_budget: 2,

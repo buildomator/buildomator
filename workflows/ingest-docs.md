@@ -56,7 +56,7 @@ INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init ingest-docs)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Parse `project_exists`, `planning_exists`, `has_git`, `project_path` from INIT.
+Parse `project_exists`, `planning_exists`, `has_git`, `git_worktree_root`, `in_nested_subdir`, `project_path` from INIT.
 
 **Auto-detect MODE** if not set:
 - `planning_exists: true` → `MODE=merge`
@@ -64,7 +64,12 @@ Parse `project_exists`, `planning_exists`, `has_git`, `project_path` from INIT.
 
 If user passed `--mode new` but `.planning/` already exists: display warning and require explicit confirm via `AskUserQuestion` (approve-revise-abort from `references/gate-prompts.md`) before overwriting.
 
-If `has_git: false` and `MODE=new`: initialize git:
+Git initialisation (Bug #3491 — never create a nested `.git` inside an existing worktree):
+
+- If `has_git: true` and `in_nested_subdir: true`: do NOT run `git init`. Surface a warning that planning files will be tracked by the outer repo at `git_worktree_root`.
+- If `has_git: true` and `in_nested_subdir: false`: already at a worktree root, skip `git init`.
+- If `has_git: false` and `MODE=new`: initialize git:
+
 ```bash
 git init
 ```

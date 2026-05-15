@@ -18,7 +18,15 @@
  * // paths.state → '/my/project/.planning/workstreams/backend/STATE.md'
  * ```
  */
-import type { PlanningPaths } from './helpers.js';
+export interface PlanningPaths {
+    planning: string;
+    state: string;
+    roadmap: string;
+    project: string;
+    config: string;
+    phases: string;
+    requirements: string;
+}
 /**
  * Resolved workspace context from environment variables.
  */
@@ -40,7 +48,7 @@ export declare function resolveWorkspaceContext(): WorkspaceContext;
  * Return PlanningPaths scoped to the active workspace or project.
  *
  * When context has a workstream set: base = .planning/workstreams/<ws>/
- * When context has a project set: base = .planning/projects/<project>/
+ * When context has a project set: base = .planning/<project>/
  * When context is null or empty: base = .planning/ (default)
  *
  * Workspace and project names are validated before path construction.
