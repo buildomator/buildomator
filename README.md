@@ -1,8 +1,8 @@
 # GSD Plugin -- Get Shit Done for Claude Code
 
-**Based on:** [GSD 1.42.2](https://github.com/gsd-build/get-shit-done/releases/tag/v1.42.2) base tree by **TACHES** (Lex Christopherson)
+**Based on:** [GSD 1.42.3](https://github.com/gsd-build/get-shit-done/releases/tag/v1.42.3) base tree by **TACHES** (Lex Christopherson)
 
-**Plugin version:** `2.43.2`
+**Plugin version:** `2.43.3`
 
 **GSD Plugin for Claude Code** ensures your coding work gets done in a systematic, structured way. It prompts you only for the important design and architectural decisions that actually need your judgment, and it splits each step into its own focused subcontext so token use stays optimised across long projects.
 
