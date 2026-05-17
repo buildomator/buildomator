@@ -8,6 +8,42 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.43.3] - 2026-05-17  (based on upstream GSD 1.42.3)
+
+Upstream hotfix sync from v1.42.2 to v1.42.3 (35 commits, primarily phase-removal logic hardening and a `plan-phase` closed-phase guard). All 4 in-tree plugin patches and the 3 SDK source patch markers survive automatically this cycle because upstream did not touch the patched files; only `bin/lib/core.cjs` required surgical re-apply of the `#PLUGIN-AGENTS-DIR` blocks. The bundled SDK was rebuilt because 8 other `sdk/src/` modules changed.
+
+### Changed
+- **Version bump**, plugin `2.43.2` to `2.43.3`.
+- Refreshed wholesale from upstream: `agents/` (5 files), `bin/lib/` (8 files), `sdk/src/` (8 files including 1 new test), `workflows/` (4 files).
+- Rebundled `sdk/dist/cli.js` via `tsc + esbuild`; bundle is 1.66 MB and carries 3 `CLAUDE_PLUGIN_ROOT` matches.
+
+### Fixed (selected upstream highlights)
+- **Phase removal logic hardening** (v1.42.3, [#3599](https://github.com/gsd-build/get-shit-done/pull/3599), [#3600](https://github.com/gsd-build/get-shit-done/pull/3600), [#3601](https://github.com/gsd-build/get-shit-done/pull/3601), [#3602](https://github.com/gsd-build/get-shit-done/pull/3602)) prefixed-phase headings now treated as section boundaries, peer-depth decimal phase preservation on integer phase removal, slugged plan-ref renumbering on phase removal, and project-code-prefixed phase dir counting in the milestone filter.
+- **`plan-phase` gated on closed phases** (v1.42.3, [#3569](https://github.com/gsd-build/get-shit-done/pull/3569)) `init.plan-phase` surfaces `phase_status`; `/gsd:plan-phase` errors out on closed phases instead of silently re-planning.
+- **W007 warning ignores archived phases** (v1.42.3, [#3560](https://github.com/gsd-build/get-shit-done/pull/3560)) repos using a milestone-archive layout no longer get false-positive "Phase N in ROADMAP but no directory" warnings for archived phases.
+- **Codex install hardening** (v1.42.3, [#3610](https://github.com/gsd-build/get-shit-done/pull/3610)) fresh Codex installs no longer block when leftover bundled hooks are present in the project tree.
+- **Installer migration env override** (v1.42.3) `GSD_INSTALLER_MIGRATION_DIR` honored when resolving the migrations directory.
+
+### Added
+- **Antigravity first-class runtime** (v1.42.3, [#3608](https://github.com/gsd-build/get-shit-done/pull/3608)) `update.md` models Antigravity (Google's IDE) as a first-class runtime alongside Claude Code, Cursor, Codex, and the existing runtime list.
+
+### Plugin patches preserved verbatim
+- **`bin/lib/core.cjs`** (`#PLUGIN-AGENTS-DIR`) upstream modified `core.cjs` this cycle; the 2x `[PLUGIN PATCH]` blocks (`resolveGsdRoot` / `resolveGsdDataDir` / `resolveGsdAsset` helper exports plus the patched `getAgentsDir` body) were re-applied surgically after the wholesale copy.
+- **`bin/lib/model-catalog.cjs`** (`#PLUGIN-MODEL-CATALOG-PATH`) upstream did NOT modify this file v1.42.2..v1.42.3; the flat-layout candidate-prepend patch survives automatically.
+- **`bin/gsd-tools.cjs`** upstream did NOT modify this file v1.42.2..v1.42.3; 4 dispatch cases (`write-phase-memory`, `checkpoint`, `hook`, `migrate`) survive automatically.
+- **`hooks/gsd-context-monitor.js`** (`#PLUGIN-HOOK-CONTEXT-MONITOR`) upstream `hooks/` entirely unchanged v1.42.2..v1.42.3; patch survives automatically.
+- **`sdk/src/query/state-project-load.ts` + `sdk/src/query-gsd-tools-path.ts` + `sdk/src/sdk-package-compatibility.ts::legacyAssetProbes`** (SDK source patches) none of the 3 patched files appear in the upstream sdk/src/ diff this cycle; patches survive automatically. Bundle still carries 3 `CLAUDE_PLUGIN_ROOT` matches.
+
+### Plugin-owned (untouched by sync)
+- `bin/gsd-sdk` + `bin/gsd-sdk.cmd` (`#PLUGIN-WRAPPER-ENV-EXPORT`) byte-identical (sha256 verified pre/post sync).
+- `hooks/gsd-shadowing-sdk-detector.js` (added in v2.43.1) byte-identical (sha256 verified pre/post sync).
+- `commands/` remains absent (per plugin policy).
+
+### Tests
+- Regression trifecta passes against the synced tree: `tests/mcp-stdio-framing.test.cjs` (8 tools), `tests/workspace-json-integration.test.cjs` (22 checks), `tests/hooks-smoke.test.cjs` (16/16 including the v2.43.1 shadowing-sdk-detector cases).
+
+See full upstream release notes: <https://github.com/gsd-build/get-shit-done/releases/tag/v1.42.3>
+
 ## [2.43.2] - 2026-05-17  (based on upstream GSD 1.42.2)
 
 Docs hotfix on v2.43.1. Replaces the misleading README claim that a pre-v2.42.0 global `gsd-sdk` install "keeps working" with explicit pre-install uninstall instructions. The shadowing global at `/opt/homebrew/bin/gsd-sdk` (or `/usr/local/bin/gsd-sdk`) does NOT honor `CLAUDE_PLUGIN_ROOT` and causes `agents_installed: false` in `/gsd:new-project` and similar workflows, so users with a legacy install must remove it before the plugin can resolve its bundled agents. v2.43.1's runtime SessionStart detector now has a matching README entry to send users to.
