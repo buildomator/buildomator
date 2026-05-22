@@ -682,4 +682,38 @@ describe('phasePlanIndex', () => {
     expect(waves['2']).toEqual(['05C-02']);
     expect(warnings).toEqual([]);
   });
+
+  it('case-insensitive short-form depends_on: [01] resolves to uppercase-suffix plan ID', async () => {
+    const phase05d = join(tmpDir, '.planning', 'phases', '05D-short-form');
+    await mkdir(phase05d, { recursive: true });
+    await writeFile(join(phase05d, '05D-01-PLAN.md'), [
+      '---',
+      'phase: 05D',
+      'plan: 01',
+      'wave: 1',
+      'autonomous: true',
+      'depends_on: []',
+      '---',
+      '<objective>Plan A with uppercase suffix.</objective>',
+    ].join('\n'));
+    await writeFile(join(phase05d, '05D-02-PLAN.md'), [
+      '---',
+      'phase: 05D',
+      'plan: 02',
+      'wave: 2',
+      'autonomous: true',
+      'depends_on: [01]',
+      '---',
+      '<objective>Plan B references plan A via bare short-form.</objective>',
+    ].join('\n'));
+
+    const result = await phasePlanIndex(['05D'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    const waves = data.waves as Record<string, string[]>;
+    const warnings = (data.warnings as string[] | undefined) ?? [];
+
+    expect(waves['1']).toEqual(['05D-01']);
+    expect(waves['2']).toEqual(['05D-02']);
+    expect(warnings).toEqual([]);
+  });
 });

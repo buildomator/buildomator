@@ -86,7 +86,7 @@ definitions to be installed for this runtime.
 Subagent spawns (gsd-project-researcher, gsd-research-synthesizer, gsd-roadmapper) will fail
 with "agent type not found" if `required_agents_installed` is false. Run the installer with --global to make agents available:
 
-  npx get-shit-done-cc@latest --global
+  npx get-shit-done-redux@latest --global
 
 Proceeding without research subagents — roadmap will be generated inline.
 ```

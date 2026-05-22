@@ -129,7 +129,7 @@ if ! command -v gsd-sdk &>/dev/null; then
   echo "⚠ gsd-sdk not found in PATH, /gsd:quick requires it."
   echo ""
   echo "Install the query-capable GSD SDK CLI:"
-  echo "  npm install -g get-shit-done-cc"
+  echo "  npm install -g get-shit-done-redux"
   echo ""
   echo "Or update GSD to get the latest packages:"
   echo "  /gsd:update"

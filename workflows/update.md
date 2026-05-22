@@ -326,7 +326,7 @@ fi
 ```text
 Couldn't check for updates (reason: {LATEST_REASON}, exit: {LATEST_STATUS}).
 
-To update manually: `npx -y --package=get-shit-done-cc@latest -- get-shit-done-cc --global`
+To update manually: `npx -y --package=get-shit-done-redux@latest -- get-shit-done-redux --global`
 ```
 
 Exit.
@@ -527,17 +527,17 @@ RUNTIME_FLAG="--$TARGET_RUNTIME"
 
 **If LOCAL install:**
 ```bash
-npx -y --package=get-shit-done-cc@latest -- get-shit-done-cc "$RUNTIME_FLAG" --local
+npx -y --package=get-shit-done-redux@latest -- get-shit-done-redux "$RUNTIME_FLAG" --local
 ```
 
 **If GLOBAL install:**
 ```bash
-npx -y --package=get-shit-done-cc@latest -- get-shit-done-cc "$RUNTIME_FLAG" --global
+npx -y --package=get-shit-done-redux@latest -- get-shit-done-redux "$RUNTIME_FLAG" --global
 ```
 
 **If UNKNOWN install:**
 ```bash
-npx -y --package=get-shit-done-cc@latest -- get-shit-done-cc --claude --global
+npx -y --package=get-shit-done-redux@latest -- get-shit-done-redux --claude --global
 ```
 
 Capture output. If install fails, show error and exit.
@@ -611,7 +611,7 @@ Format completion message (changelog was already shown in confirmation step):
 
 ⚠️  Restart your runtime to pick up the new commands.
 
-[View full changelog](https://github.com/gsd-build/get-shit-done/blob/main/CHANGELOG.md)
+[View full changelog](https://github.com/open-gsd/get-shit-done-redux/blob/main/CHANGELOG.md)
 ```
 </step>
 

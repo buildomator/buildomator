@@ -8,6 +8,25 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.43.6] - 2026-05-22  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
+
+Upstream pointer change. The original `gsd-build/get-shit-done` repo was locked on 2026-05-22 after the founder rug-pulled the associated `$GSD` Solana token and deleted his social accounts (see [intellectia.ai](https://intellectia.ai/news/crypto/gsd-token-allegedly-rugpulled-after-founder-exit) and [ourcryptotalk](https://ourcryptotalk.com/news/bags-hackathon-winner-gsd-cloud-rug-pull) for independent coverage). Within hours, GSD collaborator [trek-e](https://github.com/trek-e) (Tom Boucher) launched a bit-perfect community continuation at [open-gsd/get-shit-done-redux](https://github.com/open-gsd/get-shit-done-redux): same MIT-licensed code, all 394 branches and 229 tags mirrored, all 77 open issues and 17 open PRs imported with cross-references. The plugin treats `open-gsd/get-shit-done-redux` as upstream from this release forward.
+
+No source code changed at the cutover. The redux is bit-perfect with the pre-rug tree; only URLs and npm package names move. The plugin still ships the same base-tree as v2.43.5 (upstream GSD 1.42.3) and the same `#PLUGIN-DEPS-ON-CASE-INSENSITIVE` patch. trek-e independently landed a more thorough version of that patch in redux as PR [#88](https://github.com/open-gsd/get-shit-done-redux/pull/88) (with collision-detection guard, canonical-casing assertions, and atomic SDK+CJS update); the plugin patch will retire naturally on the first redux-based sync.
+
+### Changed
+- **`README.md`**, top-of-file. Updated "Based on" line to point at the redux release tag, added a new "Upstream change (May 2026)" call-out documenting the rug-pull and migration with links to the two press articles and the redux's [migration announcement](https://github.com/open-gsd/get-shit-done-redux/discussions/109). Drift-resilience and "For users of upstream GSD" sections rewritten to reference the redux. Credits section updated to mention both the original (TACHES) and the new maintainer (trek-e + contributors).
+- **`workflows/forensics.md`, `workflows/update.md`, `workflows/help.md`, `workflows/new-project.md`, `workflows/new-milestone.md`, `workflows/quick.md`**. User-facing references to `gsd-build/get-shit-done` and the `get-shit-done-cc` npm package retargeted to `open-gsd/get-shit-done-redux` and `get-shit-done-redux`. `/gsd:forensics` issue-filing path now targets the redux for bug reports. `/gsd:update` recipe references the new npm package.
+- **Pre-install uninstall guidance.** Now lists both pre-rug (`get-shit-done-cc`, `@gsd-build/sdk`) and post-rug (`get-shit-done-redux`, `@gsd-redux/sdk`) global packages so users with either install can clear conflicts.
+
+### Added
+- **Short-form case-insensitive test** (`sdk/src/query/phase.test.ts`, 30 cases up from 29 in v2.43.5): a `05D` phase with `05D-02` declaring `depends_on: [01]` (bare short-form) referencing the uppercase-suffix plan `05D-01`. Exercises the `shortFormToId` lookup tier that the original v2.43.5 test (canonical-prefix form `05c-01`) did not cover. trek-e's upstream review on PR #3786 flagged this gap; the plugin now covers both.
+- **`bin/lib/phase.cjs`** comment block explicitly documenting that the CJS path supports a subset of the SDK's lookup forms (full plan ID + canonical prefix only, no short-form). Closes a parity question raised in trek-e's upstream review.
+
+### Deferred to first redux-based sync
+- **`bin/maintenance/check-upstream-schema.cjs`** still references `gsd-build/get-shit-done` for the upstream tarball download. The redux's release tarball naming (`get-shit-done-redux-<version>/`) differs from gsd-build's (`get-shit-done-<version>/`). Since gsd-build's frozen v1.42.3 tarball is still downloadable and the plugin remains on v1.42.3, this script keeps working without changes until the first redux-based sync. Tracked in [[project_upstream_switch_2026_05]] memory.
+- **`sdk/package.json` / `sdk/README.md`** still self-identify as `@gsd-build/sdk`. These are bundled build artifacts not exposed via npm to plugin users; they will rename on the first redux-based sync.
+
 ## [2.43.5] - 2026-05-21  (based on upstream GSD 1.42.3)
 
 Robustness fix in plan-id resolution. The `phase.plan-index` query now resolves `depends_on` references case-insensitively, so a plan with frontmatter `depends_on: [05c-01]` matches a sibling plan whose filename is `05C-01-PLAN.md` (and vice versa). Previously the lookup was strict-case via `Map.has()` on the raw plan ID, which silently dropped the edge, collapsed the dependent into wave 1, and surfaced a misleading "declared wave: N but depends_on DAG places it in wave 1" warning. Real-world repro: plans authored by the `gsd-planner` agent occasionally lowercase letter-suffix phases (e.g. `05c` while files are `05C`), and the dropped edge would only surface once execution ordering produced a downstream failure.

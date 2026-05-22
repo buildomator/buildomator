@@ -452,6 +452,11 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
   // Secondary index: canonical prefix → full plan ID, so depends_on: ['03-01'] resolves
   // to '03-01-auth-hardening-PLAN.md'-derived ID '03-01-auth-hardening' (k015).
   const canonicalToId = new Map(rawPlans.map(p => [extractCanonicalPlanId(p.id).toLowerCase(), p.id]));
+  // NB: this CJS path intentionally supports a subset of the SDK's lookup forms
+  // (full plan ID + canonical prefix only, no short-form). The SDK's phase.ts also
+  // has a `shortFormToId` map for two-digit references like depends_on: ['01']; that
+  // form is not supported here. Parity gap predates the case-insensitive patch and
+  // is tracked separately. Adding short-form here would require collision detection.
 
   // Kahn's algorithm — compute in-degree and adjacency for in-phase deps only.
   const level = new Map();

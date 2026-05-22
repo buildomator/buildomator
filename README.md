@@ -1,12 +1,20 @@
 # GSD Plugin -- Get Shit Done for Claude Code
 
-**Based on:** [GSD 1.42.3](https://github.com/gsd-build/get-shit-done/releases/tag/v1.42.3) base tree by **TACHES** (Lex Christopherson)
+**Based on:** [GSD 1.42.3](https://github.com/open-gsd/get-shit-done-redux/releases/tag/v1.42.3) base tree by **TACHES** (Lex Christopherson), now maintained by the community at [open-gsd/get-shit-done-redux](https://github.com/open-gsd/get-shit-done-redux)
 
-**Plugin version:** `2.43.5`
+**Plugin version:** `2.43.6`
 
 **GSD Plugin for Claude Code** ensures your coding work gets done in a systematic, structured way. It prompts you only for the important design and architectural decisions that actually need your judgment, and it splits each step into its own focused subcontext so token use stays optimised across long projects.
 
-Under the hood, a performance-optimized plugin packaging of [GSD](https://github.com/gsd-build/get-shit-done) for Claude Code: reduces per-turn token overhead by ~92%, adds MCP-backed project state, auto-resumes across `/compact`, and bundles everything into a single-install plugin.
+Under the hood, a performance-optimized plugin packaging of [GSD](https://github.com/open-gsd/get-shit-done-redux) for Claude Code: reduces per-turn token overhead by ~92%, adds MCP-backed project state, auto-resumes across `/compact`, and bundles everything into a single-install plugin.
+
+> ### Upstream change (May 2026)
+>
+> In May 2026 the original GSD maintainer TÂCHES (Lex Christopherson) became unreachable, deleted his social accounts, and the associated `$GSD` Solana token was publicly linked to a rug-pull (see external coverage: [intellectia.ai](https://intellectia.ai/news/crypto/gsd-token-allegedly-rugpulled-after-founder-exit), [ourcryptotalk](https://ourcryptotalk.com/news/bags-hackathon-winner-gsd-cloud-rug-pull)).
+>
+> On 2026-05-22, GSD collaborator [trek-e](https://github.com/trek-e) launched a community continuation at [open-gsd/get-shit-done-redux](https://github.com/open-gsd/get-shit-done-redux): same MIT-licensed code, all 394 branches and 229 tags mirrored bit-for-bit, no token references. The [migration announcement](https://github.com/open-gsd/get-shit-done-redux/discussions/109) details what changed for downstream consumers. The original `gsd-build/get-shit-done` is now locked and auto-closes new issues and PRs.
+>
+> This plugin treats `open-gsd/get-shit-done-redux` as upstream from `v2.43.6` onward. No code changed at the cutover (the redux is bit-perfect with the pre-rug tree); only URLs and npm package names moved. See [Versioning](#versioning) and [Credits](#credits) for the historical relationship.
 
 ## Installation
 
@@ -14,11 +22,11 @@ GSD Plugin installs *inside* a Claude Code session, not from your host shell. If
 
 ### No prerequisites
 
-As of **v2.42.0** the plugin bundles its own copy of the GSD SDK at `sdk/dist/cli.js` and ships a `bin/gsd-sdk` wrapper that Claude Code automatically puts on `PATH` for plugin Bash calls. You no longer need to `npm install -g get-shit-done-cc`. Closes [#4](https://github.com/jnuyens/gsd-plugin/issues/4).
+As of **v2.42.0** the plugin bundles its own copy of the GSD SDK at `sdk/dist/cli.js` and ships a `bin/gsd-sdk` wrapper that Claude Code automatically puts on `PATH` for plugin Bash calls. You no longer need to `npm install -g get-shit-done-cc` (or its successor `get-shit-done-redux`). Closes [#4](https://github.com/jnuyens/gsd-plugin/issues/4).
 
 ### Pre-install: remove any pre-v2.42.0 global SDK install
 
-If you previously installed `get-shit-done-cc` or `@gsd-build/sdk` via `npm -g` (or `npx`), the global binary at `/opt/homebrew/bin/gsd-sdk` (Apple Silicon) or `/usr/local/bin/gsd-sdk` (Intel macOS / Linux) takes precedence in `$PATH` over the plugin's bundled wrapper. The global SDK does NOT honor `CLAUDE_PLUGIN_ROOT`, so every plugin workflow that calls bare `gsd-sdk` (init queries, agent-skill lookups, config reads) reports `agents_installed: false`, and skills like `/gsd:new-project` silently degrade by skipping the parallel research path. The plugin's v2.42.5 wrapper-env-export patch only fires when the wrapper itself is invoked, so a shadowing global bypasses it.
+If you previously installed `get-shit-done-cc` / `get-shit-done-redux` or `@gsd-build/sdk` / `@gsd-redux/sdk` via `npm -g` (or `npx`), the global binary at `/opt/homebrew/bin/gsd-sdk` (Apple Silicon) or `/usr/local/bin/gsd-sdk` (Intel macOS / Linux) takes precedence in `$PATH` over the plugin's bundled wrapper. The global SDK does NOT honor `CLAUDE_PLUGIN_ROOT`, so every plugin workflow that calls bare `gsd-sdk` (init queries, agent-skill lookups, config reads) reports `agents_installed: false`, and skills like `/gsd:new-project` silently degrade by skipping the parallel research path. The plugin's v2.42.5 wrapper-env-export patch only fires when the wrapper itself is invoked, so a shadowing global bypasses it.
 
 Check whether you have a shadowing install:
 
@@ -31,6 +39,8 @@ If the output is anything OTHER than a path under `~/.claude/plugins/cache/gsd-p
 ```bash
 npm uninstall -g @gsd-build/sdk
 npm uninstall -g get-shit-done-cc
+npm uninstall -g @gsd-redux/sdk
+npm uninstall -g get-shit-done-redux
 ```
 
 Re-run `which gsd-sdk`. The expected post-uninstall output is either a path under `~/.claude/plugins/cache/gsd-plugin/` (after the plugin is installed in Step 3) or `gsd-sdk not found` (before installation). Both are correct.
@@ -113,7 +123,7 @@ Note: Step 1 refreshes the marketplace index but does not upgrade the installed 
 
 A PostToolUse hook also writes a fresh checkpoint after most tool calls (`Bash`, `Edit`, `Write`, `MultiEdit`, `NotebookEdit`, `Read`, `Grep`, `Glob`, `WebFetch`, `WebSearch`), throttled to at most once per 60 seconds via mtime. This bridges Claude Code's *microcompact* path, which silently strips stale tool outputs without firing PreCompact, AND covers read-heavy research phases that don't write files: the periodic checkpoint keeps `HANDOFF.json` at most ~60s stale at any point during an active session, so resume after an unexpected session end (usage cap, kill, network drop) reflects recent state.
 
-**Drift resilience.** The plugin sits downstream of [upstream GSD](https://github.com/gsd-build/get-shit-done), which ships frequent feature releases. To catch structural drift before it reaches users, three detectors run in CI on every push: a **file-layout drift detector** flags dangling `@~/.claude/get-shit-done/*` references (e.g. skill files delegating to workflow bodies that don't exist in the plugin); a **HANDOFF schema validator** confirms `checkpoint.cjs` output matches the committed JSON Schema; and a **namespace drift check** fires if any `/gsd-<skill>` dash-style command refs have been reintroduced. Each detector has a committed ratchet baseline; regressions hard-fail. After each upstream sync, an additional **upstream schema drift detector** (`check-upstream-schema.cjs`) compares upstream's `/gsd:pause-work` output against our schema to catch format divergence early.
+**Drift resilience.** The plugin sits downstream of [upstream GSD](https://github.com/open-gsd/get-shit-done-redux), which ships frequent feature releases. To catch structural drift before it reaches users, three detectors run in CI on every push: a **file-layout drift detector** flags dangling `@~/.claude/get-shit-done/*` references (e.g. skill files delegating to workflow bodies that don't exist in the plugin); a **HANDOFF schema validator** confirms `checkpoint.cjs` output matches the committed JSON Schema; and a **namespace drift check** fires if any `/gsd-<skill>` dash-style command refs have been reintroduced. Each detector has a committed ratchet baseline; regressions hard-fail. After each upstream sync, an additional **upstream schema drift detector** (`check-upstream-schema.cjs`) compares upstream's `/gsd:pause-work` output against our schema to catch format divergence early.
 
 ## Added features beyond upstream
 
@@ -147,7 +157,7 @@ Lightweight Node scripts live in `bin/maintenance/` for plugin upkeep tasks that
 
 ## For users of upstream GSD
 
-If you already have GSD installed via `npx get-shit-done-cc` or the legacy `~/.claude/get-shit-done/` setup, this section covers the move to the plugin. Skip this entirely if you're a new user.
+If you already have GSD installed via `npx get-shit-done-cc`, `npx get-shit-done-redux`, or the legacy `~/.claude/get-shit-done/` setup, this section covers the move to the plugin. Skip this entirely if you're a new user.
 
 ### What changed from upstream GSD
 
@@ -157,7 +167,7 @@ This plugin starts from upstream GSD's source tree and adds Claude-Code-native f
 
 | Aspect | Upstream GSD | This plugin |
 |--------|-------------|-------------|
-| Install | `npx get-shit-done-cc` | `/plugin marketplace add jnuyens/gsd-plugin && /plugin install gsd@gsd-plugin` (run inside Claude Code) |
+| Install | `npx get-shit-done-redux` (or pre-rug `get-shit-done-cc`) | `/plugin marketplace add jnuyens/gsd-plugin && /plugin install gsd@gsd-plugin` (run inside Claude Code) |
 | Context overhead | ~3,000-5,000 tokens/turn via CLAUDE.md | ~200 tokens (92% reduction) |
 | Skill isolation | Inline execution; orchestration prompts pollute parent context | `context: fork` sub-agent isolation; orchestration runs in clean child contexts |
 | State access | BashTool roundtrips to `gsd-tools` CLI | MCP resources + tools; structured queries replace prompt injection |
@@ -219,13 +229,14 @@ Type these at the Claude Code prompt:
 /reload-plugins
 ```
 
-#### 2. Uninstall `get-shit-done-cc` npm package (now safe -- v2.42.0+)
+#### 2. Uninstall the global `get-shit-done-*` npm package (now safe -- v2.42.0+)
 
 ```bash
-npm uninstall -g get-shit-done-cc
+npm uninstall -g get-shit-done-cc      # pre-rug package, may still be installed
+npm uninstall -g get-shit-done-redux   # post-rug package, if you installed it
 ```
 
-> **History:** this step's wording has changed twice. Versions ≤ v2.41.0 told users to uninstall while the plugin still needed the package's `gsd-sdk` binary, which silently broke every `/gsd:*` command ([#4](https://github.com/jnuyens/gsd-plugin/issues/4)). v2.41.1 corrected the README to "keep installed". v2.42.0 bundles the SDK inside the plugin, making the uninstall genuinely safe again. Thanks to @ThomasHezard for catching the original bug and @herman925 for confirming.
+> **History:** this step's wording has changed twice. Versions ≤ v2.41.0 told users to uninstall while the plugin still needed the package's `gsd-sdk` binary, which silently broke every `/gsd:*` command ([#4](https://github.com/jnuyens/gsd-plugin/issues/4)). v2.41.1 corrected the README to "keep installed". v2.42.0 bundles the SDK inside the plugin, making the uninstall genuinely safe again. Thanks to @ThomasHezard for catching the original bug and @herman925 for confirming. The post-rug package name (`get-shit-done-redux`) was added in v2.43.6.
 
 If you're on **v2.42.0 or newer** the plugin's `bin/gsd-sdk` wrapper takes over once the global one is gone; nothing breaks. If you're on an older plugin version, leave the global package alone until you've upgraded the plugin first.
 
@@ -280,6 +291,8 @@ claude plugin uninstall gsd
 # (or restore from ~/.claude/get-shit-done-legacy/ if you've already cut over)
 ```
 
+If you want to switch from the legacy backup to the post-rug upstream (`get-shit-done-redux`), install it via `npx get-shit-done-redux@latest`; it preserves all commits/branches/tags from the pre-rug tree, so any `.planning/` directory built with the legacy install continues to work without changes.
+
 ### Migration audit
 
 To check for any remaining legacy artifacts after migration:
@@ -319,7 +332,8 @@ This project repackages the GSD workflow system as a native Claude Code plugin w
 
 ## Credits
 
-- **[GSD (Get Shit Done)](https://github.com/gsd-build/get-shit-done)** by TACHES (Lex Christopherson) -- the original workflow framework this plugin is based on
+- **GSD (Get Shit Done)** by TACHES (Lex Christopherson) -- the original workflow framework this plugin is based on. Original repo at [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done) (locked May 2026 after the founder rug-pulled the associated `$GSD` token and deleted his accounts).
+- **[open-gsd/get-shit-done-redux](https://github.com/open-gsd/get-shit-done-redux)** by [trek-e](https://github.com/trek-e) (Tom Boucher) and contributors -- bit-perfect community continuation hosting the codebase going forward.
 - Plugin packaging, MCP integration, token optimization, and memory system by Jasper Nuyens
 
 ## License
