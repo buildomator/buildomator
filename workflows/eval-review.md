@@ -43,16 +43,24 @@ EVAL_REVIEW_FILE=$(ls "${PHASE_DIR}"/*-EVAL-REVIEW.md 2>/dev/null | head -1)
 **State C** — No SUMMARY.md: Exit — "Phase {N} not executed. Run /gsd:execute-phase {N} first."
 
 
-**Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Gemini CLI, etc.) where `AskUserQuestion` is not available.
-**If `EVAL_REVIEW_FILE` non-empty:** Use AskUserQuestion:
-- header: "Existing Eval Review"
-- question: "EVAL-REVIEW.md already exists for Phase {N}."
-- options:
-  - "Re-audit — run fresh audit"
-  - "View — display current review and exit"
+**Parse flags from `$ARGUMENTS`:** `--refresh` (force re-audit, re-spawn eval-auditor), `--view` (print existing to stdout and exit).
 
-If "View": display file, exit.
-If "Re-audit": continue.
+**If `EVAL_REVIEW_FILE` non-empty AND no `--refresh` AND no `--view`:** auto-use existing. Emit a one-line notice and exit cleanly:
+
+```
+EVAL-REVIEW.md already exists for Phase {N}.
+To force a fresh audit, re-invoke with --refresh.
+To print the existing review, re-invoke with --view.
+Path: ${EVAL_REVIEW_FILE}
+```
+
+**If `EVAL_REVIEW_FILE` non-empty AND `--view`:** display file contents, exit cleanly.
+
+**If `EVAL_REVIEW_FILE` non-empty AND `--refresh`:** continue (re-spawn eval-auditor for a fresh audit).
+
+**If `EVAL_REVIEW_FILE` empty:** continue (first audit run).
+
+(Prior behavior was a two-way AskUserQuestion prompt with Re-audit/View options when the file existed. Removed in favor of the auto-use-existing default plus explicit escape hatches.)
 
 **If State B (no AI-SPEC.md):** Warn:
 ```

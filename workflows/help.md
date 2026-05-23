@@ -48,12 +48,15 @@ Creates all `.planning/` artifacts:
 
 Usage: `/gsd:new-project`
 
-**`/gsd:map-codebase [--fast] [--focus <area>] [--query <term>]`**
+**`/gsd:map-codebase [--fast] [--focus <area>] [--query <term>] [--refresh] [--view] [--update [<docs>]]`**
 Map an existing codebase for brownfield projects.
 
 - `--fast` — rapid lightweight assessment (replaces the former `gsd-scan`)
 - `--focus <area>` — scope the map to a specific area
 - `--query <term>` — query the codebase intelligence index in `.planning/intel/` (replaces the former `gsd-intel`)
+- `--refresh`: force a full remap (delete and rebuild)
+- `--update [<docs>]`: partial update of specific documents (comma-separated, e.g. `--update STACK.md,STRUCTURE.md`; bare `--update` asks which)
+- (default when map exists) auto-uses existing `.planning/codebase/` as-is (one-line notice, no prompt)
 
 - Analyzes codebase with parallel Explore agents
 - Creates `.planning/codebase/` with 7 focused documents
@@ -572,8 +575,8 @@ The commands above cover the most common day-to-day flows. Every command listed 
 
 - **`/gsd:explore`**, Socratic ideation and idea routing. Think through ideas before committing to plans.
 - **`/gsd:spec-phase <phase> [--auto] [--text]`**, Clarify WHAT a phase delivers with ambiguity scoring; produces a SPEC.md before discuss-phase.
-- **`/gsd:ai-integration-phase [phase]`**, Generate an AI-SPEC.md design contract for phases that involve building AI systems.
-- **`/gsd:ui-phase [phase]`**, Generate UI design contract (UI-SPEC.md) for frontend phases.
+- **`/gsd:ai-integration-phase [phase] [--refresh] [--view]`**, Generate an AI-SPEC.md design contract for phases that involve building AI systems. When AI-SPEC.md already exists, auto-uses it (one-line notice, no prompt); pass `--refresh` to regenerate or `--view` to print.
+- **`/gsd:ui-phase [phase] [--refresh] [--view]`**, Generate UI design contract (UI-SPEC.md) for frontend phases. When UI-SPEC.md already exists, auto-proceeds to the checker on the existing spec (no prompt); pass `--refresh` to regenerate or `--view` to print.
 - **`/gsd:import --from <filepath> | --from-gsd2`**, Ingest external plans with conflict detection, or reverse-migrate a GSD-2 (`.gsd/`) project back to GSD v1 (`.planning/`) format.
 - **`/gsd:ingest-docs [path] [--mode new|merge] [--manifest <file>] [--resolve auto|interactive]`**, Bootstrap or merge a `.planning/` setup from existing ADRs, PRDs, SPECs, and docs in a repo.
 
@@ -588,8 +591,8 @@ The commands above cover the most common day-to-day flows. Every command listed 
 - **`/gsd:code-review <phase> [--depth=quick|standard|deep] [--files file1,file2,...] [--fix [--all] [--auto]]`**, Review source files changed during a phase for bugs, security issues, and code quality problems.
 - **`/gsd:secure-phase [phase]`**, Retroactively verify threat mitigations for a completed phase.
 - **`/gsd:validate-phase [phase]`**, Retroactively audit and fill Nyquist validation gaps for a completed phase.
-- **`/gsd:ui-review [phase]`**, Retroactive 6-pillar visual audit of implemented frontend code.
-- **`/gsd:eval-review [phase]`**, Audit an executed AI phase's evaluation coverage and produce an EVAL-REVIEW.md remediation plan.
+- **`/gsd:ui-review [phase] [--refresh] [--view]`**, Retroactive 6-pillar visual audit of implemented frontend code. When UI-REVIEW.md already exists, auto-uses it (one-line notice, no prompt); pass `--refresh` for a fresh audit or `--view` to print.
+- **`/gsd:eval-review [phase] [--refresh] [--view]`**, Audit an executed AI phase's evaluation coverage and produce an EVAL-REVIEW.md remediation plan. When EVAL-REVIEW.md already exists, auto-uses it (one-line notice, no prompt); pass `--refresh` for a fresh audit or `--view` to print.
 - **`/gsd:audit-fix --source <audit-uat> [--severity medium|high|all] [--max N] [--dry-run]`**, Autonomous audit-to-fix pipeline: find issues, classify, fix, test, commit.
 - **`/gsd:add-tests <phase> [additional instructions]`**, Generate tests for a completed phase based on UAT criteria and implementation.
 

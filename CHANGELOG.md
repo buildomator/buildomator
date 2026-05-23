@@ -8,6 +8,21 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.43.9] - 2026-05-23  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
+
+Extension of the v2.43.8 auto-use-existing pattern to four additional artifact-existence prompts. Same logic applies: when an artifact already exists and the workflow's natural next step is "use it," prompting for confirmation is friction. The explicit-flag escape hatches (`--refresh` to regenerate, `--view` to print, `--update` for partial refresh on map-codebase) cover every deviation path. Default behavior is now auto-proceed with a one-line notice.
+
+### Changed
+- **`workflows/ui-phase.md` step 4 (UI-SPEC.md existing-artifact handling)**: when `UI-SPEC.md` exists and neither `--refresh` nor `--view` is set, auto-proceeds to step 7 (checker) on the existing spec instead of prompting Update/View/Skip. Replaces the AskUserQuestion with a one-line notice. `--refresh` re-spawns the researcher (was "Update" in the prompt); `--view` prints to stdout and exits. The previous "Skip" path matches the new default behavior.
+- **`workflows/ai-integration-phase.md` step 4 (AI-SPEC.md existing-artifact handling)**: same pattern. Auto-exit with notice when `AI-SPEC.md` exists; `--refresh` re-runs framework-selector and the downstream pipeline; `--view` prints to stdout. Replaces the three-way Update/View/Skip prompt.
+- **`workflows/ui-review.md` step 1 (UI-REVIEW.md existing-artifact handling)**: auto-exit with notice when `UI-REVIEW.md` exists; `--refresh` runs a fresh audit; `--view` prints to stdout. Replaces the two-way Re-audit/View prompt.
+- **`workflows/eval-review.md` step 1 (EVAL-REVIEW.md existing-artifact handling)**: same as ui-review pattern.
+- **`workflows/map-codebase.md` `check_existing` step (codebase/ existing-artifact handling)**: auto-exit with notice when `.planning/codebase/` exists; `--refresh` deletes and remaps; `--update [<docs>]` partial-refreshes (with or without a comma-separated doc list). Replaces the three-way Refresh/Update/Skip prompt.
+- **`workflows/help.md`**: command signatures and per-command descriptions updated to document the new `--refresh`, `--view`, and `--update` flags.
+
+### Upstream
+- All five prompts exist upstream in `open-gsd/get-shit-done-redux`. Will extend the enhancement issue #159 (filed for the analogous RESEARCH.md fix in v2.43.8) with the four additional prompts, or file a sibling issue if maintainer prefers narrower scope per issue. Same Gate 0 workaround pattern applies (fork-PRs blocked; diff posted as issue comment).
+
 ## [2.43.8] - 2026-05-23  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 UX refinement in research-only mode. `/gsd:plan-phase --research-phase N` used to prompt with a three-way Update/View/Skip menu when `RESEARCH.md` already existed for the target phase. The friction outweighed the value in practice: callers reaching for `--research-phase` either want to refresh research (covered by `--research`) or print it (covered by `--view`); the third option ("Skip") was the prompt's reason for existing, but it duplicated what auto-proceed-with-existing would do anyway. The standard `/gsd:plan-phase N` flow at §5.1 already auto-uses existing research without prompting; research-only mode now matches that behavior.

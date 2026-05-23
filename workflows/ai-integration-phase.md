@@ -76,18 +76,24 @@ AI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-AI-SPEC.md 2>/dev/null | head -1)
 ```
 
 
-**Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Gemini CLI, etc.) where `AskUserQuestion` is not available.
-**If exists:** Use AskUserQuestion:
-- header: "Existing AI-SPEC"
-- question: "AI-SPEC.md already exists for Phase {N}. What would you like to do?"
-- options:
-  - "Update — re-run with existing as baseline"
-  - "View — display current AI-SPEC and exit"
-  - "Skip — keep current AI-SPEC and exit"
+**Parse flags from `$ARGUMENTS`:** `--refresh` (force-regenerate, re-run framework-selector + downstream pipeline), `--view` (print existing to stdout and exit).
 
-If "View": display file contents, exit.
-If "Skip": exit.
-If "Update": continue to step 5.
+**If exists AND no `--refresh` AND no `--view`:** auto-use existing. Emit a one-line notice and exit cleanly:
+
+```
+AI-SPEC.md already exists for Phase {N}, using it.
+To force-regenerate, re-invoke with --refresh.
+To print the existing spec, re-invoke with --view.
+Path: ${AI_SPEC_FILE}
+```
+
+**If exists AND `--view`:** display file contents, exit cleanly.
+
+**If exists AND `--refresh`:** continue to step 5 (re-run with existing as baseline).
+
+**If does not exist:** continue to step 5.
+
+(Prior behavior was a three-way AskUserQuestion prompt with Update/View/Skip options when the file existed. The interactive confirmation was friction with no value the explicit-flag escape hatches do not already cover; the default "use existing, exit cleanly" path is what callers nearly always want when the spec is present.)
 
 ## 5. Spawn gsd-framework-selector
 

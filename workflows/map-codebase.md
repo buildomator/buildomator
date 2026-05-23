@@ -85,26 +85,27 @@ If `codebase_dir_exists` is true:
 ls -la .planning/codebase/
 ```
 
-**If exists:**
+**Parse flags from `$ARGUMENTS`:** `--refresh` (delete and remap from scratch), `--update [<docs>]` (partial update, optionally scoped to a comma-separated list of doc names like `STACK.md,STRUCTURE.md`).
+
+**If exists AND no `--refresh` AND no `--update`:** auto-use existing. Emit a brief notice and exit cleanly:
 
 ```
 .planning/codebase/ already exists with these documents:
 [List files found]
 
-What's next?
-1. Refresh - Delete existing and remap codebase
-2. Update - Keep existing, only update specific documents
-3. Skip - Use existing codebase map as-is
+Using existing map as-is.
+To force a full remap, re-invoke with --refresh.
+To partially update specific documents, re-invoke with --update <docs> (comma-separated, e.g. --update STACK.md,STRUCTURE.md; or bare --update to be asked which).
 ```
 
-Wait for user response.
+**If exists AND `--refresh`:** delete `.planning/codebase/`, continue to `create_structure`.
 
-If "Refresh": Delete .planning/codebase/, continue to create_structure
-If "Update": Ask which documents to update, continue to spawn_agents (filtered)
-If "Skip": Exit workflow
+**If exists AND `--update <docs>`:** continue to `spawn_agents` filtered to the named documents. With bare `--update` (no args), ask which documents to update via AskUserQuestion checkbox list, then continue to `spawn_agents` filtered.
 
 **If doesn't exist:**
-Continue to create_structure.
+Continue to `create_structure`.
+
+(Prior behavior was a three-way Refresh/Update/Skip prompt when the directory existed. The interactive confirmation was friction; the default "use as-is" path is what callers nearly always want, and the explicit flags cover the two deviation paths.)
 </step>
 
 <step name="create_structure">
