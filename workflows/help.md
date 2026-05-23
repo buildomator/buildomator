@@ -97,7 +97,7 @@ Create detailed execution plan for a specific phase.
 
 - `--skip-research` — bypass the research subagent
 - `--research-phase <N>` — research-only mode. Spawns the research agent for phase `<N>`, writes `RESEARCH.md`, then exits before the planner runs. Useful for cross-phase research, doc review before committing to a planning approach, and correction-without-replanning loops. Replaces the deleted `gsd-research-phase` standalone command (#3042).
-  - Modifiers: `--research` forces refresh (re-spawn researcher, no prompt). `--view` prints existing `RESEARCH.md` to stdout without spawning. With neither, prompts `update / view / skip` if `RESEARCH.md` already exists.
+  - Modifiers: `--research` forces refresh (re-spawn researcher). `--view` prints existing `RESEARCH.md` to stdout without spawning. With neither, auto-uses existing `RESEARCH.md` if present (brief notice, no prompt). Pass `--research` or `--view` to deviate.
 - `--gaps` — focus only on closing gaps from a prior plan-check
 - `--skip-verify` — skip the post-plan verifier loop
 - `--prd <file>` — use a PRD file as planning context and skip discuss-phase (mutually exclusive with `--ingest`)
@@ -112,7 +112,7 @@ Create detailed execution plan for a specific phase.
 - Multiple plans per phase supported (XX-01, XX-02, etc.)
 
 Usage: `/gsd:plan-phase 1`
-Usage: `/gsd:plan-phase --research-phase 2`, research only on phase 2 (prompts if `RESEARCH.md` exists)
+Usage: `/gsd:plan-phase --research-phase 2`, research only on phase 2 (auto-uses existing `RESEARCH.md` if present; pass `--research` to refresh or `--view` to print)
 Usage: `/gsd:plan-phase --research-phase 2 --view`, print existing `RESEARCH.md`, no spawn
 Usage: `/gsd:plan-phase --research-phase 2 --research`, force-refresh, no prompt
 Result: Creates `.planning/phases/01-foundation/01-01-PLAN.md`

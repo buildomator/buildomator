@@ -424,7 +424,16 @@ Three branches in research-only mode (`--research-phase <N>`):
 
 1. **`--view`** (or user picks "View" in the prompt below): print `RESEARCH.md` to stdout, no spawn, exit. If `RESEARCH.md` is missing, error with: `--view requires an existing RESEARCH.md; drop --view to spawn the researcher.`
 2. **`--research`** (force-refresh): re-spawn researcher unconditionally — fall through to "Spawn gsd-phase-researcher" below.
-3. **Neither flag AND `has_research=true`:** emit `RESEARCH.md already exists for Phase ${PHASE}.` and prompt the user with three choices: `1. Update — re-spawn researcher and refresh RESEARCH.md`, `2. View — print existing RESEARCH.md and exit (no spawn)`, `3. Skip — exit without spawning or printing`. Map "Update" → fall through to spawn, "View" → set `VIEW_ONLY=true` and emit RESEARCH.md as in (1), "Skip" → exit cleanly. Mirrors the deleted `/gsd-research-phase` standalone's existing-artifact menu (#3042 parity).
+3. **Neither flag AND `has_research=true`:** emit a brief notice and exit cleanly without prompting:
+
+   ```
+   RESEARCH.md already exists for Phase ${PHASE}, using it.
+   To force-refresh, re-invoke with --research.
+   To print the existing research, re-invoke with --view.
+   Path: ${research_path}
+   ```
+
+   This matches the standard plan-phase flow at §5.1 (line 440), which already auto-uses existing research without prompting. Forcing an interactive Update/View/Skip menu here required the user to confirm an action they did not ask to confirm; the explicit-flag escape hatches (`--research` and `--view`) already cover the cases where the caller wants to deviate from "use existing." Prior behavior (the three-way prompt) was a 2026-05 design that mirrored the deleted `/gsd-research-phase` standalone's menu (#3042 parity); it is replaced here by auto-proceed because the prompt's friction outweighed its value in practice.
 
 ```bash
 if [[ "$VIEW_ONLY" == "true" ]]; then

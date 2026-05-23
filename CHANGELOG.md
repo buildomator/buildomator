@@ -8,6 +8,16 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.43.8] - 2026-05-23  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
+
+UX refinement in research-only mode. `/gsd:plan-phase --research-phase N` used to prompt with a three-way Update/View/Skip menu when `RESEARCH.md` already existed for the target phase. The friction outweighed the value in practice: callers reaching for `--research-phase` either want to refresh research (covered by `--research`) or print it (covered by `--view`); the third option ("Skip") was the prompt's reason for existing, but it duplicated what auto-proceed-with-existing would do anyway. The standard `/gsd:plan-phase N` flow at §5.1 already auto-uses existing research without prompting; research-only mode now matches that behavior.
+
+### Changed
+- **`workflows/plan-phase.md` §5.0 (research-only existing-artifact handling)**: when `RESEARCH.md` already exists and neither `--research` nor `--view` is set, emit a one-line notice naming the file and exit cleanly. No more Update/View/Skip prompt. The explicit-flag escape hatches (`--research` for force-refresh, `--view` for print) still work and are now the only paths that deviate from "use existing." Help text in `workflows/help.md` updated to match.
+
+### Upstream
+- Same prompt exists upstream in `open-gsd/get-shit-done-redux` at `get-shit-done/workflows/plan-phase.md` §5.0. Filed enhancement issue and proposed the diff via issue comment (fork-PRs blocked on the redux per [[reference_upstream_gsd_contribution.md]] Gate 0).
+
 ## [2.43.7] - 2026-05-23  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 Workflow robustness fix and branding polish. Two workflows had `config-get workflow.nyquist_validation` calls that didn't supply a `--default` value: `workflows/validate-phase.md` was fully unguarded (would emit `Error: Key not found` to stderr and leave the variable empty when the key is unset), and `workflows/audit-milestone.md` redirected stderr but had no fallback (silent empty variable). The downstream "is the variable equal to false" checks behaved correctly by accident (empty != "false" treats absent-key as enabled, matching the documented default), but the stderr noise was real and the empty-variable trail through audit-milestone.md is the kind of silent-failure mode that breaks once a future patch adds a meaningful `--raw` consumer.
