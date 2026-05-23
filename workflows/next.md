@@ -134,6 +134,49 @@ gsd-sdk query commit "docs: defer incomplete Phase {src} items to backlog"
 **If the user chooses "Force" (F):** Continue to `determine_next_action` without recording deferral.
 </step>
 
+<step name="resume_incomplete_phase">
+**Hard invariant: any phase with PLAN.md files lacking matching SUMMARY.md files must be completed before /gsd:next routes to any forward action.**
+
+This catches the common failure mode where a session died mid-execution (hang, token exhaustion, API connection drop) and STATE.md's `current_phase` got advanced past the phase that actually has unfinished work. Without this gate, `/gsd:next` would route by `current_phase` and silently skip the partially-executed phase.
+
+**Skip if `--force` or `--no-resume` was passed.**
+
+Scan ALL phases in ROADMAP order (lowest-numbered to highest) for incomplete-execution state. Use `gsd-sdk query roadmap.analyze` to get the phase list, then for each phase number `N` query `gsd-sdk query find-phase <N>` JSON and inspect its `plans` and `summaries` arrays. A phase is **incomplete-execution** when at least one entry in `plans` has no matching SUMMARY.md (i.e., `plans.length > summaries.length`, or `incomplete_plans` array is non-empty if the find-phase JSON exposes that directly).
+
+Stop at the first such phase. Record its phase number as `INCOMPLETE_PHASE`. This is the lowest-numbered phase that needs continued execution.
+
+Illustrative bash:
+
+```bash
+INCOMPLETE_PHASE=""
+PHASES=$(gsd-sdk query roadmap.analyze --pick phases 2>/dev/null)
+for PHASE_NUM in $(echo "$PHASES" | jq -r '.[].number // .[].phase_number // empty'); do
+  PHASE_JSON=$(gsd-sdk query find-phase "$PHASE_NUM" 2>/dev/null)
+  [ -z "$PHASE_JSON" ] && continue
+  PLAN_COUNT=$(echo "$PHASE_JSON" | jq '(.plans // []) | length')
+  SUMMARY_COUNT=$(echo "$PHASE_JSON" | jq '(.summaries // []) | length')
+  if [ "${PLAN_COUNT:-0}" -gt "${SUMMARY_COUNT:-0}" ]; then
+    INCOMPLETE_PHASE="$PHASE_NUM"
+    break
+  fi
+done
+```
+
+**If `INCOMPLETE_PHASE` is non-empty:** route to `/gsd:execute-phase $INCOMPLETE_PHASE` and exit. Display a one-line notice before invoking:
+
+```
+▶ Resuming incomplete Phase ${INCOMPLETE_PHASE} (plans without summaries detected)
+  /gsd:execute-phase ${INCOMPLETE_PHASE}
+  (use --no-resume to skip this check and defer via the prior-phase prompt; --force to skip both)
+```
+
+Then invoke via SlashCommand. Do not continue to subsequent steps.
+
+**If `INCOMPLETE_PHASE` is empty:** continue to `spike_sketch_notice`.
+
+**Why this is Route 0 and not part of `determine_next_action`:** it's a hard invariant independent of `current_phase`'s value, so it must run before any routing rule that reads `current_phase`. The prior-phase-scan in `safety_gates` above still runs and remains the explicit-opt-out path for users who want to defer the incomplete plans to backlog (via `--no-resume`); this Route 0 makes the no-flag default "continue the partially-executed phase" instead of "stop and ask."
+</step>
+
 <step name="spike_sketch_notice">
 Check for pending spike/sketch work and surface a notice (does not change routing):
 
@@ -214,6 +257,7 @@ Do not ask for confirmation — the whole point of `/gsd:progress --next` is zer
 
 <success_criteria>
 - [ ] Project state correctly detected
+- [ ] Route 0 (resume_incomplete_phase) fires before any other routing when any phase has plans without summaries, unless `--force` or `--no-resume` was passed
 - [ ] Next action correctly determined from routing rules
 - [ ] Command invoked immediately without user confirmation
 - [ ] Clear status shown before invoking

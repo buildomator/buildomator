@@ -271,13 +271,14 @@ Check project status and intelligently route to next action.
 - Detects 100% milestone completion
 
 Modes:
-- **default** — progress report + intelligent routing
-- **`--next`** — auto-advance to the next logical step (use `--next --force` to bypass safety gates)
-- **`--forensic`** — append a 6-check integrity audit after the progress report
-- **`--do "<text>"`** — smart router: dispatch freeform intent to the matching `/gsd-*` command (see *Smart Router* above)
+- **default**: progress report + intelligent routing
+- **`--next`**: auto-advance to the next logical step. Before any forward routing, scans all phases for incomplete execution (plans without summaries) and resumes the lowest-numbered such phase via `/gsd:execute-phase`. This catches mid-execution session deaths from hang, token exhaustion, or API disruption. Use `--next --no-resume` to skip the auto-resume and fall through to the prior-phase defer prompt. Use `--next --force` to bypass safety gates entirely.
+- **`--forensic`**: append a 6-check integrity audit after the progress report
+- **`--do "<text>"`**: smart router: dispatch freeform intent to the matching `/gsd-*` command (see *Smart Router* above)
 
 Usage: `/gsd:progress`
 Usage: `/gsd:progress --next`
+Usage: `/gsd:progress --next --no-resume` (skip mid-phase auto-resume, prompt instead)
 Usage: `/gsd:progress --forensic`
 
 ### Session Management

@@ -8,6 +8,21 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.43.10] - 2026-05-23  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
+
+Fix for a session-resume bug in `/gsd:next` (and `/gsd:progress --next`). When a session died mid-execution (hang, token exhaustion, API connection disruption) and STATE.md's `current_phase` got advanced past the phase that still had unfinished work, `/gsd:next` would route to a forward action and silently skip the partially-executed phase's incomplete plans. The prior-phase scan in `safety_gates` detected the situation but offered Stop/Defer/Force without a "Resume" option, so the default user response either stopped the workflow (Stop) or filed the unfinished plans to a `999.x` backlog and advanced anyway (Defer).
+
+The fix is a new Route 0 invariant: before any other routing decision, scan all phases for incomplete execution and route to `/gsd:execute-phase <lowest-numbered incomplete phase>` if found. Complete-before-advance is now a hard invariant of the routing layer.
+
+### Fixed
+- **`workflows/next.md`**: new `resume_incomplete_phase` step between `safety_gates` and `spike_sketch_notice`. Scans all phases in ROADMAP order via `gsd-sdk query roadmap.analyze` + `gsd-sdk query find-phase <N>`; the first phase with `plans.length > summaries.length` is the resume target. Routes silently to `/gsd:execute-phase <N>` with a one-line notice naming the phase. Skip the check with `--no-resume` (falls through to the existing prior-phase prompt for explicit defer) or `--force` (skips all gates including this one).
+
+### Changed
+- **`workflows/help.md` `/gsd:progress --next` description**: documents the new auto-resume behavior, the `--no-resume` opt-out, and the existing `--force` bypass.
+
+### Upstream
+- Same routing logic exists upstream in `open-gsd/get-shit-done-redux` at `get-shit-done/workflows/next.md`. Will file as a fix-track bug issue (this is a real correctness bug, not just a UX preference: data loss surface via the silent-defer path) and post the proposed diff. Same Gate 0 workaround applies (fork-PRs blocked; diff ships via issue comment).
+
 ## [2.43.9] - 2026-05-23  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 Extension of the v2.43.8 auto-use-existing pattern to four additional artifact-existence prompts. Same logic applies: when an artifact already exists and the workflow's natural next step is "use it," prompting for confirmation is friction. The explicit-flag escape hatches (`--refresh` to regenerate, `--view` to print, `--update` for partial refresh on map-codebase) cover every deviation path. Default behavior is now auto-proceed with a one-line notice.
