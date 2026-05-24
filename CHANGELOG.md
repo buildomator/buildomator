@@ -8,6 +8,34 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.44.0] - 2026-05-24  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
+
+**New mode: Documentation-Driven Development (DDD).** Adds `/gsd:new-ddd` as a sibling to `/gsd:new-project`. DDD mode is for projects where the user-facing surface is the deliverable (CLIs, libraries, SDKs, APIs, plugin systems): the user validates a `DOCS.md` (user-facing documentation as the spec) before any phase work begins, and phases are derived from DOCS.md sections rather than from REQ-ID clusters.
+
+This is a minimal sketch (intentionally not the full implementation). Per-phase docs-sync automation, docs-aware verification, and DOCS.md drift detection in /gsd:next are held for v2.45.x and later, pending real-project usage to inform the design. The minimal sketch encodes DDD in the project-initialization sequence and the roadmapper's source-of-truth choice, which is enough to use the mode end-to-end with manual doc updates during execution.
+
+### Added
+- **`skills/new-ddd/SKILL.md`**: new top-level skill `/gsd:new-ddd`. Thin entry point that delegates to `workflows/new-ddd.md`. Inherits the `--auto` flag from `/gsd:new-project`. Includes guidance on when to use DDD vs. standard new-project.
+- **`workflows/new-ddd.md`**: full DDD initialization workflow. Reuses shared steps from `workflows/new-project.md` (setup, questioning, brownfield mapping, config capture, research) and overrides the requirements-gathering step with DOCS.md drafting + user validation. Generates a thin `REQUIREMENTS.md` (one `DOC-NN` per DOCS.md H2 section) for traceability compatibility with existing downstream workflows.
+- **`agents/gsd-roadmapper.md` `<ddd_mode>` block**: documents the inputs the roadmapper reads in DDD mode, the phase-derivation heuristic (cluster DOCS.md H2 sections), the success-criteria shape (anchored at DOCS.md sections), and the coverage-validation model (every H2 maps to exactly one phase). Adds a per-phase `**DDD spec anchor**:` line to ROADMAP.md output.
+
+### Changed
+- **`agents/gsd-roadmapper.md` spawned-by list**: now includes `/gsd:new-ddd`, `/gsd:new-milestone`, and `/gsd:plan-milestone-gaps` (the latter two were always callers but were not documented in the agent header).
+- **`workflows/help.md`**: documents `/gsd:new-ddd` in the Discovery & Specification section.
+
+### Held for future releases (v2.45.x and beyond)
+- Per-phase `/gsd:docs-sync` workflow that detects implementation-vs-DOCS.md drift during execution and updates DOCS.md sections.
+- Docs-aware verification (a `gsd-docs-checker` agent or extension of `gsd-verifier`) that confirms implementation matches the corresponding DOCS.md section.
+- DOCS.md drift detection in `/gsd:next` that warns when DOCS.md was edited since last verification.
+- Auto-decomposition of DOCS.md into fine-grained REQ-IDs (currently one per H2 section; richer mapping would track per-command / per-endpoint / per-extension-point items).
+- Dedicated `gsd-ddd-docs-writer` subagent if inline orchestrator drafting becomes context-pressure problematic on large projects.
+
+### Upstream
+- DDD mode is plugin-native; the redux upstream does not have this concept. Will file as an enhancement issue proposing the model and the minimal-sketch shape, with the option to upstream the full implementation later if it proves valuable in real-project use. Same Gate 0 workaround applies (external fork-PRs blocked; diff ships via issue comment).
+
+### Why a minor version bump (2.43.12 -> 2.44.0)
+DDD mode adds a meaningful new top-level command and a new mental model for project initialization. Patch-level bumps have been reserved for fixes and small workflow tweaks; introducing a new mode warrants a minor bump to signal the surface change.
+
 ## [2.43.12] - 2026-05-23  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 Tightens roadmap granularity defaults in `gsd-roadmapper` to reduce thin-phase / over-fragmentation. The user-side observation that drove this change: roadmaps tended to come back with ~15-20% too many phases, often manifesting as "GSD maintenance" phases (single-requirement, internal-quality goal like "improve performance" or "add tests for X", success criteria that read as tasks not user-observable outcomes) that would have been better folded into the most-related neighbor.

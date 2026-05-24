@@ -48,6 +48,17 @@ Creates all `.planning/` artifacts:
 
 Usage: `/gsd:new-project`
 
+**`/gsd:new-ddd [--auto]`**
+Initialize a new project using **Documentation-Driven Development** mode. Research, write user-facing docs (`DOCS.md`) as the spec, user validates the docs, then phases are derived from DOCS.md sections rather than from REQ-ID clusters.
+
+- Use for projects where the user-facing surface is well-defined: CLIs, libraries, SDKs, APIs, plugin systems.
+- Skip in favor of `/gsd:new-project` for exploratory research, pure refactors, or backend services without a human-readable interface.
+- `DOCS.md` is the canonical spec; each phase implements one or more H2 sections.
+- `--auto`: same semantics as `/gsd:new-project --auto`. Requires an idea document via `@` reference.
+
+Usage: `/gsd:new-ddd`
+Usage: `/gsd:new-ddd --auto @prd.md`
+
 **`/gsd:map-codebase [--fast] [--focus <area>] [--query <term>] [--refresh] [--view] [--update [<docs>]]`**
 Map an existing codebase for brownfield projects.
 

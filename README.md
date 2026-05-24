@@ -6,7 +6,7 @@
 
 **Based on:** [GSD 1.42.3](https://github.com/open-gsd/get-shit-done-redux/releases/tag/v1.42.3) base tree by **TACHES** (Lex Christopherson), now maintained by the community at [open-gsd/get-shit-done-redux](https://github.com/open-gsd/get-shit-done-redux)
 
-**Plugin version:** `2.43.12`
+**Plugin version:** `2.44.0`
 
 **GSD Plugin for Claude Code** ensures your coding work gets done in a systematic, structured way. It prompts you only for the important design and architectural decisions that actually need your judgment, and it splits each step into its own focused subcontext so token use stays optimised across long projects.
 
