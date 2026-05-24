@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.44.1] - 2026-05-24  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
+
+Docs catch-up for v2.44.0. The `Added features beyond upstream` table in README.md did not list the new Documentation-Driven Development mode shipped in v2.44.0; this release adds the entry. Patch-level bump so existing users get prompted to update via `/plugin marketplace update` and see the corrected feature listing without a fresh install.
+
+### Changed
+- **`README.md` `## Added features beyond upstream` table**: new top row documenting `/gsd:new-ddd`. Cross-references the v2.44.0 release for the full description and the held-back items.
+
 ## [2.44.0] - 2026-05-24  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 **New mode: Documentation-Driven Development (DDD).** Adds `/gsd:new-ddd` as a sibling to `/gsd:new-project`. DDD mode is for projects where the user-facing surface is the deliverable (CLIs, libraries, SDKs, APIs, plugin systems): the user validates a `DOCS.md` (user-facing documentation as the spec) before any phase work begins, and phases are derived from DOCS.md sections rather than from REQ-ID clusters.

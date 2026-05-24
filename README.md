@@ -6,7 +6,7 @@
 
 **Based on:** [GSD 1.42.3](https://github.com/open-gsd/get-shit-done-redux/releases/tag/v1.42.3) base tree by **TACHES** (Lex Christopherson), now maintained by the community at [open-gsd/get-shit-done-redux](https://github.com/open-gsd/get-shit-done-redux)
 
-**Plugin version:** `2.44.0`
+**Plugin version:** `2.44.1`
 
 **GSD Plugin for Claude Code** ensures your coding work gets done in a systematic, structured way. It prompts you only for the important design and architectural decisions that actually need your judgment, and it splits each step into its own focused subcontext so token use stays optimised across long projects.
 
@@ -135,6 +135,7 @@ This plugin starts from upstream GSD's source tree but adds Claude-Code-native c
 
 | Feature | What it does | Command / hook |
 |---------|--------------|----------------|
+| **Documentation-Driven Development mode** (v2.44.0) | Sibling to `/gsd:new-project`. Research, write user-facing `DOCS.md` as the spec, user validates the docs, then phases are derived from DOCS.md sections (not REQ-ID clusters). Best for CLIs, libraries, SDKs, APIs, plugin systems. Minimal sketch shipped; per-phase docs-sync and docs-aware verification held for v2.45.x. | `/gsd:new-ddd` |
 | **Scheduled resume** | Schedule a future Claude Code session to auto-run `/gsd:resume-work` (or any GSD command) at a specific time. Useful when hitting a usage cap, pausing for the day, or queuing a phase to run during off-peak quota windows. Accepts `HH:MM`, ISO 8601, or `+<duration>` (e.g. `+2h`). | `/gsd:resume-at <time>` |
 | **Auto-resume across `/compact`** | When Claude Code compacts a conversation, a 19-field `HANDOFF.json` is written automatically. The next session detects it via SessionStart and invokes `/gsd:resume-work` with **zero manual input**. | PreCompact + SessionStart hooks |
 | **Mid-session checkpoints** | A PostToolUse hook writes a fresh checkpoint after most tool calls (`Bash`, `Edit`, `Write`, `MultiEdit`, `NotebookEdit`, `Read`, `Grep`, `Glob`, `WebFetch`, `WebSearch`), throttled to ≤1/min. Closes the gap when Claude Code's silent *microcompact* path strips tool outputs without firing PreCompact, AND covers read-heavy research phases that don't write files. | PostToolUse hook |
