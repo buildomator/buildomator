@@ -8,6 +8,35 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.44.5] - 2026-05-25  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
+
+Auth-recipe memory: GSD now auto-detects when you authenticate to external systems and lets you save the recipe for future sessions and future projects. User report: "can you add auto-remembering how to connect to other systems or how to gain access to certain accounts?"
+
+Three components shipped together (the user explicitly picked the "Full" scope from a four-option menu rather than incremental phases):
+
+### Added
+- **`hooks/gsd-auth-detector.js`** PostToolUse hook on Bash invocations. Pattern-matches against 18 auth-shaped command shapes (`gh auth login`, `aws configure`, `gcloud auth login`, `vault login`, `ssh-keygen`, `git config user.signingkey`, env-var assignments like `export *_TOKEN=*`, platform CLIs like `heroku login` / `fly login` / `netlify login` / `vercel login` / `supabase login` / `firebase login` / `railway login`, etc.). On match: writes a sanitized JSON line to `.planning/.pending-auth-captures.jsonl` (the inbox). Hooks cannot use AskUserQuestion, so the inbox pattern lets the user review at their convenience instead of being interrupted inline.
+- **Secret redaction in the detector**. Before any inbox write, the command line is run through redaction rules: `--token=X` / `--password=X` / `--api-key=X` style flags get the value replaced with `[REDACTED]`; env-var assignments to credential-named vars get the value replaced; long base64-ish tokens (40+ chars) get masked; AWS access keys (`AKIA*`, `ASIA*`) get masked; GitHub PATs (`ghp_*`, `gho_*`, etc.) get masked. The inbox stores the SHAPE of the command, never the secret.
+- **`skills/remember-access/SKILL.md`** + **`workflows/remember-access.md`**: new `/gsd:remember-access` skill with two modes. Manual capture (`/gsd:remember-access <system>`) walks the user through documenting auth method, setup commands, credential locations, verification command, and freeform notes. Inbox review (`/gsd:remember-access --review`) surfaces each pending detection and lets the user confirm-and-save or discard per entry. Confirmed recipes go to `.planning/AUTH-RECIPES.md` (per-project) and optionally `~/.claude/auth-recipes/<system>.md` (cross-project, survives across new projects).
+- **PostToolUse hook registration** in `hooks/hooks.json` for the auth detector. Follows the same plugin-version-fallback Node inline resolver pattern as the other hooks.
+
+### Changed
+- **`README.md` `## Added features beyond upstream` table**: two new rows. `/gsd:remember-access` (v2.44.5) and `/gsd:new-ddd` updated to reference `docs/SPEC.md` instead of legacy `DOCS.md`. Also added the v2.44.4 auto-approve row that was missed in the previous release.
+
+### Privacy notes
+
+The hook never stores secret values. The redaction rules are conservative (over-redact rather than miss). If a command shape gets redacted that you wanted to capture, you can re-enter the raw command during the `/gsd:remember-access --review` flow — the auto-detected inbox entry is a starting point, not the final recipe.
+
+The user-global file at `~/.claude/auth-recipes/<system>.md` is NOT committed to git. It lives outside the project repo so credential-adjacent metadata does not leak through public repos.
+
+### Held for future releases
+- Workflow integration: workflows that hit auth-likely operations (`gh api`, `aws s3`, etc.) could surface the relevant recipe before the operation fails on missing credentials. Not in v2.44.5; deferred until usage patterns are clearer.
+- Recipe-driven auto-execute: GSD could replay a recipe automatically (with user confirmation) when fresh credentials are needed. High value, higher risk of doing the wrong thing; held.
+- More auth patterns: the initial 18 patterns cover the common cases. Add more as users report missed detections.
+
+### Upstream
+- Plugin-native concept. Will file as upstream enhancement once the pattern stabilizes through real-project use.
+
 ## [2.44.4] - 2026-05-25  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 Removes two AFK-blocking approval prompts on non-critical artifact drafts. When the user invokes `/gsd:new-project` or `/gsd:new-ddd` and walks away, the workflow no longer waits indefinitely on a yes-answer for the roadmap or SPEC.md draft. Auto-decisions are logged to a new `.planning/AUTO-DECISIONS.md` file the user can spot-check.
