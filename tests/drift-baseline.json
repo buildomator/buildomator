@@ -1,7 +1,7 @@
 {
   "file_layout": {
-    "total_dangling": 132,
-    "has_plugin_counterpart": 132,
+    "total_dangling": 133,
+    "has_plugin_counterpart": 133,
     "genuinely_missing": 0,
     "generated_at": "2026-05-25",
     "note": "Counts-based ratchet per Phase 7 CONTEXT D-07. Regenerate with --write-baseline when drift is legitimately reduced."
