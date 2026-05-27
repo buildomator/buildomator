@@ -227,6 +227,41 @@ function stateReplaceFieldWithFallback(content, primary, fallback, value) {
   }
   return content;
 }
+function isStateTemplateDefault(value) {
+  if (value === null || value === void 0)
+    return true;
+  const trimmed = value.trim();
+  if (KNOWN_TEMPLATE_DEFAULTS.has(trimmed))
+    return true;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed))
+    return true;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/.test(trimmed))
+    return true;
+  return false;
+}
+function stateReplaceFieldIfTemplate(content, fieldName, newValue) {
+  const current = stateExtractField(content, fieldName);
+  if (current === null) {
+    return { content, outcome: "not_found" };
+  }
+  if (!isStateTemplateDefault(current)) {
+    return { content, outcome: "preserved" };
+  }
+  const replaced = stateReplaceField(content, fieldName, newValue);
+  if (replaced === null) {
+    return { content, outcome: "not_found" };
+  }
+  return { content: replaced, outcome: "replaced" };
+}
+function stateReplaceFieldIfTemplateWithFallback(content, primary, fallback, newValue) {
+  const first = stateReplaceFieldIfTemplate(content, primary, newValue);
+  if (first.outcome !== "not_found")
+    return first;
+  if (fallback) {
+    return stateReplaceFieldIfTemplate(content, fallback, newValue);
+  }
+  return first;
+}
 function normalizeStateStatus(status, pausedAt) {
   let normalizedStatus = status || "unknown";
   const statusLower = (status || "").toLowerCase();
@@ -285,9 +320,20 @@ function normalizeProgressNumbers(progress) {
   }
   return normalized;
 }
+var KNOWN_TEMPLATE_DEFAULTS;
 var init_state_document = __esm({
   "dist/query/state-document.js"() {
     "use strict";
+    KNOWN_TEMPLATE_DEFAULTS = /* @__PURE__ */ new Set([
+      "",
+      "Ready to execute",
+      "Phase complete \u2014 ready for verification",
+      "Phase complete - ready for verification",
+      // ASCII hyphen variant
+      "unknown",
+      "None",
+      "TBD"
+    ]);
   }
 });
 
@@ -8388,11 +8434,21 @@ function updateCurrentPositionFields(content, fields) {
   if (!posMatch)
     return content;
   let posBody = posMatch[2];
-  if (fields.status && /^Status:/m.test(posBody)) {
-    posBody = posBody.replace(/^Status:.*$/m, `Status: ${fields.status}`);
+  if (fields.status) {
+    const statusLine = posBody.match(/^Status:[ \t]*(.+)$/m);
+    if (statusLine) {
+      if (isStateTemplateDefault(statusLine[1])) {
+        posBody = posBody.replace(/^Status:.*$/m, `Status: ${fields.status}`);
+      }
+    }
   }
-  if (fields.lastActivity && /^Last activity:/im.test(posBody)) {
-    posBody = posBody.replace(/^Last activity:.*$/im, `Last activity: ${fields.lastActivity}`);
+  if (fields.lastActivity) {
+    const lastActivityLine = posBody.match(/^Last activity:[ \t]*(.+)$/im);
+    if (lastActivityLine) {
+      if (isStateTemplateDefault(lastActivityLine[1])) {
+        posBody = posBody.replace(/^Last activity:.*$/im, `Last activity: ${fields.lastActivity}`);
+      }
+    }
   }
   if (fields.plan && /^Plan:/m.test(posBody)) {
     posBody = posBody.replace(/^Plan:.*$/m, `Plan: ${fields.plan}`);
@@ -8744,8 +8800,8 @@ var stateAdvancePlan = async (_args, projectDir, workstream) => {
       return content;
     }
     if (currentPlan >= totalPlans) {
-      content = stateReplaceFieldWithFallback(content, "Status", null, "Phase complete \u2014 ready for verification");
-      content = stateReplaceFieldWithFallback(content, "Last Activity", "Last activity", today);
+      content = stateReplaceFieldIfTemplate(content, "Status", "Phase complete \u2014 ready for verification").content;
+      content = stateReplaceFieldIfTemplateWithFallback(content, "Last Activity", "Last activity", today).content;
       content = updateCurrentPositionFields(content, {
         status: "Phase complete \u2014 ready for verification",
         lastActivity: today
@@ -8768,8 +8824,8 @@ var stateAdvancePlan = async (_args, projectDir, workstream) => {
       planDisplayValue = `${newPlan} of ${totalPlans}`;
       content = stateReplaceField(content, "Current Plan", String(newPlan)) || content;
     }
-    content = stateReplaceFieldWithFallback(content, "Status", null, "Ready to execute");
-    content = stateReplaceFieldWithFallback(content, "Last Activity", "Last activity", today);
+    content = stateReplaceFieldIfTemplate(content, "Status", "Ready to execute").content;
+    content = stateReplaceFieldIfTemplateWithFallback(content, "Last Activity", "Last activity", today).content;
     content = updateCurrentPositionFields(content, {
       status: "Ready to execute",
       lastActivity: today,
@@ -9048,7 +9104,7 @@ ${newSubsection}`;
 var stateRecordSession = async (args, projectDir, workstream) => {
   const parsed = parseNamedArgs(args, ["stopped-at", "resume-file"]);
   const stoppedAt = parsed["stopped-at"];
-  const resumeFile = parsed["resume-file"] ?? "None";
+  const resumeFile = parsed["resume-file"] ?? null;
   const now = (/* @__PURE__ */ new Date()).toISOString();
   const updated = [];
   await readModifyWriteStateMd(projectDir, (content) => {
@@ -9071,12 +9127,14 @@ var stateRecordSession = async (args, projectDir, workstream) => {
         updated.push("Stopped At");
       }
     }
-    result = stateReplaceField(content, "Resume File", resumeFile);
-    if (!result)
-      result = stateReplaceField(content, "Resume file", resumeFile);
-    if (result) {
-      content = result;
-      updated.push("Resume File");
+    if (resumeFile !== null) {
+      result = stateReplaceField(content, "Resume File", resumeFile);
+      if (!result)
+        result = stateReplaceField(content, "Resume file", resumeFile);
+      if (result) {
+        content = result;
+        updated.push("Resume File");
+      }
     }
     return content;
   }, workstream);
@@ -9102,27 +9160,33 @@ var statePlannedPhase = async (args, projectDir, workstream) => {
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const updated = [];
   await readModifyWriteStateMd(projectDir, (content) => {
-    let result = stateReplaceField(content, "Status", "Ready to execute");
-    if (result) {
-      content = result;
+    const statusResult = stateReplaceFieldIfTemplate(content, "Status", "Ready to execute");
+    if (statusResult.outcome === "replaced") {
+      content = statusResult.content;
       updated.push("Status");
+    } else if (statusResult.outcome === "preserved") {
+      updated.push("Status (preserved: executor-authored)");
     }
     if (planCount !== null) {
-      result = stateReplaceField(content, "Total Plans in Phase", String(planCount));
+      const result = stateReplaceField(content, "Total Plans in Phase", String(planCount));
       if (result) {
         content = result;
         updated.push("Total Plans in Phase");
       }
     }
-    result = stateReplaceField(content, "Last Activity", today);
-    if (result) {
-      content = result;
+    const activityResult = stateReplaceFieldIfTemplate(content, "Last Activity", today);
+    if (activityResult.outcome === "replaced") {
+      content = activityResult.content;
       updated.push("Last Activity");
+    } else if (activityResult.outcome === "preserved") {
+      updated.push("Last Activity (preserved: executor-authored)");
     }
-    result = stateReplaceField(content, "Last Activity Description", `Phase ${phaseLabel} planning complete \u2014 ${planCount ?? "?"} plans ready`);
-    if (result) {
-      content = result;
+    const descResult = stateReplaceFieldIfTemplate(content, "Last Activity Description", `Phase ${phaseLabel} planning complete - ${planCount ?? "?"} plans ready`);
+    if (descResult.outcome === "replaced") {
+      content = descResult.content;
       updated.push("Last Activity Description");
+    } else if (descResult.outcome === "preserved") {
+      updated.push("Last Activity Description (preserved: executor-authored)");
     }
     content = updateCurrentPositionFields(content, {
       status: "Ready to execute",

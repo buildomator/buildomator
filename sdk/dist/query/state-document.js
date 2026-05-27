@@ -40,6 +40,92 @@ export function stateReplaceFieldWithFallback(content, primary, fallback, value)
     }
     return content;
 }
+/**
+ * Known template default values that the SDK state handlers historically write.
+ *
+ * When a state handler is about to overwrite a "soft" field (Status, Last Activity,
+ * Resume File, etc.) it consults this set. If the current value matches a template
+ * default, the handler proceeds (it's overwriting its own past output). If the
+ * current value is NOT a template default, the handler treats it as executor-authored
+ * content and PRESERVES it.
+ *
+ * This preservation contract was added in plugin v2.45.0 (issue #9) after a real
+ * data-loss-shape bug where state.advance-plan / state.record-session unconditionally
+ * overwrote rich executor-authored Status / Last Activity / Resume File content with
+ * template defaults, silently losing the executor's work.
+ */
+export const KNOWN_TEMPLATE_DEFAULTS = new Set([
+    '',
+    'Ready to execute',
+    'Phase complete — ready for verification',
+    'Phase complete - ready for verification', // ASCII hyphen variant
+    'unknown',
+    'None',
+    'TBD',
+]);
+/**
+ * Returns true if `value` is a known template default (handler-owned) OR a bare
+ * ISO date (which the handlers also write as a default Last Activity value).
+ * Returns false if `value` looks executor-authored.
+ */
+export function isStateTemplateDefault(value) {
+    if (value === null || value === undefined)
+        return true;
+    const trimmed = value.trim();
+    if (KNOWN_TEMPLATE_DEFAULTS.has(trimmed))
+        return true;
+    // Bare ISO date "YYYY-MM-DD" (handler-written Last Activity short form)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed))
+        return true;
+    // ISO timestamp "YYYY-MM-DDTHH:MM:SS..." with no descriptive suffix
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/.test(trimmed))
+        return true;
+    return false;
+}
+/**
+ * Replace a field's value ONLY IF the current value is a known template default
+ * (per `isStateTemplateDefault`). Preserves executor-authored content untouched.
+ *
+ * Returns:
+ * - Updated content if the replace happened (current was template-default)
+ * - Original content (unchanged) if the field exists but the current value is
+ *   executor-authored (non-template). Logs a hint via the returned `preserved` flag.
+ * - `null` if the field is not present in the content at all.
+ *
+ * Use this in state handlers that previously called `stateReplaceField` or
+ * `stateReplaceFieldWithFallback` for "soft" fields. Hard fields the handler
+ * legitimately owns (frontmatter `percent`, structural progress lines, the
+ * "Plan: N of M" summary, etc.) can continue using the unconditional helpers.
+ */
+export function stateReplaceFieldIfTemplate(content, fieldName, newValue) {
+    const current = stateExtractField(content, fieldName);
+    if (current === null) {
+        return { content, outcome: 'not_found' };
+    }
+    if (!isStateTemplateDefault(current)) {
+        return { content, outcome: 'preserved' };
+    }
+    const replaced = stateReplaceField(content, fieldName, newValue);
+    if (replaced === null) {
+        // Should not happen if extractField succeeded, but defensive.
+        return { content, outcome: 'not_found' };
+    }
+    return { content: replaced, outcome: 'replaced' };
+}
+/**
+ * Like `stateReplaceFieldIfTemplate` but tries a primary field name and a
+ * fallback (e.g., "Last Activity" then "Last activity"). Returns the first
+ * outcome that wasn't `not_found`. If both are not_found, returns not_found.
+ */
+export function stateReplaceFieldIfTemplateWithFallback(content, primary, fallback, newValue) {
+    const first = stateReplaceFieldIfTemplate(content, primary, newValue);
+    if (first.outcome !== 'not_found')
+        return first;
+    if (fallback) {
+        return stateReplaceFieldIfTemplate(content, fallback, newValue);
+    }
+    return first;
+}
 export function normalizeStateStatus(status, pausedAt) {
     let normalizedStatus = status || 'unknown';
     const statusLower = (status || '').toLowerCase();

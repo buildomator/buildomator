@@ -34,7 +34,14 @@ import {
   normalizeMd,
 } from './helpers.js';
 import { buildStateFrontmatter, getMilestonePhaseFilter } from './state.js';
-import { stateExtractField, stateReplaceField, stateReplaceFieldWithFallback } from './state-document.js';
+import {
+  stateExtractField,
+  stateReplaceField,
+  stateReplaceFieldWithFallback,
+  stateReplaceFieldIfTemplate,
+  stateReplaceFieldIfTemplateWithFallback,
+  isStateTemplateDefault,
+} from './state-document.js';
 import type { QueryHandler } from './utils.js';
 
 const PROGRESS_FRONTMATTER_FIELDS = new Set(['Progress', 'Total Plans in Phase', 'Total Phases']);
@@ -67,11 +74,27 @@ function updateCurrentPositionFields(content: string, fields: Record<string, str
 
   let posBody = posMatch[2];
 
-  if (fields.status && /^Status:/m.test(posBody)) {
-    posBody = posBody.replace(/^Status:.*$/m, `Status: ${fields.status}`);
+  // Status and Last activity in the body-text Current Position section are "soft"
+  // fields the executor may hand-author. Preserve non-template-default content; only
+  // overwrite when the existing value looks like prior handler output. Plan is the
+  // structural summary line ("Plan: N of M") and the handler always owns it.
+  if (fields.status) {
+    const statusLine = posBody.match(/^Status:[ \t]*(.+)$/m);
+    if (statusLine) {
+      if (isStateTemplateDefault(statusLine[1])) {
+        posBody = posBody.replace(/^Status:.*$/m, `Status: ${fields.status}`);
+      }
+      // Else: executor authored. Preserve.
+    }
   }
-  if (fields.lastActivity && /^Last activity:/im.test(posBody)) {
-    posBody = posBody.replace(/^Last activity:.*$/im, `Last activity: ${fields.lastActivity}`);
+  if (fields.lastActivity) {
+    const lastActivityLine = posBody.match(/^Last activity:[ \t]*(.+)$/im);
+    if (lastActivityLine) {
+      if (isStateTemplateDefault(lastActivityLine[1])) {
+        posBody = posBody.replace(/^Last activity:.*$/im, `Last activity: ${fields.lastActivity}`);
+      }
+      // Else: executor authored. Preserve.
+    }
   }
   if (fields.plan && /^Plan:/m.test(posBody)) {
     posBody = posBody.replace(/^Plan:.*$/m, `Plan: ${fields.plan}`);
@@ -569,9 +592,13 @@ export const stateAdvancePlan: QueryHandler = async (_args, projectDir, workstre
     }
 
     if (currentPlan >= totalPlans) {
-      // Phase complete
-      content = stateReplaceFieldWithFallback(content, 'Status', null, 'Phase complete — ready for verification');
-      content = stateReplaceFieldWithFallback(content, 'Last Activity', 'Last activity', today);
+      // Phase complete. Status and Last Activity are "soft" fields the executor
+      // may author with rich context (e.g., "Plan 00-02 (Pre-Copy gate) execution
+      // complete; gate-sign pending operator merge of five PRs across two repos").
+      // Use the template-only replace so executor-authored content is preserved
+      // (issue #9, v2.45.0).
+      content = stateReplaceFieldIfTemplate(content, 'Status', 'Phase complete — ready for verification').content;
+      content = stateReplaceFieldIfTemplateWithFallback(content, 'Last Activity', 'Last activity', today).content;
       content = updateCurrentPositionFields(content, {
         status: 'Phase complete — ready for verification',
         lastActivity: today,
@@ -596,8 +623,10 @@ export const stateAdvancePlan: QueryHandler = async (_args, projectDir, workstre
       planDisplayValue = `${newPlan} of ${totalPlans}`;
       content = stateReplaceField(content, 'Current Plan', String(newPlan)) || content;
     }
-    content = stateReplaceFieldWithFallback(content, 'Status', null, 'Ready to execute');
-    content = stateReplaceFieldWithFallback(content, 'Last Activity', 'Last activity', today);
+    // Status and Last Activity are "soft" — preserve executor-authored content
+    // (issue #9, v2.45.0). Plan is the structural summary line; always own it.
+    content = stateReplaceFieldIfTemplate(content, 'Status', 'Ready to execute').content;
+    content = stateReplaceFieldIfTemplateWithFallback(content, 'Last Activity', 'Last activity', today).content;
     content = updateCurrentPositionFields(content, {
       status: 'Ready to execute',
       lastActivity: today,
@@ -1017,26 +1046,40 @@ export const stateAddRoadmapEvolution: QueryHandler = async (args, projectDir, w
 export const stateRecordSession: QueryHandler = async (args, projectDir, workstream) => {
   const parsed = parseNamedArgs(args, ['stopped-at', 'resume-file']);
   const stoppedAt = parsed['stopped-at'] as string | null | undefined;
-  const resumeFile = ((parsed['resume-file'] as string | null) ?? 'None');
+  // Issue #9 (v2.45.0): no more `?? 'None'` default. When the caller does not pass
+  // --resume-file, leave any existing Resume File value untouched (it may point at
+  // a real SUMMARY.md the executor just authored). Clobbering to 'None' silently
+  // drops that pointer.
+  const resumeFile = (parsed['resume-file'] as string | null | undefined) ?? null;
 
   const now = new Date().toISOString();
   const updated: string[] = [];
 
   await readModifyWriteStateMd(projectDir, (content) => {
+    // "Last session" / "Last Date" are timestamp fields the handler owns. Update
+    // unconditionally (the new ISO timestamp is fresher than any prior value).
     let result = stateReplaceField(content, 'Last session', now);
     if (result) { content = result; updated.push('Last session'); }
     result = stateReplaceField(content, 'Last Date', now);
     if (result) { content = result; updated.push('Last Date'); }
 
     if (stoppedAt) {
+      // Caller explicitly passed --stopped-at. They are claiming authority here;
+      // overwrite even if executor wrote rich content. To preserve executor content
+      // skip --stopped-at entirely (don't pass the flag).
       result = stateReplaceField(content, 'Stopped At', stoppedAt);
       if (!result) result = stateReplaceField(content, 'Stopped at', stoppedAt);
       if (result) { content = result; updated.push('Stopped At'); }
     }
 
-    result = stateReplaceField(content, 'Resume File', resumeFile);
-    if (!result) result = stateReplaceField(content, 'Resume file', resumeFile);
-    if (result) { content = result; updated.push('Resume File'); }
+    if (resumeFile !== null) {
+      // Caller explicitly passed --resume-file. Overwrite the pointer.
+      result = stateReplaceField(content, 'Resume File', resumeFile);
+      if (!result) result = stateReplaceField(content, 'Resume file', resumeFile);
+      if (result) { content = result; updated.push('Resume File'); }
+    }
+    // No --resume-file arg: skip the field entirely (preserve whatever was there,
+    // including executor-set pointers like "00-02-SUMMARY.md").
 
     return content;
   }, workstream);
@@ -1078,23 +1121,30 @@ export const statePlannedPhase: QueryHandler = async (args, projectDir, workstre
   const updated: string[] = [];
 
   await readModifyWriteStateMd(projectDir, (content) => {
-    let result = stateReplaceField(content, 'Status', 'Ready to execute');
-    if (result) { content = result; updated.push('Status'); }
+    // Status and Last Activity are soft fields. Preserve executor-authored content
+    // (issue #9, v2.45.0). Total Plans in Phase is structural; handler owns it.
+    const statusResult = stateReplaceFieldIfTemplate(content, 'Status', 'Ready to execute');
+    if (statusResult.outcome === 'replaced') { content = statusResult.content; updated.push('Status'); }
+    else if (statusResult.outcome === 'preserved') { updated.push('Status (preserved: executor-authored)'); }
 
     if (planCount !== null) {
-      result = stateReplaceField(content, 'Total Plans in Phase', String(planCount));
+      const result = stateReplaceField(content, 'Total Plans in Phase', String(planCount));
       if (result) { content = result; updated.push('Total Plans in Phase'); }
     }
 
-    result = stateReplaceField(content, 'Last Activity', today);
-    if (result) { content = result; updated.push('Last Activity'); }
+    const activityResult = stateReplaceFieldIfTemplate(content, 'Last Activity', today);
+    if (activityResult.outcome === 'replaced') { content = activityResult.content; updated.push('Last Activity'); }
+    else if (activityResult.outcome === 'preserved') { updated.push('Last Activity (preserved: executor-authored)'); }
 
-    result = stateReplaceField(
+    // Last Activity Description is a "what just happened" pointer. Preserve
+    // executor-authored content; only overwrite template defaults.
+    const descResult = stateReplaceFieldIfTemplate(
       content,
       'Last Activity Description',
-      `Phase ${phaseLabel} planning complete — ${planCount ?? '?'} plans ready`,
+      `Phase ${phaseLabel} planning complete - ${planCount ?? '?'} plans ready`,
     );
-    if (result) { content = result; updated.push('Last Activity Description'); }
+    if (descResult.outcome === 'replaced') { content = descResult.content; updated.push('Last Activity Description'); }
+    else if (descResult.outcome === 'preserved') { updated.push('Last Activity Description (preserved: executor-authored)'); }
 
     content = updateCurrentPositionFields(content, {
       status: 'Ready to execute',

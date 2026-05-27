@@ -8,6 +8,58 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.45.0] - 2026-05-27  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
+
+Fixes [#9](https://github.com/jnuyens/gsd-plugin/issues/9) reported by @jasonburks23: SDK state handlers (`state.advance-plan`, `state.record-session`, `state.planned-phase`) were overwriting executor-authored STATE.md content with template defaults. Data-loss-shape bug: rich `last_activity`, narrative `Status`, contextual `Stopped at`, and executor-set `Resume file` pointers all got clobbered when the post-execution handlers ran.
+
+Minor version bump because the state-handler contract changed (the handlers now preserve executor-authored content under a defined ownership table, not just blindly overwrite).
+
+### Fixed
+- **`sdk/src/query/state-mutation.ts` `stateAdvancePlan`**: stopped unconditionally overwriting `Status` and `Last Activity` with `'Ready to execute'` / `today`. Now uses `stateReplaceFieldIfTemplate` which preserves the existing value if it's not a known template default. Structural fields (`Plan: N of M`, frontmatter progress) still owned by the handler unconditionally.
+- **`sdk/src/query/state-mutation.ts` `stateRecordSession`**: removed the `?? 'None'` default for `--resume-file`. When the caller does NOT pass `--resume-file`, the existing Resume File value is preserved (no more clobber to literal `'None'`). When the caller DOES pass `--resume-file`, behavior is unchanged (caller authority wins). Same treatment for `--stopped-at`.
+- **`sdk/src/query/state-mutation.ts` `statePlannedPhase`**: same preservation treatment for `Status`, `Last Activity`, and `Last Activity Description`. `Total Plans in Phase` remains handler-owned.
+- **`sdk/src/query/state-mutation.ts` `updateCurrentPositionFields` helper**: applies the same preservation to the body-text `## Current Position` section's `Status` and `Last activity` lines. `Plan: N of M` summary line still handler-owned.
+
+### Added
+- **`sdk/src/query/state-document.ts` `KNOWN_TEMPLATE_DEFAULTS` set**: the values the handlers historically write (`'Ready to execute'`, the em-dash and ASCII-hyphen variants of `'Phase complete - ready for verification'`, `'unknown'`, `'None'`, `'TBD'`, empty string). Plus bare ISO dates and ISO timestamps with no descriptive suffix.
+- **`sdk/src/query/state-document.ts` `isStateTemplateDefault(value)` predicate**: checks a string against the set.
+- **`sdk/src/query/state-document.ts` `stateReplaceFieldIfTemplate()` and `stateReplaceFieldIfTemplateWithFallback()` helpers**: the new safe-replace primitives. Return a `{ content, outcome }` object so callers know whether the field was replaced, preserved, or not found. Existing `stateReplaceField` / `stateReplaceFieldWithFallback` retained for handlers that legitimately own a field unconditionally.
+- **Regression tests** in `sdk/src/query/state-mutation.test.ts` (7 new cases, 93 total now, up from 86):
+  - `stateAdvancePlan` preserves executor-authored Status with rich context
+  - `stateAdvancePlan` overwrites template-default Status (`'Ready to execute'`)
+  - `stateAdvancePlan` preserves Last Activity with descriptive suffix
+  - `stateAdvancePlan` overwrites bare-date Last Activity (template shape)
+  - `stateRecordSession` preserves Resume File when `--resume-file` not passed
+  - `stateRecordSession` overwrites Resume File when `--resume-file` IS passed (caller authority)
+  - `stateRecordSession` preserves Resume File when other args passed but not `--resume-file`
+
+### Field-ownership contract (the new behavior)
+
+| Field | Handler-owned (always overwrite) | Executor-owned (preserve unless template) |
+|---|---|---|
+| Frontmatter `percent`, `progress.*`, `last_updated` ISO | ✅ | |
+| Body progress bar `[██░░] 50%` | ✅ | |
+| Body "Plan: N of M" summary line | ✅ | |
+| Body "Last session" timestamp | ✅ | |
+| `Status` field | only when matching `KNOWN_TEMPLATE_DEFAULTS` | otherwise (preserved) |
+| `Last Activity` / `last_activity` field | only when matching `KNOWN_TEMPLATE_DEFAULTS` or bare-date | otherwise (preserved) |
+| `Last Activity Description` | only when matching `KNOWN_TEMPLATE_DEFAULTS` | otherwise (preserved) |
+| `stopped_at` frontmatter / body `Stopped at` | only when caller passes `--stopped-at` | otherwise (preserved) |
+| `Resume File` / `Resume file` | only when caller passes `--resume-file` | otherwise (preserved) |
+| Narrative Current Position lines beyond Status/Last activity/Plan | never | always preserved |
+
+### Migration / behavior change notes
+
+If your project's STATE.md previously had `Status: Ready to execute` (template default) and you ran a workflow that calls `state.advance-plan`, the behavior is the same as before: the field gets updated. The change is ONLY visible when the existing value is non-template content (i.e., the executor wrote something rich there).
+
+If a downstream workflow was secretly relying on the `?? 'None'` default to clear a stale Resume File pointer, that's now a no-op when `--resume-file` is omitted. To explicitly clear: pass `--resume-file None` (literal value). To set a new pointer: pass `--resume-file <new-path>`.
+
+### Acknowledgments
+Thanks @jasonburks23 for the detailed report with the full diff showing what each handler clobbered, the three workarounds you'd already considered, and the suggested fix direction (Option 2: field ownership). Made this a "build the agreed contract" task instead of an "investigate the bug" task.
+
+### Upstream
+- Same handlers exist verbatim in `open-gsd/get-shit-done-redux/sdk/src/query/state-mutation.ts`. Will file as a fix-track bug issue with the same proposed diff + new helper functions + test cases. Sibling-track to [#138](https://github.com/open-gsd/get-shit-done-redux/issues/138), [#160](https://github.com/open-gsd/get-shit-done-redux/issues/160), [#163](https://github.com/open-gsd/get-shit-done-redux/issues/163), [#222](https://github.com/open-gsd/get-shit-done-redux/issues/222).
+
 ## [2.44.6] - 2026-05-27  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 Fixes [#8](https://github.com/jnuyens/gsd-plugin/issues/8): `/gsd:update` was 404ing because workflows referenced the unscoped `get-shit-done-redux` npm package name instead of the actual scoped `@opengsd/get-shit-done-redux`. Reported by @chendrizzy with a complete patch attached. Thank you.

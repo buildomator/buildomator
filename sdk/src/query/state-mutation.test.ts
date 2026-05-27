@@ -589,6 +589,73 @@ describe('stateAdvancePlan', () => {
     expect(content).toContain('Budget: $2,500 max test');
     expect((content.match(/^Budget:/gm) || []).length).toBe(1);
   });
+
+  // Issue #9 (v2.45.0): preservation of executor-authored Status / Last Activity.
+
+  it('#9: preserves executor-authored Status with rich context (does not clobber with template default)', async () => {
+    const { stateAdvancePlan } = await import('./state-mutation.js');
+    const richStatus = 'Plan 10-02 (Pre-Copy gate) execution complete; gate-sign pending operator merge of five PRs across two repos';
+    const withRichStatus = MINIMAL_STATE.replace(
+      'Status: Executing Phase 10',
+      `Status: ${richStatus}`,
+    );
+    await setupTestProject(tmpDir, withRichStatus);
+
+    await stateAdvancePlan([], tmpDir);
+
+    const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    // The rich Status should be preserved, NOT clobbered with "Ready to execute"
+    expect(content).toContain(`Status: ${richStatus}`);
+    expect(content).not.toContain('Status: Ready to execute');
+  });
+
+  it('#9: overwrites template-default Status when current value matches a known default', async () => {
+    const { stateAdvancePlan } = await import('./state-mutation.js');
+    const withTemplateStatus = MINIMAL_STATE.replace(
+      'Status: Executing Phase 10',
+      'Status: Ready to execute',
+    );
+    await setupTestProject(tmpDir, withTemplateStatus);
+
+    await stateAdvancePlan([], tmpDir);
+
+    const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    // Template default → overwritten (handler's own past output is overridable)
+    expect(content).toContain('Status: Ready to execute');
+  });
+
+  it('#9: preserves executor-authored Last activity with descriptive suffix', async () => {
+    const { stateAdvancePlan } = await import('./state-mutation.js');
+    const richActivity = '2026-04-08 -- Plan 10-02 execution complete with operator-sign pending';
+    const withRichActivity = MINIMAL_STATE.replace(
+      'Last activity: 2026-04-08 -- Phase 10 execution started',
+      `Last activity: ${richActivity}`,
+    );
+    await setupTestProject(tmpDir, withRichActivity);
+
+    await stateAdvancePlan([], tmpDir);
+
+    const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    // The descriptive Last activity should be preserved
+    expect(content).toContain(richActivity);
+  });
+
+  it('#9: overwrites bare-date Last activity (template default for the handler)', async () => {
+    const { stateAdvancePlan } = await import('./state-mutation.js');
+    const withBareDate = MINIMAL_STATE.replace(
+      'Last activity: 2026-04-08 -- Phase 10 execution started',
+      'Last activity: 2026-04-08',
+    );
+    await setupTestProject(tmpDir, withBareDate);
+
+    await stateAdvancePlan([], tmpDir);
+
+    const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    // Bare ISO date matches the handler's own output pattern; overwritable
+    const today = new Date().toISOString().split('T')[0];
+    expect(content).toContain(`Last activity: ${today}`);
+    expect(content).not.toContain('Last activity: 2026-04-08\n');
+  });
 });
 
 // ─── stateAddDecision ───────────────────────────────────────────────────────
@@ -810,6 +877,59 @@ describe('stateRecordSession', () => {
 
     const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
     expect(content).toContain('Completed 11-01-PLAN.md');
+  });
+
+  // Issue #9 (v2.45.0): no more `?? 'None'` default. When --resume-file is not
+  // passed, the existing Resume File pointer (set by the executor pointing at a
+  // SUMMARY.md) must be preserved, not clobbered with the literal string 'None'.
+
+  it('#9: preserves existing Resume File when --resume-file is NOT passed', async () => {
+    const { stateRecordSession } = await import('./state-mutation.js');
+    // Replace the MINIMAL_STATE template's `Resume file: None` line with an executor-set pointer
+    const withResume = MINIMAL_STATE.replace(
+      'Resume file: None',
+      'Resume file: .planning/phases/00-cleanup-platform-scaffold/00-02-SUMMARY.md',
+    );
+    await setupTestProject(tmpDir, withResume);
+
+    // Call WITHOUT --resume-file. Previously this clobbered with 'None'.
+    await stateRecordSession([], tmpDir);
+
+    const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    expect(content).toContain('Resume file: .planning/phases/00-cleanup-platform-scaffold/00-02-SUMMARY.md');
+    expect(content).not.toContain('Resume file: None');
+  });
+
+  it('#9: overwrites Resume File when --resume-file IS passed (caller authority)', async () => {
+    const { stateRecordSession } = await import('./state-mutation.js');
+    const withResume = MINIMAL_STATE.replace(
+      'Resume file: None',
+      'Resume file: old-pointer.md',
+    );
+    await setupTestProject(tmpDir, withResume);
+
+    await stateRecordSession(['--resume-file', 'new-pointer.md'], tmpDir);
+
+    const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    expect(content).toContain('Resume file: new-pointer.md');
+    expect(content).not.toContain('Resume file: old-pointer.md');
+  });
+
+  it('#9: preserves existing Resume File when --resume-file is omitted (no clobber to None)', async () => {
+    const { stateRecordSession } = await import('./state-mutation.js');
+    const withResume = MINIMAL_STATE.replace(
+      'Resume file: None',
+      'Resume file: phases/00/00-02-SUMMARY.md',
+    );
+    await setupTestProject(tmpDir, withResume);
+
+    // Pass other args but NOT --resume-file
+    await stateRecordSession(['--stopped-at', 'Plan complete'], tmpDir);
+
+    const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    expect(content).toContain('Resume file: phases/00/00-02-SUMMARY.md');
+    expect(content).toContain('Stopped at: Plan complete');
+    expect(content).not.toContain('Resume file: None');
   });
 });
 
