@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.45.8] - 2026-05-29  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
+
+Test stability fix for `tests/mcp-write-tools-end-to-end.test.cjs`. The v2.45.5 fix routes each MCP write-tool call through a `spawnSync('node', ['bin/gsd-tools.cjs', 'state', '<subcommand>'])` subprocess. The end-to-end test sends 6 sequential write-tool calls in one case, which means 6 sequential node-subprocess spawns inside the MCP server, each ~100-200ms. The test's original 1.5s post-request window was too tight: 5 of 5 local runs at v2.45.7 ship produced 1-2 of 3 passes instead of 3 of 3. Bumped the post-request wait to 5s and the overall test timeout to 15s. 5 of 5 runs now pass deterministically. The MCP server behavior itself is unchanged; this is purely a test budget adjustment.
+
+### Fixed
+- **`tests/mcp-write-tools-end-to-end.test.cjs`**: `POST_REQUEST_WAIT_MS` raised from 1500 to 5000, `TIMEOUT_MS` from 8000 to 15000, kill-after-stdin-end from 300ms to 500ms. CI determinism restored.
+
 ## [2.45.7] - 2026-05-29  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 Cuts the per-quick-task commit count roughly in half. The historical pattern was a "feat: do X" work commit followed by a "docs(quick-NN): X" docs commit immediately after, with the same description and the same blast radius. Measurement at v2.45.6 ship: 27 `docs(quick-NN)` commits in the previous 30 days, each one piggybacking on a feature commit above it. Humans reading git log saw twice the noise per task.

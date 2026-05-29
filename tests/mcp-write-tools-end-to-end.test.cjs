@@ -22,7 +22,13 @@ const os = require('os');
 const { spawn } = require('child_process');
 
 const SERVER = path.join(__dirname, '..', 'mcp', 'server.cjs');
-const TIMEOUT_MS = 8000;
+// The MCP server's write-tool handlers do spawnSync internally (one node
+// subprocess per call, see mcp/server.cjs runStateSubcommand). With 6
+// sequential write-tool calls in one test case, the per-call cost adds up
+// to ~600-1200ms. Generous timeouts keep CI deterministic; locally the
+// test usually completes in well under half this budget.
+const TIMEOUT_MS = 15000;
+const POST_REQUEST_WAIT_MS = 5000;
 
 // Minimal STATE.md fixture: cmdStateAddBlocker auto-creates the Blockers
 // section if absent (DWIM scaffold path), so we just need a parseable file.
@@ -93,11 +99,13 @@ function callMcp(cwd, requests) {
     for (const req of requests) {
       child.stdin.write(JSON.stringify(req) + '\n');
     }
-    // Give the server a moment to process, then close stdin so it exits cleanly.
+    // Give the server enough time to spawnSync each write-tool subprocess
+    // (~100-200ms per call) before closing stdin. 5s budget comfortably
+    // covers 6 sequential write-tool calls plus initialize.
     setTimeout(() => {
       child.stdin.end();
-      setTimeout(() => child.kill('SIGTERM'), 300);
-    }, 1500);
+      setTimeout(() => child.kill('SIGTERM'), 500);
+    }, POST_REQUEST_WAIT_MS);
   });
 }
 
