@@ -8,6 +8,15 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.45.3] - 2026-05-29  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
+
+Adds regression tests for three plugin-flat-layout patches that have been wiped or contested across past upstream sync cycles. Principle: only test patches that have already broken (paying down debt), not speculative coverage. Each new test discriminates: temporarily reverting the patch produces failures, restoring restores green. Total +9 cases, 3 new files, single commit.
+
+### Changed
+- **`tests/getagentsdir-plugin-layout.test.cjs`** (3 cases): regression for `#PLUGIN-AGENTS-DIR` in `bin/lib/core.cjs::getAgentsDir`. Covers env override priority, plugin-flat-layout `agents/` detection via `CLAUDE_PLUGIN_ROOT`, and upstream-traversal fallback when the plugin marker is absent. Without this test, a sync that wipes the patch silently produces `agents_installed: false` warnings on every new project.
+- **`tests/model-catalog-resolver-flat-layout.test.cjs`** (3 cases): regression for `#PLUGIN-MODEL-CATALOG-PATH` in `bin/lib/model-catalog.cjs`. Verifies the prepended flat-layout candidate (`bin/lib/__dirname` to `sdk/shared/model-catalog.json` via the patched `..` traversal) resolves successfully, the catalog exposes Anthropic-compatible runtime tiers, and the resolver tolerates a bogus `GSD_MODEL_CATALOG` env override.
+- **`tests/phase-deps-on-case-insensitive-cjs.test.cjs`** (3 cases): regression for `#PLUGIN-DEPS-ON-CASE-INSENSITIVE` in `bin/lib/phase.cjs`. The SDK TypeScript side has its own coverage at `sdk/src/query/phase.test.ts`, but the CJS parallel path that the runtime actually executes had no direct test until now. Drives `bin/gsd-tools.cjs phase-plan-index` against tempdir fixtures with lowercase, uppercase, and mixed-case `depends_on` declarations; asserts the wave layout puts dependents into the correct downstream wave. Sanity-verified by reverting the three `toLowerCase()` patch points and confirming 1/3 cases pass (uppercase-canonical only).
+
 ## [2.45.2] - 2026-05-29  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 Fixes a noisy-resume regression on cold-start after auto-compact. When PreCompact fired in an idle session (between milestones, before any active phase, or after a STATE.md parse failure), the resulting `HANDOFF.json` had `phase: null` and `task: null` (the schema-valid skeleton from `bin/lib/checkpoint.cjs`), but the SessionStart hook unconditionally emitted a `Phase: unknown, Plan: ?, Task: ?` resume nudge plus the "Do this immediately without waiting for user input" directive. Wasteful and confusing on every cold-start in idle projects.
