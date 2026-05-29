@@ -1251,19 +1251,23 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
             const handoffPath = path.join(planningPaths(cwd).planning, 'HANDOFF.json');
             if (fs.existsSync(handoffPath)) {
               const handoff = JSON.parse(fs.readFileSync(handoffPath, 'utf-8'));
-              const phase = handoff.phase_name || handoff.phase || 'unknown';
-              const plan = handoff.plan || '?';
-              const task = handoff.task || '?';
-              const handoffSource = handoff.source || 'unknown';
+              // Skip trivial auto-compact checkpoints with no in-progress work
+              const hasMeaningfulWork = handoff.phase !== null || handoff.task !== null;
+              if (hasMeaningfulWork) {
+                const phase = handoff.phase_name || handoff.phase || 'unknown';
+                const plan = handoff.plan || '?';
+                const task = handoff.task || '?';
+                const handoffSource = handoff.source || 'unknown';
 
-              const systemMsg = [
-                'GSD session continuity: Found checkpoint from previous session.',
-                `Phase: ${phase}, Plan: ${plan}, Task: ${task} (source: ${handoffSource}).`,
-                'Run /gsd:resume-work to restore context and continue.',
-                'Do this immediately without waiting for user input.'
-              ].join(' ');
-              process.stdout.write(systemMsg);
-              process.stderr.write('GSD: session checkpoint detected, auto-resuming...\n');
+                const systemMsg = [
+                  'GSD session continuity: Found checkpoint from previous session.',
+                  `Phase: ${phase}, Plan: ${plan}, Task: ${task} (source: ${handoffSource}).`,
+                  'Run /gsd:resume-work to restore context and continue.',
+                  'Do this immediately without waiting for user input.'
+                ].join(' ');
+                process.stdout.write(systemMsg);
+                process.stderr.write('GSD: session checkpoint detected, auto-resuming...\n');
+              }
             }
           } catch { /* never break session start */ }
 
