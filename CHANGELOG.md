@@ -8,6 +8,21 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.45.7] - 2026-05-29  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
+
+Cuts the per-quick-task commit count roughly in half. The historical pattern was a "feat: do X" work commit followed by a "docs(quick-NN): X" docs commit immediately after, with the same description and the same blast radius. Measurement at v2.45.6 ship: 27 `docs(quick-NN)` commits in the previous 30 days, each one piggybacking on a feature commit above it. Humans reading git log saw twice the noise per task.
+
+The fix is surgical: in `workflows/quick.md` Step 8, fold the docs into the preceding work commit via `git commit --amend --no-edit` when it is safe to do so. Safety conditions: the executor produced at least one new commit this run (HEAD differs from the EXPECTED_BASE captured before Step 6), HEAD is not a merge commit (avoids amending onto worktree-merge commits in worktree mode), `commit_docs` is true, and there are docs actually staged. When any condition fails, falls back to the original separate-commit behavior so worktree flows and `commit_docs: false` projects are unaffected.
+
+What this means in practice: a single `/gsd:quick` task on a non-worktree project (the common case, including this plugin where `.planning/` is gitignored) now produces one commit instead of two. The commit message of the work commit stays the same; the docs files (PLAN.md, SUMMARY.md, STATE.md) just ride along with the code change.
+
+Tradeoff to weigh: amend rewrites the most recent commit hash. If a CI run already started against that hash before the amend, the rewrite invalidates it. In practice this is safe because the amend happens within a single `/gsd:quick` invocation before any push.
+
+Deferred for scope: `workflows/execute-phase.md` has 5 separate commit emission sites (wave-tracking, UAT gap closure, HUMAN-UAT persistence, phase complete, todo auto-close) which together produce many commits per phase. Each has different semantics, so they get their own pass in a future release. Also deferred: the pre-dispatch PLAN.md commit and the worktree-merge commit, both of which are load-bearing for the worktree isolation contract and would need coordinated changes.
+
+### Changed
+- **`workflows/quick.md` Step 8**: amend docs into the preceding work commit when safe instead of emitting a separate `docs(quick-NN): ...` commit. Fall back to the original behavior when amend would be unsafe (no new work commit, HEAD is a merge commit, `commit_docs: false`, or nothing staged). Commit count for a single `/gsd:quick` task drops from 2 commits to 1 in the common case.
+
 ## [2.45.6] - 2026-05-29  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 Nudges the `gsd-executor` agent's bias toward self-testing instead of asking the user. The agent prompt at `agents/gsd-executor.md:306` historically declared that `checkpoint:human-verify` should fire on ~90% of executor checkpoints. In practice this trained the executor to default to "can you verify X?" prompts even when the verification had a plausible automation path (file existence, grep, command exit code, test run). Lowering the declared share to 40% leaves 40% + 9% (decision) + 1% (human-action) = 50%, with the implicit remainder being silent automated checks the executor performs without emitting a checkpoint at all. That is the behavior shift: more self-testing, fewer interruptions for the user.

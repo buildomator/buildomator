@@ -1103,7 +1103,35 @@ if [ "$COMMIT_DOCS" = "false" ]; then
 else
   git add ${file_list} 2>/dev/null
 fi
-gsd-sdk query commit "docs(quick-${quick_id}): ${DESCRIPTION}" --files ${file_list}
+
+# v2.45.7: amend docs into the preceding work commit when safe, instead of
+# emitting a separate `docs(quick-NN): ...` commit. Reduces the
+# "feat: X" + "docs(quick-NN): X" doubling that historically polluted git log
+# (27 docs(quick-NN) commits in 30 days at v2.45.6 measurement). Safety:
+#   1. Executor produced at least one new commit this run
+#      (HEAD differs from EXPECTED_BASE captured before Step 6 spawn)
+#   2. HEAD is NOT a merge commit (--no-ff merges in worktree mode produce
+#      a merge commit we should NOT amend onto; falls back below)
+#   3. commit_docs is true (the empty-staging case is a no-op either path)
+#   4. There are docs actually staged to fold in
+# When any safety condition fails, fall back to the original new-commit
+# behavior so existing worktree-merge flows keep their separate docs commit.
+HEAD_AFTER_EXECUTOR=$(git rev-parse HEAD 2>/dev/null || echo "")
+HEAD_PARENT_COUNT=$(git rev-list --parents -n 1 HEAD 2>/dev/null | awk '{print NF-1}')
+
+if [ -n "$HEAD_AFTER_EXECUTOR" ] \
+   && [ "$HEAD_AFTER_EXECUTOR" != "$EXPECTED_BASE" ] \
+   && [ "${HEAD_PARENT_COUNT:-0}" -lt 2 ] \
+   && [ "$COMMIT_DOCS" != "false" ] \
+   && ! git diff --cached --quiet 2>/dev/null; then
+  # Safe to amend: fold docs into the most recent work commit (no message change)
+  git commit --amend --no-edit
+  echo "→ docs folded into work commit $(git rev-parse --short HEAD) (amend, no separate docs commit)"
+else
+  # Unsafe to amend (no new work commit, merge commit at HEAD, commit_docs disabled,
+  # or nothing staged). Fall back to the original separate-docs-commit behavior.
+  gsd-sdk query commit "docs(quick-${quick_id}): ${DESCRIPTION}" --files ${file_list}
+fi
 ```
 
 Get final commit hash:

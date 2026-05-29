@@ -7,8 +7,8 @@
     "note": "Counts-based ratchet per Phase 7 CONTEXT D-07. Regenerate with --write-baseline when drift is legitimately reduced."
   },
   "user_docs_jargon": {
-    "planning_paths": 37,
-    "artifact_names": 43,
+    "planning_paths": 38,
+    "artifact_names": 45,
     "plan_files": 3,
     "generic_phase_num": 17,
     "generated_at": "2026-05-29",
