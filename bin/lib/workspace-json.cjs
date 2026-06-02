@@ -3,8 +3,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const CANONICAL_PATH = ['.agents', 'agents.workspace.json'];
-const LEGACY_PATH = ['agents.workspace.json'];
+const CANONICAL_PATH     = ['.agents', 'workspace.json'];
+const LEGACY_AGENTS_PATH = ['.agents', 'agents.workspace.json'];
+const LEGACY_PATH        = ['agents.workspace.json'];
 
 const FRAGILITY_THRESHOLD = 0.7;
 const FRAMEWORK_CONFIDENCE_THRESHOLD = 0.7;
@@ -21,7 +22,7 @@ const MAX_CO_CHANGE_PATTERNS = 200;
 
 // Returns null if absent, malformed, or unreadable — never throws.
 function readWorkspaceJson(cwd) {
-  for (const segments of [CANONICAL_PATH, LEGACY_PATH]) {
+  for (const segments of [CANONICAL_PATH, LEGACY_AGENTS_PATH, LEGACY_PATH]) {
     const filePath = path.join(cwd, ...segments);
     let raw;
     try {
@@ -169,6 +170,7 @@ module.exports = {
   readWorkspaceJson,
   buildContextString,
   CANONICAL_PATH,
+  LEGACY_AGENTS_PATH,
   LEGACY_PATH,
   FRAGILITY_THRESHOLD,
   DEFAULT_MAX_FILES,

@@ -28,6 +28,13 @@ function withTempRepo(fn, opts) {
 
 function writeCanonicalWorkspaceJson(dir, content) {
   fs.writeFileSync(
+    path.join(dir, '.agents', 'workspace.json'),
+    JSON.stringify(content, null, 2)
+  );
+}
+
+function writeLegacyAgentsWorkspaceJson(dir, content) {
+  fs.writeFileSync(
     path.join(dir, '.agents', 'agents.workspace.json'),
     JSON.stringify(content, null, 2)
   );
@@ -71,7 +78,7 @@ check('absent file produces no workspace.json injection', () => withTempRepo(dir
 
 // Test 2: malformed file fails soft
 check('malformed file does not crash hook', () => withTempRepo(dir => {
-  fs.writeFileSync(path.join(dir, '.agents', 'agents.workspace.json'), '{not valid json');
+  fs.writeFileSync(path.join(dir, '.agents', 'workspace.json'), '{not valid json');
   const result = runHook(dir);
   if (result.status !== 0) {
     throw new Error(`Hook exited with status ${result.status} on malformed file`);
@@ -381,7 +388,7 @@ check('source other-than-startup/compact produces no workspace.json injection', 
 
 // Test 16: non-object root JSON (array) exits 0 and produces no injection
 check('array root JSON exits 0 and produces no injection', () => withTempRepo(dir => {
-  fs.writeFileSync(path.join(dir, '.agents', 'agents.workspace.json'), '[1, 2, 3]');
+  fs.writeFileSync(path.join(dir, '.agents', 'workspace.json'), '[1, 2, 3]');
   const result = runHook(dir);
   if (result.status !== 0) {
     throw new Error(`Hook exited ${result.status} on array root JSON`);
@@ -497,6 +504,33 @@ check('mixed invalid coChangePatterns skips invalid entries without crashing', (
   }
   if (result.stdout.includes('bare string') || result.stdout.includes('no files array')) {
     throw new Error('Invalid coChangePattern entry leaked into output');
+  }
+}));
+
+// Test 21: legacy path (.agents/agents.workspace.json) is still fully consumed
+check('legacy agents path (.agents/agents.workspace.json) is read and fully consumed', () => withTempRepo(dir => {
+  writeLegacyAgentsWorkspaceJson(dir, {
+    version: '0.1',
+    generated: {
+      version: '1.0',
+      fileIndex: {
+        'src/legacy-agents-path.ts': {
+          fragility: 0.88,
+          aiModificationCount: 6,
+          humanModificationCount: 2,
+        },
+      },
+    },
+  });
+  const result = runHook(dir);
+  if (!result.stdout.includes('src/legacy-agents-path.ts')) {
+    throw new Error('Legacy agents path file was not read');
+  }
+  if (!result.stdout.includes('0.88')) {
+    throw new Error('Legacy agents path: fragility score not consumed — file found but content was not fully parsed');
+  }
+  if (!result.stdout.includes('6 AI')) {
+    throw new Error('Legacy agents path: aiModificationCount not consumed — partial read suspected');
   }
 }));
 
