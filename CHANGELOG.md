@@ -8,6 +8,9 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+### Fixed
+- Canonical `workspace.json` path corrected from `.agents/agents.workspace.json` to `.agents/workspace.json` ([#10](https://github.com/jnuyens/gsd-plugin/issues/10#issuecomment-4574148528)). Both legacy paths are preserved for backwards compatibility: the prior `.agents/agents.workspace.json` location and the repo-root `agents.workspace.json` fallback.
+
 ## [2.45.9] - 2026-05-29  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 Behavior change addressing a real felt issue: in larger projects, GSD-managed milestones tend toward unbounded growth because the architecture has 4 workflows that add phases (`add-phase`, `insert-phase`, `add-backlog`, `plan-milestone-gaps`) against 1 that effectively closes them (`complete-milestone`). When `gsd-verifier` returns `gaps_found`, the historical default was to route the gaps into a follow-up phase via `/gsd:plan-phase --gaps`. That kept gap-driven phase multiplication going indefinitely.
