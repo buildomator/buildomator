@@ -8,6 +8,18 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.45.10] - 2026-06-08  (based on upstream GSD 1.42.3, with 5 cherry-picks from upstream v1.3.1)
+
+Selective cherry-pick of five verified bug fixes from upstream's v1.0.0..v1.3.1 range, ported by hand into the flat layout. This is NOT a wholesale sync: a routine "sync to v1.3.1" investigation found upstream had restructured heavily (build-at-publish for `bin/lib`, the SDK retired, and a second rename to `@opengsd/gsd-core` at repo `open-gsd/gsd-core`), making a full vendor-and-merge a ~350-file migration. We pulled only the portable, low-risk wins instead.
+
+Note on the gsd-core convergence question: upstream now ships its own native Claude Code plugin manifest (#766), but only on `next`, not in v1.3.1. Our manifest remains authoritative (it is a strict superset, adding the MCP server, a churn-resilient hook resolver, and the no-bundled-commands design); convergence is parked until #766 reaches a stable tag.
+
+### Fixed
+- **`agents/` (7 writer agents)** (upstream #582 `692343f8`, #571 `c2ebb1ba`): `gsd-eval-planner`, `gsd-ai-researcher`, `gsd-domain-researcher`, `gsd-phase-researcher`, `gsd-ui-researcher`, `gsd-debug-session-manager`, and `gsd-doc-writer` shipped with `Write` but no `Edit`. Their prompts call for surgical in-place section edits on shared files, so with no `Edit` tool they silently fell back to whole-file `Write`, clobbering sibling sections (last-writer-wins) while reporting success. Added `Edit` to all seven. `gsd-doc-writer` fix mode + critical_rules were rewritten to mandate `Edit` and forbid `Write` on existing files, and `workflows/docs-update.md` gained a post-fix >90%-shrink restore guard.
+- **`bin/lib/commands.cjs`** (upstream #387 `bd98e568`, fixes #308): the Brave web-search `fetch()` had no timeout, so a hung connection blocked the agent indefinitely. Wrapped it in a per-attempt `AbortController` timeout (configurable via `GSD_WEBSEARCH_TIMEOUT_MS`, default 10s) plus a 2-retry loop for 429/5xx that honors `Retry-After` (capped at 60s). Non-429 4xx fail immediately.
+- **`workflows/plan-phase.md`** (upstream #283 `ce945ef7`, fixes #275): the decision-coverage gate parsed only `.data.passed`/`.data.message`; it now reads `(.passed // .data.passed)` with a message fallback, tolerating top-level result fields from the CLI so the gate cannot silently mis-fire.
+- **`workflows/{new-project,settings-advanced,settings-integrations}.md`** (upstream #243 `b2a8411e`, fixes #17): `AskUserQuestion` blocks that exceeded Claude Code's 4-option runtime cap (the settings-change multiselect, the runtime selector, and the review/agent-skills pickers) are now split into gated two-block flows, so options are no longer silently truncated.
+
 ## [2.45.9] - 2026-05-29  (based on upstream GSD 1.42.3, hosted at open-gsd/get-shit-done-redux)
 
 Behavior change addressing a real felt issue: in larger projects, GSD-managed milestones tend toward unbounded growth because the architecture has 4 workflows that add phases (`add-phase`, `insert-phase`, `add-backlog`, `plan-milestone-gaps`) against 1 that effectively closes them (`complete-milestone`). When `gsd-verifier` returns `gaps_found`, the historical default was to route the gaps into a follow-up phase via `/gsd:plan-phase --gaps`. That kept gap-driven phase multiplication going indefinitely.

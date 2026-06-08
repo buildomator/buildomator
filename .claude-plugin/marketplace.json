@@ -11,7 +11,7 @@
       "name": "gsd",
       "source": "./",
       "description": "Get Shit Done -- structured workflow plugin for Claude Code with planning, execution, verification, and MCP-backed project state",
-      "version": "2.45.9",
+      "version": "2.45.10",
       "author": {
         "name": "Jasper Nuyens"
       },
