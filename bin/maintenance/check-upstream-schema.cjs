@@ -12,7 +12,7 @@
  *
  * If UPSTREAM_VERSION is unset, the detector queries `gh release view` for
  * the latest upstream tag. If a cached extracted tarball is available at
- * `/tmp/gsd-sync-<clean-version>/get-shit-done-<clean-version>/` (from a
+ * `/tmp/gsd-sync-<clean-version>/gsd-core-<clean-version>/` (from a
  * prior sync), the detector uses it instead of re-downloading — cheap
  * optimization that lets offline post-sync checks work.
  *
@@ -39,7 +39,7 @@ if (!fs.existsSync('.git') || !fs.existsSync('schema/handoff-v1.json')) {
 function resolveUpstreamVersion() {
   if (process.env.UPSTREAM_VERSION) return process.env.UPSTREAM_VERSION;
   try {
-    const out = execSync('gh release view --repo gsd-build/get-shit-done --json tagName -q .tagName', {
+    const out = execSync('gh release view --repo open-gsd/gsd-core --json tagName -q .tagName', {
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -51,11 +51,13 @@ function resolveUpstreamVersion() {
 }
 
 function ensureUpstreamTarball(version) {
-  // Cached tarball layout: /tmp/gsd-sync-<clean>/get-shit-done-<clean>/
+  // Cached tarball layout: /tmp/gsd-sync-<clean>/gsd-core-<clean>/
   // (Clean version has the leading 'v' stripped; established by past sync runs.)
+  // GitHub source archives extract to <repo>-<clean>/, so the new upstream repo
+  // open-gsd/gsd-core yields `gsd-core-<clean>/` (was `get-shit-done-<clean>/`).
   const clean = version.replace(/^v/, '');
   const workDir = path.join('/tmp', `gsd-sync-${clean}`);
-  const cachedDir = path.join(workDir, `get-shit-done-${clean}`);
+  const cachedDir = path.join(workDir, `gsd-core-${clean}`);
   if (fs.existsSync(cachedDir)) {
     console.log('Using cached tarball at:', cachedDir);
     return cachedDir;
@@ -64,7 +66,7 @@ function ensureUpstreamTarball(version) {
   try {
     fs.mkdirSync(workDir, { recursive: true });
     execSync(
-      `gh release download ${version} --repo gsd-build/get-shit-done --archive=tar.gz -O upstream.tar.gz`,
+      `gh release download ${version} --repo open-gsd/gsd-core --archive=tar.gz -O upstream.tar.gz`,
       { cwd: workDir, stdio: ['ignore', 'pipe', 'pipe'] }
     );
     execSync('tar xzf upstream.tar.gz', { cwd: workDir });
@@ -139,7 +141,7 @@ function main() {
   console.log('');
   console.log('Target version:', version);
   const upstreamDir = ensureUpstreamTarball(version);
-  const workflowPath = path.join(upstreamDir, 'get-shit-done', 'workflows', 'pause-work.md');
+  const workflowPath = path.join(upstreamDir, 'gsd-core', 'workflows', 'pause-work.md');
   if (!fs.existsSync(workflowPath)) {
     console.error('error: workflow file not found at', workflowPath);
     process.exit(2);
