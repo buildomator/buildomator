@@ -487,6 +487,15 @@ function cmdValidateConsistency(cwd, raw) {
   while ((m = phasePattern.exec(roadmapContent)) !== null) {
     roadmapPhases.add(m[1]);
   }
+  // Also match checklist-style phases (`- [x] **Phase N: name**`), not just
+  // heading-style (`## Phase N:`). Without this, a checklist-format ROADMAP
+  // triggers a false "Phase X exists on disk but not in ROADMAP.md" for every
+  // realized phase (upstream #892).
+  const checklistPattern = /-\s*\[[ xX]\]\s*\*{0,2}Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:/gi;
+  let cm;
+  while ((cm = checklistPattern.exec(roadmapContent)) !== null) {
+    roadmapPhases.add(cm[1]);
+  }
 
   // Get phases on disk (flat layout + milestone-archive layout)
   const diskPhases = collectDiskPhases(planBase);
@@ -807,6 +816,13 @@ function cmdValidateHealth(cwd, options, raw) {
     let m;
     while ((m = phasePattern.exec(roadmapContent)) !== null) {
       roadmapPhases.add(m[1]);
+    }
+    // Also match checklist-style phases (`- [x] **Phase N:**`) so W006 does not
+    // false-fire on a checklist-format ROADMAP (upstream #892).
+    const checklistPattern = /-\s*\[[ xX]\]\s*\*{0,2}Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:/gi;
+    let cm;
+    while ((cm = checklistPattern.exec(roadmapContent)) !== null) {
+      roadmapPhases.add(cm[1]);
     }
 
     const diskPhases = collectDiskPhases(planBase);

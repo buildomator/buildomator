@@ -164,6 +164,17 @@
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-context-monitor.js'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/gsd-context-monitor.js'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
+            "timeout": 10000
+          }
+        ]
+      }
     ]
   }
 }
