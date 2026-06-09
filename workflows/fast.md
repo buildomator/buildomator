@@ -75,6 +75,15 @@ fi
 ```
 </step>
 
+<step name="auto_memory_capture">
+Run the durable-decision capture protocol in `references/auto-memory-capture.md`. Gated on
+`workflow.auto_memory_capture` (default ON). Fast tasks are usually too trivial to produce a
+durable decision, so this almost always writes nothing — but if the user stated a preference
+or you made a non-obvious judgement call, capture ONE memory via
+`gsd-tools write-decision-memory` and surface only the `Saved memory: <slug>` line. When
+nothing durable emerged, write nothing and say nothing.
+</step>
+
 <step name="done">
 Report completion:
 

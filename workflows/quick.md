@@ -1079,6 +1079,19 @@ Use Edit tool to make these changes atomically
 
 ---
 
+**Step 7.5: Auto-capture durable decisions**
+
+Before the final commit, run the durable-decision capture protocol in
+`references/auto-memory-capture.md`. Gated on `workflow.auto_memory_capture` (default ON):
+if a durable decision, preference, or non-obvious rationale emerged during this task that a
+future session would want and that is not already in the SUMMARY/commit/code, write ONE
+memory via `gsd-tools write-decision-memory` and surface the single `Saved memory: <slug>`
+line. Most quick tasks capture nothing — be conservative; write nothing and say nothing when
+no durable decision emerged. This writes to the auto-memory store (outside the repo), so it
+does not affect the commit below.
+
+---
+
 **Step 8: Final commit and completion**
 
 Stage and commit quick task artifacts. This step MUST always run — even if the executor already committed some files (e.g. when running without worktree isolation). The `gsd-sdk query commit` command (or legacy `gsd-tools.cjs` commit) handles already-committed files gracefully.

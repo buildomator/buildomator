@@ -1200,16 +1200,41 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
     }
 
     // ─── Plugin-only dispatch cases ───────────────────────────────────
-    // The four cases below (`write-phase-memory`, `checkpoint`, `hook`,
-    // `migrate`) are plugin-only — they are NOT in upstream gsd-tools.cjs.
-    // Preserve verbatim across upstream syncs.
+    // The cases below (`write-phase-memory`, `write-decision-memory`,
+    // `checkpoint`, `hook`, `migrate`) are plugin-only — they are NOT in
+    // upstream gsd-tools.cjs. Preserve verbatim across upstream syncs.
     // See: feedback_plugin_patches_inventory.md
 
     case 'write-phase-memory': {
       const memory = require('./lib/memory.cjs');
-      const phaseArg = args[0];
+      const phaseArg = args[1];
       if (!phaseArg) { error('Usage: write-phase-memory <phase-number>'); }
-      memory.writePhaseMemory(cwd, phaseArg, raw);
+      // Two latent bugs fixed here (command was orphaned since 7bf7d0d, never
+      // wired into a workflow, so neither ever fired): (1) export is
+      // cmdWritePhaseMemory, not the undefined `memory.writePhaseMemory`;
+      // (2) sub-args start at args[1] (args[0] is the command name), so the
+      // phase number is args[1], not args[0].
+      memory.cmdWritePhaseMemory(cwd, phaseArg, raw);
+      break;
+    }
+
+    // Ad-hoc durable-decision capture at quick/debug/fast close-out.
+    // The orchestrating model composes the body (durability is a judgment
+    // call) and passes it via --body-file; this command resolves the
+    // auto-memory path, writes the file idempotently, and flat-indexes it.
+    case 'write-decision-memory': {
+      const memory = require('./lib/memory.cjs');
+      const getFlag = (name) => {
+        const i = args.indexOf(name);
+        return i !== -1 && i + 1 < args.length ? args[i + 1] : undefined;
+      };
+      memory.cmdWriteDecisionMemory(cwd, {
+        slug: getFlag('--slug'),
+        title: getFlag('--title'),
+        description: getFlag('--description'),
+        type: getFlag('--type'),
+        bodyFile: getFlag('--body-file'),
+      }, raw);
       break;
     }
 

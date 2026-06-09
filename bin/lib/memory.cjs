@@ -493,10 +493,136 @@ function cmdWritePhaseMemory(cwd, phaseNumber, raw) {
   outputResult(result, raw, `Phase memory written: ${memoryFilePath}`);
 }
 
+// ─── Ad-hoc decision memory (quick / debug / fast close-out capture) ─────────
+
+const VALID_DECISION_TYPES = new Set(['user', 'feedback', 'project', 'reference']);
+
+/**
+ * Append (or update) a flat MEMORY.md index line for a decision memory.
+ *
+ * Unlike updateMemoryIndex (which maintains a "## Phase Memories" section),
+ * this matches the flat one-line-per-memory format the auto-memory spec uses
+ * for hand-curated memories: `- [Title](slug.md): hook`. Dedup is by the
+ * `(slug.md)` link target, so re-running with the same slug updates in place.
+ *
+ * @param {string} memoryDir - Resolved auto-memory directory
+ * @param {string} slug - Memory slug (filename without .md)
+ * @param {string} title - Human title shown in the index
+ * @param {string} hook - One-line description / relevance hook
+ */
+function appendDecisionIndex(memoryDir, slug, title, hook) {
+  const entrypointPath = path.join(memoryDir, 'MEMORY.md');
+  let content = fs.existsSync(entrypointPath)
+    ? fs.readFileSync(entrypointPath, 'utf-8')
+    : '';
+
+  const indexLine = `- [${title}](${slug}.md): ${hook}`;
+  const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Match any existing flat-list line that links to this slug.md
+  const existingPattern = new RegExp(`^- \\[[^\\]]*\\]\\(${escapedSlug}\\.md\\):.*$`, 'm');
+
+  if (existingPattern.test(content)) {
+    content = content.replace(existingPattern, indexLine);
+  } else if (!content.trim()) {
+    content = `${indexLine}\n`;
+  } else {
+    // Insert after the last top-level "- [" list entry to keep the flat list
+    // contiguous; fall back to end-of-file if there is no list yet.
+    const lines = content.split('\n');
+    let lastEntry = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (/^- \[/.test(lines[i])) lastEntry = i;
+    }
+    if (lastEntry >= 0) {
+      lines.splice(lastEntry + 1, 0, indexLine);
+      content = lines.join('\n');
+    } else {
+      content = content.trimEnd() + `\n${indexLine}\n`;
+    }
+  }
+
+  fs.writeFileSync(entrypointPath, content, 'utf-8');
+}
+
+/**
+ * Write an ad-hoc "durable decision" memory captured at the close-out of a
+ * quick / debug / fast task. The CONTENT is composed by the orchestrating
+ * model (durability is a judgment call); this helper only resolves the
+ * correct auto-memory path, assembles consistent frontmatter, writes the
+ * file idempotently by slug, and flat-indexes it in MEMORY.md.
+ *
+ * Usage: gsd-tools write-decision-memory --slug <slug> --title <title> \
+ *          --description <hook> --type <user|feedback|project|reference> \
+ *          --body-file <path>   (use '-' to read body from stdin)
+ *
+ * @param {string} cwd - Project root
+ * @param {object} opts - { slug, title, description, type, bodyFile }
+ * @param {boolean} raw - Raw output mode
+ */
+function cmdWriteDecisionMemory(cwd, opts, raw) {
+  const { slug, title, description, type, bodyFile } = opts || {};
+  if (!slug || !description || !type || !bodyFile) {
+    exitError('Usage: gsd-tools write-decision-memory --slug <slug> --title <title> --description <hook> --type <user|feedback|project|reference> --body-file <path|->');
+  }
+  // Slug must be filesystem-safe and match the memory spec's kebab-case shape.
+  if (!/^[a-z0-9][a-z0-9_-]{0,79}$/.test(slug)) {
+    exitError(`Invalid slug '${slug}': use lowercase kebab/snake-case, max 80 chars, no path separators.`);
+  }
+  if (!VALID_DECISION_TYPES.has(type)) {
+    exitError(`Invalid type '${type}': must be one of user, feedback, project, reference.`);
+  }
+
+  let body;
+  try {
+    body = bodyFile === '-'
+      ? fs.readFileSync(0, 'utf-8')
+      : fs.readFileSync(bodyFile, 'utf-8');
+  } catch (err) {
+    exitError(`Could not read --body-file '${bodyFile}': ${err && err.message ? err.message : err}`);
+  }
+  if (!body.trim()) {
+    exitError('Refusing to write an empty decision memory (body is blank).');
+  }
+
+  const displayTitle = title && title.trim() ? title.trim() : slug;
+  const frontmatter =
+    `---\n` +
+    `name: ${slug}\n` +
+    `description: ${description.replace(/\n/g, ' ').trim()}\n` +
+    `metadata:\n` +
+    `  type: ${type}\n` +
+    `---\n\n`;
+
+  const memoryDir = getAutoMemPath(cwd);
+  fs.mkdirSync(memoryDir, { recursive: true });
+
+  const filename = `${slug}.md`;
+  const memoryFilePath = path.join(memoryDir, filename);
+  fs.writeFileSync(memoryFilePath, frontmatter + body.trim() + '\n', 'utf-8');
+
+  appendDecisionIndex(memoryDir, slug, displayTitle, description.replace(/\n/g, ' ').trim());
+
+  outputResult(
+    {
+      written: true,
+      file: memoryFilePath,
+      index: path.join(memoryDir, 'MEMORY.md'),
+      filename,
+      slug,
+      type,
+      memoryDir,
+    },
+    raw,
+    `Saved memory: ${slug}`
+  );
+}
+
 module.exports = {
   buildPhaseMemoryPayload,
   getAutoMemPath,
   getAutoMemEntrypoint,
   updateMemoryIndex,
+  appendDecisionIndex,
   cmdWritePhaseMemory,
+  cmdWriteDecisionMemory,
 };

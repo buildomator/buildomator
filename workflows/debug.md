@@ -217,6 +217,14 @@ Display the compact summary returned by the session manager.
 If summary shows `DEBUG SESSION COMPLETE`: done.
 If summary shows `ABANDONED`: note session saved at `.planning/debug/{slug}.md` for later `/gsd:debug continue {slug}`.
 
+**Auto-capture durable decisions (only when `DEBUG SESSION COMPLETE`):** run the protocol in
+`references/auto-memory-capture.md`. Gated on `workflow.auto_memory_capture` (default ON). A
+resolved bug often yields a durable `project` memory — a non-obvious root cause and the
+rationale of the fix that a future session could not recover from the diff alone. If so,
+write ONE memory via `gsd-tools write-decision-memory` and surface only the
+`Saved memory: <slug>` line. Skip silently for abandoned sessions or when the fix is
+self-evident from the code.
+
 </process>
 
 <success_criteria>
