@@ -8,6 +8,22 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [2.46.0] - 2026-06-09  (based on upstream GSD 1.42.3)
+
+New capability: automatic capture of durable decisions during ad-hoc work, so context persists between milestones without the user manually typing "remember".
+
+Background: the plugin previously only auto-wrote memory at planned-phase completion, and that path was doubly broken and never wired into any workflow. The `write-phase-memory` dispatch called `memory.writePhaseMemory` (the export is `cmdWritePhaseMemory`, so it threw `not a function` on every call) and read the phase number from `args[0]` (the command name) instead of `args[1]`. The command was added in April and never invoked by a workflow, so in practice the plugin never auto-captured anything: all memory was manual. This release fixes both bugs and fills the ad-hoc gap.
+
+### Added
+- **Ad-hoc durable-decision capture** at the close-out of `/gsd:quick`, `/gsd:debug`, and `/gsd:fast`, gated on `workflow.auto_memory_capture` (default `true`). The orchestrating model judges whether a durable decision emerged (a hard preference, a non-obvious rationale, a resolved-bug root cause) and, if so, writes one memory and surfaces a single `Saved memory: <slug>` line. Conservative by design: most ad-hoc tasks capture nothing.
+- **`bin/lib/memory.cjs`**: `cmdWriteDecisionMemory` + `appendDecisionIndex`. The model composes the body (durability is a judgment call); the helper resolves the auto-memory path (handling worktree-shared and remote memory dirs), writes `<slug>.md` with consistent frontmatter idempotently, and flat-indexes it in `MEMORY.md` matching the hand-curated one-line style.
+- **`bin/gsd-tools.cjs`**: new plugin-only `write-decision-memory` dispatch (flag-parsed `--slug/--title/--description/--type/--body-file`).
+- **`references/auto-memory-capture.md`**: shared protocol (config gate, conservative durability test, dedup-before-write, one-line notice) referenced by all three ad-hoc workflows.
+- **`tests/auto-memory-capture.test.cjs`**: 23 checks (write + flat index + idempotency, the two phase-memory regressions, and the workflow wiring). Full suite now 10/10.
+
+### Fixed
+- **`bin/gsd-tools.cjs` `write-phase-memory`**: now calls `cmdWritePhaseMemory` (was the undefined `writePhaseMemory`) and reads the phase number from `args[1]` (was `args[0]`, the command name). The command was orphaned (never wired into a workflow), so neither bug had surfaced.
+
 ## [2.45.10] - 2026-06-08  (based on upstream GSD 1.42.3, with 5 cherry-picks from upstream v1.3.1)
 
 Selective cherry-pick of five verified bug fixes from upstream's v1.0.0..v1.3.1 range, ported by hand into the flat layout. This is NOT a wholesale sync: a routine "sync to v1.3.1" investigation found upstream had restructured heavily (build-at-publish for `bin/lib`, the SDK retired, and a second rename to `@opengsd/gsd-core` at repo `open-gsd/gsd-core`), making a full vendor-and-merge a ~350-file migration. We pulled only the portable, low-risk wins instead.
