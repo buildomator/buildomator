@@ -104,11 +104,13 @@ Enable auto-update for the marketplace in Claude Code settings and updates will 
 # Step 2: Reinstall the plugin to pick up the new version
 /plugin install gsd@gsd-plugin
 
-# Step 3: Reload plugins so the new version is active in this session
+# Step 3: Reload plugins so the new version is active (run in EACH open session)
 /reload-plugins
 ```
 
 Note: Step 1 refreshes the marketplace index but does not upgrade the installed plugin. Step 2 installs the new version on disk, and Step 3 makes Claude Code pick it up without restarting.
+
+**Do I run `/reload-plugins` in all open sessions or just one?** In all of them. `/reload-plugins` is per-session: each Claude Code session loads its own copy of the plugin, so reloading in one session does not refresh the others. Run it once per session you have open. Sessions you start **after** the update load the new version automatically, with no reload needed (so only your already-open sessions need the command). No `/exit` or restart is required. gsd-plugin ships an MCP server, but its tools load on demand via tool search, so the reload applies cleanly; on Claude Code v2.1.163+ in the rare case a reload would force a full context re-read, `/reload-plugins` prints a warning and you re-run it as `/reload-plugins --force`.
 
 ## What GSD Plugin provides
 
