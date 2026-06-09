@@ -155,7 +155,7 @@ function cmdInitExecutePhase(cwd, phase, raw, options = {}) {
     branch_name: config.branching_strategy === 'phase' && phaseInfo
       ? config.phase_branch_template
           .replace('{project}', config.project_code || '')
-          .replace('{phase}', phaseInfo.phase_number)
+          .replace('{phase}', normalizePhaseName(phaseInfo.phase_number))
           .replace('{slug}', phaseInfo.phase_slug || 'phase')
       : config.branching_strategy === 'milestone'
         ? config.milestone_branch_template

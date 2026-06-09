@@ -291,7 +291,7 @@ function cmdCommit(cwd, message, files, raw, amend, noVerify) {
         const phaseInfo = findPhaseInternal(cwd, phaseNum);
         if (phaseInfo) {
           branchName = config.phase_branch_template
-            .replace('{phase}', phaseInfo.phase_number)
+            .replace('{phase}', normalizePhaseName(phaseInfo.phase_number))
             .replace('{slug}', phaseInfo.phase_slug || 'phase');
         }
       }

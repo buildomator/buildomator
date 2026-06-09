@@ -909,6 +909,33 @@ function syncStateFrontmatter(content, cwd) {
     derivedFm.status = existingFm.status;
   }
 
+  // Bug #905 (upstream e0f67c75): buildStateFrontmatter can only derive these
+  // scalars from body annotations (Current Phase: / Current Plan: ...). When an
+  // agent rewrites the body without those annotations, the values would be
+  // silently stripped from the frontmatter — a data-loss bug. Fall back to the
+  // existing frontmatter values, mirroring the same pattern in cmdStateJson.
+  if (!derivedFm.stopped_at && existingFm.stopped_at) {
+    derivedFm.stopped_at = existingFm.stopped_at;
+  }
+  if (!derivedFm.paused_at && existingFm.paused_at) {
+    derivedFm.paused_at = existingFm.paused_at;
+  }
+  if (!derivedFm.current_phase && existingFm.current_phase) {
+    derivedFm.current_phase = existingFm.current_phase;
+  }
+  if (!derivedFm.current_phase_name && existingFm.current_phase_name) {
+    derivedFm.current_phase_name = existingFm.current_phase_name;
+  }
+  if (!derivedFm.current_plan && existingFm.current_plan) {
+    derivedFm.current_plan = existingFm.current_plan;
+  }
+  // progress is a sub-object: fall back to existing only when no progress block
+  // was derived at all (a derived block, even a lower one, wins — the
+  // cross-milestone shouldPreserveExistingProgress logic runs on the read path).
+  if (!derivedFm.progress && existingFm.progress) {
+    derivedFm.progress = normalizeProgressNumbers(existingFm.progress);
+  }
+
   const yamlStr = reconstructFrontmatter(derivedFm);
   return `---\n${yamlStr}\n---\n\n${body}`;
 }
@@ -1050,6 +1077,17 @@ function cmdStateJson(cwd, raw) {
   }
   if (existingFm && existingFm.paused_at && !built.paused_at) {
     built.paused_at = existingFm.paused_at;
+  }
+  // Bug #905: preserve the current_* scalars when body annotations are absent
+  // (mirrors the syncStateFrontmatter fallback on the write path).
+  if (existingFm && existingFm.current_phase && !built.current_phase) {
+    built.current_phase = existingFm.current_phase;
+  }
+  if (existingFm && existingFm.current_phase_name && !built.current_phase_name) {
+    built.current_phase_name = existingFm.current_phase_name;
+  }
+  if (existingFm && existingFm.current_plan && !built.current_plan) {
+    built.current_plan = existingFm.current_plan;
   }
   // Preserve existing status when body-derived status is 'unknown' (same logic as syncStateFrontmatter).
   if (built.status === 'unknown' && existingFm && existingFm.status && existingFm.status !== 'unknown') {
