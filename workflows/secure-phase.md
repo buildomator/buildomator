@@ -3,7 +3,7 @@ Verify threat mitigations for a completed phase. Confirm PLAN.md threat register
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/ui-brand.md
+@${CLAUDE_PLUGIN_ROOT}/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
@@ -116,7 +116,7 @@ Handle return:
 ## 6. Write/Update SECURITY.md
 
 **State B (create):**
-1. Read template from `~/.claude/get-shit-done/templates/SECURITY.md`
+1. Read template from `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/SECURITY.md`
 2. Fill: frontmatter, threat register, accepted risks, audit trail
 3. Write to `${PHASE_DIR}/${PADDED_PHASE}-SECURITY.md`
 

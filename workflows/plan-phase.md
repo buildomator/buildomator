@@ -5,11 +5,11 @@ Create executable phase prompts (PLAN.md files) for a roadmap phase with integra
 <required_reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-@~/.claude/get-shit-done/references/ui-brand.md
-@~/.claude/get-shit-done/references/revision-loop.md
-@~/.claude/get-shit-done/references/gate-prompts.md
-@~/.claude/get-shit-done/references/agent-contracts.md
-@~/.claude/get-shit-done/references/gates.md
+@${CLAUDE_PLUGIN_ROOT}/references/ui-brand.md
+@${CLAUDE_PLUGIN_ROOT}/references/revision-loop.md
+@${CLAUDE_PLUGIN_ROOT}/references/gate-prompts.md
+@${CLAUDE_PLUGIN_ROOT}/references/agent-contracts.md
+@${CLAUDE_PLUGIN_ROOT}/references/gates.md
 </required_reading>
 
 <available_agent_types>
@@ -62,7 +62,7 @@ TDD_MODE=$(gsd-sdk query config-get workflow.tdd_mode 2>/dev/null || echo "false
 MVP_MODE_CFG=$(gsd-sdk query config-get workflow.mvp_mode 2>/dev/null || echo "false")
 ```
 
-When `TDD_MODE` is `true`, the planner agent is instructed to apply `type: tdd` to eligible tasks using heuristics from `references/tdd.md`. The planner's `<required_reading>` is extended to include `@~/.claude/get-shit-done/references/tdd.md` so gate enforcement rules are available during planning.
+When `TDD_MODE` is `true`, the planner agent is instructed to apply `type: tdd` to eligible tasks using heuristics from `references/tdd.md`. The planner's `<required_reading>` is extended to include `@${CLAUDE_PLUGIN_ROOT}/references/tdd.md` so gate enforcement rules are available during planning.
 
 When `CONTEXT_WINDOW >= 500000`, the planner prompt includes the 3 most recent prior phase CONTEXT.md and SUMMARY.md files PLUS any phases explicitly listed in the current phase's `Depends on:` field in ROADMAP.md. Explicit dependencies always load regardless of recency (e.g., Phase 7 declaring `Depends on: Phase 2` always sees Phase 2's context). Bounded recency keeps the planner's context budget focused on recent work.
 
@@ -163,7 +163,7 @@ fi
 ```
 
 When `WALKING_SKELETON=true`:
-- Planner is instructed to produce `SKELETON.md` in the phase directory alongside `PLAN.md`. The template lives at `@~/.claude/get-shit-done/references/skeleton-template.md`.
+- Planner is instructed to produce `SKELETON.md` in the phase directory alongside `PLAN.md`. The template lives at `@${CLAUDE_PLUGIN_ROOT}/references/skeleton-template.md`.
 - The plan must scaffold project + routing + one real DB read/write + one real UI interaction + dev deployment — the thinnest possible end-to-end working slice.
 
 **Interaction with `--prd <filepath>`.** `--mvp` and `--prd` compose. The PRD express path (Step 3.5) creates `CONTEXT.md` from the PRD file and continues to research; the Walking Skeleton gate fires independently from the conditions above. When both are active on Phase 1 of a new project, the planner receives `WALKING_SKELETON=true` and PRD-derived context simultaneously — the PRD informs *what the skeleton should prove*. No precedence is needed; the two signals are orthogonal. See [`references/mvp-concepts.md`](../references/mvp-concepts.md) for the broader interaction map.
@@ -335,7 +335,7 @@ gsd-sdk query commit "docs(${padded_phase}): generate context from PRD" --files 
 **If `--ingest <path-or-glob>` provided:**
 
 1. Display banner: `GSD ► ADR Ingest Express Path` with `{INGEST_PATH}` and `{INGEST_FORMAT}`.
-2. Parse each resolved ADR through `get-shit-done/bin/lib/adr-parser.cjs` (`--input`, `--format`) and collect normalized records.
+2. Parse each resolved ADR through `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/bin/lib/adr-parser.cjs` (`--input`, `--format`) and collect normalized records.
 3. Status gate: reject `superseded`/`rejected`/`deprecated`; warn on `proposed`; missing status defaults to `accepted`.
 4. Empty-decisions fallback: if all parsed ADRs have zero `decisions[]`, emit `ADR ingest produced no locked decisions; fall back to discuss-phase for this phase.` and exit with `/gsd:discuss-phase {N}` guidance.
 5. Generate CONTEXT.md using `<domain>`, `<decisions>`, `<canonical_refs>`, `<specifics>`, `<deferred>`, `<scope_fence>`, map `consequences_positive[]` to Success Criteria and `consequences_negative[]` to Risk Summary, and include `**Source:** ADR Ingest Express Path ({INGEST_PATH})`.
@@ -599,7 +599,7 @@ grep -l "## Validation Architecture" "${PHASE_DIR}"/*-RESEARCH.md 2>/dev/null ||
 ```
 
 **If found:**
-1. Read template: `~/.claude/get-shit-done/templates/VALIDATION.md`
+1. Read template: `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/VALIDATION.md`
 2. Write to `${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md` (use Write tool)
 3. Fill frontmatter: `{N}` → phase number, `{phase-slug}` → slug, `{date}` → current date
 4. Verify:
@@ -931,7 +931,7 @@ ${AGENT_SKILLS_PLANNER}
 
 ${TDD_MODE === 'true' ? `
 <tdd_mode_active>
-**TDD Mode is ENABLED.** Apply TDD heuristics from @~/.claude/get-shit-done/references/tdd.md to all eligible tasks:
+**TDD Mode is ENABLED.** Apply TDD heuristics from @${CLAUDE_PLUGIN_ROOT}/references/tdd.md to all eligible tasks:
 - Business logic with defined I/O → type: tdd
 - API endpoints with request/response contracts → type: tdd
 - Data transformations, validation, algorithms → type: tdd
@@ -940,12 +940,12 @@ Each TDD plan gets one feature with RED/GREEN/REFACTOR gate sequence.
 </tdd_mode_active>
 ` : ''}
 
-**MVP_MODE:** ${MVP_MODE} (when true, follow vertical-slice rules from `@~/.claude/get-shit-done/references/planner-mvp-mode.md`; when false, ignore MVP guidance entirely.)
+**MVP_MODE:** ${MVP_MODE} (when true, follow vertical-slice rules from `@${CLAUDE_PLUGIN_ROOT}/references/planner-mvp-mode.md`; when false, ignore MVP guidance entirely.)
 **WALKING_SKELETON:** ${WALKING_SKELETON} (when true, the first deliverable must be a Walking Skeleton — produce SKELETON.md alongside PLAN.md.)
 
 ${MVP_MODE === 'true' ? `
 <mvp_mode_active>
-**MVP Mode is ENABLED.** Follow vertical-slice planning rules from @~/.claude/get-shit-done/references/planner-mvp-mode.md. Each plan must deliver a complete vertical slice — thin end-to-end functionality rather than horizontal layers.
+**MVP Mode is ENABLED.** Follow vertical-slice planning rules from @${CLAUDE_PLUGIN_ROOT}/references/planner-mvp-mode.md. Each plan must deliver a complete vertical slice — thin end-to-end functionality rather than horizontal layers.
 </mvp_mode_active>
 ` : ''}
 </planning_context>
@@ -1632,7 +1632,7 @@ one place before execution begins.
 ```bash
 POST_PLANNING_GAPS=$(gsd-sdk query config-get workflow.post_planning_gaps --default true 2>/dev/null || echo true)
 if [ "$POST_PLANNING_GAPS" = "true" ]; then
-  node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" gap-analysis --phase-dir "${PHASE_DIR}"
+  node "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/bin/gsd-tools.cjs" gap-analysis --phase-dir "${PHASE_DIR}"
 fi
 ```
 

@@ -138,7 +138,7 @@ Identify gaps that couldn't be resolved and need attention during planning.
 4. **Do NOT use `Bash(cat << 'EOF')` or heredoc** for file creation. Use the `Write` tool.
 5. **If the Write tool errors,** surface the actual error in your return message. Do not silently fall back to returning content; that hides the failure from the orchestrator.
 
-Use template: ~/.claude/get-shit-done/templates/research-project/SUMMARY.md
+Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/SUMMARY.md
 
 Write to `.planning/research/SUMMARY.md`.
 
@@ -158,7 +158,7 @@ Return brief confirmation with key points for the orchestrator.
 
 <output_format>
 
-Use template: ~/.claude/get-shit-done/templates/research-project/SUMMARY.md
+Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/SUMMARY.md
 
 Key sections:
 - Executive Summary (2-3 paragraphs)

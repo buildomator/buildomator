@@ -3,7 +3,7 @@ Retroactive 6-pillar visual audit of implemented frontend code. Standalone comma
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/ui-brand.md
+@${CLAUDE_PLUGIN_ROOT}/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>

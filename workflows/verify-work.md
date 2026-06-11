@@ -21,7 +21,7 @@ No Pass/Fail buttons. No severity questions. Just: "Here's what should happen. D
 </philosophy>
 
 <template>
-@~/.claude/get-shit-done/templates/UAT.md
+@${CLAUDE_PLUGIN_ROOT}/templates/UAT.md
 </template>
 
 <process>
@@ -146,7 +146,7 @@ Read each SUMMARY.md to extract testable deliverables.
 </step>
 
 <step name="extract_tests">
-**MVP-mode UAT framing.** When `MVP_MODE=true`, follow the rules in `@~/.claude/get-shit-done/references/verify-mvp-mode.md`. Briefly:
+**MVP-mode UAT framing.** When `MVP_MODE=true`, follow the rules in `@${CLAUDE_PLUGIN_ROOT}/references/verify-mvp-mode.md`. Briefly:
 
 1. Generate the UAT script in three ordered sections: (a) user-flow walk-through derived from the phase's user-story goal, (b) technical checks (deferred — only run after user flow passes), (c) coverage check (goal-backward, narrowed to the user story's outcome clause).
 2. **User-flow steps run first.** Each step is one user action: open, fill, click, type, observe. No HTTP verbs, no JSON shapes, no error codes in user-flow steps.
@@ -478,7 +478,7 @@ If `SECURITY_CFG` is `false` OR (`SECURITY_FILE` exists AND `threats_open` is `0
 
 Execute the transition workflow inline (do NOT use Task — the orchestrator context already holds the UAT results and phase data needed for accurate transition):
 
-Read and follow `~/.claude/get-shit-done/workflows/transition.md`.
+Read and follow `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/workflows/transition.md`.
 
 After transition completes, present next-step options to the user:
 
@@ -533,7 +533,7 @@ Spawning parallel debug agents to investigate each issue.
 ```
 
 - Load diagnose-issues workflow
-- Follow @~/.claude/get-shit-done/workflows/diagnose-issues.md
+- Follow @${CLAUDE_PLUGIN_ROOT}/workflows/diagnose-issues.md
 - Spawn parallel debug agents for each issue
 - Collect root causes
 - Update UAT.md with root causes

@@ -3,7 +3,7 @@ Audit Nyquist validation gaps for a completed phase. Generate missing tests. Upd
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/ui-brand.md
+@${CLAUDE_PLUGIN_ROOT}/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
@@ -116,7 +116,7 @@ Handle return:
 ## 6. Generate/Update VALIDATION.md
 
 **State B (create):**
-1. Read template from `~/.claude/get-shit-done/templates/VALIDATION.md`
+1. Read template from `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/VALIDATION.md`
 2. Fill: frontmatter, Test Infrastructure, Per-Task Map, Manual-Only, Sign-Off
 3. Write to `${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md`
 

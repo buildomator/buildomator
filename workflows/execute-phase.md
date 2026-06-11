@@ -25,9 +25,9 @@ via filesystem and git state.
 
 <required_reading>
 Read STATE.md before any operation to load project context.
-@~/.claude/get-shit-done/references/agent-contracts.md
-@~/.claude/get-shit-done/references/context-budget.md
-@~/.claude/get-shit-done/references/gates.md
+@${CLAUDE_PLUGIN_ROOT}/references/agent-contracts.md
+@${CLAUDE_PLUGIN_ROOT}/references/context-budget.md
+@${CLAUDE_PLUGIN_ROOT}/references/gates.md
 </required_reading>
 
 <available_agent_types>
@@ -120,8 +120,8 @@ When `CONTEXT_WINDOW >= 500000` (1M-class models), subagent prompts include rich
 - This enables cross-phase awareness and history-aware verification
 
 When `CONTEXT_WINDOW < 200000` (sub-200K models), subagent prompts are thinned to reduce static overhead:
-- Executor agents omit extended deviation rule examples and checkpoint examples from inline prompt — load on-demand via @~/.claude/get-shit-done/references/executor-examples.md
-- Planner agents omit extended anti-pattern lists and specificity examples from inline prompt — load on-demand via @~/.claude/get-shit-done/references/planner-antipatterns.md
+- Executor agents omit extended deviation rule examples and checkpoint examples from inline prompt — load on-demand via @${CLAUDE_PLUGIN_ROOT}/references/executor-examples.md
+- Planner agents omit extended anti-pattern lists and specificity examples from inline prompt — load on-demand via @${CLAUDE_PLUGIN_ROOT}/references/planner-antipatterns.md
 - Core rules and decision logic remain inline; only verbose examples and edge-case lists are extracted
 - This reduces executor static overhead by ~40% while preserving behavioral correctness
 
@@ -241,7 +241,7 @@ checkpoints between tasks. The user can review, modify, or redirect work at any 
 
    b. **If "Review first":** Read and display the full plan file. Ask again: Execute, Modify, Skip.
 
-   c. **If "Execute":** Read and follow `~/.claude/get-shit-done/workflows/execute-plan.md` **inline**
+   c. **If "Execute":** Read and follow `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/workflows/execute-plan.md` **inline**
       (do NOT spawn a subagent). Execute tasks one at a time.
 
    d. **After each task:** Pause briefly. If the user intervenes (types anything), stop and address
@@ -497,7 +497,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
 
 2.5. **Per-plan worktree decision (run for each plan in this wave BEFORE its dispatch):**
 
-   Read and execute `get-shit-done/workflows/execute-phase/steps/per-plan-worktree-gate.md` for each plan. It extracts `PLAN_FILES` from the plan's JSON, intersects against `SUBMODULE_PATHS` (with normalization, bidirectional matching, and glob-prefix handling), and sets `USE_WORKTREES_FOR_PLAN` to `false` when the plan touches a submodule path. Append `plan_id` to a `WAVE_WORKTREE_PLANS` accumulator when `USE_WORKTREES_FOR_PLAN != false`.
+   Read and execute `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/workflows/execute-phase/steps/per-plan-worktree-gate.md` for each plan. It extracts `PLAN_FILES` from the plan's JSON, intersects against `SUBMODULE_PATHS` (with normalization, bidirectional matching, and glob-prefix handling), and sets `USE_WORKTREES_FOR_PLAN` to `false` when the plan touches a submodule path. Append `plan_id` to a `WAVE_WORKTREE_PLANS` accumulator when `USE_WORKTREES_FOR_PLAN != false`.
 
    The dispatch branches in step 3 below MUST gate on `USE_WORKTREES_FOR_PLAN` for the current plan, not on the project-level `USE_WORKTREES`.
 
@@ -599,12 +599,12 @@ increases monotonically across waves. `{status}` is `complete` (success),
        </parallel_execution>
 
        <execution_context>
-       @~/.claude/get-shit-done/workflows/execute-plan.md
-       @~/.claude/get-shit-done/templates/summary.md
-       @~/.claude/get-shit-done/references/checkpoints.md
-       @~/.claude/get-shit-done/references/tdd.md
-       @~/.claude/get-shit-done/references/worktree-path-safety.md
-       ${CONTEXT_WINDOW < 200000 ? '' : '@~/.claude/get-shit-done/references/executor-examples.md'}
+       @${CLAUDE_PLUGIN_ROOT}/workflows/execute-plan.md
+       @${CLAUDE_PLUGIN_ROOT}/templates/summary.md
+       @${CLAUDE_PLUGIN_ROOT}/references/checkpoints.md
+       @${CLAUDE_PLUGIN_ROOT}/references/tdd.md
+       @${CLAUDE_PLUGIN_ROOT}/references/worktree-path-safety.md
+       ${CONTEXT_WINDOW < 200000 ? '' : '@${CLAUDE_PLUGIN_ROOT}/references/executor-examples.md'}
        </execution_context>
 
        <files_to_read>
@@ -911,7 +911,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
    harness engineering research: agents reliably report Self-Check: PASSED even when
    merging their work creates failures.
 
-   Read and execute `get-shit-done/workflows/execute-phase/steps/post-merge-gate.md`.
+   Read and execute `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/workflows/execute-phase/steps/post-merge-gate.md`.
 
 5.7. **Post-wave shared artifact update (when at least one plan used worktrees, skip if tests failed):**
 
@@ -1440,7 +1440,7 @@ any internal error here MUST fall through to `verify_phase_goal`. The phase
 is never failed by this gate.
 
 Load and follow the full step spec from
-`get-shit-done/workflows/execute-phase/steps/codebase-drift-gate.md` —
+`${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/workflows/execute-phase/steps/codebase-drift-gate.md` —
 covers the SDK call, JSON contract, `warn` vs `auto-remap` branches, mapper
 spawn template, and the two `workflow.drift_*` config keys.
 </step>
@@ -1782,7 +1782,7 @@ STOP. Do not proceed to auto-advance or transition.
 
 Execute the transition workflow inline (do NOT use Agent — orchestrator context is ~10-15%, transition needs phase completion data already in context):
 
-Read and follow `~/.claude/get-shit-done/workflows/transition.md`, passing through the `--auto` flag so it propagates to the next phase invocation.
+Read and follow `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/workflows/transition.md`, passing through the `--auto` flag so it propagates to the next phase invocation.
 
 **If neither `--auto` nor `AUTO_MODE` is true:**
 

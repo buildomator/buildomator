@@ -236,7 +236,7 @@ keeps raw file contents out of the main context window, protecting token budget.
 **Resolve calibration tier (if USER-PROFILE.md exists):**
 
 ```bash
-PROFILE_PATH="$HOME/.claude/get-shit-done/USER-PROFILE.md"
+PROFILE_PATH="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md"
 ```
 
 If file exists at PROFILE_PATH:

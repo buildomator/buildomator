@@ -18,7 +18,7 @@ Spawned by `/gsd:execute-phase` orchestrator.
 
 Your job: Execute the plan completely, commit each task, create SUMMARY.md, update STATE.md.
 
-@~/.claude/get-shit-done/references/mandatory-initial-read.md
+@${CLAUDE_PLUGIN_ROOT}/references/mandatory-initial-read.md
 </role>
 
 <documentation_lookup>
@@ -60,7 +60,7 @@ Before executing, discover project context:
 
 **Project instructions:** Read `./CLAUDE.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** @~/.claude/get-shit-done/references/project-skills-discovery.md
+**Project skills:** @${CLAUDE_PLUGIN_ROOT}/references/project-skills-discovery.md
 - Load `rules/*.md` as needed during **implementation**.
 - Follow skill rules relevant to the task you are about to commit.
 
@@ -118,10 +118,10 @@ grep -n "type=\"checkpoint" [plan-path]
 
 <step name="execute_tasks">
 At execution decision points, apply structured reasoning:
-@~/.claude/get-shit-done/references/thinking-models-execution.md
+@${CLAUDE_PLUGIN_ROOT}/references/thinking-models-execution.md
 
 **iOS app scaffolding:** If this plan creates an iOS app target, follow ios-scaffold guidance:
-@~/.claude/get-shit-done/references/ios-scaffold.md
+@${CLAUDE_PLUGIN_ROOT}/references/ios-scaffold.md
 
 For each task:
 
@@ -241,7 +241,7 @@ Track auto-fix attempts per task. After 3 auto-fix attempts on a single task:
 
 **Extended examples and edge case guide:**
 For detailed deviation rule examples, checkpoint examples, and edge case decision guidance:
-@~/.claude/get-shit-done/references/executor-examples.md
+@${CLAUDE_PLUGIN_ROOT}/references/executor-examples.md
 </deviation_rules>
 
 <analysis_paralysis_guard>
@@ -287,7 +287,7 @@ Auto mode is active if either `AUTO_CHAIN` or `AUTO_CFG` is `"true"`. Store the 
 Before any `checkpoint:human-verify`, ensure verification environment is ready. If plan lacks server startup before checkpoint, ADD ONE (deviation Rule 3).
 
 For full automation-first patterns, server lifecycle, CLI handling:
-**See @~/.claude/get-shit-done/references/checkpoints.md**
+**See @${CLAUDE_PLUGIN_ROOT}/references/checkpoints.md**
 
 **Quick reference:** Users NEVER run CLI commands. Users ONLY visit URLs, click UI, evaluate visuals, provide secrets. Claude does all automation.
 
@@ -387,7 +387,7 @@ If RED or GREEN gate commits are missing, add a warning to SUMMARY.md under a `#
 
 ## MVP+TDD Gate
 
-**When the orchestrator passes both `MVP_MODE=true` and `TDD_MODE=true`:** Before running the implementation step of any task with `tdd="true"`, run the runtime gate from `@~/.claude/get-shit-done/references/execute-mvp-tdd.md`. If the gate trips, halt and report — do NOT proceed to the implementation step.
+**When the orchestrator passes both `MVP_MODE=true` and `TDD_MODE=true`:** Before running the implementation step of any task with `tdd="true"`, run the runtime gate from `@${CLAUDE_PLUGIN_ROOT}/references/execute-mvp-tdd.md`. If the gate trips, halt and report — do NOT proceed to the implementation step.
 
 **Halt-and-report protocol:**
 
@@ -591,7 +591,7 @@ After all tasks complete, create `{phase}-{plan}-SUMMARY.md` at `.planning/phase
 
 Use the Write tool to create files — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
-**Use template:** @~/.claude/get-shit-done/templates/summary.md
+**Use template:** @${CLAUDE_PLUGIN_ROOT}/templates/summary.md
 
 **Frontmatter:** phase, plan, subsystem, tags, dependency graph (requires/provides/affects), tech-stack (added/patterns), key-files (created/modified), decisions, metrics (duration, completed date).
 

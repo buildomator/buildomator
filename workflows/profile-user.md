@@ -8,9 +8,9 @@ This workflow wires Phase 1 (session pipeline) and Phase 2 (profiling engine) in
 Read all files referenced by the invoking prompt's execution_context before starting.
 
 Key references:
-- @$HOME/.claude/get-shit-done/references/ui-brand.md (display patterns)
+- @${CLAUDE_PLUGIN_ROOT}/references/ui-brand.md (display patterns)
 - @$HOME/.claude/agents/gsd-user-profiler.md (profiler agent definition)
-- @$HOME/.claude/get-shit-done/references/user-profiling.md (profiling reference doc)
+- @${CLAUDE_PLUGIN_ROOT}/references/user-profiling.md (profiling reference doc)
 </required_reading>
 
 <process>
@@ -24,7 +24,7 @@ Parse flags from $ARGUMENTS:
 Check for existing profile:
 
 ```bash
-PROFILE_PATH="$HOME/.claude/get-shit-done/USER-PROFILE.md"
+PROFILE_PATH="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md"
 [ -f "$PROFILE_PATH" ] && echo "EXISTS" || echo "NOT_FOUND"
 ```
 
@@ -48,7 +48,7 @@ If "Cancel": Display "No changes made." and exit.
 
 Backup existing profile:
 ```bash
-cp "$HOME/.claude/get-shit-done/USER-PROFILE.md" "$HOME/.claude/USER-PROFILE.backup.md"
+cp "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md" "$HOME/.claude/USER-PROFILE.backup.md"
 ```
 
 Display: "Re-analyzing your sessions to update your profile."
@@ -92,7 +92,7 @@ Your recent Claude Code sessions, looking for patterns in these
 
 ✓ Reads session files locally (read-only, nothing modified)
 ✓ Analyzes message patterns (not content meaning)
-✓ Stores profile at $HOME/.claude/get-shit-done/USER-PROFILE.md
+✓ Stores profile at ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md
 ✗ Nothing is sent to external services
 ✗ Sensitive content (API keys, passwords) is automatically excluded
 ```
@@ -163,13 +163,13 @@ Display: "◆ Analyzing patterns..."
 
 Use the Task tool to spawn the `gsd-user-profiler` agent. Provide it with:
 - The sampled JSONL file path from profile-sample output
-- The user-profiling reference doc at `$HOME/.claude/get-shit-done/references/user-profiling.md`
+- The user-profiling reference doc at `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/references/user-profiling.md`
 
 The agent prompt should follow this structure:
 ```
 Read the profiling reference document and the sampled session messages, then analyze the developer's behavioral patterns across all 8 dimensions.
 
-Reference: @$HOME/.claude/get-shit-done/references/user-profiling.md
+Reference: @${CLAUDE_PLUGIN_ROOT}/references/user-profiling.md
 Session data: @{temp_dir}/profile-sample.jsonl
 
 Analyze these messages and return your analysis in the <analysis> JSON format specified in the reference document.
@@ -274,7 +274,7 @@ Display: "◆ Writing profile..."
 gsd-sdk query write-profile --input "$ANALYSIS_PATH" --json
 ```
 
-Display: "✓ Profile written to $HOME/.claude/get-shit-done/USER-PROFILE.md"
+Display: "✓ Profile written to ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md"
 
 ---
 
@@ -339,7 +339,7 @@ Use AskUserQuestion with multiSelect:
   - "CLAUDE.md profile section" -- "Add profile to this project's CLAUDE.md"
   - "Global CLAUDE.md" -- "Add profile to $HOME/.claude/CLAUDE.md for all projects"
 
-**If no artifacts selected:** Display "No artifacts generated. Your profile is saved at $HOME/.claude/get-shit-done/USER-PROFILE.md" and jump to step 10.
+**If no artifacts selected:** Display "No artifacts generated. Your profile is saved at ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md" and jump to step 10.
 
 ---
 
@@ -406,7 +406,7 @@ If nothing changed: Display "No changes detected -- your profile is already up t
  GSD > PROFILE COMPLETE ✓
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Your profile:    $HOME/.claude/get-shit-done/USER-PROFILE.md
+Your profile:    ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md
 ```
 
 Then list paths for each generated artifact:

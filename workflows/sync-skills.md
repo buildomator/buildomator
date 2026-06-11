@@ -60,7 +60,7 @@ Use `install.js --skills-root` to resolve paths — this reuses the single autho
 ```bash
 INSTALL_JS="$(dirname "$0")/../get-shit-done/bin/install.js"
 # If running from a global install, resolve relative to the GSD package
-INSTALL_JS_GLOBAL="$HOME/.claude/get-shit-done/bin/install.js"
+INSTALL_JS_GLOBAL="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/bin/install.js"
 [[ ! -f "$INSTALL_JS" ]] && INSTALL_JS="$INSTALL_JS_GLOBAL"
 
 SRC_SKILLS_ROOT=$(node "$INSTALL_JS" --skills-root "$FROM_RUNTIME")
@@ -74,7 +74,7 @@ done
 ```
 error: source skills root not found: <path>
        Is GSD installed globally for the '<runtime>' runtime?
-       Run: node ~/.claude/get-shit-done/bin/install.js --global --<runtime>
+       Run: node ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/bin/install.js --global --<runtime>
 ```
 Then exit.
 

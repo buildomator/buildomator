@@ -5,9 +5,9 @@ You are a thinking partner, not an interviewer. The user is the visionary — yo
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/domain-probes.md
-@~/.claude/get-shit-done/references/gate-prompts.md
-@~/.claude/get-shit-done/references/universal-anti-patterns.md
+@${CLAUDE_PLUGIN_ROOT}/references/domain-probes.md
+@${CLAUDE_PLUGIN_ROOT}/references/gate-prompts.md
+@${CLAUDE_PLUGIN_ROOT}/references/universal-anti-patterns.md
 </required_reading>
 
 <progressive_disclosure>
@@ -129,7 +129,7 @@ Exit workflow.
 
 ```bash
 # Detect advisor mode (file-existence guard — no Read until needed)
-if [ -f "$HOME/.claude/get-shit-done/USER-PROFILE.md" ]; then
+if [ -f "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md" ]; then
   ADVISOR_MODE=true
 else
   ADVISOR_MODE=false
@@ -280,7 +280,7 @@ Parse JSON for: `todo_count`, `matches[]` (each with `file`, `title`, `area`, `s
 <step name="scout_codebase">
 Lightweight scan of existing code to inform gray area identification (~10% context).
 
-Read `@~/.claude/get-shit-done/references/scout-codebase.md` — it contains the phase-type→map selection table, single-read rule, no-maps fallback, and `<codebase_context>` output schema. Then execute:
+Read `@${CLAUDE_PLUGIN_ROOT}/references/scout-codebase.md` — it contains the phase-type→map selection table, single-read rule, no-maps fallback, and `<codebase_context>` output schema. Then execute:
 1. `ls .planning/codebase/*.md` to find existing maps
 2. Select 2–3 maps via the reference's table; or grep fallback if none exist
 3. Build internal `<codebase_context>` per the reference's output schema

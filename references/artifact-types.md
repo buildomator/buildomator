@@ -63,7 +63,7 @@ reads is inert — the consumption mechanism is what gives an artifact meaning.
 ### USER-PROFILE.md
 - **Shape**: Calibration tier and preferences profile
 - **Lifecycle**: Created by `profile-user` → Updated as preferences are observed
-- **Location**: `~/.claude/get-shit-done/USER-PROFILE.md`
+- **Location**: `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md`
 - **Consumed by**: `discuss-phase-assumptions` (calibration tier), `plan-phase`
 
 ### SPIKE.md / DESIGN.md (per-spike)

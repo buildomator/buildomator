@@ -353,7 +353,7 @@ When `FALLOW_ENABLED=true`:
 1) Resolve binary via PATH first, then `node_modules/.bin/fallow`.
 ```bash
 FALLOW_BIN=$(FALLOW_CWD="$(pwd)" node -e "
-const { resolveFallowBinary } = require('./get-shit-done/bin/lib/fallow-runner.cjs');
+const { resolveFallowBinary } = require('${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/bin/lib/fallow-runner.cjs');
 const resolved = resolveFallowBinary({ cwd: process.env.FALLOW_CWD });
 if (resolved) process.stdout.write(resolved);
 ")

@@ -8,7 +8,7 @@
 ## Dispatch
 
 ```
-Read @~/.claude/get-shit-done/workflows/discuss-phase-power.md
+Read @${CLAUDE_PLUGIN_ROOT}/workflows/discuss-phase-power.md
 ```
 
 Execute it end-to-end. Do not continue with the standard interactive steps.

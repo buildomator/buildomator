@@ -11,10 +11,10 @@ Supports two modes:
 <required_reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-@~/.claude/get-shit-done/references/sketch-theme-system.md
-@~/.claude/get-shit-done/references/sketch-variant-patterns.md
-@~/.claude/get-shit-done/references/sketch-interactivity.md
-@~/.claude/get-shit-done/references/sketch-tooling.md
+@${CLAUDE_PLUGIN_ROOT}/references/sketch-theme-system.md
+@${CLAUDE_PLUGIN_ROOT}/references/sketch-variant-patterns.md
+@${CLAUDE_PLUGIN_ROOT}/references/sketch-interactivity.md
+@${CLAUDE_PLUGIN_ROOT}/references/sketch-tooling.md
 </required_reading>
 
 <process>

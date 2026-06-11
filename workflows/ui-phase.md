@@ -5,7 +5,7 @@ UI-SPEC.md locks spacing, typography, color, copywriting, and design system deci
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/ui-brand.md
+@${CLAUDE_PLUGIN_ROOT}/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
@@ -149,7 +149,7 @@ ${AGENT_SKILLS_UI}
 
 <output>
 Write to: {phase_dir}/{padded_phase}-UI-SPEC.md
-Template: ~/.claude/get-shit-done/templates/UI-SPEC.md
+Template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/UI-SPEC.md
 </output>
 
 <config>

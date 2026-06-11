@@ -52,7 +52,7 @@ If `PATH_NOT_FOUND` or `MANIFEST_NOT_FOUND`: display error and exit.
 Run the init query:
 
 ```bash
-INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init ingest-docs)
+INIT=$(node "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/bin/gsd-tools.cjs" init ingest-docs)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -195,7 +195,7 @@ Agent({
 
     <required_reading>
     - agents/gsd-doc-synthesizer.md
-    - get-shit-done/references/doc-conflict-engine.md
+    - ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/references/doc-conflict-engine.md
     </required_reading>
   "
 })
@@ -295,7 +295,7 @@ Preview the merge diff to the user and gate via approve-revise-abort before writ
 Commit the ingest results:
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit \
+node "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/bin/gsd-tools.cjs" commit \
   "docs: ingest {N} docs from {SCAN_PATH} (#2387)" --files \
   .planning/PROJECT.md \
   .planning/REQUIREMENTS.md \

@@ -11,8 +11,8 @@ This prevents the two most common AI development failures: choosing the wrong fr
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/ai-frameworks.md
-@~/.claude/get-shit-done/references/ai-evals.md
+@${CLAUDE_PLUGIN_ROOT}/references/ai-frameworks.md
+@${CLAUDE_PLUGIN_ROOT}/references/ai-evals.md
 </required_reading>
 
 <process>
@@ -134,7 +134,7 @@ Parse selector output for: `primary_framework`, `system_type`, `model_provider`,
 
 Copy template:
 ```bash
-cp "$HOME/.claude/get-shit-done/templates/AI-SPEC.md" "${PHASE_DIR}/${PADDED_PHASE}-AI-SPEC.md"
+cp "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/AI-SPEC.md" "${PHASE_DIR}/${PADDED_PHASE}-AI-SPEC.md"
 ```
 
 Fill in header fields:

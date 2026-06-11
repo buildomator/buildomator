@@ -566,6 +566,11 @@ Usage: `/gsd:cleanup`
 **`/gsd:help`**
 Show this command reference.
 
+**`/gsd:version`**
+Print the installed plugin version and check GitHub for the latest release; shows how to update when one is available. Read-only, performs no update (use `/gsd:update` for that).
+
+Usage: `/gsd:version`
+
 **`/gsd:update [--sync] [--reapply]`**
 Update GSD to latest version with changelog preview.
 

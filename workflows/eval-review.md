@@ -5,7 +5,7 @@ Use after /gsd:execute-phase to verify that the evaluation strategy from AI-SPEC
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/ai-evals.md
+@${CLAUDE_PLUGIN_ROOT}/references/ai-evals.md
 </required_reading>
 
 <process>

@@ -2,14 +2,14 @@
 
 > **Lazy-loaded and gated.** The parent `workflows/discuss-phase.md` Reads
 > this file ONLY when `ADVISOR_MODE` is true (i.e., when
-> `$HOME/.claude/get-shit-done/USER-PROFILE.md` exists). Skip the Read
+> `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md` exists). Skip the Read
 > entirely when no profile is present — that's the inverse of the
 > `--advisor` flag from #2174 (don't pay the cost when unused).
 
 ## Activation
 
 ```bash
-PROFILE_PATH="$HOME/.claude/get-shit-done/USER-PROFILE.md"
+PROFILE_PATH="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md"
 if [ -f "$PROFILE_PATH" ]; then
   ADVISOR_MODE=true
 else
@@ -45,7 +45,7 @@ ADVISOR_MODEL=$(gsd-sdk query resolve-model gsd-advisor-researcher --raw)
 Read USER-PROFILE.md and check for product-owner signals:
 
 ```bash
-PROFILE_CONTENT=$(cat "$HOME/.claude/get-shit-done/USER-PROFILE.md" 2>/dev/null || true)
+PROFILE_CONTENT=$(cat "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md" 2>/dev/null || true)
 ```
 
 Set `NON_TECHNICAL_OWNER = true` if ANY of the following are present:

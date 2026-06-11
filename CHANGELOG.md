@@ -8,6 +8,22 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [3.4.9] - 2026-06-11  (/gsd:version command + legacy install-path sweep; no upstream change)
+
+### Added
+- **`/gsd:version` command.** A read-only command that prints the installed plugin version (from `.claude-plugin/plugin.json`) and checks GitHub for the latest release, then shows the update steps only when you are behind or the check could not run. The online check is best-effort and never blocks or fails the command. It checks **git tags** (`git ls-remote --tags`, with a `curl` tags-API fallback), because this repo ships releases as tags and the GitHub "Releases" feed lags (it still reported 3.4.5 while tags were at 3.4.8). It is the lightweight, report-only sibling of `/gsd:update` (which performs the upgrade). New `skills/version/SKILL.md` + `workflows/version.md`; listed in `/gsd:help`. New `tests/version-command.test.cjs`.
+
+### Fixed
+- **Repointed every dangling `.claude/get-shit-done/` install-path reference across the operational docs** (51 files in `workflows/`, `skills/`, `agents/`, `references/`, starting with `plan-review-convergence.md`). The legacy `$HOME/.claude/get-shit-done/` (and `~/...`, `@./...`) path is the old non-plugin install location and does not exist on a plugin install, so these references silently dangled. Run as a multi-agent sweep: one agent classified and rewrote each file's references by context, a second independent agent adversarially verified each, then a deterministic pass reconciled the form per the established convention:
+  - **`@`-includes** (`<required_reading>` / `<execution_context>` directives) use `@${CLAUDE_PLUGIN_ROOT}/<sub>` (Claude Code's plugin loader substitutes `${CLAUDE_PLUGIN_ROOT}`; an `@`-include is not shell-expanded), now 115 across the swept files.
+  - **Non-`@` paths the agent reads or executes** (bash commands, "Read template/Load `path`" prose) use the resolver form `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/<sub>`, which falls back when `CLAUDE_PLUGIN_ROOT` is unset (common in Bash-tool environments) where the bare form would break.
+  - Also fixed one genuinely-broken executed require (`workflows/code-review.md`: `require('./get-shit-done/bin/lib/fallow-runner.cjs')` -> resolver form).
+  - **Deliberately left** the intentional bare `get-shit-done/` references that are not broken install-path refs: legacy-install detection/management in `update.md` and `reapply-patches.md`, few-shot example data in `references/few-shot-examples/`, the layout table in `gsd-intel-updater.md`, source-location citations, and the `gsd-debugger.md` line that explains the legacy installer.
+  - New `tests/legacy-path-sweep.test.cjs` guards against re-introducing a broken `.claude/get-shit-done/` install-path reference (scans 288 operational docs). The file-layout drift baseline was regenerated to 137 (all Category A / targets exist; the increase reflects more references now using the correct `@${CLAUDE_PLUGIN_ROOT}/` form, which the detector also counts).
+- **`.claude-plugin/marketplace.json` version sync.** The marketplace manifest had drifted to `3.4.5` while `plugin.json` advanced to `3.4.8`; `marketplace.json` drives `/plugin install`, so the stale value could serve an older version on discovery. Bumped to match, and `tests/version-command.test.cjs` adds a plugin.json/marketplace.json version-parity guard so the two cannot drift again silently.
+
+Full suite 20/20.
+
 ## [3.4.8] - 2026-06-11  (ultracode orchestration signal + Fable sunset SDK fix; no upstream change)
 
 ### Fixed

@@ -321,7 +321,7 @@ ${AGENT_SKILLS_RESEARCHER}
 
 <output>
 Write to: .planning/research/{FILE}
-Use template: ~/.claude/get-shit-done/templates/research-project/{FILE}
+Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/{FILE}
 </output>
 ", subagent_type="gsd:gsd-project-researcher", model="{researcher_model}", description="{DIMENSION} research")
 ```
@@ -354,7 +354,7 @@ Synthesize research outputs into SUMMARY.md.
 ${AGENT_SKILLS_SYNTHESIZER}
 
 Write to: .planning/research/SUMMARY.md
-Use template: ~/.claude/get-shit-done/templates/research-project/SUMMARY.md
+Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/SUMMARY.md
 Commit after writing.
 ", subagent_type="gsd:gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
 ```
