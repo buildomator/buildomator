@@ -8,6 +8,11 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [3.4.7] - 2026-06-11  (Fable sunset; no upstream change)
+
+### Added
+- **Claude Fable 5 auto-falls-back to Opus after 2026-06-22.** Fable is offered only through 2026-06-22, but v3.4.4 made `fable` the quality-profile default for the 9 heaviest agents, so past the cutoff those agents would resolve to an unavailable model. `bin/lib/core.cjs` `resolveModelInternal` now downgrades the `fable` tier to `opus` at resolution time once the date passes (new `applyFableSunset`/`fableAvailable` helpers + `FABLE_SUNSET_DATE = '2026-06-22'`). The downgrade happens right after the tier is computed, before the runtime / `resolve_model_ids` / alias exit points, so every path sees one consistent effective tier. The sunset day is inclusive (available through `2026-06-22T23:59:59.999Z`, falls back from 2026-06-23). No config edit is needed; `GSD_FABLE_SUNSET_NOW` (ISO date) pins "now" for tests, and an unparseable value is treated as still-available so a bad env var never forces the fallback early. `init.cjs` resolves `planner_model`/`executor_model` through this same function, so agent spawns inherit the fallback; non-Claude runtimes (which only alias `fable` to their own top model) and explicit per-agent/`model_overrides` are unaffected. New `tests/fable-sunset.test.cjs` (11 checks) plus an end-to-end check that quality-profile `gsd-planner` resolves `claude-fable-5` before the cutoff and `claude-opus-4-8` after. Full suite 17/17.
+
 ## [3.4.6] - 2026-06-11  (community-reported fixes; no upstream change)
 
 Batch of three plugin-local correctness fixes raised through the project's issues and a contributor PR. None are upstream adaptations; all are flat-layout/plugin-install bugs that only surface in the packaged plugin.

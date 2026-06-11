@@ -1397,6 +1397,40 @@ function _resolveRuntimeTier(config, tier) {
   });
 }
 
+/**
+ * Claude Fable 5 sunset (gsd-plugin).
+ *
+ * Fable is offered only through 2026-06-22. The `fable` tier is the quality
+ * profile's pick for the heaviest agents (routingTier: heavy — planner,
+ * roadmapper, debugger, etc.). After the sunset the tier automatically falls
+ * back to `opus` so those agents keep resolving to a real model instead of an
+ * unavailable one, with no config edit required.
+ *
+ * "now" resolves from the GSD_FABLE_SUNSET_NOW env var (ISO string) when set,
+ * otherwise the system clock; the override exists so tests can pin a date
+ * deterministically. The sunset day itself is inclusive (Fable stays available
+ * through 2026-06-22T23:59:59.999Z, falls back from 2026-06-23 onward).
+ */
+const FABLE_SUNSET_DATE = '2026-06-22';
+
+function fableAvailable(now) {
+  let ref = now instanceof Date ? now : null;
+  if (!ref) {
+    const envNow = process.env.GSD_FABLE_SUNSET_NOW;
+    ref = envNow ? new Date(envNow) : new Date();
+  }
+  // A bad env value or unparseable date must not strand callers on an
+  // unavailable tier — treat an invalid "now" as still-available (the
+  // pre-sunset default) rather than silently forcing the opus fallback.
+  if (Number.isNaN(ref.getTime())) return true;
+  const cutoff = new Date(`${FABLE_SUNSET_DATE}T23:59:59.999Z`);
+  return ref.getTime() <= cutoff.getTime();
+}
+
+function applyFableSunset(tier, now) {
+  return (tier === 'fable' && !fableAvailable(now)) ? 'opus' : tier;
+}
+
 function resolveModelInternal(cwd, agentType) {
   const config = loadConfig(cwd);
 
@@ -1433,11 +1467,16 @@ function resolveModelInternal(cwd, agentType) {
   // tier='inherit' only when there's no phase-type override keeps the
   // original inherit semantics intact while letting a valid phase-type
   // tier win.
-  const tier = (phaseTypeTier && VALID_TIERS.has(phaseTypeTier))
+  const requestedTier = (phaseTypeTier && VALID_TIERS.has(phaseTypeTier))
     ? phaseTypeTier
     : (profile === 'inherit'
       ? 'inherit'
       : (agentModels ? (agentModels[profile] || agentModels['balanced']) : null));
+
+  // Fable sunset: past 2026-06-22 the `fable` tier downgrades to `opus` here,
+  // before any runtime / resolve_model_ids / alias path below — so every exit
+  // point (steps 3-5) sees a single, consistent effective tier.
+  const tier = applyFableSunset(requestedTier);
 
   // 3. Runtime-aware resolution (#2517) — only when `runtime` is explicitly set
   // to a non-Claude runtime. `runtime: "claude"` is the implicit default and is
@@ -2015,6 +2054,9 @@ module.exports = {
   getRoadmapPhaseInternal,
   resolveModelInternal,
   resolveModelForTier,
+  applyFableSunset,
+  fableAvailable,
+  FABLE_SUNSET_DATE,
   resolveReasoningEffortInternal,
   RUNTIME_PROFILE_MAP,
   RUNTIMES_WITH_REASONING_EFFORT,
