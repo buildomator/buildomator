@@ -6,11 +6,19 @@
 
 **Based on:** [GSD 1.42.3](https://github.com/open-gsd/get-shit-done-redux/releases/tag/v1.42.3) base tree by **TACHES** (Lex Christopherson), now maintained by the community at [open-gsd/get-shit-done-redux](https://github.com/open-gsd/get-shit-done-redux)
 
-**Plugin version:** `2.45.0`
+**Plugin version:** `3.4.11`
 
 **GSD Plugin for Claude Code** ensures your coding work gets done in a systematic, structured way. It prompts you only for the important design and architectural decisions that actually need your judgment, and it splits each step into its own focused subcontext so token use stays optimised across long projects.
 
 Under the hood, a performance-optimized plugin packaging of [GSD](https://github.com/open-gsd/get-shit-done-redux) for Claude Code: reduces per-turn token overhead by ~92%, adds MCP-backed project state, auto-resumes across `/compact`, and bundles everything into a single-install plugin.
+
+## What's New
+
+**v3.4.11** (latest):
+- **Reliable default-branch resolution.** No more main-vs-master drift when forking phase/quick branches or targeting PRs (the old detection fell back to `main` on `master` repos whenever `origin/HEAD` was unset). Reported upstream as [gsd-core#1146](https://github.com/open-gsd/gsd-core/issues/1146).
+- **Tunable Claude Fable 5 availability** (`fable.mode` / `fable.until`). Fable was withdrawn 2026-06-12, so quality-profile heavy agents fall back to Opus; flip it back with one `config-set` if it returns.
+
+Recent: v3.4.10 trimmed ~1,810 lines of token overhead from every instruction doc; v3.4.9 added `/gsd:version`; v3.4.8 added the ultracode orchestration signal. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
 > ### Upstream change (May 2026)
 >
