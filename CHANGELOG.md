@@ -8,6 +8,18 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [3.4.11] - 2026-06-13  (default-branch resolver + Fable availability knob; no upstream change)
+
+### Changed
+- **Claude Fable 5 availability is now a tunable knob (`fable.mode` / `fable.until`), defaulting to auto-fallback to `opus`.** Claude Fable 5 became unavailable around 2026-06-12 (earlier than the originally planned 2026-06-22), so the `fable` tier falls back to Opus and quality-profile heavy agents resolve to Opus. Because it may come back quickly, availability is now config-driven and auto-selecting rather than hardcoded:
+  - `fable.mode`: `auto` (default, date-gated) | `on` (force available) | `off` (force opus).
+  - `fable.until`: ISO date overriding the auto cutoff (default `2026-06-12`).
+
+  When Fable returns, flip it with one command, no code change: `config-set fable.mode on` (or `config-set fable.until 2026-09-30`). The knob is read straight from `config.json` (bypassing `loadConfig`, which builds a fixed key set) and honored on **both** resolution paths (`bin/lib/core.cjs` and the rebuilt SDK `sdk/src/query/config-query.ts`); registered in both config-key schemas so `config-set` accepts it and no "unknown key" warning fires. Verified end-to-end on both paths: `auto` -> opus, `on` -> fable, `off` -> opus, `until: <future>` -> fable. `tests/fable-sunset.test.cjs` gains knob + CJS/SDK-parity coverage. The ultracode 2026-06-22 cost window is unrelated to Fable availability and is unchanged.
+
+### Fixed
+- **Default-branch resolution no longer diverges between `main` and `master`.** The branch-forking workflows (`execute-phase`, `quick`, `ship`, `complete-milestone`, `pr-branch`) each ran their own bash that detected only `refs/remotes/origin/HEAD` and then hardcoded a `:-main` fallback, with two of them ignoring the `git.base_branch` config entirely. On any checkout where `origin/HEAD` is unset (a `git init` + `git remote add` repo, a fresh fetch, many worktrees, most CI checkouts) this silently fell back to `main` even on a `master` repo, so GSD forked phase/quick branches off a non-existent base and targeted PRs at the wrong branch (the wasted/diverging work). Replaced all five with a single `gsd-tools.cjs base-branch` resolver (`core.resolveBaseBranch`) whose precedence is `git.base_branch` config -> `origin/HEAD` symref -> **`git remote show origin`** (the authoritative source the old code never consulted) -> local `master`/`main` existence -> `main`. Pure `git`, **no `gsd-sdk` dependency** (it lives in the CJS core the hooks already use, so it survives any future removal of the bundled SDK). New `tests/base-branch-resolver.test.cjs` covers the precedence and guards against any workflow re-introducing a hardcoded `:-main`/`:-master` fallback. Suite 21/21.
+
 ## [3.4.10] - 2026-06-12  (/gsd:version resolution fix + token-overhead reduction; no upstream change)
 
 ### Changed

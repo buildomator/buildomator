@@ -658,6 +658,13 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
       break;
     }
 
+    case 'base-branch': {
+      // Single source of truth for the project default/base branch (fixes the
+      // main-vs-master divergence). Prints the bare name for `$(...)` capture.
+      process.stdout.write(core.resolveBaseBranch(cwd));
+      break;
+    }
+
     case 'config-new-project': {
       config.cmdConfigNewProject(cwd, args[1], raw);
       break;

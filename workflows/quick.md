@@ -162,8 +162,7 @@ compound on top of each other and stay unpushed (#2916). If `$branch_name`
 already exists locally, reuse it as-is so resumed work is not rebased.
 
 ```bash
-DEFAULT_BRANCH=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
-DEFAULT_BRANCH=${DEFAULT_BRANCH:-main}
+DEFAULT_BRANCH=$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" base-branch)
 
 if git show-ref --verify --quiet "refs/heads/$branch_name"; then
   git switch "$branch_name" \

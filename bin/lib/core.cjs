@@ -1400,20 +1400,43 @@ function _resolveRuntimeTier(config, tier) {
 /**
  * Claude Fable 5 sunset (gsd-plugin).
  *
- * Fable is offered only through 2026-06-22. The `fable` tier is the quality
- * profile's pick for the heaviest agents (routingTier: heavy — planner,
- * roadmapper, debugger, etc.). After the sunset the tier automatically falls
- * back to `opus` so those agents keep resolving to a real model instead of an
- * unavailable one, with no config edit required.
+ * Claude Fable 5 was WITHDRAWN around 2026-06-12, earlier than the originally
+ * planned 2026-06-22 sunset, so the cutoff was pulled forward. The `fable` tier
+ * (the quality profile's pick for the heaviest routingTier: heavy agents) now
+ * automatically falls back to `opus`, so those agents keep resolving to a real
+ * model instead of an unavailable one, with no config edit required. This is a
+ * one-constant, reversible change: if Fable returns, set the date forward again.
  *
  * "now" resolves from the GSD_FABLE_SUNSET_NOW env var (ISO string) when set,
  * otherwise the system clock; the override exists so tests can pin a date
- * deterministically. The sunset day itself is inclusive (Fable stays available
- * through 2026-06-22T23:59:59.999Z, falls back from 2026-06-23 onward).
+ * deterministically. The cutoff day itself is inclusive (Fable counted available
+ * through <date>T23:59:59.999Z, falls back from the next day onward).
  */
-const FABLE_SUNSET_DATE = '2026-06-22';
+const FABLE_SUNSET_DATE = '2026-06-12';
 
-function fableAvailable(now) {
+// Tunable Fable knob, read straight from config.json (loadConfig builds a fixed
+// key set and would drop `fable`, so read the file directly — same approach as
+// resolveBaseBranch). Returns { mode, until }:
+//   fable.mode  = 'auto' (default) | 'on' | 'off'  — force availability or date-gate
+//   fable.until = ISO date overriding the default cutoff when mode is 'auto'
+// So when Fable returns you flip it back with one config-set, no code change:
+//   gsd-tools config-set fable.mode on            # force on now
+//   gsd-tools config-set fable.until 2026-09-30    # auto, available through that date
+function readFableKnob(cwd) {
+  try {
+    const p = path.join(planningDir(cwd || process.cwd(), process.env.GSD_WORKSTREAM || null), 'config.json');
+    const cfg = JSON.parse(fs.readFileSync(p, 'utf8'));
+    const f = (cfg && cfg.fable) || {};
+    return { mode: f.mode ?? cfg['fable.mode'], until: f.until ?? cfg['fable.until'] };
+  } catch { return {}; }
+}
+
+function fableAvailable(now, knob = {}) {
+  // Manual override wins: force on/off regardless of date.
+  const mode = String(knob.mode ?? 'auto').toLowerCase();
+  if (mode === 'on' || mode === 'true' || mode === 'available') return true;
+  if (mode === 'off' || mode === 'false' || mode === 'unavailable') return false;
+  // 'auto': date-gated, with an optional config cutoff override (fable.until).
   let ref = now instanceof Date ? now : null;
   if (!ref) {
     const envNow = process.env.GSD_FABLE_SUNSET_NOW;
@@ -1421,14 +1444,17 @@ function fableAvailable(now) {
   }
   // A bad env value or unparseable date must not strand callers on an
   // unavailable tier — treat an invalid "now" as still-available (the
-  // pre-sunset default) rather than silently forcing the opus fallback.
+  // pre-cutoff default) rather than silently forcing the opus fallback.
   if (Number.isNaN(ref.getTime())) return true;
-  const cutoff = new Date(`${FABLE_SUNSET_DATE}T23:59:59.999Z`);
+  const until = (typeof knob.until === 'string' && /^\d{4}-\d{2}-\d{2}/.test(knob.until))
+    ? knob.until.slice(0, 10)
+    : FABLE_SUNSET_DATE;
+  const cutoff = new Date(`${until}T23:59:59.999Z`);
   return ref.getTime() <= cutoff.getTime();
 }
 
-function applyFableSunset(tier, now) {
-  return (tier === 'fable' && !fableAvailable(now)) ? 'opus' : tier;
+function applyFableSunset(tier, now, knob) {
+  return (tier === 'fable' && !fableAvailable(now, knob)) ? 'opus' : tier;
 }
 
 function resolveModelInternal(cwd, agentType) {
@@ -1473,10 +1499,10 @@ function resolveModelInternal(cwd, agentType) {
       ? 'inherit'
       : (agentModels ? (agentModels[profile] || agentModels['balanced']) : null));
 
-  // Fable sunset: past 2026-06-22 the `fable` tier downgrades to `opus` here,
-  // before any runtime / resolve_model_ids / alias path below — so every exit
-  // point (steps 3-5) sees a single, consistent effective tier.
-  const tier = applyFableSunset(requestedTier);
+  // Fable availability: the `fable` tier downgrades to `opus` here (before any
+  // runtime / resolve_model_ids / alias path below, so every exit point sees one
+  // effective tier) unless the tunable knob (fable.mode / fable.until) keeps it on.
+  const tier = applyFableSunset(requestedTier, undefined, readFableKnob(cwd));
 
   // 3. Runtime-aware resolution (#2517) — only when `runtime` is explicitly set
   // to a non-Claude runtime. `runtime: "claude"` is the implicit default and is
@@ -2030,10 +2056,59 @@ function timeAgo(date) {
   return `${years} years ago`;
 }
 
+/**
+ * Resolve the project's default/base branch. Single source of truth for every
+ * workflow that forks branches or targets PRs, fixing the main-vs-master
+ * divergence: the old per-workflow bash detected only `origin/HEAD` and then
+ * hardcoded `:-main`, so any checkout where `origin/HEAD` is unset (git init +
+ * remote add, fresh fetch, many worktrees, CI) silently fell back to `main`
+ * even on a `master` repo. Pure git, no gsd-sdk dependency.
+ *
+ * Precedence:
+ *   1. `git.base_branch` config override (explicit user intent)
+ *   2. `refs/remotes/origin/HEAD` symref (set by `git clone`)
+ *   3. `git remote show origin` HEAD branch (authoritative; the old code never
+ *      consulted this before defaulting)
+ *   4. local branch existence (master present and main absent -> master; main -> main)
+ *   5. `main`
+ */
+function resolveBaseBranch(cwd) {
+  const dir = cwd || process.cwd();
+  // Read git.base_branch straight from config.json (nested, the same shape
+  // config-set writes and config-get reads via dot-traversal). loadConfig()
+  // flattens git.* keys and does not expose `git`, so it can't be used here.
+  try {
+    const cfgPath = path.join(planningDir(dir, process.env.GSD_WORKSTREAM || null), 'config.json');
+    const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+    const b = (cfg && cfg.git && cfg.git.base_branch) || (cfg && cfg['git.base_branch']);
+    if (b && typeof b === 'string' && b !== 'null') return b;
+  } catch { /* config missing/unparseable — fall through to git detection */ }
+
+  const git = (args) => {
+    try {
+      return require('child_process')
+        .execSync(`git ${args}`, { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+        .trim();
+    } catch { return ''; }
+  };
+
+  const symref = git('symbolic-ref --quiet --short refs/remotes/origin/HEAD').replace(/^origin\//, '');
+  if (symref) return symref;
+
+  const remote = git('remote show origin').match(/HEAD branch:\s*(\S+)/);
+  if (remote && remote[1] && remote[1] !== '(unknown)') return remote[1];
+
+  const has = (ref) => git(`show-ref --verify --quiet refs/heads/${ref} && echo y`) === 'y';
+  if (has('master') && !has('main')) return 'master';
+  if (has('main')) return 'main';
+  return 'main';
+}
+
 module.exports = {
   resolveGsdRoot,
   resolveGsdDataDir,
   resolveGsdAsset,
+  resolveBaseBranch,
   output,
   error,
   ERROR_REASON,
@@ -2056,6 +2131,7 @@ module.exports = {
   resolveModelForTier,
   applyFableSunset,
   fableAvailable,
+  readFableKnob,
   FABLE_SUNSET_DATE,
   resolveReasoningEffortInternal,
   RUNTIME_PROFILE_MAP,

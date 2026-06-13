@@ -16,7 +16,8 @@ already supports (parallel mappers, review dimensions, reviewer panels).
 Ultracode is **on automatically through 2026-06-22**, because the deeper runs are
 included during that window. **After 2026-06-22 it is off by default**, because it
 becomes extra-paid. An explicit config value overrides the window in either
-direction. This shares the same 2026-06-22 cutoff as the Claude Fable 5 sunset.
+direction. (This 2026-06-22 cost window is independent of the Claude Fable 5
+tier, which was withdrawn earlier on 2026-06-12.)
 
 Each good-fit workflow resolves the state with this gate:
 

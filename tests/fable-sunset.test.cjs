@@ -27,13 +27,15 @@ function check(name, fn) {
   }
 }
 
+// Claude Fable 5 was withdrawn ~2026-06-12 (earlier than the planned 06-22),
+// so the cutoff was pulled forward. The `fable` tier now falls back to `opus`.
 const beforeSunset = new Date('2026-06-11T12:00:00Z');
-const lastDay = new Date('2026-06-22T23:59:59Z');     // inclusive — still available
-const afterSunset = new Date('2026-06-23T00:00:01Z'); // first day of fallback
+const lastDay = new Date('2026-06-12T23:59:59Z');     // inclusive — still counted available
+const afterSunset = new Date('2026-06-13T00:00:01Z'); // first day of fallback
 const wayAfter = new Date('2027-01-01T00:00:00Z');
 
-check('sunset date constant is 2026-06-22', () => {
-  assert.strictEqual(FABLE_SUNSET_DATE, '2026-06-22');
+check('fable cutoff constant is 2026-06-12 (withdrawn early)', () => {
+  assert.strictEqual(FABLE_SUNSET_DATE, '2026-06-12');
 });
 
 // Parity guard: the live spawn path for `gsd-sdk query init.*` is the SDK
@@ -46,7 +48,7 @@ check('SDK resolver (sdk/src) applies the fable sunset (CJS/SDK parity)', () => 
     'utf8',
   );
   assert.ok(sdkResolver.includes('applyFableSunset'), 'SDK resolver missing applyFableSunset');
-  assert.ok(sdkResolver.includes("'2026-06-22'"), 'SDK resolver missing the 2026-06-22 cutoff');
+  assert.ok(sdkResolver.includes("'2026-06-12'"), 'SDK resolver cutoff out of sync with CJS');
 });
 
 check('fable is available before the sunset', () => {
@@ -102,6 +104,39 @@ check('GSD_FABLE_SUNSET_NOW env override pins the date', () => {
     if (prev === undefined) delete process.env.GSD_FABLE_SUNSET_NOW;
     else process.env.GSD_FABLE_SUNSET_NOW = prev;
   }
+});
+
+// Tunable knob: fable.mode (on/off override) + fable.until (cutoff override).
+check('knob mode=on forces fable available even after the cutoff', () => {
+  assert.strictEqual(fableAvailable(afterSunset, { mode: 'on' }), true);
+  assert.strictEqual(applyFableSunset('fable', afterSunset, { mode: 'on' }), 'fable');
+});
+
+check('knob mode=off forces opus even before the cutoff', () => {
+  assert.strictEqual(fableAvailable(beforeSunset, { mode: 'off' }), false);
+  assert.strictEqual(applyFableSunset('fable', beforeSunset, { mode: 'off' }), 'opus');
+});
+
+check('knob until=<future> extends the auto cutoff', () => {
+  assert.strictEqual(fableAvailable(afterSunset, { until: '2027-01-01' }), true);
+  assert.strictEqual(applyFableSunset('fable', afterSunset, { until: '2027-01-01' }), 'fable');
+});
+
+check('knob until=<past> brings the auto cutoff forward', () => {
+  assert.strictEqual(fableAvailable(beforeSunset, { until: '2026-06-01' }), false);
+});
+
+check('readFableKnob exported; returns {} when no config/knob present', () => {
+  assert.strictEqual(typeof core.readFableKnob, 'function');
+  const k = core.readFableKnob(__dirname); // tests/ has no .planning/config.json
+  assert.deepStrictEqual({ mode: k.mode, until: k.until }, { mode: undefined, until: undefined });
+});
+
+// CJS/SDK parity: the knob must exist in the SDK resolver too.
+check('SDK resolver reads the fable knob (CJS/SDK parity)', () => {
+  const sdk = fs.readFileSync(path.join(__dirname, '..', 'sdk', 'src', 'query', 'config-query.ts'), 'utf8');
+  assert.ok(sdk.includes('readFableKnob'), 'SDK resolver missing readFableKnob');
+  assert.ok(/fable\.mode|knob\.mode/.test(sdk), 'SDK resolver does not honor the knob mode');
 });
 
 if (failures) {

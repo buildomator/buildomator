@@ -243,8 +243,7 @@ Check `branching_strategy` from init:
 Fork the new phase branch off `origin/HEAD` (the project's default branch), not the current HEAD — otherwise consecutive phases compound and stay unpushed (#2916). If `$BRANCH_NAME` already exists locally, reuse it as-is.
 
 ```bash
-DEFAULT_BRANCH=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
-DEFAULT_BRANCH=${DEFAULT_BRANCH:-main}
+DEFAULT_BRANCH=$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" base-branch)
 
 if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
   git switch "$BRANCH_NAME" || { echo "ERROR: Could not switch to existing branch '$BRANCH_NAME'." >&2; exit 1; }

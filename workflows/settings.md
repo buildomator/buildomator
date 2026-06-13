@@ -52,6 +52,8 @@ Parse current values (default to `true` if not present):
 - `intel.enabled` — enable queryable codebase intelligence (/gsd:map-codebase --query) (default: false if absent)
 - `graphify.enabled` — enable project knowledge graph (/gsd:graphify) (default: false if absent)
 - `model_profile` — which model each agent uses (default: `balanced`)
+- `fable.mode` — Claude Fable 5 availability: `auto` (default, date-gated) / `on` (force available) / `off` (force Opus). Fable was withdrawn 2026-06-12, so `auto` resolves the quality-profile heavy agents to Opus; set `on` if Fable returns.
+- `fable.until` — ISO date overriding the auto cutoff for `fable.mode: auto` (default `2026-06-12`)
 - `git.branching_strategy` — branching approach (default: `"none"`)
 - `workflow.use_worktrees` — whether parallel executor agents run in worktree isolation (default: `true`)
 - `workflow.ultracode` — orchestration signal: the good-fit heavy commands (`/gsd:map-codebase`, `/gsd:code-review`, `/gsd:review`) run at maximum multi-agent depth (full fan-out + adversarial verification). **Auto-on through 2026-06-22** (the deeper runs are included during that window), **off afterward** (extra-paid). Set `true`/`false` to override the window in either direction; leave unset for the automatic behavior. Claude Code only. See `references/ultracode-mode.md`.
