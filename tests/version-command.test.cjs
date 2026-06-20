@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 'use strict';
 
-// Regression test for the /gsd:version command (v3.4.9).
+// Regression test for the /gsd:version command.
 //
 // /gsd:version is a read-only command that prints the installed plugin version
-// and checks GitHub for the latest release, then shows update guidance when
-// relevant. Locks: the skill exists with correct frontmatter, the workflow
-// carries the version-resolution + tag-based online-check + guidance logic, and
-// help.md lists the command.
+// and checks GitHub (git tags) for the latest, then shows update guidance only
+// when behind. The logic is INLINED in skills/version/SKILL.md (no separate
+// workflow.md @-include) to keep the per-invocation token cost minimal.
 
 const assert = require('node:assert');
 const fs = require('node:fs');
@@ -22,43 +21,38 @@ function check(name, fn) {
   catch (e) { console.error(`  FAIL - ${name}: ${e.message}`); failures++; }
 }
 
-check('skills/version/SKILL.md exists with name gsd:version + Bash tool', () => {
-  const s = read('skills/version/SKILL.md');
-  assert.ok(/^name:\s*gsd:version\s*$/m.test(s), 'frontmatter name is not gsd:version');
-  assert.ok(/allowed-tools:/.test(s) && /\bBash\b/.test(s), 'Bash not in allowed-tools');
-  assert.ok(
-    s.includes('@${CLAUDE_PLUGIN_ROOT}/workflows/version.md'),
-    'skill does not delegate to the plugin-local workflow',
-  );
+const SKILL = read('skills/version/SKILL.md');
+
+check('SKILL.md: gsd:version, Bash tool, effort: low', () => {
+  assert.ok(/^name:\s*gsd:version\s*$/m.test(SKILL), 'frontmatter name is not gsd:version');
+  assert.ok(/allowed-tools:/.test(SKILL) && /\bBash\b/.test(SKILL), 'Bash not in allowed-tools');
+  assert.ok(/^effort:\s*low\s*$/m.test(SKILL), 'effort: low missing (cheap read-only report)');
 });
 
-check('workflows/version.md resolves the installed version from plugin.json', () => {
-  const w = read('workflows/version.md');
-  assert.ok(w.includes('.claude-plugin/plugin.json'), 'does not read plugin.json version');
-  // Robust resolution: prefer CLAUDE_PLUGIN_ROOT, else glob the newest versioned
-  // cache dir (the real layout: .../cache/gsd-plugin/gsd/<version>/). The 'current'
-  // symlink does not exist on recent Claude Code, so a bare fallback to it reports
-  // "unknown" when CLAUDE_PLUGIN_ROOT is unset (the Bash-tool env).
-  assert.ok(w.includes('CLAUDE_PLUGIN_ROOT'), 'does not prefer CLAUDE_PLUGIN_ROOT');
-  assert.ok(
-    w.includes('cache/gsd-plugin/gsd/') && w.includes('sort -V'),
-    'does not fall back to the newest versioned cache dir',
-  );
+check('SKILL.md is self-contained (inline bash, no workflow @-include)', () => {
+  assert.ok(/```bash/.test(SKILL), 'no inline bash block');
+  assert.ok(!SKILL.includes('workflows/version.md'), 'still delegates to a separate workflow (token cost)');
 });
 
-check('workflows/version.md checks GitHub by tags (not Releases) and is best-effort', () => {
-  const w = read('workflows/version.md');
-  assert.ok(w.includes('git ls-remote --tags'), 'does not check tags via git ls-remote');
-  assert.ok(/jnuyens\/gsd-plugin/.test(w), 'does not target the plugin repo');
-  // must NOT depend on gh release view, which lags when Releases are unpublished
-  assert.ok(!/gh release view/.test(w), 'still uses gh release view (lags behind tags)');
+check('SKILL.md resolves the installed version from plugin.json (CLAUDE_PLUGIN_ROOT, no node)', () => {
+  assert.ok(SKILL.includes('.claude-plugin/plugin.json'), 'does not read plugin.json version');
+  assert.ok(SKILL.includes('CLAUDE_PLUGIN_ROOT'), 'does not prefer CLAUDE_PLUGIN_ROOT');
+  assert.ok(SKILL.includes('cache/gsd-plugin/gsd/') && SKILL.includes('sort -V'),
+    'does not fall back to the newest versioned cache dir');
+  assert.ok(!/node\s+-e|require\(/.test(SKILL), 'parses with node (should be grep/sed so it works when node is broken)');
 });
 
-check('workflows/version.md shows update guidance only when behind/unknown', () => {
-  const w = read('workflows/version.md');
-  assert.ok(w.includes('/plugin install gsd@gsd-plugin'), 'missing update install step');
-  assert.ok(w.includes('/reload-plugins'), 'missing reload step');
-  assert.ok(/behind|unknown/.test(w), 'guidance not gated on update-available/unknown status');
+check('SKILL.md checks GitHub by tags (not Releases) and is best-effort', () => {
+  assert.ok(SKILL.includes('git ls-remote --tags'), 'does not check tags via git ls-remote');
+  assert.ok(/jnuyens\/gsd-plugin/.test(SKILL), 'does not target the plugin repo');
+  assert.ok(!/gh release view/.test(SKILL), 'still uses gh release view (lags behind tags)');
+});
+
+check('SKILL.md update guidance: gated, /plugins flow + /reload-plugins (not /plugin install)', () => {
+  assert.ok(/Update available/.test(SKILL), 'guidance not gated on update-available');
+  assert.ok(SKILL.includes('/plugins') && /Marketplace/i.test(SKILL), 'does not use the /plugins Marketplace flow');
+  assert.ok(SKILL.includes('/reload-plugins'), 'missing reload step');
+  assert.ok(!SKILL.includes('/plugin install gsd@gsd-plugin'), 'still shows the deprecated /plugin install step');
 });
 
 check('help.md lists /gsd:version', () => {
