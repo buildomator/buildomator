@@ -37,9 +37,10 @@
     "bundle": "esbuild dist/cli.js --bundle --platform=node --format=esm --outfile=dist/cli.js --allow-overwrite --banner:js=\"import { createRequire as _gsdCreateRequire } from 'module'; const require = _gsdCreateRequire(import.meta.url);\"",
     "check:alias-drift": "npm run build && node scripts/check-command-aliases-fresh.mjs",
     "prepublishOnly": "rm -rf dist && tsc && chmod +x dist/cli.js",
-    "test": "vitest run",
+    "test": "vitest run --project unit",
     "test:unit": "vitest run --project unit",
-    "test:integration": "vitest run --project integration"
+    "test:integration": "vitest run --project integration",
+    "test:all": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.84",
