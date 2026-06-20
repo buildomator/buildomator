@@ -1,19 +1,19 @@
 <purpose>
-Print the installed plugin version, check GitHub (git tags) for the latest, and show update steps only when behind or the check failed. Read-only, best-effort: the online check never blocks or fails the command.
+Print the installed plugin version, check GitHub tags for the latest, show update steps only when behind/unknown. Read-only, best-effort: never blocks or fails.
 </purpose>
 
 <process>
-Run this bash block and relay its output verbatim. Add nothing beyond what it prints.
+Run this bash block and relay its output verbatim. Add nothing.
 
 ```bash
-# Installed plugin.json: CLAUDE_PLUGIN_ROOT (set at plugin load), else newest
-# versioned cache dir (no 'current' symlink on recent Claude Code), else 'current'.
+# Installed version from plugin.json (CLAUDE_PLUGIN_ROOT, else newest cache dir, else current).
+# Parsed with grep/sed (no node dependency, so it works even if node is broken).
 PJ="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json}"
 [ -f "$PJ" ] || PJ=$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/.claude-plugin/plugin.json 2>/dev/null | sort -V | tail -1)
 [ -f "$PJ" ] || PJ="$HOME/.claude/plugins/cache/gsd-plugin/current/.claude-plugin/plugin.json"
-CURRENT=$(node -e "process.stdout.write(String(require('$PJ').version||''))" 2>/dev/null); [ -z "$CURRENT" ] && CURRENT="unknown"
+CURRENT=$(grep -m1 '"version"' "$PJ" 2>/dev/null | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/'); [ -z "$CURRENT" ] && CURRENT="unknown"
 
-# Latest = newest git tag (releases ship as tags, not GitHub Releases): ls-remote, then curl tags API.
+# Latest = newest git tag (releases ship as tags): ls-remote, else curl tags API.
 LATEST=$(git ls-remote --tags --refs https://github.com/jnuyens/gsd-plugin 2>/dev/null | sed 's|.*refs/tags/v\{0,1\}||' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
 [ -z "$LATEST" ] && command -v curl >/dev/null 2>&1 && LATEST=$(curl -fsSL https://api.github.com/repos/jnuyens/gsd-plugin/tags 2>/dev/null | grep -oE '"v?[0-9]+\.[0-9]+\.[0-9]+"' | tr -d '"v' | sort -V | tail -1)
 
@@ -34,7 +34,7 @@ case "$STATUS" in
   unknown) echo "Could not determine whether an update is available." ;;
 esac
 if [ "$STATUS" = behind ] || [ "$STATUS" = unknown ]; then
-  printf '\nTo update (type at the Claude Code prompt):\n  /plugin marketplace update gsd-plugin\n  /plugin install gsd@gsd-plugin\n  /reload-plugins   (run in EACH open session)\n'
+  printf '\nTo update:\n  1. /plugins -> Marketplace -> select gsd-plugin to refresh, then Esc twice (updates it on disk)\n  2. /reload-plugins   (run in EACH open session)\n'
 fi
 ```
 </process>

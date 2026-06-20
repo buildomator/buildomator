@@ -27,7 +27,7 @@ function frontmatter(content) {
   return m ? m[1] : '';
 }
 
-const SHOULD_BE_LOW = ['skills/progress/SKILL.md', 'skills/stats/SKILL.md'];
+const SHOULD_BE_LOW = ['skills/progress/SKILL.md', 'skills/stats/SKILL.md', 'skills/version/SKILL.md'];
 
 for (const rel of SHOULD_BE_LOW) {
   const fm = frontmatter(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
