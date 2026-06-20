@@ -632,14 +632,15 @@ UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
 
 **If UI-SPEC.md missing AND `UI_GATE_CFG` is `true`:**
 
-Read ephemeral chain flag (same field as `check.auto-mode` → `auto_chain_active`):
+Read the auto-advance signal (`active` = a `--chain`/`--auto` pipeline OR `auto_advance`, which defaults on since 3.6.0):
 ```bash
-AUTO_CHAIN=$(gsd-sdk query check auto-mode --pick auto_chain_active 2>/dev/null || echo "false")
+AUTO_ACTIVE=$(gsd-sdk query check auto-mode --pick active 2>/dev/null || echo "true")
 ```
 
-**If `AUTO_CHAIN` is `true` (running inside a `--chain` or `--auto` pipeline):**
+**If `AUTO_ACTIVE` is `true` AND `--no-auto` is NOT in `$ARGUMENTS`:**
 
-Auto-generate UI-SPEC without prompting:
+Follow the recommendation automatically — this is not a decision the user needs to
+make; auto-generate the UI-SPEC and keep going (no gate, no prompt):
 ```
 Skill(skill="gsd-ui-phase", args="${PHASE} --auto ${GSD_WS}")
 ```
@@ -648,9 +649,10 @@ After `gsd-ui-phase` returns, re-read:
 UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
 UI_SPEC_PATH="${UI_SPEC_FILE}"
 ```
-Continue to step 6.
+Continue to step 6. (For an interactive design session instead, run `/gsd:ui-phase {N}`
+yourself, or pass `--no-auto`; to plan without a UI-SPEC, pass `--skip-ui`.)
 
-**If `AUTO_CHAIN` is `false` (manual invocation):**
+**Otherwise (`--no-auto`, or `auto_advance` disabled):**
 
 Output this markdown directly (not as a code block):
 

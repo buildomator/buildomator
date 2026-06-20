@@ -32,6 +32,9 @@ const has = (src, n, m) => src.includes(n) ? ok(m) : fail(`${m} (missing: ${n})`
   has(src, 'If `PLAN_COUNT` > 2 (big phase):', `${f}: big-phase /clear hand-off branch`);
   has(src, 'Auto-advance paused for context hygiene', `${f}: big-phase hygiene notice`);
   has(src, 'Skill(skill="gsd-execute-phase"', `${f}: silent dispatch retained for cheap phases`);
+  // UI-SPEC gate (§5.6) honors auto_advance, not just the chain flag — no needless gate.
+  has(src, 'AUTO_ACTIVE=$(gsd-sdk query check auto-mode --pick active', `${f}: UI-SPEC gate reads auto_advance (active), not just auto_chain_active`);
+  has(src, 'this is not a decision the user needs to\nmake; auto-generate the UI-SPEC', `${f}: UI-SPEC auto-generates under auto-advance`);
 }
 
 // --- discuss-phase chain: interactive-by-default discuss->plan ---
