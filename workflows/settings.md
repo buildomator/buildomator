@@ -172,8 +172,8 @@ AskUserQuestion([
     header: "Auto",
     multiSelect: false,
     options: [
-      { label: "No (Recommended)", description: "Manual /clear + paste between stages" },
-      { label: "Yes", description: "Chain stages via Agent() subagents (same isolation)" }
+      { label: "Yes (Recommended)", description: "Auto-advance the pipeline. Cheap phases (<=2 plans) run hands-free; big phases pause for a /clear hand-off (clean context + live checkpoints). Pass --no-auto to opt out per run." },
+      { label: "No", description: "Manual /clear + paste between stages" }
     ]
   },
   {

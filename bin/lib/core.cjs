@@ -563,7 +563,7 @@ function loadConfig(cwd, options = {}) {
       tdd_mode: get('tdd_mode', { section: 'workflow', field: 'tdd_mode' }) ?? false,
       mvp_mode: get('mvp_mode', { section: 'workflow', field: 'mvp_mode' }) ?? false,
       text_mode: get('text_mode', { section: 'workflow', field: 'text_mode' }) ?? defaults.text_mode,
-      auto_advance: get('auto_advance', { section: 'workflow', field: 'auto_advance' }) ?? false,
+      auto_advance: get('auto_advance', { section: 'workflow', field: 'auto_advance' }) ?? true,
       _auto_chain_active: get('_auto_chain_active', { section: 'workflow', field: '_auto_chain_active' }) ?? false,
       mode: get('mode') ?? 'interactive',
       sub_repos: get('sub_repos', { section: 'planning', field: 'sub_repos' }) ?? defaults.sub_repos,

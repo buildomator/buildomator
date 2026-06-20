@@ -45,7 +45,7 @@ export const checkConfigGates = async (args, projectDir) => {
         ui_safety_gate: workflowBool(wf.ui_safety_gate, true),
         ui_review: workflowBool(wf.ui_review, true),
         text_mode: workflowBool(wf.text_mode, false),
-        auto_advance: workflowBool(wf.auto_advance, false),
+        auto_advance: workflowBool(wf.auto_advance, true),
         auto_chain_active: workflowBool(wf._auto_chain_active, false),
         code_review: workflowBool(wf.code_review, true),
         code_review_depth: wf.code_review_depth ?? 'standard',

@@ -234,7 +234,7 @@ Set via `workflow.*` namespace in config.json (e.g., `"workflow": { "research": 
 | `workflow.verifier` | boolean | `true` | `true`, `false` | Run verifier agent after execution |
 | `workflow.nyquist_validation` | boolean | `true` | `true`, `false` | Enable Nyquist-inspired validation gates |
 | `workflow.auto_prune_state` | boolean | `false` | `true`, `false` | Automatically prune old STATE.md entries on phase completion (keeps 3 most recent phases) |
-| `workflow.auto_advance` | boolean | `false` | `true`, `false` | Auto-advance to next phase after completion |
+| `workflow.auto_advance` | boolean | `true` | `true`, `false` | Auto-advance the pipeline after each stage. Context-aware: cheap phases (<=2 plans) dispatch silently; big phases and discuss->plan use a `/clear` hand-off (clean context + live checkpoints). `--no-auto` opts out per run. |
 | `workflow.node_repair` | boolean | `true` | `true`, `false` | Attempt automatic repair of failed plan nodes |
 | `workflow.node_repair_budget` | number | `2` | Any positive integer | Max repair retries per failed node |
 | `workflow.ai_integration_phase` | boolean | `true` | `true`, `false` | Run /gsd:ai-integration-phase before planning AI system phases |

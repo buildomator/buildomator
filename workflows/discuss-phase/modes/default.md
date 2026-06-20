@@ -69,16 +69,19 @@ check whether to continue. Each answer should reveal the next question.
    If "Other" (free text) → interpret intent: continuation phrases ("chat more", "keep going", "yes", "more") map to "More questions"; advancement phrases ("done", "move on", "next", "skip") map to "Next area". If ambiguous, ask: "Continue with more questions about [area], or move to the next area?"
 
 4. **After all initially-selected areas complete:**
-   - Summarize what was captured from the discussion so far
-   - AskUserQuestion:
-     - header: "Done"
-     - question: "We've discussed [list areas]. Which gray areas remain unclear?"
-     - options: "Explore more gray areas" / "I'm ready for context"
-   - If "Explore more gray areas":
-     - Identify 2-4 additional gray areas based on what was learned
-     - Return to present_gray_areas logic with these new areas
-     - Loop: discuss new areas, then prompt again
-   - If "I'm ready for context": Proceed to write_context
+   - Summarize what was captured from the discussion so far.
+   - Do NOT block on "explore more or ready for context?" — the gray areas were
+     already user-selected, so this gate is a plumbing rubber-stamp. Proceed to
+     write_context by default, announcing with a soft escape (matches `--auto`,
+     which already skips this prompt — see `modes/auto.md`):
+     ```
+     Captured decisions for [areas]. Writing CONTEXT.md...
+     (Say "explore more" if you want to open additional gray areas first.)
+     ```
+   - If the user interjects "explore more" (or names new areas): identify 2-4
+     additional gray areas based on what was learned, return to
+     present_gray_areas logic, discuss them, then announce + proceed again.
+   - Otherwise: proceed to write_context.
 
 **Ref accumulation during discussion:**
 When the user references a doc, spec, or ADR during any answer — e.g., "read adr-014", "check the MCP spec", "per browse-spec.md" — immediately:

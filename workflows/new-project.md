@@ -468,10 +468,24 @@ gsd-sdk query commit "docs: initialize project" --files .planning/PROJECT.md
 
 **If auto mode:** Skip — config was collected in Step 2a. Proceed to Step 5.5.
 
-**Check for global defaults** at `~/.gsd/defaults.json`. If the file exists, read and display its contents before asking:
+**Determine the defaults to offer.** Always present the single defaults gate below
+— first-time users (no saved defaults) get built-in RECOMMENDED defaults instead
+of the full ~8-question gauntlet. They can still "Modify" or "Configure fresh".
 
 ```bash
 DEFAULTS_RAW=$(cat ~/.gsd/defaults.json 2>/dev/null)
+```
+
+**If `~/.gsd/defaults.json` exists** (`DEFAULTS_RAW` non-empty): use its values;
+label the block **"Your saved defaults (~/.gsd/defaults.json)"**.
+
+**If it does NOT exist** (`DEFAULTS_RAW` empty): use these built-in **recommended
+defaults** and label the block **"Recommended defaults"** — they mirror the
+`(Recommended)` option in every question below:
+```json
+{ "mode": "yolo", "granularity": "coarse", "parallelization": true,
+  "commit_docs": true, "model_profile": "balanced",
+  "workflow.research": true, "workflow.plan_check": true, "workflow.verifier": true }
 ```
 
 Format the JSON into human-readable bullets using these label mappings:
@@ -487,7 +501,7 @@ Format the JSON into human-readable bullets using these label mappings:
 Display above the prompt:
 
 ```text
-Your saved defaults (~/.gsd/defaults.json):
+{Your saved defaults (~/.gsd/defaults.json) | Recommended defaults}:
   • Mode: [value]
   • Granularity: [value]
   • Execution: [Parallel|Sequential]
@@ -503,7 +517,7 @@ Then ask:
 ```text
 AskUserQuestion([
   {
-    question: "Use these saved defaults?",
+    question: "Use these defaults?",
     header: "Defaults",
     multiSelect: false,
     options: [
@@ -605,7 +619,10 @@ option set from Round 1 / Round 2 below. Merge user answers over the saved
 defaults — unchanged settings retain their saved values. Then skip to
 **Commit config.json**.
 
-**If "Configure fresh" or `~/.gsd/defaults.json` doesn't exist:** proceed with the questions below.
+**If "Configure fresh":** proceed with the questions below. (First-time users no
+longer fall through here automatically — absent saved defaults, the gate above
+offers built-in recommended defaults; only an explicit "Configure fresh" reaches
+the full question set.)
 
 **Round 1 — Core workflow settings (4 questions):**
 

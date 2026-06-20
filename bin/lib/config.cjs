@@ -173,7 +173,7 @@ function buildNewProjectConfig(userChoices) {
       plan_check: true,
       verifier: true,
       nyquist_validation: true,
-      auto_advance: false,
+      auto_advance: true,
       node_repair: true,
       node_repair_budget: 2,
       ui_phase: true,

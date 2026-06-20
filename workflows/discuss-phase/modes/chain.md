@@ -38,8 +38,13 @@
    gsd-sdk query config-set workflow._auto_chain_active true
    ```
 
-5. **If `--auto` flag present OR `--chain` flag present OR `AUTO_MODE` is
-   true:** display banner and launch plan-phase.
+5. **Auto-advance to plan-phase.** Skip entirely if `--no-auto` is present in
+   `$ARGUMENTS` (route to `confirm_creation` — the manual next-steps). Otherwise,
+   when `--auto`/`--chain`/`AUTO_MODE` applies, choose the hand-off by intent:
+
+   **a. Explicit `--auto` or `--chain` flag** (power user opted into the full silent
+   chain): launch plan-phase silently via the Skill tool to keep the chain flat
+   (deep Task nesting freezes — see #686):
 
    Banner:
    ```
@@ -47,15 +52,29 @@
 
    Context captured. Launching plan-phase...
    ```
-
-   Launch plan-phase using the Skill tool to avoid nested Task sessions
-   (deep agent nesting causes runtime freezes — see #686). This keeps the
-   chain flat (discuss, plan, execute at the same nesting level):
    ```
    Skill(skill="gsd-plan-phase", args="${PHASE} --auto ${GSD_WS}")
    ```
+   Then continue to step 6 (handle return).
 
-6. **Handle plan-phase return:**
+   **b. Config default only** (`AUTO_MODE` true via `workflow.auto_advance`, NO
+   explicit flag): do NOT silently dispatch with `--auto` — planning has genuine
+   interactive scope decisions a nested `--auto` dispatch would suppress (#1009).
+   Emit the /clear hand-off so plan-phase runs top-level and interactive, then STOP
+   (do not dispatch, skip step 6):
+   ```
+   GSD ► CONTEXT CAPTURED ✓
+
+   /clear then:
+
+   /gsd:plan-phase ${PHASE} ${GSD_WS}
+
+   (/clear sheds the discussion transcript; plan-phase reads CONTEXT.md fresh with
+    its scope prompts live. Default auto-advance keeps planning interactive — pass
+    --chain for the full silent chain, or --no-auto to stop here.)
+   ```
+
+6. **Handle plan-phase return** (only after the explicit-flag silent dispatch in 5a):
 
    - **PHASE COMPLETE** → Full chain succeeded. Display:
      ```

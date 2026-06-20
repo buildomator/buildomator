@@ -1,4 +1,5 @@
 .planning/
+.claude/
 node_modules/
 
 # macOS Finder metadata

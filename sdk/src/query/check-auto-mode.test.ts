@@ -20,13 +20,13 @@ describe('checkAutoMode', () => {
     await rm(projectDir, { recursive: true, force: true });
   });
 
-  it('returns defaults when config.json is missing', async () => {
+  it('active by default when config.json is missing (auto_advance defaults on)', async () => {
     const { data } = await checkAutoMode([], projectDir);
     expect(data).toEqual({
-      active: false,
-      source: 'none',
+      active: true,
+      source: 'auto_advance',
       auto_chain_active: false,
-      auto_advance: false,
+      auto_advance: true,
     });
   });
 
@@ -45,10 +45,10 @@ describe('checkAutoMode', () => {
     });
   });
 
-  it('active true when only _auto_chain_active is set', async () => {
+  it('active true when only _auto_chain_active is set (auto_advance explicitly off)', async () => {
     await writeFile(
       join(projectDir, '.planning', 'config.json'),
-      JSON.stringify({ workflow: { _auto_chain_active: true } }),
+      JSON.stringify({ workflow: { _auto_chain_active: true, auto_advance: false } }),
       'utf-8',
     );
     const { data } = await checkAutoMode([], projectDir);

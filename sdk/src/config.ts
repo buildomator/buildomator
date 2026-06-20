@@ -107,7 +107,7 @@ export const CONFIG_DEFAULTS: GSDConfig = {
     nyquist_validation: true,
     tdd_mode: false,
     human_verify_mode: 'end-of-phase',
-    auto_advance: false,
+    auto_advance: true,
     node_repair: true,
     node_repair_budget: 2,
     ui_phase: true,

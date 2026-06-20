@@ -453,34 +453,20 @@ fi
 **If RESEARCH.md missing OR `--research` flag:**
 
 **If no explicit flag (`--research` or `--skip-research`) and not `--auto`:**
-Ask the user whether to research, with a contextual recommendation based on the phase:
+Honor the configured research default instead of rubber-stamping it with a prompt.
+The old prompt marked "Research first" recommended every time, so it carried no
+signal. `research_enabled` is the existing `workflow.research` config (default
+`true`) — no separate research knob:
 
-If `TEXT_MODE` is true, present as a plain-text numbered list:
-```
-Research before planning Phase {X}: {phase_name}?
+- **`research_enabled` true (default):** auto-research. Do NOT prompt. Emit one
+  line, then fall through to the RESEARCHING banner and spawn the researcher:
+  `[research] Auto (workflow.research=true; re-run with --skip-research to plan directly this time, or set workflow.research=false to skip by default).`
+- **`research_enabled` false:** skip research. Emit
+  `[research] Skipped (workflow.research=false; pass --research to force).` and skip to step 6.
 
-1. Research first (Recommended) — Investigate domain, patterns, and dependencies before planning. Best for new features, unfamiliar integrations, or architectural changes.
-2. Skip research — Plan directly from context and requirements. Best for bug fixes, simple refactors, or well-understood tasks.
-
-Enter number:
-```
-
-Otherwise use AskUserQuestion:
-```
-AskUserQuestion([
-  {
-    question: "Research before planning Phase {X}: {phase_name}?",
-    header: "Research",
-    multiSelect: false,
-    options: [
-      { label: "Research first (Recommended)", description: "Investigate domain, patterns, and dependencies before planning. Best for new features, unfamiliar integrations, or architectural changes." },
-      { label: "Skip research", description: "Plan directly from context and requirements. Best for bug fixes, simple refactors, or well-understood tasks." }
-    ]
-  }
-])
-```
-
-If user selects "Skip research": skip to step 6.
+This gate is a GSD-process decision (whether to run a research step), not a
+build decision, so auto-following the default is in-scope for prompt reduction.
+The `--research` / `--skip-research` flags remain the per-run escapes.
 
 **If `--auto` and `research_enabled` is false:** Skip research silently (preserves automated behavior).
 
@@ -1650,40 +1636,62 @@ if ([[ "$ARGUMENTS" =~ --auto ]] || [[ "$ARGUMENTS" =~ --chain ]]) && [[ "$AUTO_
 fi
 ```
 
-**If `--auto` or `--chain` flag present OR `AUTO_CHAIN` is true OR `AUTO_CFG` is true:**
+**Opt-out — `--no-auto`:** if `--no-auto` is present in `$ARGUMENTS`, skip all
+auto-advance and route to `<offer_next>` (the manual /clear hand-off). This is the
+explicit per-run opt-out, since `auto_advance` defaults on.
 
-Display banner:
+**If auto-advance is active** (`--auto`/`--chain` flag OR `AUTO_CHAIN` true OR
+`AUTO_CFG` true) **AND `--no-auto` is NOT present:**
+
+Context-aware hand-off. Resolve the authoritative plan count from disk:
+```bash
+PLAN_COUNT=$(ls "${PHASE_DIR}"/*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
 ```
-GSD > AUTO-ADVANCING TO EXECUTE
+Cheap phases advance hands-free; big phases get a clean context + live wave
+checkpoints — neither of which a nested `--auto` dispatch can provide (#1009).
 
-Plans ready. Launching execute-phase...
-```
+- **If `PLAN_COUNT` <= 2 (cheap phase):** silent auto-advance.
 
-Launch execute-phase using the Skill tool to avoid nested Task sessions (which cause runtime freezes due to deep agent nesting):
-```
-Skill(skill="gsd-execute-phase", args="${PHASE} --auto --no-transition ${GSD_WS}")
-```
-
-The `--no-transition` flag tells execute-phase to return status after verification instead of chaining further. This keeps the auto-advance chain flat — each phase runs at the same nesting level rather than spawning deeper Task agents.
-
-**Handle execute-phase return:**
-- **PHASE COMPLETE** → Display final summary:
+  Display banner:
   ```
-  GSD > PHASE ${PHASE} COMPLETE ✓
+  GSD > AUTO-ADVANCING TO EXECUTE
 
-  Auto-advance pipeline finished.
-
-  Next: /gsd:discuss-phase ${NEXT_PHASE} --auto ${GSD_WS}
-  ```
-- **GAPS FOUND / VERIFICATION FAILED** → Display result, stop chain:
-  ```
-  Auto-advance stopped: Execution needs review.
-
-  Review the output above and continue manually:
-  /gsd:execute-phase ${PHASE} ${GSD_WS}
+  Plans ready. Launching execute-phase...
   ```
 
-**If neither `--auto` nor config enabled:**
+  Launch execute-phase using the Skill tool to avoid nested Task sessions (which cause runtime freezes due to deep agent nesting):
+  ```
+  Skill(skill="gsd-execute-phase", args="${PHASE} --auto --no-transition ${GSD_WS}")
+  ```
+
+  The `--no-transition` flag tells execute-phase to return status after verification instead of chaining further. This keeps the auto-advance chain flat — each phase runs at the same nesting level rather than spawning deeper Task agents.
+
+  **Handle execute-phase return:**
+  - **PHASE COMPLETE** → Display final summary:
+    ```
+    GSD > PHASE ${PHASE} COMPLETE ✓
+
+    Auto-advance pipeline finished.
+
+    Next: /gsd:discuss-phase ${NEXT_PHASE} --auto ${GSD_WS}
+    ```
+  - **GAPS FOUND / VERIFICATION FAILED** → Display result, stop chain:
+    ```
+    Auto-advance stopped: Execution needs review.
+
+    Review the output above and continue manually:
+    /gsd:execute-phase ${PHASE} ${GSD_WS}
+    ```
+
+- **If `PLAN_COUNT` > 2 (big phase):** do NOT silently dispatch — a big phase wants a
+  clean context and interactive wave checkpoints, which a nested `--auto` dispatch
+  cannot give. Route to `<offer_next>` (the /clear hand-off), prefixed with:
+  ```
+  ⚡ Auto-advance paused for context hygiene (${PLAN_COUNT} plans).
+     /clear sheds the planning context so execute-phase starts clean with live checkpoints.
+  ```
+
+**If `--no-auto`, or neither flag nor config enabled:**
 Route to `<offer_next>` (existing behavior).
 
 </process>
