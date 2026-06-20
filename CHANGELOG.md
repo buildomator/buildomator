@@ -8,6 +8,15 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [3.6.1] - 2026-06-20  (fix: profile template path in flat-layout installs)
+
+### Fixed
+- **Profile commands could not find their templates in installs.** `BUNDLED_GSD_TEMPLATES_DIR` resolved to the nested `get-shit-done/templates` path while the sibling agents dir already used the flat `../../agents`, so `/gsd:profile-user` and dev-preferences generation failed with "Template not found" in the plugin's flat layout. Now resolves to `../../templates`. SDK rebuilt and bundled.
+- **CJS/SDK new-project default divergence:** `configNewProject` hardcoded `commit_docs: false` while the CJS `buildNewProjectConfig` and `CONFIG_DEFAULTS` use `true`; aligned to `true`.
+
+### Internal
+- Cleaned up a large batch of pre-existing SDK test failures that assumed upstream's nested `get-shit-done/` layout: golden `gsd-tools.cjs` resolution (prefers the repo's `bin/gsd-tools.cjs` when `CLAUDE_PLUGIN_ROOT` is unset), `secrets` / `command-seam` / `agent-skills` / `assembled-prompts` path references, and `config-mutation` test `HOME` isolation. The remaining golden subprocess-parity tests are environmental integration checks and flaky under full-suite subprocess concurrency (they pass in isolation).
+
 ## [3.6.0] - 2026-06-20  (less GSD housekeeping prompts: auto-follow recommendations, context-aware auto-advance, severity-routed gaps)
 
 Minor bump. The theme is removing interactions about GSD's own plumbing while keeping every interaction about what you are building. A process prompt that merely confirmed a recommendation is a default, not a question, so those now auto-follow the recommendation (announced, with a per-run escape); build and design prompts are untouched.
