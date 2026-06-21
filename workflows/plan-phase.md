@@ -1454,26 +1454,36 @@ If all requirements covered and no dropped features:
 ```
 → Proceed to step 14.
 
-If gaps found:
+If gaps found, **AUTO-HEAL first** (same principle as §13a). An uncovered REQ-ID
+often means a plan implements the requirement but didn't tag its REQ-ID. For each
+uncovered REQ-ID, read the phase `*-PLAN.md` files and check whether a task
+genuinely addresses it:
+
+1. **If a plan clearly addresses it (just untagged):** add the REQ-ID to that
+   plan's requirement field via Edit (mechanical, no scope change). Be
+   conservative — only tag when the plan really covers it; do NOT tag to silence
+   the gate.
+2. **Re-run the coverage check.** If now fully covered, display
+   `✓ Requirements coverage: auto-tagged {K} REQ-ID(s) ({N}/{N} covered)`,
+   re-commit the plan edits if `commit_docs` is on, and proceed to step 14. No prompt.
+
+**Only REQ-IDs (and CONTEXT.md features) genuinely addressed by no plan** are real
+gaps. Surface ONLY those, in plain language with the fix recommended:
+
 ```
-## ⚠ Requirements Coverage Gap
+## ⚠ Requirements not covered by any plan
 
-{M} of {N} phase requirements are not assigned to any plan:
+{M} requirement(s) would not get built:
+- {REQ-ID}: {description from REQUIREMENTS.md}
+{K} feature(s) described in your context but in no plan:
+- {feature_name}
 
-| REQ-ID | Description | Plans |
-|--------|-------------|-------|
-| {id} | {from REQUIREMENTS.md} | None |
-
-{K} CONTEXT.md features not found in plan objectives:
-- {feature_name} — described in CONTEXT.md but no plan covers it
-
-Options:
-1. Re-plan to include missing requirements (recommended)
-2. Move uncovered requirements to next phase
-3. Proceed anyway — accept coverage gaps
+Recommended: re-plan to include them.
+Also: move them to a later phase, or proceed anyway (recorded as an override).
 ```
 
-If `TEXT_MODE` is true, present as a plain-text numbered list (options already shown in the block above). Otherwise use AskUserQuestion to present the options.
+If `TEXT_MODE` is true, present as a plain-text numbered list; otherwise use
+AskUserQuestion (option 1 "Re-plan to include them" recommended).
 
 ## 13a. Decision Coverage Gate
 
@@ -1515,22 +1525,37 @@ The handler returns JSON:
 `(skipped — gate disabled)` / `(skipped — no decisions)`) and proceed to
 step 13b.
 
-**If `passed` is false:** Display the handler's `message` block. It already
-names each uncovered decision (`D-NN | category | text`) and tells the user
-what to do — cite the id in a relevant plan's `must_haves` / `truths`, or
-move the decision under `### Claude's Discretion` / tag it `[informational]`
-if it should not be tracked. Then offer:
+**If `passed` is false: AUTO-HEAL first — do NOT immediately prompt.** The
+plan-checker (Dimension 7) already verified these decisions are *semantically*
+covered, so an uncovered result here almost always means the planner described a
+decision in plain English without its literal `(D-NN)` tag — a **traceability gap,
+not a coverage gap**. Confronting the user with `D-NN` / `must_haves` / `truths`
+internals (with re-planning as the "recommended" option) is exactly the wrong
+response. Heal it instead:
+
+1. **Backfill tags.** For each id in `uncovered[]`, read the phase `*-PLAN.md`
+   files, find the task/truth that implements that decision (it exists — the
+   plan-checker confirmed it), and add the `(D-NN)` tag to that task's
+   `must_haves`/`truths` via Edit. Mechanical, no semantic change.
+2. **Re-run the gate:** `gsd-sdk query check.decision-coverage-plan "${PHASE_DIR}" "${CONTEXT_PATH}"`.
+3. **If it now passes:** Display `✓ Decision coverage: auto-tagged {K} decision(s) for traceability ({N}/{N} covered)`, re-commit the plan edits if `commit_docs` is on, and proceed to step 13b. No prompt.
+
+**Only if decisions remain uncovered after backfill** (genuinely implemented in no
+plan — a real dropped decision) surface ONLY those, in plain language with the fix
+recommended and NO GSD internals:
 
 ```text
-Options:
-1. Re-plan to cover missing decisions (recommended)
-2. Edit CONTEXT.md to mark dropped decisions as [informational] / Discretion
-3. Proceed anyway — accept the coverage gap
+A few decisions from your discussion aren't covered by any plan, so they would not get built:
+- {plain text of the decision}
+
+Recommended: re-plan to cover them.
+Also: mark them out-of-scope in CONTEXT.md if that's intentional; or proceed anyway (recorded as an override).
 ```
 
-If `TEXT_MODE` is true, present as a plain-text numbered list. Otherwise use
-AskUserQuestion. Selecting "Proceed anyway" continues to step 13b but
-records the override in STATE.md so verify-phase can re-surface it.
+If `TEXT_MODE` is true, present as a plain-text numbered list; otherwise use
+AskUserQuestion (option 1 "Re-plan to cover them" recommended). "Proceed anyway"
+continues to step 13b and records the override in STATE.md so verify-phase can
+re-surface it.
 
 **Why this gate blocks:** if a decision isn't visible in any plan, no executor will implement it. Catching that now is cheap; discovering it after execution is not.
 
