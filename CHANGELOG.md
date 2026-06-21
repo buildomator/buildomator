@@ -8,6 +8,20 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-06-21  (improved resilience when sessions are broken)
+
+When a session drops and resumes, phases can be left partially delivered. GSD used to either lose the thread or confront the user with hard-to-read internals questions. This release heals instead: it finishes the build-work that was in flight and auto-fixes mechanical gaps, reserving questions for genuine judgment calls in plain language.
+
+### Added
+- **Interrupted UATs are never lost.** A started-but-unfinished `{phase}-UAT.md` (`status: testing`/`partial`) is now a hard invariant in `/gsd:next` (Route 0.5, mirroring the existing incomplete-phase invariant): it is routed to `/gsd:verify-work` before any forward action, regardless of `current_phase`. The detour commands (`/gsd:quick`, `/gsd:add-phase`, `/gsd:explore`) also leave a "↩ resume UAT" breadcrumb above their Next-Up (rule 8 in `references/continuation-format.md`). Previously only `/gsd:progress` surfaced a partial UAT, so after a detour advanced `current_phase` the UAT could go silently incomplete and be found out late.
+
+### Changed
+- **Coverage gates auto-heal a tagging gap instead of interrogating with internals.** The decision-coverage (§13a) and requirements-coverage (§13) gates grep plans for literal `(D-NN)`/REQ-ID tags. The plan-checker (Dimension 7) already verifies semantic coverage, so a failure is almost always a traceability gap, not a coverage gap. The gates now backfill the missing tags onto the plans that already implement the decision/requirement and proceed silently; only items implemented in NO plan surface, in plain language with re-plan recommended (the requirements gate stays conservative: tag only when a plan really covers it). The old behavior confronted the user with `D-NN`/`must_haves`/`truths` jargon and recommended re-planning over the safe fix. Genuine scope/quality gates (source-audit §9c, plan-checker bounce) are unchanged: they already recommend the fix in plain language.
+- **`/gsd:version` is leaner and node-independent.** Inlined into the skill (the separate `workflows/version.md` is removed, roughly a 3x cut in the markdown loaded per call) with a compact `grep`/`git`/`curl` block, so it works even when node is broken.
+
+### Tests
+- `tests/uat-resume-invariant.test.cjs`, `tests/coverage-gate-autoheal.test.cjs`; `version-command.test.cjs` rewritten for the inlined skill.
+
 ## [3.6.3] - 2026-06-20  (fix: UI-SPEC gate honors auto_advance)
 
 ### Fixed
