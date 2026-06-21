@@ -78,6 +78,8 @@ Phase {N} added to current milestone:
 
 Roadmap updated: .planning/ROADMAP.md
 
+**Unfinished-UAT breadcrumb:** adding a phase is a common detour from a UAT. Apply rule 8 of `references/continuation-format.md` — if any phase has a `testing`/`partial` UAT, lead with `↩ Resume UAT for Phase {M}: /gsd:verify-work {M}` ABOVE the Next-Up below, so the interrupted verification is not lost behind the new phase.
+
 ---
 
 ## ▶ Next Up — [${PROJECT_CODE}] ${PROJECT_TITLE}

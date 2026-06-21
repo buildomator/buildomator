@@ -120,6 +120,8 @@ gsd-sdk query commit "docs: capture exploration — {topic_slug}" --files {file_
 
 ## Step 6: Close
 
+**Unfinished-UAT breadcrumb:** exploring is a common detour from a UAT (feature ideas surfaced mid-verification). Apply rule 8 of `references/continuation-format.md` — if any phase has a `testing`/`partial` UAT, lead with `↩ Resume UAT for Phase {N}: /gsd:verify-work {N}` ABOVE the close block, so the interrupted verification is not silently abandoned.
+
 ```
 ## Exploration Complete
 

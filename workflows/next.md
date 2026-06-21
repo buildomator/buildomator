@@ -169,9 +169,35 @@ done
 
 Then invoke via SlashCommand. Do not continue to subsequent steps.
 
-**If `INCOMPLETE_PHASE` is empty:** continue to `spike_sketch_notice`.
+**If `INCOMPLETE_PHASE` is empty:** continue to `resume_partial_uat`.
 
 **Why Route 0, not part of `determine_next_action`:** it's a hard invariant independent of `current_phase`, so it must run before any routing rule that reads `current_phase`. The prior-phase-scan in `safety_gates` remains the explicit opt-out path (via `--no-resume`) for deferring incomplete plans to backlog; this Route 0 makes the no-flag default "continue the partially-executed phase" instead of "stop and ask."
+</step>
+
+<step name="resume_partial_uat">
+**Hard invariant (Route 0.5): any phase with a started-but-unfinished UAT (`{phase}-UAT.md` with `status: testing` or `status: partial`) must be finished before /gsd:next routes to any forward action.** This catches the failure mode where a UAT was interrupted by a detour (a bug surfaced -> `/gsd:quick`, feature requests -> `/gsd:add-phase` / `/gsd:explore`) and `current_phase` advanced past it; without this gate the partial UAT goes silently incomplete and is found out late. Runs AFTER the execution invariant (finish executing, then finish verifying) and BEFORE any `current_phase`-based routing.
+
+**Skip if `--force` or `--no-resume` was passed.**
+
+Scan all phases for an unfinished UAT, lowest phase first. `diagnosed` (UAT done, gaps found) is NOT included here — that routes to gap-closure via `determine_next_action`, not a UAT resume:
+
+```bash
+PARTIAL_UAT_FILE=$(grep -lE '^status:[[:space:]]*(testing|partial)[[:space:]]*$' .planning/phases/*/*-UAT.md 2>/dev/null | sort | head -1)
+PARTIAL_UAT_PHASE=""
+[ -n "$PARTIAL_UAT_FILE" ] && PARTIAL_UAT_PHASE=$(basename "$PARTIAL_UAT_FILE" | grep -oE '^[0-9]+(\.[0-9]+)?')
+```
+
+**If `PARTIAL_UAT_PHASE` is non-empty:** route to `/gsd:verify-work $PARTIAL_UAT_PHASE` and exit. Display a one-line notice before invoking:
+
+```
+▶ Resuming unfinished UAT for Phase ${PARTIAL_UAT_PHASE} (verification was interrupted)
+  /gsd:verify-work ${PARTIAL_UAT_PHASE}
+  (use --no-resume to skip and route forward; --force to skip all resume gates)
+```
+
+Then invoke via SlashCommand. Do not continue to subsequent steps.
+
+**If `PARTIAL_UAT_PHASE` is empty:** continue to `spike_sketch_notice`.
 </step>
 
 <step name="spike_sketch_notice">
