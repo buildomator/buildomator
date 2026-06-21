@@ -80,9 +80,12 @@ Build: `{ threat_id, category, component, disposition, status, evidence }`
 
 
 **Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Gemini CLI, etc.) where `AskUserQuestion` is not available.
-Call AskUserQuestion with threat table and options:
-1. "Verify all open threats" → Step 5
-2. "Accept all open — document in accepted risks log" → add to SECURITY.md accepted risks, set all CLOSED, Step 6
+Verifying the open threats is the whole purpose of `/gsd:secure-phase`, and the
+auditor only verifies (it never modifies code), so it is the recommended path (not
+a neutral menu). Accepting risk stays a deliberate security choice, never the
+default. Display the threat table, then AskUserQuestion in plain language:
+1. "Verify all open threats (recommended)" → Step 5
+2. "Accept the risk — document in SECURITY.md accepted risks" (a deliberate security decision) → set all CLOSED, Step 6
 3. "Cancel" → exit
 
 ## 5. Spawn gsd-security-auditor

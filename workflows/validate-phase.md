@@ -85,9 +85,11 @@ No gaps → skip to Step 6, set `nyquist_compliant: true`.
 
 
 **Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Gemini CLI, etc.) where `AskUserQuestion` is not available.
-Call AskUserQuestion with gap table and options:
-1. "Fix all gaps" → Step 5
-2. "Skip — mark manual-only" → add to Manual-Only, Step 6
+Filling these gaps is the whole purpose of `/gsd:validate-phase`, so the fix is the
+recommended path (not a neutral menu). Display the gap table, then AskUserQuestion
+in plain language (no GSD internals):
+1. "Fix all gaps (recommended)" — generate the missing tests via gsd-nyquist-auditor → Step 5
+2. "Mark some manual-only" — for requirements that can't be auto-tested → add to Manual-Only, Step 6
 3. "Cancel" → exit
 
 ## 5. Spawn gsd-nyquist-auditor

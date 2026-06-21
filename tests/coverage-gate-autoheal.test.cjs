@@ -33,6 +33,19 @@ has('Requirements not covered by any plan', '§13: surfaces genuine req gaps pla
 // The genuine-judgment gates still recommend the fix (not auto-healed, by design).
 has('Add a plan to cover this item (recommended)', '§9c source-audit recommends the fix');
 
+// Sweep extension: validate-phase + secure-phase gates recommend the fix-it action
+// (the command's whole purpose) instead of a neutral menu, in plain language.
+{
+  const v = fs.readFileSync(path.join(ROOT, 'workflows/validate-phase.md'), 'utf8');
+  v.includes('Fix all gaps (recommended)') ? ok('validate-phase: recommends filling the gaps')
+    : fail('validate-phase: fix-it option not recommended');
+  const s = fs.readFileSync(path.join(ROOT, 'workflows/secure-phase.md'), 'utf8');
+  s.includes('Verify all open threats (recommended)') ? ok('secure-phase: recommends verifying threats')
+    : fail('secure-phase: verify option not recommended');
+  s.includes('deliberate security') ? ok('secure-phase: accept-risk stays deliberate, not default')
+    : fail('secure-phase: accept-risk framing missing');
+}
+
 if (failures) {
   console.error(`\ncoverage-gate-autoheal: ${failures} failure(s)`);
   process.exit(1);
