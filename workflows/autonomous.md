@@ -10,6 +10,16 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 </required_reading>
 
+<autonomous_contract priority="critical">
+
+Autonomous means autonomous. Once invoked, do NOT pause to confirm scope, re-state the plan back as a question, or ask the user to approve kicking off — that defeats the command and forces the user to repeat themselves. Display the phase plan (informational, read-only) and immediately continue into execution in the same turn.
+
+A constraint you discover (e.g. a sequential-ordering requirement, a migration collision) is surfaced as a one-line NOTICE that you then act on — never as a gate that waits for a reply. State it, honor it, proceed.
+
+Auto-follow every recommended default. Do the research the workflow calls for, but auto-accept its recommendation rather than presenting it for sign-off. The ONLY permitted pauses are the explicit user-decision points defined below: `human_needed` verification, `gaps_found` after one auto-retry, milestone audit gaps/tech-debt, and `handle_blocker`. Nothing else stops the run.
+
+</autonomous_contract>
+
 <process>
 
 <step name="initialize" priority="first">
@@ -141,6 +151,8 @@ DETAIL=$(gsd-sdk query roadmap.get-phase ${PHASE_NUM})
 ```
 
 Extract `phase_name`, `goal`, `success_criteria` from each. Store for use in execute_phase and transition messages.
+
+**Then proceed directly into execute_phase for the first phase — in the same turn, with no confirmation prompt.** The phase plan shown above is informational, not a gate (see `<autonomous_contract>`). Do not end your turn here waiting for the user to say "go".
 
 </step>
 
@@ -720,6 +732,8 @@ When any phase operation fails or a blocker is detected, present 3 options via A
 </process>
 
 <success_criteria>
+- [ ] No kickoff confirmation: phase plan is shown then execution begins in the same turn (no "approve scope?" pause) — per `<autonomous_contract>`
+- [ ] Discovered constraints surfaced as one-line notices that are acted on, not as gates that wait for a reply
 - [ ] All incomplete phases executed in order (smart discuss → ui-phase → plan → execute → ui-review each)
 - [ ] Smart discuss proposes grey area answers in tables, user accepts or overrides per area
 - [ ] Progress banners displayed between phases

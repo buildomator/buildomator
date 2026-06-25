@@ -6,13 +6,15 @@
 
 **Based on:** [GSD 1.42.3](https://github.com/open-gsd/get-shit-done-redux/releases/tag/v1.42.3) base tree by **TACHES** (Lex Christopherson), now maintained by the community at [open-gsd/get-shit-done-redux](https://github.com/open-gsd/get-shit-done-redux)
 
-**Plugin version:** `3.7.1`
+**Plugin version:** `3.7.2`
 
 **GSD Plugin for Claude Code** ensures your coding work gets done in a systematic, structured way. It prompts you only for the important design and architectural decisions that actually need your judgment, and it splits each step into its own focused subcontext so token use stays optimised across long projects.
 
 Under the hood, a performance-optimized plugin packaging of [GSD](https://github.com/open-gsd/get-shit-done-redux) for Claude Code: reduces per-turn token overhead by ~92%, adds MCP-backed project state, auto-resumes across `/compact`, and bundles everything into a single-install plugin.
 
 ## What's New
+
+**v3.7.2**: `/gsd:autonomous` no longer stops to ask you to re-confirm before kicking off. The workflow had no confirm-scope step, so the orchestrator improvised one out of caution: it printed the phase plan, then waited for you to say "go" again, which defeats an autonomous command. A new explicit contract makes the rule plain (show the plan, then continue into execution in the same turn; surface a discovered constraint, like a migration-chain collision, as a one-line notice it acts on, not a gate that waits). The only pauses left are the real decision points: human verification, gaps after one auto-retry, audit gaps/tech-debt, and blockers.
 
 **v3.7.1**: fixes `/gsd:version` reporting `Error: Exit code 1` when you are up to date (the update-hint chain exited non-zero; it printed correctly but Claude Code flagged it), and trims its bash. Extends the resilience sweep to `/gsd:validate-phase` and `/gsd:secure-phase` so the fix-it action is recommended (not a neutral menu).
 

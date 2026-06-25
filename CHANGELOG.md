@@ -8,6 +8,11 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [3.7.2] - 2026-06-25  (fix: autonomous stops asking you to re-confirm before kicking off)
+
+### Fixed
+- **`/gsd:autonomous` paused to confirm scope before starting.** The workflow had no confirm-scope step, so the orchestrator improvised one out of caution before a long, expensive run: it printed the phase plan, then ended its turn waiting for the user to say "go" again, forcing them to repeat themselves and defeating the point of an autonomous command. A new `<autonomous_contract priority="critical">` block makes the rule explicit (show the phase plan, then continue into execution in the same turn; surface a discovered constraint, such as a migration-chain collision, as a one-line notice the orchestrator acts on, not a gate that waits for a reply), and phase discovery now instructs the orchestrator to proceed directly into the first phase rather than ending its turn on the plan table. The only permitted pauses remain the documented decision points: `human_needed` verification, `gaps_found` after one auto-retry, milestone audit gaps/tech-debt, and blockers. Two success criteria lock the behavior in. This is the same principle as the "recommended outcome must be silent" rule, applied to autonomous kickoff.
+
 ## [3.7.1] - 2026-06-21  (fix: /gsd:version exit code + resilience sweep extension)
 
 ### Fixed
