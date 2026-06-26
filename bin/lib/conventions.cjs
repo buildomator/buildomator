@@ -23,6 +23,14 @@
  *   - Idiom checks (verb-vs-body, architectural-split) are JS/TS rule packs;
  *     on a non-JS/TS file they skip gracefully (D-05) — never an error.
  *   - Every finding is `{ tier:'CONVENTION', blocking:false, ... }` (D-03).
+ *
+ * Known limitation (advisory-tier false negative): the `blankSpans` pre-pass
+ * blanks a template literal's entire span, including any `${...}` interpolation.
+ * Live code inside an interpolation (a call, assignment, or `process.env` read,
+ * e.g. `` `${process.env.TOKEN}` ``) is therefore replaced with spaces and never
+ * seen by verbBodyViolations / classifyArchitecture. The result is silent
+ * under-reporting (a false negative), not a false positive. Accepted for v1;
+ * closing it would require recursing into interpolations as live code.
  */
 
 'use strict';
