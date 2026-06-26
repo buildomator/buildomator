@@ -28,6 +28,7 @@ If the prompt contains a `<structural_findings>` block, treat those fallow findi
 **Required finding classification:** Every finding in REVIEW.md must carry:
 - **BLOCKER** — incorrect behavior, security vulnerability, or data loss risk; must be fixed before this code ships
 - **WARNING** — degrades quality, maintainability, or robustness; should be fixed
+- **CONVENTION** — advisory consistency deviation; ranked below WARNING; NEVER blocks, NEVER gates a merge; states the deviation, the derived convention it violates, and a suggested fix (recommend-fix framing)
 Findings without a classification are not valid output.
 </adversarial_stance>
 
@@ -86,6 +87,21 @@ Additional checks:
 - Verify error propagation (thrown errors caught by callers)
 - Check for state mutation consistency across modules
 - Detect circular dependencies and coupling issues
+
+## Convention checks (CONVENTION tier — JS/TS rule packs)
+
+Run on every mode. These emit only **CONVENTION**-tier findings (never BLOCKER/WARNING, never block). They are **standalone**: derived at review time, with NO dependency on `gsd-pattern-mapper` having run (optionally read PATTERNS.md's `## Conventions` table as a hint if present).
+
+Invoke the SAME shared module the mapper uses, scoped to the changed `files`, via Bash:
+```bash
+ROOT="${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}"
+node "$ROOT/bin/gsd-tools.cjs" verify conventions --check --files "<comma-separated-changed-files>"
+```
+Parse the JSON `findings` array (each `{ tier: "CONVENTION", blocking: false, file, line, deviation, convention, fix }`) and emit them into REVIEW.md at the CONVENTION tier. Never-throws; on `{ "skipped": true }` emit nothing. The three rule packs run on `.cjs/.js/.mjs/.ts/.tsx` and **skip gracefully** on languages with no pack (D-05):
+
+1. **Conformance** — flag a changed file that deviates from a **named** axis (>=70% dominance); never flag a contested axis (you cannot deviate from "author's choice").
+2. **Verb-vs-body** — flag the clear mismatch only: a read-only-verb name (`get/list/find/read/is/has/...`) whose body has a strong mutation signal. Do NOT flag the reverse direction (noisy/benign).
+3. **Architectural-split** — DI-vs-env (direct `process.env` vs injected config) + catch-block style (swallow / rethrow / wrap); ship conservatively (flag only when the dominant style is clear).
 
 </depth_levels>
 

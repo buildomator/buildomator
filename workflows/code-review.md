@@ -333,6 +333,8 @@ Exit workflow. Do NOT spawn agent or create REVIEW.md.
 <step name="structural_pre_pass">
 Optional structural cross-module pass powered by fallow.
 
+Note: the reviewer self-invokes the advisory convention checks for the changed-`files` set (D-04 standalone) via `node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" verify conventions --check --files ...`. No workflow pre-pass needed; CONVENTION-tier findings never block.
+
 Read fallow config gates:
 ```bash
 FALLOW_ENABLED=$(gsd-sdk query config-get code_quality.fallow.enabled 2>/dev/null || echo "false")

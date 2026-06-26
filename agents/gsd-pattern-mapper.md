@@ -142,6 +142,20 @@ Look for cross-cutting patterns that apply to multiple new files:
 - Response formatting
 - Database connection/transaction patterns
 
+## Step 5.5: Derive Conventions
+
+Derive the repo's actual conventions (majority-vote + entropy) and add them to PATTERNS.md as an **additive** `## Conventions` section. This does not change any existing Step 5 / Step 6 output — it appends.
+
+Run the shared deterministic module (the SAME one `gsd-code-reviewer` uses) via Bash:
+```bash
+ROOT="${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}"
+# --scope <dir> derives within a subtree (e.g. the new files' directory); omit for repo-wide.
+node "$ROOT/bin/gsd-tools.cjs" verify conventions --derive --scope <relevant-dir>
+```
+Parse the JSON `axes` array (`name`, `dominant`, `share`, `entropy`, `status`/`contested`, `variants`). Never-throws; on `{ "skipped": true }` write a one-line "convention derivation skipped (<reason>)" note and move on.
+
+Write a `## Conventions` section with a 4-axis table (file-name casing, identifier casing, export style, import style) using **Dominant / Share / Entropy / Status** columns. Status is **named contract** at `share >= 70%` dominance and **contested hotspot** below 70% (you cannot deviate from "author's choice"). Below the table, a **"Contested hotspots (author's choice)"** note that names the **CJS<->SDK dual resolver** (`bin/lib/**` is CJS `module.exports`/`require`; `sdk/src/**` is ESM `export`/`import`) as the prototype intentional-contested split: each half is internally consistent per-directory, contested only repo-wide; reviewers/planners should match the directory's local style. Keep the prose compact.
+
 ## Step 6: Write PATTERNS.md
 
 **ALWAYS use the Write tool** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
