@@ -136,7 +136,7 @@ function blankSpans(src) {
       const quote = c;
       out[i] = c; i++;
       while (i < n && src[i] !== quote) {
-        if (src[i] === '\\') { out[i] = ' '; out[i + 1] = ' '; i += 2; continue; }
+        if (src[i] === '\\') { out[i] = ' '; if (i + 1 < n) out[i + 1] = ' '; i += 2; continue; }
         out[i] = src[i] === '\n' ? '\n' : ' '; i++;
       }
       if (i < n) { out[i] = quote; i++; }
@@ -147,7 +147,7 @@ function blankSpans(src) {
     if (c === '`') {
       out[i] = c; i++;
       while (i < n && src[i] !== '`') {
-        if (src[i] === '\\') { out[i] = ' '; out[i + 1] = ' '; i += 2; continue; }
+        if (src[i] === '\\') { out[i] = ' '; if (i + 1 < n) out[i + 1] = ' '; i += 2; continue; }
         out[i] = src[i] === '\n' ? '\n' : ' '; i++;
       }
       if (i < n) { out[i] = '`'; i++; }
@@ -160,7 +160,7 @@ function blankSpans(src) {
       out[i] = c; i++;
       let inClass = false;
       while (i < n && (src[i] !== '/' || inClass)) {
-        if (src[i] === '\\') { out[i] = ' '; out[i + 1] = ' '; i += 2; continue; }
+        if (src[i] === '\\') { out[i] = ' '; if (i + 1 < n) out[i + 1] = ' '; i += 2; continue; }
         if (src[i] === '[') inClass = true;
         else if (src[i] === ']') inClass = false;
         if (src[i] === '\n') break; // unterminated; bail

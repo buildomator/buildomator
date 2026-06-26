@@ -36,6 +36,15 @@ check('exports the five named functions', () => {
   }
 });
 
+// ─── blankSpans length-preservation invariant (WR-01) ─────────────────────────
+
+check('WR-01 blankSpans preserves length on a literal ending in a trailing backslash', () => {
+  for (const s of ['const x = "abc\\', 'x = /abc\\', '`abc\\']) {
+    assert.strictEqual(conventions.blankSpans(s).length, s.length,
+      `blankSpans must preserve length for ${JSON.stringify(s)}`);
+  }
+});
+
 // ─── classifyCasing ───────────────────────────────────────────────────────────
 
 check('classifyCasing distinguishes kebab/snake/camel/Pascal/CONSTANT/other', () => {
