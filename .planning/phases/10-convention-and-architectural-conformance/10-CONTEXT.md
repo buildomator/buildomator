@@ -57,9 +57,10 @@ Requirements covered: CONV-01, CONV-02, CONV-03, CONV-04.
   `.cjs/.js/.mjs/.ts/.tsx` (the repo's actual stack and where VibeDrift's heuristics are proven).
 
 ### Todo cross-reference
-- **D-06:** The two low-confidence todo matches (`auto-accept-recommended-default-prompts`,
+- **D-06 [informational]:** The two low-confidence todo matches (`auto-accept-recommended-default-prompts`,
   `collapse-plan-phase-upstream-gates`) are **NOT folded** - both are keyword coincidences about
   prompt UX / plan-phase gates, unrelated to consistency drift. Left in pending/ for their own work.
+  Negative decision (nothing to implement) - not a tracked plan requirement.
 
 ### Claude's Discretion
 - Exact dominance threshold (start ~70%, tune on first run against this repo's CJS/SDK halves).

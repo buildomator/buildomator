@@ -63,9 +63,25 @@ the conventions the codebase already exhibits (derived by majority vote, not har
 **Requirements:** CONV-01, CONV-02, CONV-03, CONV-04
 
 **Success criteria:**
+
 1. `gsd-pattern-mapper` writes a Conventions section (identifier casing, file-name casing, export style) to PATTERNS.md, derived by majority vote with an entropy signal.
 2. `gsd-code-reviewer` flags a deliberately convention-violating changed file and passes a conforming one.
 3. Verb-vs-body intent and architectural-split (DI vs env, error-handling) checks run with no new runtime dependency, in the existing review path.
+
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 10-01-PLAN.md — TDD: bin/lib/conventions.cjs (deriveConventions + checkConformance) + tests/conventions.test.cjs (Wave 0 first)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 10-02-PLAN.md — Wire `verify conventions` JSON subcommand (manifest/alias/router/handler) + CI test job
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 10-03-PLAN.md — pattern-mapper Conventions section + code-reviewer CONVENTION tier + code-review.md wiring
 
 ### Phase 11: Drift Detection and Consistency Gate
 
@@ -77,6 +93,7 @@ with a GSD-native fallback so the sweep runs even when VibeDrift is absent.
 **Requirements:** DRIFT-01, DRIFT-02, DRIFT-03, DRIFT-04, DRIFT-05
 
 **Success criteria:**
+
 1. `audit-milestone` runs an optional, config-gated integrity gate that the intentional CJS<->SDK dual resolver does not trip (allowlist verified, suppressions auditable in the report).
 2. `/gsd:scan --drift` produces a ranked drift report on gsd-plugin.
 3. Graceful-degrade proven: the sweep still runs via native checks with VibeDrift uninstalled.

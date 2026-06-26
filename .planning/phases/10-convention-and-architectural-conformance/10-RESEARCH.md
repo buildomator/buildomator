@@ -527,28 +527,27 @@ Mirror `cmdVerifySchemaDrift`'s `output({...}, raw)` JSON contract so the agent 
 | A4 | Per-directory scoping (or surfaced per-directory split) correctly frames the CJS↔SDK resolver as intentional | Pattern 4 / Pitfall 1 | If derivation stays strictly repo-wide, every new bin/lib file is mis-flagged; mitigation is the contested-hotspot note at minimum |
 | A5 | Adding a `verify conventions` subcommand does not require regenerating `command-aliases.generated.cjs` (or that regeneration is a known step) | Runtime State Inventory | A missing alias means the subcommand isn't reachable by its short form; verify during planning |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Derivation scope: per-directory vs repo-wide vs changed-file-subtree.**
-   - What we know: repo-wide makes export/import contested (the dual resolver); per-directory makes
-     each half consistent.
-   - What's unclear: the cleanest API — does `deriveConventions` take a `scope` path, or always
-     derive repo-wide and let the caller pick the relevant directory's axis?
-   - Recommendation: support an optional `scope` (directory subtree); default to the changed file's
-     directory for conformance, repo-wide for the PATTERNS.md overview with the per-directory split
-     surfaced as a hotspot. Decide in planning.
+1. **Derivation scope: per-directory vs repo-wide vs changed-file-subtree.** **RESOLVED (Plan 10-01):**
+   `deriveConventions(files, opts)` takes an optional `opts.scope` directory subtree; conformance
+   defaults to the changed file's directory, the PATTERNS.md overview derives repo-wide with the
+   per-directory split surfaced as a contested hotspot.
 
-2. **Does `gsd-tools.cjs` subcommand addition require alias regeneration?**
-   - What we know: `command-aliases.generated.cjs` and `state-document.generated.cjs` are generated.
-   - What's unclear: whether a new `verify conventions` subcommand needs an alias entry.
-   - Recommendation: check the alias-generation source during planning; if needed, regenerate as a
-     plan task. (See A5.)
+2. **Does `gsd-tools.cjs` subcommand addition require alias regeneration?** **RESOLVED (Plan 10-02):**
+   Yes — `bin/lib/command-aliases.generated.cjs` carries `VERIFY_SUBCOMMANDS` (feeds the
+   unknown-subcommand error list), so `verify.conventions` must be added there mirroring the
+   `verify.schema-drift` entry. CAVEAT (verified during plan-check): the only generator
+   (`sdk/scripts/gen-command-aliases.ts`) emits the SDK `.ts` twin, NOT the `bin/lib` `.cjs`, and
+   the freshness checker `sdk/scripts/check-command-aliases-fresh.mjs` resolves a non-existent
+   `get-shit-done/…command-aliases.generated.cjs` path (pre-existing breakage in this flat plugin
+   layout — out of Phase 10 scope). Plan 10-02 therefore adds the manifest entry + the `.cjs`
+   entry directly and verifies functionally (`verify conventions` routes + `conventions` appears in
+   the subcommand list) rather than via the broken freshness script.
 
 3. **Should the reviewer self-derive every run, or reuse a cached PATTERNS.md derivation?**
-   - What we know: D-04 says reviewer derives at review time (standalone). Re-deriving is cheap
-     (regex over a directory) and avoids stale caches.
-   - Recommendation: self-derive each run; do not depend on PATTERNS.md existing. Optionally read
-     PATTERNS.md's Conventions table as a hint if present, but never require it.
+   **RESOLVED (Plan 10-03, per D-04):** self-derive each run (cheap regex over a directory); never
+   depend on PATTERNS.md existing — optionally read its Conventions table as a hint if present.
 
 ## Environment Availability
 
