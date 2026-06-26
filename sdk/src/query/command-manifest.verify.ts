@@ -12,4 +12,5 @@ export const VERIFY_COMMAND_MANIFEST: readonly CommandManifestEntry[] = [
   { family: 'verify', canonical: 'verify.key-links', aliases: ['verify key-links'], mutation: false, outputMode: 'json' },
   { family: 'verify', canonical: 'verify.schema-drift', aliases: ['verify schema-drift'], mutation: false, outputMode: 'json' },
   { family: 'verify', canonical: 'verify.codebase-drift', aliases: ['verify codebase-drift'], mutation: false, outputMode: 'json' },
+  { family: 'verify', canonical: 'verify.conventions', aliases: ['verify conventions'], mutation: false, outputMode: 'json' },
 ] as const;

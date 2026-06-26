@@ -238,6 +238,14 @@ const VERIFY_COMMAND_ALIASES = [
     ],
     "subcommand": "codebase-drift",
     "mutation": false
+  },
+  {
+    "canonical": "verify.conventions",
+    "aliases": [
+      "verify conventions"
+    ],
+    "subcommand": "conventions",
+    "mutation": false
   }
 ];
 

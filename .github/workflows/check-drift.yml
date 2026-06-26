@@ -52,6 +52,17 @@ jobs:
       - name: Run MCP write-tools end-to-end test
         run: node tests/mcp-write-tools-end-to-end.test.cjs
 
+  conventions:
+    name: Convention derivation + conformance (Phase 10)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run conventions module test
+        run: node tests/conventions.test.cjs
+
   user-docs-jargon:
     name: User-docs jargon ratchet
     runs-on: ubuntu-latest
