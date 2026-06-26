@@ -45,11 +45,11 @@ Reduce GSD's per-turn token overhead and agent spawn latency without breaking mu
 
 ### Active (v1.3 — Consistency & Code-Integrity Safeguards)
 
-Prevention (Phase 10):
-- [ ] **CONV-01** — pattern-mapper writes a derived Conventions section to PATTERNS.md (majority-vote + entropy)
-- [ ] **CONV-02** — code-review flags changed files that deviate from the derived convention
-- [ ] **CONV-03** — code-review runs a verb-vs-body intent check
-- [ ] **CONV-04** — code-review runs an architectural-pattern split check (DI vs env, error handling)
+Prevention (Phase 10) — Validated 2026-06-26:
+- [x] **CONV-01** — pattern-mapper writes a derived Conventions section to PATTERNS.md (majority-vote + entropy)
+- [x] **CONV-02** — code-review flags changed files that deviate from the derived convention
+- [x] **CONV-03** — code-review runs a verb-vs-body intent check
+- [x] **CONV-04** — code-review runs an architectural-pattern split check (DI vs env, error handling)
 
 Detection (Phase 11):
 - [ ] **DRIFT-01** — optional VibeDrift gate (pinned, `--local-only`, graceful-degrade when absent)
@@ -70,6 +70,8 @@ Deferred (not in v1.3): `allowed-tools` on verification skills, tool restriction
 - Offline mode — real-time context is core value
 
 ## Current State
+
+**In progress:** v1.3 Consistency & Code-Integrity Safeguards. Phase 10 (Convention & Architectural Conformance) complete 2026-06-26 — `bin/lib/conventions.cjs` ships as the deterministic single source of truth (derive + conformance, zero-dep, never-throws), wired through `gsd-tools verify conventions` + CI and surfaced via the pattern-mapper Conventions section and the code-reviewer advisory CONVENTION tier. CONV-01..04 validated (12/12 must-haves + both human-UAT items passed). Phase 11 (repo-wide detection) is next.
 
 **Shipped:** v1.2 Upstream Resilience — 2026-04-24. Three detectors now run in CI on every push (file-layout, HANDOFF schema, namespace drift), each with a committed ratchet baseline that hard-fails on regression. Unified `check-drift.cjs` orchestrator + post-sync upstream-schema detector close the loop. Plus a skill-directory rename that fixed a duplicated-prefix UX bug in tab completion. Full v1.2 details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md).
 
@@ -152,4 +154,4 @@ This document evolves at phase transitions and milestone boundaries.
 9. **Run `UPSTREAM_VERSION=v1.x.y node bin/maintenance/check-upstream-schema.cjs`** (use the just-synced version) — must exit 0 before declaring the sync complete. If upstream added fields, decide whether to absorb them into `schema/handoff-v1.json` as optional or bump to a `handoff-v2.json` alongside
 
 ---
-*Last updated: 2026-06-26 — formalized milestone v1.3 Consistency & Code-Integrity Safeguards (requirements CONV-01..04, DRIFT-01..05 mapped to Phases 10-11; roadmap was scoped earlier the same day via /gsd:explore). Prior: 2026-05-11 synced upstream GSD 1.41.2 (plugin v2.42.4) — state-mutation data-loss fixes, verifier hardening (TBD/FIXME/XXX rejection + direct probe execution), executor stall detection, phase remove --force renumbering fix, Codex/Gemini/Windows install hardening, detect-custom-files scanning skills/. Bundled SDK still v1.50.0-canary.0.*
+*Last updated: 2026-06-26 — Phase 10 (Convention & Architectural Conformance) complete: CONV-01..04 validated, conventions module + verify subcommand + agent/review wiring shipped. Earlier same day: formalized milestone v1.3 Consistency & Code-Integrity Safeguards (requirements CONV-01..04, DRIFT-01..05 mapped to Phases 10-11; roadmap was scoped via /gsd:explore). Prior: 2026-05-11 synced upstream GSD 1.41.2 (plugin v2.42.4) — state-mutation data-loss fixes, verifier hardening (TBD/FIXME/XXX rejection + direct probe execution), executor stall detection, phase remove --force renumbering fix, Codex/Gemini/Windows install hardening, detect-custom-files scanning skills/. Bundled SDK still v1.50.0-canary.0.*
