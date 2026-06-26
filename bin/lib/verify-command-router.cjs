@@ -24,6 +24,18 @@ function routeVerifyCommand({ verify, args, cwd, raw, error }) {
     verify.cmdVerifySchemaDrift(cwd, phaseArg, skipFlag, raw);
   } else if (subcommand === 'codebase-drift') {
     verify.cmdVerifyCodebaseDrift(cwd, raw);
+  } else if (subcommand === 'conventions') {
+    // Parse --derive / --check / --scope <value> / --files <value> into opts.
+    const rest = args.slice(2);
+    const parsedOpts = { derive: false, check: false, scope: undefined, files: undefined };
+    for (let i = 0; i < rest.length; i++) {
+      const a = rest[i];
+      if (a === '--derive') parsedOpts.derive = true;
+      else if (a === '--check') parsedOpts.check = true;
+      else if (a === '--scope') parsedOpts.scope = rest[++i];
+      else if (a === '--files') parsedOpts.files = rest[++i];
+    }
+    verify.cmdVerifyConventions(cwd, parsedOpts, raw);
   } else {
     error(`Unknown verify subcommand. Available: ${VERIFY_SUBCOMMANDS.join(', ')}`);
   }

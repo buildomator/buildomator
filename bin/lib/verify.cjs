@@ -1396,6 +1396,140 @@ function cmdVerifyCodebaseDrift(cwd, raw) {
   }
 }
 
+// ─── Convention Conformance (Phase 10, plan 10-02) ───────────────────────────
+
+/**
+ * Wrap bin/lib/conventions.cjs (the single deterministic source of truth from
+ * 10-01) as a JSON subcommand. Two modes:
+ *   --derive --scope <dir>     -> scan the scope corpus, emit { mode:'derive', axes, skipped }
+ *   --check  --files a,b,c     -> read each file, emit { mode:'check', findings, skipped }
+ *
+ * Never-exit-nonzero contract (mirrors cmdVerifyCodebaseDrift, T-10-05): every
+ * failure / usage / bad-input path emits a `{ skipped:true, reason }` JSON via
+ * the output() wrapper and returns 0, so the review/plan gate can never fail the
+ * phase. Path args are run through the module's sanitizePaths (T-10-04, V5).
+ *
+ * @param {string} cwd
+ * @param {Object} opts - { derive?, check?, scope?, files? }
+ * @param {boolean} raw
+ */
+function cmdVerifyConventions(cwd, opts, raw) {
+  const emit = (payload) => output(payload, raw);
+
+  try {
+    const conventions = require('./conventions.cjs');
+    const o = opts && typeof opts === 'object' ? opts : {};
+
+    if (o.derive) {
+      // Build the scope corpus by walking the scope dir (or cwd) for files.
+      const scope = typeof o.scope === 'string' && o.scope ? o.scope : '.';
+      const safeScope = conventions.sanitizePaths([scope])[0];
+      if (scope !== '.' && !safeScope) {
+        emit({ mode: 'derive', skipped: true, reason: 'unsafe-scope', axes: [] });
+        return;
+      }
+      const root = scope === '.' ? cwd : path.resolve(cwd, scope);
+      let corpus;
+      try {
+        corpus = collectConventionCorpus(root, cwd);
+      } catch (err) {
+        emit({ mode: 'derive', skipped: true, reason: 'scope-walk-failed: ' + err.message, axes: [] });
+        return;
+      }
+      if (corpus.length === 0) {
+        emit({ mode: 'derive', skipped: true, reason: 'no-readable-files', axes: [] });
+        return;
+      }
+      const result = conventions.deriveConventions(corpus, { cwd });
+      emit({ mode: 'derive', axes: result.axes || [], skipped: result.skipped || false, reason: result.reason || null });
+      return;
+    }
+
+    if (o.check) {
+      const csv = typeof o.files === 'string' ? o.files : '';
+      const requested = csv.split(',').map((s) => s.trim()).filter(Boolean);
+      const safe = conventions.sanitizePaths(requested);
+      if (safe.length === 0) {
+        emit({ mode: 'check', skipped: true, reason: 'no-safe-files', findings: [] });
+        return;
+      }
+      const changedFiles = [];
+      for (const rel of safe) {
+        try {
+          const full = path.resolve(cwd, rel);
+          const stat = fs.statSync(full);
+          if (!stat.isFile()) continue;
+          changedFiles.push({ file: rel, src: fs.readFileSync(full, 'utf8') });
+        } catch {
+          // unreadable file: skip it, do not fail the run
+        }
+      }
+      if (changedFiles.length === 0) {
+        emit({ mode: 'check', skipped: true, reason: 'no-readable-files', findings: [] });
+        return;
+      }
+      // Derive the contract from the directories the changed files live in, so
+      // conformance is judged against the surrounding corpus (not just the
+      // changed files themselves).
+      const scopeDirs = new Set(changedFiles.map((c) => path.posix.dirname(c.file.replace(/\\/g, '/'))));
+      const corpus = [];
+      for (const dir of scopeDirs) {
+        try {
+          corpus.push(...collectConventionCorpus(path.resolve(cwd, dir), cwd));
+        } catch {
+          // ignore an unreadable scope dir
+        }
+      }
+      const derived = conventions.deriveConventions(corpus.length ? corpus : changedFiles.map((c) => c.file), { cwd });
+      const result = conventions.checkConformance(changedFiles, derived);
+      emit({ mode: 'check', findings: result.findings || [], skipped: result.skipped || false, reason: result.reason || null });
+      return;
+    }
+
+    // No mode flag: usage skip (never an error / non-zero exit).
+    emit({ skipped: true, reason: 'usage: verify conventions --derive --scope <dir> | --check --files a,b,c' });
+  } catch (err) {
+    emit({ skipped: true, reason: 'exception: ' + (err && err.message ? err.message : String(err)), axes: [], findings: [] });
+  }
+}
+
+/**
+ * Collect repo-relative source paths under `root` for convention derivation.
+ * Bounded, never throws to the caller's emit contract beyond its own try. Skips
+ * dot-dirs, node_modules, and non-source files; returns paths relative to cwd so
+ * the module's sanitizePaths + reads line up.
+ * @param {string} root - absolute directory to walk
+ * @param {string} cwd - absolute repo root for relativization
+ * @returns {string[]}
+ */
+function collectConventionCorpus(root, cwd) {
+  const SRC_RE = /\.(c|m)?[jt]sx?$/;
+  const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'coverage']);
+  const out = [];
+  const stack = [root];
+  let budget = 5000; // bounded walk
+  while (stack.length && budget-- > 0) {
+    const dir = stack.pop();
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const ent of entries) {
+      if (ent.name.startsWith('.')) continue;
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) {
+        if (!SKIP_DIRS.has(ent.name)) stack.push(full);
+      } else if (ent.isFile() && SRC_RE.test(ent.name)) {
+        const rel = path.relative(cwd, full).split(path.sep).join('/');
+        out.push(rel);
+      }
+    }
+  }
+  return out;
+}
+
 module.exports = {
   cmdVerifySummary,
   cmdVerifyPlanStructure,
@@ -1409,4 +1543,5 @@ module.exports = {
   cmdValidateAgents,
   cmdVerifySchemaDrift,
   cmdVerifyCodebaseDrift,
+  cmdVerifyConventions,
 };

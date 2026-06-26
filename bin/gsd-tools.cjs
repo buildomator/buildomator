@@ -113,6 +113,7 @@
  *   verify key-links <plan-file>       Check must_haves.key_links
  *   verify schema-drift <phase> [--skip]  Detect schema file changes without push
  *   verify codebase-drift                Detect structural drift since last codebase map (#2003)
+ *   verify conventions --derive|--check  Derive/check convention conformance (advisory JSON, never blocking)
  *
  * Template Fill:
  *   template fill summary --phase N    Create pre-filled SUMMARY.md
