@@ -42,23 +42,44 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 </details>
 
-<details open>
-<summary>v1.3 Consistency & Code-Integrity Safeguards (Phases 10-11) — SCOPED 2026-06-26</summary>
+**v1.3 Consistency & Code-Integrity Safeguards (Phases 10-11) — SCOPED 2026-06-26 (active)**
 
 Addresses **cross-session drift**: independent agent sessions, no shared memory, produce
 locally-reasonable but globally-inconsistent code (duplicate logic under different names,
 oscillating naming conventions, split architectural patterns, half-finished stubs). Two
-complementary tracks — prevention stops new drift, detection reconciles existing drift.
+complementary tracks: prevention stops new drift, detection reconciles existing drift.
 Origin: `/gsd:explore` session 2026-06-26. VibeDrift v0.14.0 empirically evaluated on 4 repos
-(see `milestones/v1.3-ROADMAP.md` and `references/` for findings: adopt as optional external
-gate + cherry-pick its heuristics; do not vendor).
+(see [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md) for findings: adopt as optional
+external gate + cherry-pick its heuristics; do not vendor).
 
-- [ ] Phase 10: Prevention — convention/architectural conformance in plan -> execute -> review
-- [ ] Phase 11: Detection — consistency sweep + optional VibeDrift gate in the pre-1.0 ceremony
+- [ ] Phase 10: Convention and Architectural Conformance
+- [ ] Phase 11: Drift Detection and Consistency Gate
 
-Full details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
+### Phase 10: Convention and Architectural Conformance
 
-</details>
+**Goal:** Stop a new file from introducing cross-session convention/architectural drift, using
+the conventions the codebase already exhibits (derived by majority vote, not hardcoded).
+
+**Requirements:** CONV-01, CONV-02, CONV-03, CONV-04
+
+**Success criteria:**
+1. `gsd-pattern-mapper` writes a Conventions section (identifier casing, file-name casing, export style) to PATTERNS.md, derived by majority vote with an entropy signal.
+2. `gsd-code-reviewer` flags a deliberately convention-violating changed file and passes a conforming one.
+3. Verb-vs-body intent and architectural-split (DI vs env, error-handling) checks run with no new runtime dependency, in the existing review path.
+
+### Phase 11: Drift Detection and Consistency Gate
+
+**Goal:** Surface existing cross-session drift repo-wide and gate the pre-1.0 release ceremony,
+with a GSD-native fallback so the sweep runs even when VibeDrift is absent.
+
+**Depends on:** Phase 10 (reuses the convention-extraction logic in the native fallback)
+
+**Requirements:** DRIFT-01, DRIFT-02, DRIFT-03, DRIFT-04, DRIFT-05
+
+**Success criteria:**
+1. `audit-milestone` runs an optional, config-gated integrity gate that the intentional CJS<->SDK dual resolver does not trip (allowlist verified, suppressions auditable in the report).
+2. `/gsd:scan --drift` produces a ranked drift report on gsd-plugin.
+3. Graceful-degrade proven: the sweep still runs via native checks with VibeDrift uninstalled.
 
 ### v1.3 carried backlog (still deferred, NOT in this milestone)
 
