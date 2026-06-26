@@ -225,7 +225,13 @@ function observeFile(file, src) {
     obs['identifier-casing'][label] = (obs['identifier-casing'][label] || 0) + 1;
   }
 
-  // export style (CJS vs ESM), per file → count once each direction present
+  // export style (CJS vs ESM), per file → count once each direction present.
+  // NOTE (per-file vote): export/import axes record `= 1` per direction per file
+  // regardless of occurrence count (a file with 30 require() calls still votes
+  // cjs:1). With minSamples=8 these two axes therefore need 8+ FILES in scope to
+  // be named — not 8 occurrences — so a single overwhelming file stays
+  // insufficient-data, and a --check on one changed file never names them. This
+  // deliberately stops one large file from dominating the verdict.
   const hasCjsExport = /\bmodule\.exports\b/.test(blanked) || /\bexports\.[A-Za-z_$]/.test(blanked);
   const hasEsmExport = /\bexport\s+(default\s+|const\s+|function\s+|class\s+|\{|\*)/.test(blanked);
   if (hasCjsExport) obs['export-style'].cjs = 1;
