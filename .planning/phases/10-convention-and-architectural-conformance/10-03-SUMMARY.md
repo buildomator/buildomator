@@ -71,3 +71,7 @@ All threat-register dispositions held without added code: T-10-07 (tier pinned b
 ## Notes for Next Phase
 
 Phase 11 (detection) reuses the same `bin/lib/conventions.cjs` module for its native fallback; the contested-hotspot list the mapper writes (CJS<->SDK resolver) is the seed for repo-wide drift detection. Manual UAT per VALIDATION.md (a real `/gsd:code-review` run on a convention-violating file surfacing a non-blocking CONVENTION finding) remains a phase-gate check.
+
+## Self-Check: PASSED
+
+All modified files exist on disk; all three commits (169e00d, 27b0f60, 9b30cbc) are in git history; working tree clean.
