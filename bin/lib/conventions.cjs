@@ -353,7 +353,6 @@ function classifyArchitecture(src) {
       else if (ch === '}') depth--;
       j++;
     }
-    const body = src.slice(bodyStart, j - 1);
     const blankedBody = blanked.slice(bodyStart, j - 1);
     let style;
     if (/\bthrow\s+new\b/.test(blankedBody) || /\bcause\b/.test(blankedBody)) style = 'wrap';
@@ -361,7 +360,6 @@ function classifyArchitecture(src) {
     else if (/\S/.test(blankedBody.replace(/\bconsole\.[a-z]+\s*\([^)]*\)\s*;?/g, ''))) style = 'swallow-partial';
     else style = 'swallow';
     catchStyles.push({ style, line: lineOf(src, bodyStart) });
-    void body;
   }
   return { envStyle, catchStyles };
 }
