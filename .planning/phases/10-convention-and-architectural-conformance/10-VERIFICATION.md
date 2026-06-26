@@ -1,10 +1,11 @@
 ---
 phase: 10-convention-and-architectural-conformance
 verified: 2026-06-26T00:00:00Z
-status: human_needed
+status: passed
 score: 12/12 must-haves verified
 has_blocking_gaps: false
 overrides_applied: 0
+human_verification_resolved: "2026-06-26 — both items PASSED via UAT; see 10-HUMAN-UAT.md (10-UAT-REVIEW.md, 10-UAT-PATTERNS.md)"
 human_verification:
   - test: "Run a real /gsd:code-review on a branch containing a deliberately convention-violating changed JS/TS file"
     expected: "An advisory CONVENTION-tier finding appears in REVIEW.md (states deviation + derived convention + suggested fix) and does NOT block or gate the review"
