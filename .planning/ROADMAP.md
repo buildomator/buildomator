@@ -52,7 +52,7 @@ Origin: `/gsd:explore` session 2026-06-26. VibeDrift v0.14.0 empirically evaluat
 (see [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md) for findings: adopt as optional
 external gate + cherry-pick its heuristics; do not vendor).
 
-- [ ] Phase 10: Convention and Architectural Conformance
+- [x] Phase 10: Convention and Architectural Conformance (completed 2026-06-26)
 - [ ] Phase 11: Drift Detection and Consistency Gate
 
 ### Phase 10: Convention and Architectural Conformance
@@ -68,7 +68,7 @@ the conventions the codebase already exhibits (derived by majority vote, not har
 2. `gsd-code-reviewer` flags a deliberately convention-violating changed file and passes a conforming one.
 3. Verb-vs-body intent and architectural-split (DI vs env, error-handling) checks run with no new runtime dependency, in the existing review path.
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -81,7 +81,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 10-03-PLAN.md — pattern-mapper Conventions section + code-reviewer CONVENTION tier + code-review.md wiring
+- [x] 10-03-PLAN.md — pattern-mapper Conventions section + code-reviewer CONVENTION tier + code-review.md wiring
 
 ### Phase 11: Drift Detection and Consistency Gate
 
