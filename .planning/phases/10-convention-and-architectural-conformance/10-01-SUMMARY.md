@@ -108,6 +108,15 @@ None. The module is fully wired against in-memory and real-file inputs. The only
 - Plan 10-03 wires the two agents (pattern-mapper Step 5.5, code-reviewer CONVENTION tier) to call this module via Bash.
 - No blockers.
 
+## Self-Check: PASSED
+
+- FOUND: bin/lib/conventions.cjs
+- FOUND: tests/conventions.test.cjs
+- FOUND: .planning/phases/10-convention-and-architectural-conformance/10-01-SUMMARY.md
+- FOUND commit: 0cea9a5 (test RED)
+- FOUND commit: 7785e76 (feat GREEN)
+- FOUND commit: 7dab124 (docs SUMMARY)
+
 ---
 *Phase: 10-convention-and-architectural-conformance*
 *Completed: 2026-06-26*
