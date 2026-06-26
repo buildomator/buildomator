@@ -68,7 +68,7 @@ the conventions the codebase already exhibits (derived by majority vote, not har
 2. `gsd-code-reviewer` flags a deliberately convention-violating changed file and passes a conforming one.
 3. Verb-vs-body intent and architectural-split (DI vs env, error-handling) checks run with no new runtime dependency, in the existing review path.
 
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 **Wave 1**
@@ -77,7 +77,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 10-02-PLAN.md — Wire `verify conventions` JSON subcommand (manifest/alias/router/handler) + CI test job
+- [x] 10-02-PLAN.md — Wire `verify conventions` JSON subcommand (manifest/alias/router/handler) + CI test job
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
