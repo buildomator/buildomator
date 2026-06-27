@@ -64,40 +64,19 @@ Added a row to the "Added features beyond upstream" table describing the VibeDri
 
 None of the core acceptance criteria were affected -- the npm view primitive is the authoritative version source; the GitHub call is purely additive.
 
-## Task 3: DEFERRED HUMAN-ACTION
+## Task 3: HUMAN-ACTION (installed during execution, crontab paste pending)
 
-Task 3 (install + seed the VibeDrift cron entry on the maintainer's machine) is **DEFERRED** per plan guidance ("Deferring is acceptable -- the script is committed and ready; just note it deferred").
+The maintainer chose "Install now" at the Phase 11 Wave 1 checkpoint. The orchestrator performed the machine-state install steps:
 
-The executor cannot touch the maintainer's machine state. The script is committed at `bin/check-vibedrift-release.sh` and ready to install.
+1. **Seeded** `~/.vibedrift-last-known-version` = `0.14.4` (from `npm view @vibedrift/cli version` — the package is published, real version pulled). First cron run will fire no spurious email.
+2. **Copied** the script to the live cron bin: `~/claude-code-gsd/bin/check-vibedrift-release.sh` (alongside the existing `check-gsd-release.sh`), `chmod +x` applied.
+3. **Dry-ran** `bash ~/claude-code-gsd/bin/check-vibedrift-release.sh` → `exit=0`, no email (clean).
 
-**Maintainer install steps (run manually when ready):**
-
-1. Seed the version file so the first cron run fires NO spurious email:
-   ```
-   npm view @vibedrift/cli version > ~/.vibedrift-last-known-version
-   cat ~/.vibedrift-last-known-version
-   ```
-   (confirm it shows a version string like `0.14.0`)
-
-2. Copy the script to the live cron location (matching wherever `check-gsd-release.sh` lives):
-   ```
-   cp bin/check-vibedrift-release.sh ~/claude-code-gsd/
-   ```
-
-3. Add a crontab entry parallel to the existing gsd-release check:
-   ```
-   crontab -e
-   ```
-   Add a line like:
-   ```
-   0 * * * * ~/claude-code-gsd/check-vibedrift-release.sh
-   ```
-
-4. Dry-run to confirm a clean no-mail exit on the seeded version:
-   ```
-   bash ~/claude-code-gsd/check-vibedrift-release.sh; echo "exit=$?"
-   ```
-   Expect: exit=0, no email sent.
+**Remaining (maintainer paste — crontab edit kept manual):**
+```
+( crontab -l 2>/dev/null; echo '23 * * * * /Users/jnuyens/claude-code-gsd/bin/check-vibedrift-release.sh' ) | crontab -
+```
+Offset to :23 so it does not fire simultaneously with the existing gsd watch (:17). Until this line is added the watch is staged but not yet scheduled.
 
 ## Verification
 
