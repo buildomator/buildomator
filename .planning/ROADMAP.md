@@ -100,14 +100,14 @@ VibeDrift is treated as a second upstream whose heuristics are ported and watche
 2. `/gsd:scan --drift` produces a ranked drift report on gsd-plugin.
 3. Native-primary proven: the sweep runs entirely via native checks (zero runtime dep, VibeDrift never invoked).
 
-**Plans:** 2/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
 **Wave 1**
 
 - [x] 11-01-PLAN.md — TDD: bin/lib/semantic-dup.cjs (MinHash+LCS structural near-clone) + tests + calibration on gsd-plugin
 - [x] 11-02-PLAN.md — TDD: bin/lib/phantom-scaffolding.cjs + bin/lib/drift-allowlist.cjs + committed .gsd/drift-allowlist.json + .vibedriftignore + tests
-- [ ] 11-03-PLAN.md — VibeDrift second-upstream watch (bin/check-vibedrift-release.sh) + README + cron-install checkpoint (autonomous:false)
+- [x] 11-03-PLAN.md — VibeDrift second-upstream watch (bin/check-vibedrift-release.sh) + README + cron-install checkpoint (autonomous:false)
 
 **Wave 2** *(blocked on 11-01 + 11-02)*
 

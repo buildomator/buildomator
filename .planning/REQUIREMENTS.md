@@ -16,7 +16,7 @@ Cross-session drift is the failure mode this milestone targets: independent agen
 
 ### Drift Detection (Detection — Phase 11)
 
-- [ ] **DRIFT-01**: drift detection is 100% native — GSD never calls the `vibedrift` CLI at runtime; VibeDrift is treated as a second upstream project whose heuristics are ported natively and whose repo is added to the periodic upstream-watch for future cherry-picks (pin v0.14.0 as the idea baseline). [Reworded 2026-06-27 per Phase 11 discuss — supersedes the earlier "optional external gate" framing]
+- [x] **DRIFT-01**: drift detection is 100% native — GSD never calls the `vibedrift` CLI at runtime; VibeDrift is treated as a second upstream project whose heuristics are ported natively and whose repo is added to the periodic upstream-watch for future cherry-picks (pin v0.14.0 as the idea baseline). [Reworded 2026-06-27 per Phase 11 discuss — supersedes the earlier "optional external gate" framing]
 - [ ] **DRIFT-02**: audit-milestone runs a config-gated (opt-in, OFF by default), warn-first pre-1.0 integrity gate with recommended-fix framing; `--fail-on-score N` is an explicit escalation to a hard exit-code gate, never imposed by default
 - [x] **DRIFT-03**: a committed, pre-seeded intentional-duplication allowlist (reusing the `.vibedrift` format for upstream-portability) suppresses the CJS<->SDK dual resolver while keeping suppressions auditable via the report
 - [ ] **DRIFT-04**: `/gsd:scan --drift` produces a ranked top-N markdown report to stdout (lighter than `map-codebase`)
@@ -56,7 +56,7 @@ Deferred to a later milestone. Tracked but not in the v1.3 roadmap.
 | CONV-02 | Phase 10 | Pending |
 | CONV-03 | Phase 10 | Pending |
 | CONV-04 | Phase 10 | Pending |
-| DRIFT-01 | Phase 11 | Pending |
+| DRIFT-01 | Phase 11 | Complete |
 | DRIFT-02 | Phase 11 | Pending |
 | DRIFT-03 | Phase 11 | Complete |
 | DRIFT-04 | Phase 11 | Pending |
