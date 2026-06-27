@@ -43,22 +43,16 @@ Reduce GSD's per-turn token overhead and agent spawn latency without breaking mu
 - ✓ Skill directories renamed `skills/gsd-<name>/` → `skills/<name>/` — fixed duplicated `/gsd:gsd-<skill>` prefix in tab completion — v1.2 quick task 260424-srn
 - ✓ PostToolUse periodic checkpoint bridges Claude Code's microcompact gap — file-mutation tool calls trigger a fresh HANDOFF write (throttled to once per 60s) so resume reflects recent state even when only microcompact (not PreCompact) has run — quick task 260425-mct
 
-### Active (v1.3 — Consistency & Code-Integrity Safeguards)
+- ✓ Convention and architectural conformance gate: pattern-mapper Conventions section + code-review convention/verb-vs-body/architectural-split checks, zero new runtime dep (CONV-01..04) — v4.0.0 (Phase 10)
+- ✓ Native drift detection: MinHash+LCS structural-dup, phantom/placeholder, and conventions reuse via `verify drift`; ranked `/gsd:scan --drift`; opt-in warn-first audit-milestone integrity gate; committed auditable allowlist + `.vibedriftignore` (DRIFT-02..05) — v4.0.0 (Phase 11)
+- ✓ VibeDrift adopted as a second upstream: heuristics ported natively (pinned v0.14.0 baseline), repo watched, never invoked at runtime (DRIFT-01) — v4.0.0 (Phase 11)
+- ✓ Weekly plugin self-update watch + CJS/SDK config-schema parity guard — v4.0.0
 
-Prevention (Phase 10) — Validated 2026-06-26:
-- [x] **CONV-01** — pattern-mapper writes a derived Conventions section to PATTERNS.md (majority-vote + entropy)
-- [x] **CONV-02** — code-review flags changed files that deviate from the derived convention
-- [x] **CONV-03** — code-review runs a verb-vs-body intent check
-- [x] **CONV-04** — code-review runs an architectural-pattern split check (DI vs env, error handling)
+### Active
 
-Detection (Phase 11):
-- [ ] **DRIFT-01** — optional VibeDrift gate (pinned, `--local-only`, graceful-degrade when absent)
-- [ ] **DRIFT-02** — config-gated pre-1.0 integrity gate in audit-milestone (`--fail-on-score`)
-- [ ] **DRIFT-03** — intentional-duplication allowlist suppresses the CJS<->SDK dual resolver, auditably
-- [ ] **DRIFT-04** — `/gsd:scan --drift` produces a ranked drift report
-- [ ] **DRIFT-05** — native fallback heuristics run when VibeDrift is absent
+No active requirements: v1.3 shipped as plugin **v4.0.0** (2026-06-27). Scope the next milestone via `/gsd:new-milestone`.
 
-Deferred (not in v1.3): `allowed-tools` on verification skills, tool restriction profiles, empirical token measurement.
+Deferred (carried to ROADMAP `## Backlog`): LIFE-02, LIFE-03, BEHAVIOR-01, UPST-03/04. Also deferred: `allowed-tools` on verification skills, tool restriction profiles, empirical token measurement.
 
 ### Out of Scope
 
@@ -71,27 +65,21 @@ Deferred (not in v1.3): `allowed-tools` on verification skills, tool restriction
 
 ## Current State
 
-**In progress:** v1.3 Consistency & Code-Integrity Safeguards. Phase 10 (Convention & Architectural Conformance) complete 2026-06-26 — `bin/lib/conventions.cjs` ships as the deterministic single source of truth (derive + conformance, zero-dep, never-throws), wired through `gsd-tools verify conventions` + CI and surfaced via the pattern-mapper Conventions section and the code-reviewer advisory CONVENTION tier. CONV-01..04 validated (12/12 must-haves + both human-UAT items passed). Phase 11 (repo-wide detection) is next.
+**Shipped:** v1.3 Consistency & Code-Integrity Safeguards, released as plugin **v4.0.0** (2026-06-27). Phase 10 delivered the convention conformance gate (`bin/lib/conventions.cjs` + `verify conventions` + pattern-mapper/code-review wiring, CONV-01..04). Phase 11 delivered native drift detection (`semantic-dup` + `phantom-scaffolding` + `drift-allowlist` composed via `verify drift`), `/gsd:scan --drift`, the opt-in warn-first audit-milestone integrity gate, and VibeDrift adopted as a second upstream (heuristics ported natively, never invoked at runtime). DRIFT-01..05 validated; both phases nyquist-compliant. v4.0.0 also moved the plugin to its own version line (decoupled from the gsd-core `+2` scheme). Full v1.3 details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md).
 
 **Shipped:** v1.2 Upstream Resilience — 2026-04-24. Three detectors now run in CI on every push (file-layout, HANDOFF schema, namespace drift), each with a committed ratchet baseline that hard-fails on regression. Unified `check-drift.cjs` orchestrator + post-sync upstream-schema detector close the loop. Plus a skill-directory rename that fixed a duplicated-prefix UX bug in tab completion. Full v1.2 details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md).
 
 **Previously shipped:** v1.1 Session Continuity (2026-04-20) — checkpoint/resume across `/compact`; details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md). v1.0 MVP (2026-04-06) — plugin packaging + MCP + memory; details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md).
 
-## Current Milestone: v1.3 Consistency & Code-Integrity Safeguards
+## Current Milestone
 
-**Goal:** Catch cross-session drift — duplicate logic under different names, oscillating naming conventions, split architectural patterns, and half-finished stubs — through prevention at authoring time and detection repo-wide.
+None active. v1.3 Consistency & Code-Integrity Safeguards shipped 2026-06-27 as plugin **v4.0.0**. Run `/gsd:new-milestone` to scope the next one. Archived roadmap: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md); requirements: [milestones/v1.3-REQUIREMENTS.md](milestones/v1.3-REQUIREMENTS.md).
 
-**Target features:**
-- Convention/architectural conformance in plan -> execute -> review (Phase 10): pattern-mapper emits a derived Conventions section; code-review gains conformance, verb-vs-body, and architectural-split dimensions.
-- Repo-wide drift detection (Phase 11): a consistency sweep plus an optional, config-gated VibeDrift gate with an intentional-duplication allowlist and a GSD-native fallback.
-
-**Scoped:** 2026-06-26 via `/gsd:explore`; requirements formalized via `/gsd:new-milestone`. Roadmap: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md). Requirements: [REQUIREMENTS.md](REQUIREMENTS.md).
-
-Carried backlog (still deferred, not in v1.3):
-- **LIFE-02** — staleness threshold detection for HANDOFF.json
-- **LIFE-03** — dedicated `/gsd:checkpoint` skill (optional polish; manual path already works)
-- **BEHAVIOR-01** — integration tests for upstream skill behavior drift (needs integration-test infra)
-- **UPST-03/04** — upstream PR packaging (blocked on upstream-direction review)
+Carried backlog (see ROADMAP `## Backlog`, surfaces at next `/gsd:new-milestone`):
+- **LIFE-02**: staleness threshold detection for HANDOFF.json
+- **LIFE-03**: dedicated `/gsd:checkpoint` skill (optional polish; manual path already works)
+- **BEHAVIOR-01**: integration tests for upstream skill behavior drift (needs integration-test infra)
+- **UPST-03/04**: upstream PR packaging (blocked on upstream-direction review)
 
 ## Context
 
@@ -101,7 +89,7 @@ Shipped v1.2 with 3 phases, 3 plans, 14 tasks, plus 3 structurally related quick
 Tech stack: Node.js CJS (bin/lib), MCP server (stdio JSON-RPC), Claude Code plugin system.
 ~14k LOC in bin/*.cjs, ~573 LOC MCP server, 81 self-contained skill files (~21k LOC).
 Published as [jnuyens/gsd-plugin](https://github.com/jnuyens/gsd-plugin) on GitHub.
-Based on [GSD 1.41.2](https://github.com/gsd-build/get-shit-done) by TACHES (Lex Christopherson).
+Based on the [GSD](https://github.com/open-gsd/gsd-core) base tree by TÂCHES (Lex Christopherson), now community-maintained at open-gsd; selectively cherry-picked from the gsd-core 1.x line. As of v4.0.0 the plugin tracks its own version line.
 
 ## Constraints
 
@@ -123,6 +111,8 @@ Based on [GSD 1.41.2](https://github.com/gsd-build/get-shit-done) by TACHES (Lex
 | Lightweight MCP transport | Custom stdio JSON-RPC instead of full SDK in plugin | ✓ Good — reduces dependency footprint |
 | memdir project-type memories | Lean phase memories with Why:/How to apply: structure | ✓ Good — auto-recalled by Claude Code's existing pipeline |
 | Plugin hooks via hooks/hooks.json | Auto-loaded by plugin loader, not manifest.hooks | ✓ Good — avoids duplicate registration |
+| VibeDrift as a second upstream (native port, never run) | Keep drift detection 100% native/zero-dep while still learning from VibeDrift heuristics | ✓ Good — DRIFT-01; ops-only release watch, nothing on the runtime path (v4.0.0) |
+| Plugin on its own version line (v4.0.0) | A second upstream plus features with no upstream equivalent make a gsd-core-coupled major misleading | ✓ Good — major now signals plugin milestones; gsd-core line noted per release for provenance |
 
 ## Evolution
 
@@ -154,4 +144,4 @@ This document evolves at phase transitions and milestone boundaries.
 9. **Run `UPSTREAM_VERSION=v1.x.y node bin/maintenance/check-upstream-schema.cjs`** (use the just-synced version) — must exit 0 before declaring the sync complete. If upstream added fields, decide whether to absorb them into `schema/handoff-v1.json` as optional or bump to a `handoff-v2.json` alongside
 
 ---
-*Last updated: 2026-06-26 — Phase 10 (Convention & Architectural Conformance) complete: CONV-01..04 validated, conventions module + verify subcommand + agent/review wiring shipped. Earlier same day: formalized milestone v1.3 Consistency & Code-Integrity Safeguards (requirements CONV-01..04, DRIFT-01..05 mapped to Phases 10-11; roadmap was scoped via /gsd:explore). Prior: 2026-05-11 synced upstream GSD 1.41.2 (plugin v2.42.4) — state-mutation data-loss fixes, verifier hardening (TBD/FIXME/XXX rejection + direct probe execution), executor stall detection, phase remove --force renumbering fix, Codex/Gemini/Windows install hardening, detect-custom-files scanning skills/. Bundled SDK still v1.50.0-canary.0.*
+*Last updated: 2026-06-27 after the v1.3 milestone shipped as plugin v4.0.0. Phase 10 (convention conformance gate, CONV-01..04) + Phase 11 (native drift detection, VibeDrift second upstream, DRIFT-01..05); both nyquist-compliant. Plugin moved to its own version line (decoupled from the gsd-core +2 scheme). Added a weekly plugin self-update watch and a CJS/SDK config-schema parity guard. Prior: 2026-06-26 Phase 10 complete; 2026-05-11 synced upstream GSD 1.41.2 (plugin v2.42.4). Bundled SDK v1.50.0-canary.0.*

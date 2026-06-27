@@ -47,6 +47,39 @@
 
 ---
 
+## Milestone: v1.3 — Consistency & Code-Integrity Safeguards
+
+**Shipped:** 2026-06-27 (released as plugin v4.0.0)
+**Phases:** 2 (Phases 10-11) | **Plans:** 8
+
+### What Was Built
+A convention conformance gate (`conventions.cjs` + `verify conventions`, derived by majority vote with entropy, wired into pattern-mapper and code-review) and native, zero-dependency drift detection (MinHash+LCS structural-dup, phantom/placeholder scaffolding, an auditable allowlist) surfaced via `verify drift`, `/gsd:scan --drift`, and an opt-in audit-milestone integrity gate. VibeDrift was adopted as a second, idea-only upstream (ported natively, watched, never run). The plugin moved to its own version line.
+
+### What Worked
+- TDD throughout (RED/GREEN commits) made the verifier's job cheap and caught real bugs.
+- The verifier earned its keep: it found a genuine blocking bug (the `**` glob mistranslation that silently leaked the CJS/SDK dual-resolver pairs), auto-healed inline rather than spun into a gap phase.
+- Sequential-on-main-tree execution traded parallel-worktree speed for bullet-proof reliability in this runtime; the right call for an 8-plan milestone.
+- Nyquist validation caught soft tests (`assert.ok(true)` fallbacks) that "passed" but couldn't fail.
+
+### What Was Inefficient
+- Several flagship-feature gaps shipped in Phase 11 and had to be caught later by code review (`.vibedriftignore` loaded-but-unused, dead `METHOD_RE`, a consumer-workflow key mismatch). Tighter executor self-review would have caught these in-phase.
+- The CJS/SDK dual resolver keeps producing parity drift (config schema, aliases); each is a separate fix until a parity guard exists. Added the config-schema parity test this release.
+
+### Patterns Established
+- "Native port + second-upstream watch" as an alternative to vendoring a dependency.
+- Auditable-allowlist + ignore-file as the standard way to suppress intentional duplication in drift scans.
+- Major version as a deliberate divergence signal, decoupled from upstream tracking.
+
+### Key Lessons
+- A config file the user populates (`.vibedriftignore`) that silently does nothing is the worst failure mode for a trust feature; wire the input through end-to-end and test it.
+- When two resolvers must agree (CJS/SDK), a parity test is worth more than fixing each drift instance.
+
+### Cost Observations
+- Model mix: orchestrator on opus, executors/verifiers/auditors on sonnet.
+- Notable: the milestone close turned into a substantial release (flagship-gap fixes + a new cron feature + full docs + Nyquist validation) folded in at the user's request.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution

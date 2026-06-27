@@ -5,7 +5,7 @@
 - [x] **v1.0 MVP** — Phases 1-3 (shipped 2026-04-06)
 - [x] **v1.1 Session Continuity** — Phases 4-5 (shipped 2026-04-20; Phase 6 dropped, rehomed to v1.2 backlog)
 - [x] **v1.2 Upstream Resilience** — Phases 7-9 (shipped 2026-04-24 — 3 phases, 3 plans, 14 tasks, ~26min executor time)
-- [ ] **v1.3 Consistency & Code-Integrity Safeguards** — Phases 10-11 (scoped 2026-06-26). Carried backlog (still deferred): LIFE-02, LIFE-03, BEHAVIOR-01, UPST-03, UPST-04.
+- [x] **v1.3 Consistency & Code-Integrity Safeguards** — Phases 10-11 (shipped 2026-06-27, released as plugin v4.0.0)
 
 ## Phases
 
@@ -42,7 +42,10 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 </details>
 
-**v1.3 Consistency & Code-Integrity Safeguards (Phases 10-11) — SCOPED 2026-06-26 (active)**
+<details>
+<summary>✅ v1.3 Consistency & Code-Integrity Safeguards (Phases 10-11): SHIPPED 2026-06-27 (plugin v4.0.0)</summary>
+
+**v1.3 Consistency & Code-Integrity Safeguards (Phases 10-11): SHIPPED 2026-06-27**
 
 Addresses **cross-session drift**: independent agent sessions, no shared memory, produce
 locally-reasonable but globally-inconsistent code (duplicate logic under different names,
@@ -117,7 +120,11 @@ Plans:
 
 - [x] 11-05-PLAN.md — `/gsd:scan --drift` ranked report branch + audit-milestone §5.6 opt-in warn-first Drift Integrity Gate
 
-### v1.3 carried backlog (still deferred, NOT in this milestone)
+</details>
+
+## Backlog
+
+Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 
 - **LIFE-02** — staleness threshold detection for HANDOFF.json (resume refuses / warns on stale)
 - **LIFE-03** — dedicated `/gsd:checkpoint` skill for manual save (optional; current manual path works via `/gsd:pause-work`)
@@ -132,4 +139,4 @@ Plans:
 | v1.0 MVP | 3 | 2026-04-06 |
 | v1.1 Session Continuity | 2 (+ 1 dropped) | 2026-04-20 |
 | v1.2 Upstream Resilience | 3 | 2026-04-24 |
-| v1.3 Consistency & Code-Integrity Safeguards | 2 (scoped) | — |
+| v1.3 Consistency & Code-Integrity Safeguards | 2 | 2026-06-27 |

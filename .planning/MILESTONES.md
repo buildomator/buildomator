@@ -1,5 +1,20 @@
 # Milestones
 
+## v1.3 Consistency and Code-Integrity Safeguards (Shipped: 2026-06-27)
+
+**Phases completed:** 2 phases, 8 plans, 7 tasks
+
+**Key accomplishments:**
+
+- Zero-dep CJS module deriving file-name/identifier casing + export/import style by majority vote with normalized Shannon entropy, plus per-file CONVENTION-tier conformance, verb-vs-body intent, and catch-handling checks that never block.
+- Task 1 — handler + router branch (commit 81eaba7):
+- Task 1 — gsd-pattern-mapper Step 5.5 (commit 169e00d):
+- 1. [Rule 1 - Bug] Block comment doc contained `
+- One-liner:
+- Task 1: `cmdVerifyDrift` + router case
+
+---
+
 ## v1.0 MVP (Shipped: 2026-04-06)
 
 **Phases completed:** 3 phases, 10 plans, 27 tasks
