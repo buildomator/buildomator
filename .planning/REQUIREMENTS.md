@@ -20,7 +20,7 @@ Cross-session drift is the failure mode this milestone targets: independent agen
 - [ ] **DRIFT-02**: audit-milestone runs a config-gated (opt-in, OFF by default), warn-first pre-1.0 integrity gate with recommended-fix framing; `--fail-on-score N` is an explicit escalation to a hard exit-code gate, never imposed by default
 - [ ] **DRIFT-03**: a committed, pre-seeded intentional-duplication allowlist (reusing the `.vibedrift` format for upstream-portability) suppresses the CJS<->SDK dual resolver while keeping suppressions auditable via the report
 - [ ] **DRIFT-04**: `/gsd:scan --drift` produces a ranked top-N markdown report to stdout (lighter than `map-codebase`)
-- [ ] **DRIFT-05**: native detection heuristics run as the primary sweep — Phase 10 `conventions.cjs` reuse (convention / verb-vs-body / architectural-split) + phantom/placeholder detection + native MinHash+LCS structural semantic-dup. [Reworded 2026-06-27 — "fallback" reframed to primary, per the native-first decision]
+- [x] **DRIFT-05**: native detection heuristics run as the primary sweep — Phase 10 `conventions.cjs` reuse (convention / verb-vs-body / architectural-split) + phantom/placeholder detection + native MinHash+LCS structural semantic-dup. [Reworded 2026-06-27 — "fallback" reframed to primary, per the native-first decision]
 
 ## Future Requirements
 
@@ -60,7 +60,7 @@ Deferred to a later milestone. Tracked but not in the v1.3 roadmap.
 | DRIFT-02 | Phase 11 | Pending |
 | DRIFT-03 | Phase 11 | Pending |
 | DRIFT-04 | Phase 11 | Pending |
-| DRIFT-05 | Phase 11 | Pending |
+| DRIFT-05 | Phase 11 | Complete |
 
 **Coverage:**
 - v1.3 requirements: 9 total
