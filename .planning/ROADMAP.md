@@ -85,10 +85,12 @@ Plans:
 
 ### Phase 11: Drift Detection and Consistency Gate
 
-**Goal:** Surface existing cross-session drift repo-wide and gate the pre-1.0 release ceremony,
-with a GSD-native fallback so the sweep runs even when VibeDrift is absent.
+**Goal:** Surface existing cross-session drift repo-wide and gate the pre-1.0 release ceremony.
+Detection is 100% native (D-01/D-04 retired the "fallback" framing): three native layers (Phase 10
+conventions reuse + phantom/placeholder + MinHash+LCS structural-dup) are the primary sweep, and
+VibeDrift is treated as a second upstream whose heuristics are ported and watched, never invoked.
 
-**Depends on:** Phase 10 (reuses the convention-extraction logic in the native fallback)
+**Depends on:** Phase 10 (reuses the convention-extraction logic as native detection layer 1)
 
 **Requirements:** DRIFT-01, DRIFT-02, DRIFT-03, DRIFT-04, DRIFT-05
 
@@ -96,7 +98,24 @@ with a GSD-native fallback so the sweep runs even when VibeDrift is absent.
 
 1. `audit-milestone` runs an optional, config-gated integrity gate that the intentional CJS<->SDK dual resolver does not trip (allowlist verified, suppressions auditable in the report).
 2. `/gsd:scan --drift` produces a ranked drift report on gsd-plugin.
-3. Graceful-degrade proven: the sweep still runs via native checks with VibeDrift uninstalled.
+3. Native-primary proven: the sweep runs entirely via native checks (zero runtime dep, VibeDrift never invoked).
+
+**Plans:** 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 11-01-PLAN.md — TDD: bin/lib/semantic-dup.cjs (MinHash+LCS structural near-clone) + tests + calibration on gsd-plugin
+- [ ] 11-02-PLAN.md — TDD: bin/lib/phantom-scaffolding.cjs + bin/lib/drift-allowlist.cjs + committed .gsd/drift-allowlist.json + .vibedriftignore + tests
+- [ ] 11-03-PLAN.md — VibeDrift second-upstream watch (bin/check-vibedrift-release.sh) + README + cron-install checkpoint (autonomous:false)
+
+**Wave 2** *(blocked on 11-01 + 11-02)*
+
+- [ ] 11-04-PLAN.md — Wire `verify drift` subcommand (cmdVerifyDrift + router) + CJS<->SDK parity (manifest/aliases/2 config keys/dist rebuild) + CI drift-detectors job
+
+**Wave 3** *(blocked on 11-04)*
+
+- [ ] 11-05-PLAN.md — `/gsd:scan --drift` ranked report branch + audit-milestone §5.6 opt-in warn-first Drift Integrity Gate
 
 ### v1.3 carried backlog (still deferred, NOT in this milestone)
 
