@@ -1,0 +1,12 @@
+# VibeDrift-compatible gitignore-syntax exclusion file.
+# Paths matching these patterns are excluded from drift analysis.
+# GSD native: the pair-allowlist for intentional duplicates lives in
+# .gsd/drift-allowlist.json; this file handles path-based exclusions only.
+
+node_modules/
+dist/
+build/
+coverage/
+sdk/dist/
+**/*.test.cjs
+tests/drift-baseline.json
