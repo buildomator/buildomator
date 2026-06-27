@@ -190,8 +190,8 @@ Add to audit YAML:
 ```yaml
 drift:
   score: {score}
-  findings_count: {counts.findings}
-  suppressed_count: {counts.suppressed}
+  findings_count: {findings.length}
+  suppressed_count: {suppressed.length}
   overall: "pass | warn | fail"
 ```
 

@@ -60,7 +60,7 @@ Parse the JSON result:
 ```markdown
 ## Drift Report
 
-**Composite score:** {score}  |  **Findings:** {counts.findings}  |  **Suppressed:** {counts.suppressed}
+**Composite score:** {score}  |  **Findings:** {findings.length}  |  **Suppressed:** {suppressed.length}
 
 ### Findings (ranked by severity)
 
@@ -79,7 +79,7 @@ Suppression is listed here for auditability (D-07).
 | {a} / {b} | {reason} |
 ```
 
-If `counts.suppressed` is 0, emit the suppressed section with a "none" row so the auditability section is always present.
+If `suppressed.length` is 0, emit the suppressed section with a "none" row so the auditability section is always present.
 
 Exit with the code returned by `gsd-tools verify drift` (non-zero only when `--fail-on-score` was set and the score is below the cutoff).
 
