@@ -208,30 +208,45 @@ check('CONV-03 verb-vs-body does NOT flag a read-builder that only mutates a loc
 // ─── CONV-04: architectural-split (DI-vs-env, catch swallow/rethrow/wrap) ──────
 
 check('CONV-04 arch-split classifies a process.env file as direct-env', () => {
-  const r = conventions.classifyArchitecture
-    ? conventions.classifyArchitecture("const token = process.env.TOKEN;\n")
-    : null;
-  if (r) {
-    assert.strictEqual(r.envStyle, 'direct-env');
-  } else {
-    // classifyArchitecture is an internal helper; if not exported, assert via checkConformance shape below.
-    assert.ok(true);
+  // classifyArchitecture is exported; assert the label directly (no optional guard).
+  assert.strictEqual(typeof conventions.classifyArchitecture, 'function', 'classifyArchitecture must be exported');
+  const r = conventions.classifyArchitecture("const token = process.env.TOKEN;\n");
+  assert.strictEqual(r.envStyle, 'direct-env');
+});
+
+check('CONV-04 arch-split classifies injected-config file as injected (no process.env)', () => {
+  const r = conventions.classifyArchitecture("function build(config) { return config.token; }\n");
+  assert.strictEqual(r.envStyle, 'injected');
+});
+
+check('CONV-04 arch-split swallow catch produces a finding via checkConformance', () => {
+  // Use a kebab-named file so the ONLY finding is from the catch body.
+  const swallow = 'function f() {\n  try { doThing(); } catch (e) { /* ignore */ }\n}\n';
+  // Derive a minimal named contract (kebab file-name only; no casing axis so no noise).
+  const derived = { skipped: false, axes: [
+    { name: 'file-name-casing', status: 'named', dominant: 'kebab', share: 1, entropy: 0, contested: false, total: 20, variants: { kebab: 20 } },
+  ]};
+  const r = conventions.checkConformance([{ file: 'bin/lib/catch-swallow.cjs', src: swallow }], derived);
+  assert.strictEqual(r.skipped, false);
+  const catchFindings = r.findings.filter((f) => /swallow|catch/i.test(f.deviation));
+  assert.ok(catchFindings.length >= 1, 'a swallowed catch must produce at least one catch finding');
+  for (const f of catchFindings) {
+    assert.strictEqual(f.tier, 'CONVENTION');
+    assert.strictEqual(f.blocking, false);
   }
 });
 
-check('CONV-04 arch-split classifies catch bodies as swallow / rethrow / wrap', () => {
-  // Exercised through the public surface: a file with a swallow catch should be analyzable
-  // without throwing, and any finding it produces must be CONVENTION/non-blocking.
-  const swallow = 'function f() {\n  try { doThing(); } catch (e) { /* ignore */ }\n}\n';
+check('CONV-04 arch-split rethrow and wrap catch bodies do NOT produce a catch-swallow finding', () => {
+  const derived = { skipped: false, axes: [
+    { name: 'file-name-casing', status: 'named', dominant: 'kebab', share: 1, entropy: 0, contested: false, total: 20, variants: { kebab: 20 } },
+  ]};
   const rethrow = 'function g() {\n  try { doThing(); } catch (e) { throw e; }\n}\n';
   const wrap = 'function h() {\n  try { doThing(); } catch (e) { throw new Error("wrapped", { cause: e }); }\n}\n';
-  for (const src of [swallow, rethrow, wrap]) {
-    const r = conventions.checkConformance([{ file: 'bin/lib/catchy.cjs', src }], derivedNamed);
-    assert.strictEqual(r.skipped, false, 'must not skip on a valid JS catch body');
-    for (const fnd of r.findings) {
-      assert.strictEqual(fnd.tier, 'CONVENTION');
-      assert.strictEqual(fnd.blocking, false);
-    }
+  for (const [label, src] of [['rethrow', rethrow], ['wrap', wrap]]) {
+    const r = conventions.checkConformance([{ file: 'bin/lib/catch-ok.cjs', src }], derived);
+    assert.strictEqual(r.skipped, false);
+    const catchFindings = r.findings.filter((f) => /swallow|catch/i.test(f.deviation));
+    assert.deepStrictEqual(catchFindings, [], `${label} catch body must not be flagged as a swallow`);
   }
 });
 
