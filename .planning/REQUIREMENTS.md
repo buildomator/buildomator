@@ -16,11 +16,11 @@ Cross-session drift is the failure mode this milestone targets: independent agen
 
 ### Drift Detection (Detection — Phase 11)
 
-- [ ] **DRIFT-01**: code-review and audit can invoke an optional VibeDrift gate that probes PATH / `npx` (pinned version), runs `--local-only`, and degrades gracefully when the tool is absent
-- [ ] **DRIFT-02**: audit-milestone runs a config-gated pre-1.0 integrity gate (`--fail-on-score N`) with recommended-fix framing
-- [ ] **DRIFT-03**: an intentional-duplication allowlist (`.vibedrift`) suppresses the CJS<->SDK dual resolver while keeping suppressions auditable via the report
-- [ ] **DRIFT-04**: `/gsd:scan --drift` produces a ranked drift report (lighter than `map-codebase`)
-- [ ] **DRIFT-05**: native fallback heuristics (placeholder/phantom detection, MinHash semantic-dup) run when VibeDrift is absent, so the sweep still degrades to GSD-native checks
+- [ ] **DRIFT-01**: drift detection is 100% native — GSD never calls the `vibedrift` CLI at runtime; VibeDrift is treated as a second upstream project whose heuristics are ported natively and whose repo is added to the periodic upstream-watch for future cherry-picks (pin v0.14.0 as the idea baseline). [Reworded 2026-06-27 per Phase 11 discuss — supersedes the earlier "optional external gate" framing]
+- [ ] **DRIFT-02**: audit-milestone runs a config-gated (opt-in, OFF by default), warn-first pre-1.0 integrity gate with recommended-fix framing; `--fail-on-score N` is an explicit escalation to a hard exit-code gate, never imposed by default
+- [ ] **DRIFT-03**: a committed, pre-seeded intentional-duplication allowlist (reusing the `.vibedrift` format for upstream-portability) suppresses the CJS<->SDK dual resolver while keeping suppressions auditable via the report
+- [ ] **DRIFT-04**: `/gsd:scan --drift` produces a ranked top-N markdown report to stdout (lighter than `map-codebase`)
+- [ ] **DRIFT-05**: native detection heuristics run as the primary sweep — Phase 10 `conventions.cjs` reuse (convention / verb-vs-body / architectural-split) + phantom/placeholder detection + native MinHash+LCS structural semantic-dup. [Reworded 2026-06-27 — "fallback" reframed to primary, per the native-first decision]
 
 ## Future Requirements
 
