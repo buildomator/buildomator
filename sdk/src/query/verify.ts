@@ -690,3 +690,52 @@ export const verifyCodebaseDrift: QueryHandler = async (_args, projectDir) => {
     };
   }
 };
+
+/**
+ * SDK bridge for `verify conventions` (Phase 10).
+ * Delegates to the CJS handler — the implementation lives in bin/lib/verify.cjs cmdVerifyConventions.
+ * Args are forwarded verbatim so callers can pass --derive / --check / --scope / --files / --json.
+ */
+export const verifyConventions: QueryHandler = async (args, projectDir) => {
+  try {
+    const { execFileSync } = await import('node:child_process');
+    const toolsPath = resolveGsdToolsPath(projectDir);
+    const out = execFileSync(process.execPath, [toolsPath, 'verify', 'conventions', '--json', ...args], {
+      cwd: projectDir,
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+    try {
+      return { data: JSON.parse(out) };
+    } catch {
+      return { data: { skipped: true, reason: 'sdk-parse-failed' } };
+    }
+  } catch (err) {
+    return { data: { skipped: true, reason: 'sdk-exception: ' + (err instanceof Error ? err.message : String(err)) } };
+  }
+};
+
+/**
+ * SDK bridge for `verify drift` (Phase 11, plan 11-04).
+ * Delegates to the CJS handler — the implementation lives in bin/lib/verify.cjs cmdVerifyDrift.
+ * Args are forwarded verbatim so callers can pass --scope / --top / --fail-on-score / --json.
+ * Never-throw contract: the CJS handler guarantees { skipped:true, reason } on any exception.
+ */
+export const verifyDrift: QueryHandler = async (args, projectDir) => {
+  try {
+    const { execFileSync } = await import('node:child_process');
+    const toolsPath = resolveGsdToolsPath(projectDir);
+    const out = execFileSync(process.execPath, [toolsPath, 'verify', 'drift', '--json', ...args], {
+      cwd: projectDir,
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+    try {
+      return { data: JSON.parse(out) };
+    } catch {
+      return { data: { skipped: true, reason: 'sdk-parse-failed' } };
+    }
+  } catch (err) {
+    return { data: { skipped: true, reason: 'sdk-exception: ' + (err instanceof Error ? err.message : String(err)) } };
+  }
+};

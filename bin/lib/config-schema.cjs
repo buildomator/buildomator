@@ -43,6 +43,8 @@ const VALID_CONFIG_KEYS = new Set([
   'workflow.security_block_on',
   'workflow.drift_threshold',
   'workflow.drift_action',
+  'workflow.drift_gate',
+  'workflow.drift_fail_on_score',
   'code_quality.fallow.enabled',
   'code_quality.fallow.scope',
   'code_quality.fallow.profile',

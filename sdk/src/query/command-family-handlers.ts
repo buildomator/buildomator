@@ -15,7 +15,7 @@ import { roadmapUpdatePlanProgress } from './roadmap-update-plan-progress.js';
 import {
   verifyPlanStructure, verifyPhaseCompleteness, verifyReferences,
   verifyCommits, verifyArtifacts, verifySchemaDrift,
-  verifyCodebaseDrift,
+  verifyCodebaseDrift, verifyConventions, verifyDrift,
 } from './verify.js';
 import { verifyKeyLinks, validateConsistency, validateHealth, validateAgents, validateContext } from './validate.js';
 import {
@@ -72,6 +72,8 @@ export const FAMILY_HANDLERS: Record<string, Readonly<Record<string, QueryHandle
     'verify.key-links': verifyKeyLinks,
     'verify.schema-drift': verifySchemaDrift,
     'verify.codebase-drift': verifyCodebaseDrift,
+    'verify.conventions': verifyConventions,
+    'verify.drift': verifyDrift,
   },
   validate: {
     'validate.consistency': validateConsistency,

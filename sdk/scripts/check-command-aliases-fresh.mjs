@@ -38,7 +38,8 @@ const {
   ROADMAP_COMMAND_ALIASES,
 } = await import('../dist/query/command-aliases.generated.js');
 
-const cjsAliases = require(resolve(here, '..', '..', 'get-shit-done', 'bin', 'lib', 'command-aliases.generated.cjs'));
+// Plugin flat-layout: CJS file is at repo-root/bin/lib/ (not get-shit-done/bin/lib/)
+const cjsAliases = require(resolve(here, '..', '..', 'bin', 'lib', 'command-aliases.generated.cjs'));
 
 function toAliasEntries(manifest, family) {
   const prefix = `${family}.`;

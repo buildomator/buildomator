@@ -107,4 +107,17 @@ export declare const verifySchemaDrift: QueryHandler;
  * canonical place (see `cmdVerifyCodebaseDrift`).
  */
 export declare const verifyCodebaseDrift: QueryHandler;
+/**
+ * SDK bridge for `verify conventions` (Phase 10).
+ * Delegates to the CJS handler — the implementation lives in bin/lib/verify.cjs cmdVerifyConventions.
+ * Args are forwarded verbatim so callers can pass --derive / --check / --scope / --files / --json.
+ */
+export declare const verifyConventions: QueryHandler;
+/**
+ * SDK bridge for `verify drift` (Phase 11, plan 11-04).
+ * Delegates to the CJS handler — the implementation lives in bin/lib/verify.cjs cmdVerifyDrift.
+ * Args are forwarded verbatim so callers can pass --scope / --top / --fail-on-score / --json.
+ * Never-throw contract: the CJS handler guarantees { skipped:true, reason } on any exception.
+ */
+export declare const verifyDrift: QueryHandler;
 //# sourceMappingURL=verify.d.ts.map

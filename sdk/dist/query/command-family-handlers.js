@@ -3,7 +3,7 @@ import { stateJson, stateGet } from './state.js';
 import { stateUpdate, statePatch, stateBeginPhase, stateAdvancePlan, stateRecordMetric, stateUpdateProgress, stateAddDecision, stateAddBlocker, stateResolveBlocker, stateRecordSession, stateSignalWaiting, stateSignalResume, statePlannedPhase, stateValidate, stateSync, statePrune, stateMilestoneSwitch, stateAddRoadmapEvolution, } from './state-mutation.js';
 import { roadmapAnalyze, roadmapGetPhase, roadmapAnnotateDependencies } from './roadmap.js';
 import { roadmapUpdatePlanProgress } from './roadmap-update-plan-progress.js';
-import { verifyPlanStructure, verifyPhaseCompleteness, verifyReferences, verifyCommits, verifyArtifacts, verifySchemaDrift, verifyCodebaseDrift, } from './verify.js';
+import { verifyPlanStructure, verifyPhaseCompleteness, verifyReferences, verifyCommits, verifyArtifacts, verifySchemaDrift, verifyCodebaseDrift, verifyConventions, verifyDrift, } from './verify.js';
 import { verifyKeyLinks, validateConsistency, validateHealth, validateAgents, validateContext } from './validate.js';
 import { phaseListPlans, phaseListArtifacts, } from './phase-list-queries.js';
 import { phaseAdd, phaseAddBatch, phaseInsert, phaseRemove, phaseComplete, phaseScaffold, phaseNextDecimal, phasesList, phasesClear, phasesArchive, } from './phase-lifecycle.js';
@@ -48,6 +48,8 @@ export const FAMILY_HANDLERS = {
         'verify.key-links': verifyKeyLinks,
         'verify.schema-drift': verifySchemaDrift,
         'verify.codebase-drift': verifyCodebaseDrift,
+        'verify.conventions': verifyConventions,
+        'verify.drift': verifyDrift,
     },
     validate: {
         'validate.consistency': validateConsistency,

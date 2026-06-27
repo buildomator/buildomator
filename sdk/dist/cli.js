@@ -5397,7 +5397,9 @@ var VERIFY_COMMAND_ALIASES = [
   { canonical: "verify.artifacts", aliases: ["verify artifacts"], subcommand: "artifacts", mutation: false },
   { canonical: "verify.key-links", aliases: ["verify key-links"], subcommand: "key-links", mutation: false },
   { canonical: "verify.schema-drift", aliases: ["verify schema-drift"], subcommand: "schema-drift", mutation: false },
-  { canonical: "verify.codebase-drift", aliases: ["verify codebase-drift"], subcommand: "codebase-drift", mutation: false }
+  { canonical: "verify.codebase-drift", aliases: ["verify codebase-drift"], subcommand: "codebase-drift", mutation: false },
+  { canonical: "verify.conventions", aliases: ["verify conventions"], subcommand: "conventions", mutation: false },
+  { canonical: "verify.drift", aliases: ["verify drift"], subcommand: "drift", mutation: false }
 ];
 var INIT_COMMAND_ALIASES = [
   { canonical: "init.execute-phase", aliases: ["init execute-phase"], subcommand: "execute-phase", mutation: false },
@@ -5698,7 +5700,9 @@ var VERIFY_COMMAND_MANIFEST = [
   { family: "verify", canonical: "verify.artifacts", aliases: ["verify artifacts"], mutation: false, outputMode: "json" },
   { family: "verify", canonical: "verify.key-links", aliases: ["verify key-links"], mutation: false, outputMode: "json" },
   { family: "verify", canonical: "verify.schema-drift", aliases: ["verify schema-drift"], mutation: false, outputMode: "json" },
-  { family: "verify", canonical: "verify.codebase-drift", aliases: ["verify codebase-drift"], mutation: false, outputMode: "json" }
+  { family: "verify", canonical: "verify.codebase-drift", aliases: ["verify codebase-drift"], mutation: false, outputMode: "json" },
+  { family: "verify", canonical: "verify.conventions", aliases: ["verify conventions"], mutation: false, outputMode: "json" },
+  { family: "verify", canonical: "verify.drift", aliases: ["verify drift"], mutation: false, outputMode: "json" }
 ];
 
 // dist/query/command-manifest.init.js
@@ -8339,6 +8343,8 @@ var VALID_CONFIG_KEYS = /* @__PURE__ */ new Set([
   "workflow.security_block_on",
   "workflow.drift_threshold",
   "workflow.drift_action",
+  "workflow.drift_gate",
+  "workflow.drift_fail_on_score",
   "code_quality.fallow.enabled",
   "code_quality.fallow.scope",
   "code_quality.fallow.profile",
@@ -10736,6 +10742,42 @@ var verifyCodebaseDrift = async (_args, projectDir) => {
         elements: []
       }
     };
+  }
+};
+var verifyConventions = async (args, projectDir) => {
+  try {
+    const { execFileSync } = await import("node:child_process");
+    const toolsPath = resolveGsdToolsPath(projectDir);
+    const out = execFileSync(process.execPath, [toolsPath, "verify", "conventions", "--json", ...args], {
+      cwd: projectDir,
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"]
+    }).trim();
+    try {
+      return { data: JSON.parse(out) };
+    } catch {
+      return { data: { skipped: true, reason: "sdk-parse-failed" } };
+    }
+  } catch (err) {
+    return { data: { skipped: true, reason: "sdk-exception: " + (err instanceof Error ? err.message : String(err)) } };
+  }
+};
+var verifyDrift = async (args, projectDir) => {
+  try {
+    const { execFileSync } = await import("node:child_process");
+    const toolsPath = resolveGsdToolsPath(projectDir);
+    const out = execFileSync(process.execPath, [toolsPath, "verify", "drift", "--json", ...args], {
+      cwd: projectDir,
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"]
+    }).trim();
+    try {
+      return { data: JSON.parse(out) };
+    } catch {
+      return { data: { skipped: true, reason: "sdk-parse-failed" } };
+    }
+  } catch (err) {
+    return { data: { skipped: true, reason: "sdk-exception: " + (err instanceof Error ? err.message : String(err)) } };
   }
 };
 
@@ -20874,7 +20916,9 @@ var FAMILY_HANDLERS = {
     "verify.artifacts": verifyArtifacts,
     "verify.key-links": verifyKeyLinks,
     "verify.schema-drift": verifySchemaDrift,
-    "verify.codebase-drift": verifyCodebaseDrift
+    "verify.codebase-drift": verifyCodebaseDrift,
+    "verify.conventions": verifyConventions,
+    "verify.drift": verifyDrift
   },
   validate: {
     "validate.consistency": validateConsistency,

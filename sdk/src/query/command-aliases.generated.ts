@@ -43,6 +43,8 @@ export const VERIFY_COMMAND_ALIASES: readonly FamilyCommandAlias[] = [
   { canonical: 'verify.key-links', aliases: ['verify key-links'], subcommand: 'key-links', mutation: false },
   { canonical: 'verify.schema-drift', aliases: ['verify schema-drift'], subcommand: 'schema-drift', mutation: false },
   { canonical: 'verify.codebase-drift', aliases: ['verify codebase-drift'], subcommand: 'codebase-drift', mutation: false },
+  { canonical: 'verify.conventions', aliases: ['verify conventions'], subcommand: 'conventions', mutation: false },
+  { canonical: 'verify.drift', aliases: ['verify drift'], subcommand: 'drift', mutation: false },
 ] as const;
 
 export const INIT_COMMAND_ALIASES: readonly FamilyCommandAlias[] = [

@@ -246,6 +246,14 @@ const VERIFY_COMMAND_ALIASES = [
     ],
     "subcommand": "conventions",
     "mutation": false
+  },
+  {
+    "canonical": "verify.drift",
+    "aliases": [
+      "verify drift"
+    ],
+    "subcommand": "drift",
+    "mutation": false
   }
 ];
 
