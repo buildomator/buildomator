@@ -336,10 +336,12 @@ function extractFunctions(src) {
  * @returns {boolean}
  */
 function globMatch(pattern, filePath) {
-  // Escape special regex chars except *
+  // Escape special regex chars except *, then expand globs: ** (any depth,
+  // crosses separators) before * (single path segment). The escape step leaves
+  // * untouched, so the ** match is on the literal pattern, not the escaped form.
   const reStr = pattern
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\\\*\\\*/g, '__DSTAR__')
+    .replace(/\*\*/g, '__DSTAR__')
     .replace(/\*/g, '[^/]*')
     .replace(/__DSTAR__/g, '.*');
   const re = new RegExp('^' + reStr + '$');
