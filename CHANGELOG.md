@@ -2,11 +2,32 @@
 
 All notable changes to this plugin are documented here.
 
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Plugin version in section brackets; upstream GSD base version in trailing parentheses. See [README § Versioning](./README.md#versioning) for the `plugin_major = upstream_major + 2` scheme (the plugin tracks the `@opengsd/gsd-core` 1.x line with a +2 major offset, so gsd-core 1.4.x maps to plugin 3.4.x).
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Plugin version in section brackets. As of v4.0.0 the plugin is on its [own version line](./README.md#versioning): the major signals the plugin's own milestones (feature sets, divergence from upstream), not gsd-core's major. Each release notes the gsd-core line it follows for provenance. Releases before 4.0.0 used the `plugin_major = gsd-core_major + 2` offset scheme.
 
 History before 2.38.2 lives in git + the per-milestone archive (see `.planning/milestones/v1.0-ROADMAP.md` and `.planning/milestones/v1.1-ROADMAP.md`).
 
 ## [Unreleased]
+
+## [4.0.0] - 2026-06-27  (consistency and code-integrity safeguards, a second upstream, and an independent version line)
+
+This is a milestone release (internal milestone v1.3) and the first on the plugin's own version line. The major bump is a **divergence signal, not a breaking change**: existing commands, config, and planning artifacts work unchanged, and the new capabilities are additive and opt-in. Follows the gsd-core `1.x` line.
+
+### Added
+- **Convention and architectural conformance gate.** A zero-dependency `bin/lib/conventions.cjs` derives a project's naming and architecture conventions (identifier/file casing, export/import style) by majority vote with a normalized-entropy signal, exposes `gsd-tools verify conventions --derive|--check`, and wires named-contract output into `gsd-pattern-mapper` (a `## Conventions` section in PATTERNS.md) and `gsd-code-reviewer` (CONVENTION-tier findings: convention deviation, verb-vs-body intent, architectural-split). Runs in the existing review path, never blocks.
+- **Native drift detection.** Three native detection layers run as a single sweep over one bounded corpus via `gsd-tools verify drift`: structural near-clones (native MinHash+LCS in `bin/lib/semantic-dup.cjs`, heuristics ported from `@vibedrift/cli@0.14.4`), phantom/placeholder scaffolding (`bin/lib/phantom-scaffolding.cjs`), and convention reuse. A committed, auditable allowlist (`.gsd/drift-allowlist.json`) suppresses intentional duplication (e.g. the CJS/SDK dual resolver) while keeping suppressions visible in the report, and `.vibedriftignore` excludes generated/test paths. Surfaced through `/gsd:scan --drift` (ranked report) and an opt-in, warn-first `/gsd:audit-milestone` integrity gate (`workflow.drift_gate`, with `--fail-on-score N` as the only hard-exit escalation). Never throws, never exits non-zero by default.
+- **VibeDrift as a second upstream.** GSD never installs or runs VibeDrift; it ports the heuristics natively (pinned to the v0.14.0 idea baseline) and watches the package for new releases via `bin/check-vibedrift-release.sh` (cron notifier; first-run seed, offline-safe, never fails cron) so future heuristics can be cherry-picked. See [README § Upstream projects](./README.md#upstream-projects).
+- **Weekly plugin self-update watch.** `bin/check-plugin-update.sh` compares the installed plugin version (from the Claude Code plugin cache) against the latest `jnuyens/gsd-plugin` tag and emails only when the install is behind, since Claude Code's plugin auto-update is unreliable. Uses tags (not the lagging Releases feed) as the version signal; never fails cron.
+- CJS/SDK config-schema parity test (`tests/config-schema-sdk-parity.test.cjs`) wired into CI, guarding the whole class of resolver drift.
+
+### Changed
+- **Versioning is now an independent line.** Retired the `plugin_major = gsd-core_major + 2` offset; the plugin major now signals its own milestones. Provenance (which gsd-core line a release follows) is noted per release. See [README § Versioning](./README.md#versioning).
+
+### Fixed
+- **`.vibedriftignore` is now applied.** The ignore list was loaded but never used; it now filters the drift corpus before any detector runs, so generated/test paths are excluded as documented.
+- **Structural-dup detector now sees class methods.** `METHOD_RE` was declared but absent from the pattern set; added with a control-flow keyword guard so `if`/`for`/`while`/`switch`/`catch` are never extracted as functions.
+- **`fable` tier accepted by both resolvers.** The SDK config schema accepted only `opus|sonnet|haiku` for `model_profile_overrides` while CJS accepted `fable` too; aligned the SDK pattern and added the parity test above.
+- **Multi-level glob suppression.** `semantic-dup` `globMatch` mistranslated `**` (it matched the never-existing escaped form), so `sdk/src/**` failed to suppress nested paths and the intentional CJS/SDK dual-resolver pairs leaked into findings. Corrected so `verify drift` reports `suppressed: 21` with zero cross-resolver pairs in findings.
+- Consumer workflows referenced non-existent `counts.findings`/`counts.suppressed` (the real keys are top-level `findings`/`suppressed` arrays); corrected in `scan.md` and `audit-milestone.md`.
 
 ## [3.7.2] - 2026-06-25  (fix: autonomous stops asking you to re-confirm before kicking off)
 
