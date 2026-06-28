@@ -45,6 +45,15 @@ Use these entry points:
 Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
 <!-- GSD:workflow-end -->
 
+## Third-Party Contributions
+
+When contributing a change to a repository you do not own (upstream gsd-core, VibeDrift, the workspace.json spec, or any external repo):
+
+1. Run every feasible check first. Before proposing the change, run the target repo's tests, linters, build, and any CI-equivalent commands you can run locally, and report what passed and what could not be run.
+2. Keep the patch minimal. Make the smallest diff that fixes the issue, and match the target repo's conventions, not this project's.
+3. Produce a patch file. Generate a `.patch` (for example `git format-patch` or `git diff > NNNN-description.patch`) instead of pushing or opening a PR directly.
+4. Hand it to the user for manual review. Surface the patch and wait for explicit approval before anything is submitted (PR, push, or a diff comment on an issue). Never auto-submit to a third-party repo.
+
 
 
 <!-- GSD:profile-start -->
