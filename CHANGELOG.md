@@ -8,6 +8,16 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.0.2] - 2026-06-29  (maintenance: version-alignment CI guard + portable mktemp on macOS)
+
+Patch release on the 4.0.x line (4.1.0 stays reserved for the in-progress Buildomator milestone). Two standalone maintenance items committed during v4.1 planning. Follows the gsd-core `1.x` line.
+
+### Added
+- **Version-alignment guard.** `bin/maintenance/check-version-alignment.cjs` (plus `tests/version-alignment.test.cjs`, wired into a `version-alignment` CI job and the `check-drift` umbrella) fails the build when the active milestone major drifts off the product version line (it must equal the plugin major, or plugin major + 1 for a next-major in progress), and when `plugin.json` and `marketplace.json` versions disagree. Skips cleanly when there is no manifest or no milestone; override a deliberate transition with `VERSION_ALIGNMENT_ALLOW=1`. Codifies the single-version-line decision so the old "internal v1.x vs plugin 4.x" split cannot recur silently.
+
+### Fixed
+- **Non-portable `mktemp` templates collided on BSD/macOS (cherry-picked from gsd-core 1.6 #1520).** Five callsites used `mktemp ...-XXXXXX.json` / `.md`, putting a suffix after the X's. macOS `/usr/bin/mktemp` leaves those X's literal, so concurrent wave runs returned the same path and collided. Moved the X's to the end at all five (`execute-phase` and `quick` worktree manifests, `ship` PR body, `profile-user` answers and analysis); the temp files are referenced by variable, so the dropped extension was cosmetic. New `tests/mktemp-portable.test.cjs` regression guard, wired into the `drift-detectors` CI job.
+
 ## [4.0.1] - 2026-06-28  (fix: checkpoint hook no longer wipes HANDOFF.json or creates .planning/ in non-GSD dirs)
 
 ### Fixed
