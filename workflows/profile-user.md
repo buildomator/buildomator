@@ -212,7 +212,7 @@ Collect all answers into an answers JSON object mapping dimension keys to select
 
 **Save answers to temp file:**
 ```bash
-ANSWERS_PATH=$(mktemp /tmp/gsd-profile-answers-XXXXXX.json)
+ANSWERS_PATH=$(mktemp /tmp/gsd-profile-answers-XXXXXX)
 ```
 
 Write the answers JSON to `$ANSWERS_PATH`.
@@ -226,7 +226,7 @@ Parse the analysis JSON from the result.
 
 Save analysis JSON to a temp file:
 ```bash
-ANALYSIS_PATH=$(mktemp /tmp/gsd-profile-analysis-XXXXXX.json)
+ANALYSIS_PATH=$(mktemp /tmp/gsd-profile-analysis-XXXXXX)
 ```
 
 Write the analysis JSON to `$ANALYSIS_PATH`.

@@ -483,7 +483,7 @@ To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeou
    DISPATCH_TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
    EXPECTED_BRANCH=$(git rev-parse --abbrev-ref HEAD)
    if [ "${USE_WORKTREES_FOR_PLAN:-true}" != "false" ] && [ -z "${WAVE_WORKTREE_MANIFEST:-}" ]; then
-     WAVE_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/gsd-worktree-wave-XXXXXX.json")
+     WAVE_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/gsd-worktree-wave-XXXXXX")
      printf '{"worktrees":[]}\n' > "$WAVE_WORKTREE_MANIFEST"
      export WAVE_WORKTREE_MANIFEST
    fi

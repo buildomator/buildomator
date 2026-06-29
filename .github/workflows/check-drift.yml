@@ -91,6 +91,8 @@ jobs:
           node tests/semantic-dup.test.cjs
           node tests/phantom-scaffolding.test.cjs
           node tests/drift-allowlist.test.cjs
+      - name: Run mktemp portability guard (gsd-core 1.6 #1520)
+        run: node tests/mktemp-portable.test.cjs
       - name: Run CJS/SDK config-schema parity test
         run: node tests/config-schema-sdk-parity.test.cjs
       - name: Smoke test verify drift JSON output

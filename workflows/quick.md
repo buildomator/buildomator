@@ -617,7 +617,7 @@ Capture current HEAD before spawning (used for worktree branch check):
 ```bash
 EXPECTED_BASE=$(git rev-parse HEAD)
 if [ "${USE_WORKTREES:-true}" != "false" ]; then
-  QUICK_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/gsd:quick-worktree-XXXXXX.json")
+  QUICK_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/gsd:quick-worktree-XXXXXX")
   printf '{"worktrees":[]}\n' > "$QUICK_WORKTREE_MANIFEST"
   export QUICK_WORKTREE_MANIFEST
 fi
