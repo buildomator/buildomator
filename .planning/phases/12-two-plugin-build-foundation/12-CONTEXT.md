@@ -32,6 +32,13 @@ One build step generates both the `bm` (Buildomator) and `gsd` plugin packages f
 ### Version lockstep (BUILD-02)
 - **D-08:** Both packages derive their version from **one source** (`.claude-plugin/plugin.json` `version`) at build time, guaranteeing identical version (4.1.0) across both `plugin.json` and both `marketplace.json` entries. Aligns with the version-alignment guard shipped in 4.0.2 (plugin/marketplace parity).
 
+### Naming layers (locked — do NOT conflate)
+- **D-09:** Four distinct identifiers, confirmed 2026-07-01:
+  1. **Command prefix** = `bm` -> `/bm:` (the `plugin.json` `name` field; short by deliberate choice).
+  2. **Brand / display name** = "Buildomator" (goes in `description`, README, marketplace text, buildomator.com) — NOT the command prefix.
+  3. **Repo + install-cache id** = **`gsd-plugin`, unchanged this milestone** (BUILD-03). The move to `buildomator/buildomator` is the deferred high-risk lever (breaks `CLAUDE_PLUGIN_ROOT`/hook path resolvers) — a separate later step, NOT v4.1.
+  4. **Build output folder** = `dist/bm/` — internal, named after the `bm` package; cosmetic. Do NOT rename it to `dist/buildomator/` and do NOT infer a repo move from the `bm` package name.
+
 ### Claude's Discretion
 - Exact copy/stamp mechanism and the precise file list the build touches.
 - How the prepublish hook wires into `RELEASING.md` and `package.json`.
