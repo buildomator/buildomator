@@ -1,6 +1,8 @@
-# Draft reply for issue #19 (close as not-a-vulnerability / by design)
+# Reply for issue #19 (closed as not-a-vulnerability / by design)
 
-> Not posted. Prepared for the maintainer to review, edit, and post.
+> POSTED + CLOSED 2026-07-01 (not-planned); comment
+> https://github.com/jnuyens/gsd-plugin/issues/19#issuecomment-4860161607
+> Posted text omits the final "Thanks again for the report." sentence below.
 
 ---
 
