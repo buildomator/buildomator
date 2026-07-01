@@ -27,12 +27,20 @@ skipped the third (bad model id). Commit e93417c... err, code commit `1298162`.
 - `sdk/dist` rebuilt (tsc + esbuild). New regression tests in
   `roadmap.test.ts` (sentinel) and `phase-lifecycle.test.ts` (#1591 bold-checkbox).
 
-## Skipped (with cause)
+## #1847 — initially skipped, then ADOPTED (commit d5667a9)
 
-- **#1847 — Sonnet -> `claude-sonnet-5`.** NOT a real released model (current
-  Sonnet is `claude-sonnet-4-6`, verified against the claude-api catalog).
-  Porting it would point our CJS+SDK resolvers at a nonexistent model and 404
-  every Sonnet-profile spawn. Revisit only if `claude-sonnet-5` actually ships.
+First skipped on the belief `claude-sonnet-5` wasn't real — that was WRONG: it
+relied on the claude-api skill's cached model catalog (2026-06-04), which
+predated the **Claude Sonnet 5 announcement (2026-06-30)**. The user pointed to
+the official announcement; verified against the live Anthropic models overview
+(`claude-sonnet-5` is now the current Sonnet, `claude-sonnet-4-6` is legacy).
+
+Adopted: updated the Claude-model `sonnet` tier in `sdk/shared/model-catalog.json`
+(single source both resolvers read) to `claude-sonnet-5` (bare) /
+`anthropic/claude-sonnet-5` (prefixed runtimes). Non-Anthropic tiers
+(codex/gemini/qwen) untouched. Two resolution assertions updated; full SDK suite
++ CJS catalog tests green. Lesson: never assert a model id is fake from a cached
+catalog — the claude-api skill warns models release after its cache; verify live.
 
 ## Verified
 
