@@ -33,11 +33,18 @@ One build step generates both the `bm` (Buildomator) and `gsd` plugin packages f
 - **D-08:** Both packages derive their version from **one source** (`.claude-plugin/plugin.json` `version`) at build time, guaranteeing identical version (4.1.0) across both `plugin.json` and both `marketplace.json` entries. Aligns with the version-alignment guard shipped in 4.0.2 (plugin/marketplace parity).
 
 ### Naming layers (locked — do NOT conflate)
-- **D-09:** Four distinct identifiers, confirmed 2026-07-01:
-  1. **Command prefix** = `bm` -> `/bm:` (the `plugin.json` `name` field; short by deliberate choice).
+- **D-09:** Five distinct identifiers, confirmed 2026-07-01 (Claude Code docs, via claude-code-guide):
+  1. **Command prefix** = `bm` -> `/bm:` (the `plugin.json` `name`; short by deliberate choice). Also the plugin cache subdir and the plugin part of `enabledPlugins` (`bm@gsd-plugin`).
   2. **Brand / display name** = "Buildomator" (goes in `description`, README, marketplace text, buildomator.com) — NOT the command prefix.
-  3. **Repo + install-cache id** = **`gsd-plugin`, unchanged this milestone** (BUILD-03). The move to `buildomator/buildomator` is the deferred high-risk lever (breaks `CLAUDE_PLUGIN_ROOT`/hook path resolvers) — a separate later step, NOT v4.1.
-  4. **Build output folder** = `dist/bm/` — internal, named after the `bm` package; cosmetic. Do NOT rename it to `dist/buildomator/` and do NOT infer a repo move from the `bm` package name.
+  3. **Marketplace name** = `gsd-plugin` (`marketplace.json` `name`) — the FIRST cache level: `~/.claude/plugins/cache/gsd-plugin/<plugin>/<version>/`. This (NOT the repo) is what the cache dir + `enabledPlugins` suffix key off. **Unchanged this milestone.**
+  4. **GitHub repo** = `jnuyens/gsd-plugin` = the marketplace SOURCE URL. Separable from the marketplace name; a repo rename is LOW-risk (GitHub 301-redirects git fetches).
+  5. **Build output folder** = `dist/bm/` — internal, named after the `bm` package; cosmetic. Do NOT rename it to `dist/buildomator/` and do NOT infer a repo move from it.
+
+### Cache/path mechanics + rename preparation (BUILD-03 scope)
+- **D-10:** Cache layout is `~/.claude/plugins/cache/<marketplace-name>/<plugin-name>/<version>/` (verified: `cache/gsd-plugin/gsd/`). The bm package lands at `cache/gsd-plugin/bm/<version>/`. **Each plugin gets its OWN `CLAUDE_PLUGIN_ROOT`** — this is why both plugins enabled = both hook sets fire (the dedup problem, deferred to Phase 14).
+- **D-11:** HARD CONSTRAINT — the marketplace `name` must stay distinct from every plugin `name`, forever (equal names trigger the documented infinite-nesting `ENAMETOOLONG` bug, CC #34200). `gsd-plugin` vs `gsd`/`bm` is safe; never introduce a plugin named `gsd-plugin` nor a marketplace named `gsd`/`bm`.
+- **D-12:** BUILD-03 "paths unaffected" means: everything resolves via `${CLAUDE_PLUGIN_ROOT}` for BOTH packages (never the literal `gsd-plugin` cache string), and the marketplace `name` stays `gsd-plugin` so no cache dir moves and no `enabledPlugins` entry orphans. The install-smoke test must assert this for the bm package too.
+- **D-13:** Rename readiness (prep only, execution deferred): the future move to "buildomator" is three separable levers — (a) rename the GitHub repo (low-risk, source-URL only, GitHub redirects); (b) rename the marketplace `name` (DISRUPTIVE: cache moves + `enabledPlugins` orphan) — mitigate with the marketplace `renames` field (CC >= 2.1.193), NOT yet present in our marketplace.json; (c) flip plugin `name` gsd->bm (the v5.0 `/gsd:` retirement). Lever (a) can happen independently and safely; (b) waits for v5.0 with a `renames` migration.
 
 ### Claude's Discretion
 - Exact copy/stamp mechanism and the precise file list the build touches.
