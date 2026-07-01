@@ -10,7 +10,18 @@ set -euo pipefail
 
 # --- Configuration ---
 VERSION_FILE="$HOME/.vibedrift-last-known-version"
-NPM="/usr/bin/npm"
+# Resolve npm robustly. cron runs with a minimal PATH and npm is NOT at
+# /usr/bin/npm on Homebrew macOS, so a hardcoded path made `$NPM view` fail and
+# `|| exit 0` froze the watcher (stuck at 0.14.4 while npm latest was 0.14.8).
+# Probe PATH first, then known install locations; exit 0 (never wedge cron) if
+# npm is genuinely absent. Fixed in quick-260701-gbo.
+NPM="$(command -v npm 2>/dev/null || true)"
+if [ -z "$NPM" ]; then
+  for cand in /opt/homebrew/bin/npm /usr/local/bin/npm /opt/homebrew/opt/node@22/bin/npm; do
+    [ -x "$cand" ] && NPM="$cand" && break
+  done
+fi
+[ -n "$NPM" ] || exit 0
 CURL="/usr/bin/curl"
 SSH="/usr/bin/ssh"
 RECIPIENT="jnuyens"
