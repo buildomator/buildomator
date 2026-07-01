@@ -55,14 +55,34 @@ kernel is the generic Claude-Code plugin trust model (a user-invoked skill with
 `allowed-tools: Bash` runs its bash unprompted), which applies to essentially all
 workflow plugins and is gated by explicit invocation.
 
-## Optional real hardening (defense-in-depth, not required)
-Investigate whether skill-frontmatter `allowed-tools` supports command-scoped Bash
-(e.g. `Bash(gsd-sdk:*)`, `Bash(git:*)`) the way settings permission rules do. If it
-does, narrowing the 83 skills from unrestricted `Bash` to their actual command
-prefixes would shrink the "unrestricted" surface and preempt naive scanners —
-turning the theoretical concern into a hardened posture. Needs verification that
-the granular syntax is honored in skill frontmatter before committing to an
-83-file change.
+## Scoped-Bash hardening: EXPLORED, and REJECTED (useless overhead)
+
+Explored narrowing `allowed-tools: Bash` -> `Bash(gsd-sdk:*)` etc. across the 83
+skills. Verdict: **do not do it.**
+
+1. **Wrong layer / unproven.** The `Bash(cmd:*)` prefix grammar belongs to
+   `settings.json` `permissions.allow`/`deny` (user-controlled) — the only repo
+   occurrences are in `skills/bundled/updateConfig.ts`, which DOCUMENTS that
+   settings syntax. A plugin cannot set those (reference_cc_plugin_no_permissions).
+   Skill-frontmatter `allowed-tools` is documented as tool NAMES; the granular
+   `Bash(...)` form is not confirmed to be honored there at all.
+2. **No enforcement uplift even if it worked.** `allowed-tools` only suppresses
+   prompts; it does not enforce. Scoping would just re-introduce prompts for
+   un-listed commands — it can't stop a malicious one. The user already consented
+   by invoking the slash command.
+3. **Real, recurring cost for a non-vuln.** The shell surface is broad and diverse
+   per skill (gsd-sdk/git/node/jq/mkdir/rm/awk/sed/find/python3/mail/...).
+   Enumerating each skill's command allow-list across 83 skills = large, brittle
+   frontmatter loaded on every invocation (violates minimize-workflow-tokens,
+   [[feedback_minimize_workflow_tokens]]) and breaks every time a skill adds a
+   command -> prompt storms / failures. Pure overhead to appease a naive scanner.
+
+**Cheaper, real alternative (opt-in, zero per-skill bloat):** document a
+`settings.json` deny snippet for genuinely destructive commands (e.g.
+`"deny": ["Bash(rm -rf:*)"]`) in the README — the additive-doc pattern
+(reference_cc_plugin_no_permissions), which the updateConfig skill already
+teaches. That reduces blast radius without touching any skill frontmatter. Even
+this is optional; the primary action is to close #19 with the explanation.
 
 ## Recommended response to #19
 Not a real vulnerability at the stated severity; safe to close with a courteous
