@@ -150,16 +150,16 @@ function resolveRuntimeTier(config, tier) {
 /**
  * Claude Fable 5 sunset — SDK mirror of bin/lib/core.cjs applyFableSunset.
  *
- * Claude Fable 5 was WITHDRAWN around 2026-06-12 (earlier than the planned
- * 2026-06-22 sunset), so the cutoff was pulled forward; the `fable` tier now
- * falls back to `opus` so heavy agents keep resolving to a real model. This is
- * the live resolution path for `gsd-sdk query init.*` (the workflow spawn path),
- * so the cutoff MUST match the CJS resolver. `GSD_FABLE_SUNSET_NOW` (ISO date)
- * pins "now" for tests; an unparseable value stays available so a bad env var
- * never forces the fallback early. The cutoff day is inclusive. Reversible: set
- * the date forward again if Fable returns.
+ * Claude Fable 5 was withdrawn ~2026-06-12, then REDEPLOYED 2026-07-01 and
+ * included in plan usage only through 2026-07-07 (usage-credit-gated after); the
+ * `fable` tier is available again through 2026-07-07 and downgrades to `opus`
+ * from 2026-07-08. This is the live resolution path for `gsd-sdk query init.*`
+ * (the workflow spawn path), so the cutoff MUST match the CJS resolver.
+ * `GSD_FABLE_SUNSET_NOW` (ISO date) pins "now" for tests; an unparseable value
+ * stays available so a bad env var never forces the fallback early. The cutoff
+ * day is inclusive. Reversible: move the date if it changes again.
  */
-const FABLE_SUNSET_DATE = '2026-06-12';
+const FABLE_SUNSET_DATE = '2026-07-07';
 // Tunable Fable knob, read straight from config.json (loadConfig builds a fixed
 // key set and drops `fable`). { mode, until }: mode 'auto'(default)|'on'|'off';
 // until = ISO date overriding the default cutoff in 'auto'. Lets Fable be flipped

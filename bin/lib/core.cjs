@@ -1400,19 +1400,19 @@ function _resolveRuntimeTier(config, tier) {
 /**
  * Claude Fable 5 sunset (gsd-plugin).
  *
- * Claude Fable 5 was WITHDRAWN around 2026-06-12, earlier than the originally
- * planned 2026-06-22 sunset, so the cutoff was pulled forward. The `fable` tier
- * (the quality profile's pick for the heaviest routingTier: heavy agents) now
- * automatically falls back to `opus`, so those agents keep resolving to a real
- * model instead of an unavailable one, with no config edit required. This is a
- * one-constant, reversible change: if Fable returns, set the date forward again.
+ * Claude Fable 5 was withdrawn ~2026-06-12, then REDEPLOYED 2026-07-01 and
+ * included in plan usage only through 2026-07-07 (usage-credit-gated after). So
+ * the `fable` tier (the quality profile's pick for the heaviest routingTier:
+ * heavy agents) is available again through 2026-07-07 and auto-downgrades to
+ * `opus` from 2026-07-08 onward, keeping heavy agents on Fable during the free
+ * window and off usage credits after it. One-constant, reversible: move the date.
  *
  * "now" resolves from the GSD_FABLE_SUNSET_NOW env var (ISO string) when set,
  * otherwise the system clock; the override exists so tests can pin a date
  * deterministically. The cutoff day itself is inclusive (Fable counted available
  * through <date>T23:59:59.999Z, falls back from the next day onward).
  */
-const FABLE_SUNSET_DATE = '2026-06-12';
+const FABLE_SUNSET_DATE = '2026-07-07';
 
 // Tunable Fable knob, read straight from config.json (loadConfig builds a fixed
 // key set and would drop `fable`, so read the file directly — same approach as

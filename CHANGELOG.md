@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.0.4] - 2026-07-01  (re-enable Claude Fable 5 through its redeploy free-usage window)
+
+Patch release on the 4.0.x line. Claude Fable 5 was redeployed 2026-07-01 and is included in plan usage only through 2026-07-07, so the `fable` tier is switched back on for that window.
+
+### Changed
+- **Re-enabled the Claude Fable 5 tier through 2026-07-07.** Fable 5 was withdrawn ~2026-06-12 (the quality profile's heaviest agents fell back to Opus) and has now been redeployed. Bumped `FABLE_SUNSET_DATE` from `2026-06-12` to `2026-07-07` in both resolvers (`bin/lib/core.cjs` + `sdk/src/query/config-query.ts`, rebuilt `sdk/dist`), so quality-profile heavy agents resolve to `claude-fable-5` again through 2026-07-07 and auto-downgrade to `opus` from 2026-07-08 (when Fable moves to usage credits). No manual revert needed; the per-project `fable` knob (`fable.mode` / `fable.until`) still overrides. Updated `tests/fable-sunset.test.cjs`.
+
 ## [4.0.3] - 2026-07-01  (gsd-core 1.6.1 correctness slice + Claude Sonnet 5 + watcher fix)
 
 Patch release on the 4.0.x line. Cherry-picks the worthwhile fixes from the gsd-core `1.6.1` line, adopts the newly released Claude Sonnet 5, and fixes a stale second-upstream watcher. Both parallel resolvers (SDK + CJS) stay in sync; `sdk/dist` rebuilt.
