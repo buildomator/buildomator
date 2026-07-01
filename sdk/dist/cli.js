@@ -6732,6 +6732,9 @@ var roadmapAnalyze = async (_args, projectDir, workstream) => {
   let match;
   while ((match = phasePattern.exec(content)) !== null) {
     const phaseNum = match[1];
+    const majorNum = parseInt(phaseNum, 10);
+    if (majorNum === 0 || majorNum === 999)
+      continue;
     const phaseName = match[2].replace(/\(INSERTED\)/i, "").trim();
     const sectionStart = match.index;
     const restOfContent = content.slice(sectionStart);
@@ -6813,7 +6816,10 @@ var roadmapAnalyze = async (_args, projectDir, workstream) => {
     checklistPhases.add(checklistMatch[1]);
   }
   const detailPhases = new Set(phases.map((p) => p.number));
-  const missingDetails = [...checklistPhases].filter((p) => !detailPhases.has(p));
+  const missingDetails = [...checklistPhases].filter((p) => {
+    const major = parseInt(p, 10);
+    return !detailPhases.has(p) && major !== 0 && major !== 999;
+  });
   const result = {
     milestones,
     phases,
@@ -13479,6 +13485,8 @@ var phaseComplete = async (args, projectDir, workstream) => {
     for (const dir of dirs) {
       const dm = dir.match(/^(\d+[A-Z]?(?:\.\d+)*)-?(.*)/i);
       if (dm) {
+        if (/^999(?:\.|$)/.test(dm[1]))
+          continue;
         if (comparePhaseNum(dm[1], phaseNum) > 0) {
           nextPhaseNum = dm[1];
           nextPhaseName = dm[2] || null;
@@ -13493,7 +13501,7 @@ var phaseComplete = async (args, projectDir, workstream) => {
     try {
       const roadmapContent = await readFile25(paths.roadmap, "utf-8");
       const roadmapForPhases = completedPhaseInPrimaryMilestone ? await extractCurrentMilestone(roadmapContent, projectDir) : roadmapContent;
-      const phasePattern = /#{2,4}\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
+      const phasePattern = /(?:#{2,4}|-\s*\[[ xX]\])\s*(?:\*\*|__)?\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n*]+)/gi;
       let pm;
       while ((pm = phasePattern.exec(roadmapForPhases)) !== null) {
         if (comparePhaseNum(pm[1], phaseNum) > 0) {

@@ -218,6 +218,9 @@ function cmdRoadmapAnalyze(cwd, raw) {
 
   while ((match = phasePattern.exec(content)) !== null) {
     const phaseNum = match[1];
+    // #1580: skip Phase 0 / Phase 999 sentinels (placeholder/backlog), never real phases
+    const major = parseInt(phaseNum, 10);
+    if (major === 0 || major === 999) continue;
     const phaseName = match[2].replace(/\(INSERTED\)/i, '').trim();
 
     // Extract goal from the section
@@ -321,7 +324,11 @@ function cmdRoadmapAnalyze(cwd, raw) {
     checklistPhases.add(checklistMatch[1]);
   }
   const detailPhases = new Set(phases.map(p => p.number));
-  const missingDetails = [...checklistPhases].filter(p => !detailPhases.has(p));
+  // #1580: sentinel phases (0/999) never need a detail section
+  const missingDetails = [...checklistPhases].filter(p => {
+    const major = parseInt(p, 10);
+    return !detailPhases.has(p) && major !== 0 && major !== 999;
+  });
 
   const result = {
     milestones,

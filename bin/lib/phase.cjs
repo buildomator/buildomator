@@ -1302,7 +1302,10 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
   if (isLastPhase && fs.existsSync(roadmapPath)) {
     try {
       const roadmapForPhases = extractCurrentMilestone(fs.readFileSync(roadmapPath, 'utf-8'), cwd);
-      const phasePattern = /#{2,4}\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
+      // #1591: match heading, checkbox, and bold-checkbox phase forms so
+      // <details>-wrapped checklists (- [ ] **Phase N: Name**) don't yield a
+      // false "Milestone complete". Only this isLastPhase fallback changes.
+      const phasePattern = /(?:#{2,4}|-\s*\[[ xX]\])\s*(?:\*\*|__)?\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n*]+)/gi;
       let pm;
       while ((pm = phasePattern.exec(roadmapForPhases)) !== null) {
         if (comparePhaseNum(pm[1], phaseNum) > 0) {

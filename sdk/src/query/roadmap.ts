@@ -655,6 +655,9 @@ export const roadmapAnalyze: QueryHandler = async (_args, projectDir, workstream
 
   while ((match = phasePattern.exec(content)) !== null) {
     const phaseNum = match[1];
+    // #1580: skip Phase 0 / Phase 999 sentinels (placeholder/backlog), never real phases
+    const majorNum = parseInt(phaseNum, 10);
+    if (majorNum === 0 || majorNum === 999) continue;
     const phaseName = match[2].replace(/\(INSERTED\)/i, '').trim();
 
     // Extract goal from the section
@@ -751,7 +754,11 @@ export const roadmapAnalyze: QueryHandler = async (_args, projectDir, workstream
     checklistPhases.add(checklistMatch[1]);
   }
   const detailPhases = new Set(phases.map(p => p.number as string));
-  const missingDetails = [...checklistPhases].filter(p => !detailPhases.has(p));
+  // #1580: sentinel phases (0/999) never need a detail section
+  const missingDetails = [...checklistPhases].filter(p => {
+    const major = parseInt(p, 10);
+    return !detailPhases.has(p) && major !== 0 && major !== 999;
+  });
 
   const result: Record<string, unknown> = {
     milestones,

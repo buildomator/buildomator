@@ -1303,6 +1303,33 @@ describe('phaseComplete', () => {
     expect(data.is_last_phase).toBe(false);
   });
 
+  // #1591: a later phase declared only as a checkbox / bold-checkbox (the roadmap
+  // template form, often inside a <details> block) must be seen by the isLastPhase
+  // fallback — otherwise completing the last on-disk phase falsely reports
+  // "milestone complete".
+  it('does not report last phase when a later phase exists only as a bold checkbox (#1591)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = ROADMAP_FOR_COMPLETE.replace(
+      '- [ ] Phase 11: Final Phase',
+      '- [ ] Phase 11: Final Phase\n- [ ] **Phase 12: Future work**'
+    );
+    await setupTestProject(tmpDir, {
+      roadmap,
+      state: STATE_FOR_COMPLETE,
+      phases: ['09-foundation', '10-read-only-queries', '11-final-phase'],
+    });
+    const p11Dir = join(tmpDir, '.planning', 'phases', '11-final-phase');
+    await writeFile(join(p11Dir, '11-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p11Dir, '11-01-SUMMARY.md'), 'summary', 'utf-8');
+    await writeFile(join(tmpDir, '.planning', 'REQUIREMENTS.md'), REQUIREMENTS_FOR_COMPLETE, 'utf-8');
+
+    const result = await phaseComplete(['11'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data.is_last_phase).toBe(false);
+    expect(data.next_phase).toBe('12');
+  });
+
   it('sets is_last_phase when completing the final phase', async () => {
     const { phaseComplete } = await import('./phase-lifecycle.js');
     await setupTestProject(tmpDir, {

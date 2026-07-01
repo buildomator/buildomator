@@ -1179,3 +1179,51 @@ describe('extractNextMilestoneSection', () => {
     expect(next).toBeNull();
   });
 });
+
+// ─── roadmapAnalyze — sentinel phase exclusion (#1580) ─────────────────────
+
+describe('roadmapAnalyze — Phase 0 / Phase 999 sentinel exclusion (#1580)', () => {
+  it('excludes 999-heading phases and never flags a 999 checklist entry as missing detail', async () => {
+    const roadmap = `# Roadmap: Test
+
+## Current Milestone: v4.1 Test
+
+## Phases
+
+### Phase 12: First real phase
+**Goal:** do the first thing
+
+### Phase 13: Second real phase
+**Goal:** do the second thing
+
+### Phase 999: Backlog sentinel
+**Goal:** parked idea, not a real phase
+
+## Backlog
+- [ ] Phase 999.1: another parked idea
+`;
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), roadmap);
+    await writeFile(
+      join(tmpDir, '.planning', 'STATE.md'),
+      '---\nmilestone: v4.1\nmilestone_name: Test\n---\n# State\n'
+    );
+
+    const result = await roadmapAnalyze([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    const nums = (data.phases as Array<Record<string, unknown>>).map(p => p.number);
+
+    // 999 heading is skipped by the analyze loop; real phases remain.
+    expect(nums).toContain('12');
+    expect(nums).toContain('13');
+    expect(nums).not.toContain('999');
+    expect(nums).not.toContain('999.1');
+    expect(data.next_phase).not.toBe('999');
+
+    // A 999.x checklist entry with no detail section must not be reported missing.
+    const missing = data.missing_phase_details as string[] | null;
+    if (missing) {
+      expect(missing).not.toContain('999');
+      expect(missing).not.toContain('999.1');
+    }
+  });
+});

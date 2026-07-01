@@ -963,6 +963,10 @@ export const phaseComplete = async (args, projectDir, workstream) => {
         for (const dir of dirs) {
             const dm = dir.match(/^(\d+[A-Z]?(?:\.\d+)*)-?(.*)/i);
             if (dm) {
+                // Skip backlog phases (999.x) — parked ideas, not sequential work (#2129).
+                // Parity with bin/lib/phase.cjs, which already skips them.
+                if (/^999(?:\.|$)/.test(dm[1]))
+                    continue;
                 if (comparePhaseNum(dm[1], phaseNum) > 0) {
                     nextPhaseNum = dm[1];
                     nextPhaseName = dm[2] || null;
@@ -983,7 +987,10 @@ export const phaseComplete = async (args, projectDir, workstream) => {
             const roadmapForPhases = completedPhaseInPrimaryMilestone
                 ? await extractCurrentMilestone(roadmapContent, projectDir)
                 : roadmapContent;
-            const phasePattern = /#{2,4}\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
+            // #1591: match heading, checkbox, and bold-checkbox phase forms so
+            // <details>-wrapped checklists (- [ ] **Phase N: Name**) don't yield a
+            // false "Milestone complete". Only this isLastPhase fallback changes.
+            const phasePattern = /(?:#{2,4}|-\s*\[[ xX]\])\s*(?:\*\*|__)?\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n*]+)/gi;
             let pm;
             while ((pm = phasePattern.exec(roadmapForPhases)) !== null) {
                 if (comparePhaseNum(pm[1], phaseNum) > 0) {
