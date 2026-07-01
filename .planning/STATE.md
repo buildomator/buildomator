@@ -145,6 +145,7 @@ None.
 | 260629-rrr | Ported gsd-core 1.6 #1520: fixed BSD/macOS mktemp suffix collision across 5 callsites (X's moved to end; extension was cosmetic) + tests/mktemp-portable.test.cjs regression guard wired into CI. | 2026-06-29 | e93417c | Done | [260629-rrr-fix-bsd-macos-mktemp-suffix-collision-gs](./quick/260629-rrr-fix-bsd-macos-mktemp-suffix-collision-gs/) |
 
 | 260701-gbo | Upstream follow-ups (parallel): surveyed gsd-core 1.6.1 (ADOPT #1580 + #1591; #1847 claude-sonnet-5 verify-first; no #1520 companion) + 1.7.0-rc.1 (multi-runtime = SKIP; watch ADR-1769 vs #9); FIXED vibedrift watcher npm-path freeze (was stuck 0.14.4 vs 0.14.8). | 2026-07-01 | 1b3dbd7 | Done | [260701-gbo-upstream-follow-ups-survey-gsd-core-1-6-](./quick/260701-gbo-upstream-follow-ups-survey-gsd-core-1-6-/) |
+| 260701-gzj | Cherry-picked gsd-core 1.6.1 #1580 (roadmap-analyze Phase 0/999 sentinel exclusion) + #1591 (isLastPhase checkbox/bold-checkbox detection, kills false milestone-complete) into BOTH resolvers + rebuilt sdk/dist + regression tests (1815 SDK tests green). SKIPPED #1847: claude-sonnet-5 is not a real model (would break Sonnet resolution). | 2026-07-01 | 1298162 | Done | [260701-gzj-cherry-pick-gsd-core-1-6-1-1580-1591-sen](./quick/260701-gzj-cherry-pick-gsd-core-1-6-1-1580-1591-sen/) |
 
 ## Session Continuity
 
