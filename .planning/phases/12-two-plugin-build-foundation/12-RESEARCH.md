@@ -372,17 +372,19 @@ Source: [VERIFIED: codebase — job shape copied from existing check-drift.yml j
 | A3 | Version single-sourced from `plugin.json` (not `package.json`, which is stuck at 2.45.0) | Version lockstep | LOW. `package.json` version (2.45.0) is stale/internal and already divergent; `.claude-plugin/plugin.json` (4.0.4) is the product version per the existing alignment guard. Do NOT source version from package.json. [VERIFIED: codebase] |
 | A4 | `tests/` and `.github/` MAY be copied into `dist/bm/` (byte-identical, harmless) OR excluded | Build filter | LOW. CC only loads plugin components (skills/agents/hooks/mcp/commands); extra dirs are ignored. Decide for cleanliness; excluding them shrinks the package but the drift guard must match the choice. Recommend INCLUDING everything except the EXCLUDE set, for a truly byte-identical guarantee. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `tests/`, `.github/`, `docs/`, `CHANGELOG.md`, `README.md` be copied into `dist/bm/`?**
    - What we know: CC ignores non-component files; byte-identical copy is the strongest drift guarantee.
    - What's unclear: whether a leaner package is preferred over maximal identity.
    - Recommendation: copy everything except the EXCLUDE set (`.git .planning .claude node_modules dist scratchpad .DS_Store`). Simplest to reason about and to drift-check. Planner's discretion per D-02 ("every other file byte-identical").
+   - **RESOLVED:** Plan 01 Task 2 — copy everything except the EXCLUDE set (`git ls-files` source list minus the exclusion predicate), giving a byte-identical drift guarantee.
 
 2. **Exact handling of the hook cache-fallback literal (Pitfall 1 / A1).**
    - What we know: primary path is correct for bm; fallback points at gsd's cache.
    - What's unclear: whether to leave it (byte-identical policy) or make the fallback plugin-aware now.
    - Recommendation: leave verbatim in Phase 12 (respects D-02's identity-only whitelist), but add an install-smoke assertion that bm resolves via `${CLAUDE_PLUGIN_ROOT}`, and file the per-plugin fallback fix against Phase 13/14. Surface as an explicit plan decision.
+   - **RESOLVED:** Plan 01 Task 2 leaves the fallback verbatim (D-02); Plan 02 Task 2 adds the tripwire install-smoke assertion proving bm resolves via its primary `${CLAUDE_PLUGIN_ROOT}` (fallback never fires); the per-plugin fix is deferred to Phase 13/14 and documented in RELEASING.md.
 
 ## Environment Availability
 
