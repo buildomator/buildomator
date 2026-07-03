@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-21T12:00:00.000Z",
+  "source": "manual-pause",
+  "partial": false,
+  "phase": "8",
+  "phase_name": "HANDOFF Schema Baseline and Detector",
+  "phase_dir": ".planning/phases/08-handoff-schema-detector",
+  "plan": "01",
+  "task": 2,
+  "total_tasks": 6,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 1, "name": "Add ajv + ajv-formats as devDependencies", "status": "done", "commit": "c3825d5"}
+  ],
+  "remaining_tasks": [
+    {"id": 3, "name": "Implement check-handoff-schema.cjs", "status": "not_started"},
+    {"id": 4, "name": "Implement check-upstream-schema.cjs", "status": "not_started"},
+    {"id": 5, "name": "Extend check-drift.yml with handoff-schema job", "status": "not_started"},
+    {"id": 6, "name": "README + PROJECT.md pointers", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "ajv + ajv-formats as devDependencies (not runtime)", "rationale": "JSON Schema validation needed only for maintenance scripts, not hooks or CLI", "phase": "8"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Write schema/handoff-v1.json and positive fixture",
+  "context_notes": "Phase 8 of v1.2 Upstream Resilience. Research R-1 confirmed upstream schema stability (1.37.x through 1.38.x) and that upstream's 17 fields are a strict subset of the plugin's 19."
+}

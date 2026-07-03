@@ -1,0 +1,109 @@
+name: Install smoke (fresh Debian)
+
+# Catches the v2.42.0-class bug where the bundled SDK works on the
+# maintainer's laptop (which has an external gsd-sdk on PATH masking
+# missing-deps issues) but breaks on a clean install with no prior
+# get-shit-done-cc. Runs the same 6-test matrix that was used to
+# catch the original bug on 192.168.1.170, but in a debian:trixie
+# container so it fires on every push, every PR, and every tag.
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  fresh-debian-install:
+    name: gsd-sdk works on debian:trixie with no prior GSD install
+    runs-on: ubuntu-latest
+    container:
+      image: debian:trixie
+    steps:
+      - name: Install minimum prereqs (nodejs, ca-certificates, git for checkout)
+        # ca-certificates needed for HTTPS git clone, git for actions/checkout's
+        # `--depth=1` clone, nodejs for the bundled SDK runtime. Deliberately
+        # NOT installing `npm` or `get-shit-done-cc` -- the whole point of
+        # this job is to prove the plugin needs neither.
+        run: |
+          apt-get update -qq
+          apt-get install -y --no-install-recommends nodejs ca-certificates git
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sanity-check the test environment is genuinely fresh
+        run: |
+          set -e
+          echo "node version: $(node --version)"
+          echo "npm available: $(command -v npm || echo 'NO -- correct, simulating fresh user')"
+          echo "gsd-sdk available before plugin: $(command -v gsd-sdk || echo 'NO -- correct, simulating fresh user')"
+          test -f sdk/dist/cli.js
+          test -x bin/gsd-sdk
+          echo "✓ plugin tree complete, sdk/dist/cli.js: $(stat -c%s sdk/dist/cli.js) bytes"
+          test ! -d sdk/node_modules
+          echo "✓ no sdk/node_modules in the tree (proves bundle must be self-contained)"
+
+      - name: Test 1 - bin/gsd-sdk wrapper resolves (CLAUDE_PLUGIN_ROOT-driven)
+        run: |
+          set -e
+          out=$(CLAUDE_PLUGIN_ROOT="$PWD" bin/gsd-sdk --version)
+          echo "out: $out"
+          echo "$out" | grep -q "gsd-sdk v" || { echo "FAIL: expected 'gsd-sdk v...' in output"; exit 1; }
+
+      - name: Test 2 - PATH-based resolution (simulates Claude Code plugin loader)
+        run: |
+          set -e
+          export PATH="$PWD/bin:$PATH"
+          export CLAUDE_PLUGIN_ROOT="$PWD"
+          out=$(gsd-sdk --version)
+          echo "out: $out"
+          echo "$out" | grep -q "gsd-sdk v" || { echo "FAIL: PATH resolution did not find bundled wrapper"; exit 1; }
+
+      - name: "Test 3 - real query: state.load on a synthetic project"
+        run: |
+          set -e
+          mkdir -p /tmp/smoke-project && cd /tmp/smoke-project
+          git init -q
+          mkdir -p .planning && echo '{}' > .planning/config.json
+          out=$(CLAUDE_PLUGIN_ROOT="$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/bin/gsd-sdk" query state.load 2>&1)
+          echo "$out" | head -10
+          echo "$out" | grep -q '"config"' || { echo "FAIL: state.load did not return a config block"; exit 1; }
+
+      - name: Test 4 - query commands lists the plugin's command surface
+        run: |
+          set -e
+          out=$(CLAUDE_PLUGIN_ROOT="$PWD" bin/gsd-sdk query commands 2>&1)
+          echo "$out" | head -5
+          echo "$out" | grep -q '"agent-skills"' || { echo "FAIL: query commands missing agent-skills"; exit 1; }
+
+      - name: Test 5 - MCP stdio framing regression (issue #3)
+        run: node tests/mcp-stdio-framing.test.cjs
+
+      - name: Test 6 - workflow-style callsite (naked gsd-sdk via PATH)
+        run: |
+          set -e
+          export PATH="$PWD/bin:$PATH"
+          export CLAUDE_PLUGIN_ROOT="$PWD"
+          out=$(bash -c 'gsd-sdk query commands 2>&1' | head -5)
+          echo "$out"
+          echo "$out" | grep -q '"agent-skills"' || { echo "FAIL: naked gsd-sdk callsite did not resolve via PATH"; exit 1; }
+
+      - name: Verify no node_modules was created during the run
+        # If any step accidentally invoked `npm install` or `npx`, this would
+        # fail. The whole point of bundling is to not need any.
+        run: |
+          set -e
+          test ! -d sdk/node_modules || { echo "FAIL: sdk/node_modules was created during the run"; ls -la sdk/node_modules; exit 1; }
+          test ! -d node_modules || { echo "FAIL: root node_modules was created during the run"; ls -la node_modules; exit 1; }
+          echo "✓ no node_modules touched"
+
+      - name: Summary
+        run: |
+          echo "─────────────────────────────────────────────"
+          echo " Install smoke PASS on debian:trixie"
+          echo " Plugin: $(grep '\"version\"' package.json | head -1)"
+          echo " Bundled SDK: $(stat -c%s sdk/dist/cli.js) bytes, no node_modules"
+          echo "─────────────────────────────────────────────"

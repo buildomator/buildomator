@@ -1,0 +1,27 @@
+{
+  "name": "bm",
+  "version": "4.0.4",
+  "description": "Buildomator -- a structured workflow plugin for Claude Code that adds planning, execution, and verification commands with MCP-backed project state",
+  "author": {
+    "name": "Jasper Nuyens"
+  },
+  "repository": "https://github.com/jnuyens/gsd-plugin",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "planning",
+    "execution",
+    "project-management",
+    "gsd"
+  ],
+  "mcpServers": {
+    "gsd": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/mcp/server.cjs"
+      ]
+    }
+  },
+  "displayName": "Buildomator"
+}

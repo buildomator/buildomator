@@ -1,0 +1,1 @@
+{"version":3,"file":"query-fallback-output-classifier.d.ts","sourceRoot":"","sources":["../../src/query/query-fallback-output-classifier.ts"],"names":[],"mappings":"AAEA,MAAM,WAAW,4BAA4B;IAC3C,IAAI,EAAE,MAAM,GAAG,MAAM,CAAC;IACtB,MAAM,EAAE,OAAO,CAAC;CACjB;AAeD,wBAAsB,sBAAsB,CAAC,GAAG,EAAE,MAAM,EAAE,UAAU,EAAE,MAAM,GAAG,OAAO,CAAC,4BAA4B,CAAC,CAUnH"}

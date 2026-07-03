@@ -20,6 +20,21 @@
       "license": "MIT",
       "keywords": ["workflow", "planning", "gsd", "mcp"],
       "category": "productivity"
+    },
+    {
+      "name": "bm",
+      "source": "./dist/bm",
+      "displayName": "Buildomator",
+      "description": "Buildomator -- structured workflow plugin for Claude Code with planning, execution, verification, and MCP-backed project state",
+      "version": "4.0.4",
+      "author": {
+        "name": "Jasper Nuyens"
+      },
+      "homepage": "https://github.com/jnuyens/gsd-plugin",
+      "repository": "https://github.com/jnuyens/gsd-plugin",
+      "license": "MIT",
+      "keywords": ["workflow", "planning", "buildomator", "mcp"],
+      "category": "productivity"
     }
   ]
 }
