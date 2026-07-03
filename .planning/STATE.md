@@ -150,6 +150,8 @@ None.
 | 260701-vnh | Investigation (no code): security issue #19 "Multiple Skills Auto-Approve Unrestricted Shell" (Trustabl scanner). VERDICT: theoretical/mischaracterized, not a real Critical — allowed-tools:Bash only suppresses prompts while the user-INVOKED skill runs (documented CC behavior); no bypass/mode/background vector; 83/86 skills declare Bash of necessity. Optional hardening: scoped Bash(gsd-sdk:*). | 2026-07-01 | (docs) | Done | [260701-vnh-investigate-trustabl-security-report-19-](./quick/260701-vnh-investigate-trustabl-security-report-19-/) |
 | 260701-wxe | Re-enabled Claude Fable 5 tier through its redeploy free-usage window (redeployed 2026-07-01, plan-included through 2026-07-07). Bumped FABLE_SUNSET_DATE 2026-06-12 -> 2026-07-07 in both resolvers + tests + dist; heavy agents ride Fable through 07-07 then auto-downgrade to Opus. Shipped as 4.0.4. | 2026-07-01 | v4.0.4 | Done | [260701-wxe-re-enable-fable-5-through-2026-07-07-red](./quick/260701-wxe-re-enable-fable-5-through-2026-07-07-red/) |
 
+| 260703-2zr | Discoverability fix: /gsd:scan --drift was implemented in workflows/scan.md but invisible (scan had no argument-hint). Added argument-hint to scan (+ --drift in description), explore, workstreams, next; audited all 23 hint-less skills, rest take no user args. No workflow logic changed. | 2026-07-03 | f00ac99 | Done | [260703-2zr-add-argument-hint-to-scan-skill-advertis](./quick/260703-2zr-add-argument-hint-to-scan-skill-advertis/) |
+
 ## Session Continuity
 
 Last session: 2026-07-01T00:28:17.775Z
