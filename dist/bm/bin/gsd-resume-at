@@ -1,0 +1,209 @@
+#!/bin/bash
+set -euo pipefail
+
+# gsd-resume-at — pure-shell scheduling primitive for /gsd:resume-work
+#
+# Schedules a future Claude Code session WITHOUT consuming Claude tokens.
+# Use this when the /gsd:resume-at skill can't run (e.g. usage cap hit).
+#
+# Mechanism: nohup + sleep + osascript. No daemon, no plist, no cron entry.
+# Survives shell exit; does NOT survive reboot.
+#
+# Usage:
+#   bin/gsd-resume-at <HH:MM | +Nm/Nh/Nd | ISO8601> [--cmd <command>] [--project <dir>]
+#
+# Examples:
+#   bin/gsd-resume-at +3h
+#   bin/gsd-resume-at 09:00
+#   bin/gsd-resume-at 2026-04-28T08:00 --project ~/code/myproject
+#
+# Rate-limited? When Claude Code shows "You've hit your limit", the
+# /gsd:resume-at SKILL won't run (it needs tokens). Recover with:
+#   /exit                    # leave the rate-limited Claude session first
+#   gsd-resume-at 17:41      # then run this wrapper from a plain terminal
+#
+# Platform: macOS only (v1).
+
+# --- Usage ---
+usage() {
+  cat >&2 <<'EOF'
+Usage: gsd-resume-at <HH:MM | +Nm/Nh/Nd | ISO8601> [--cmd <command>] [--project <dir>]
+
+Time forms:
+  HH:MM             Today at that local time (tomorrow if already passed).
+  +Nm | +Nh | +Nd   Relative offset from now (integer N).
+  ISO 8601          Absolute timestamp, e.g. 2026-04-28T08:00.
+
+Options:
+  --cmd <command>     Informational override (default: /gsd:resume-work).
+                      The shell fallback always launches `claude`; the
+                      SessionStart hook + HANDOFF.json route to /gsd:resume-work.
+  --project <dir>     Project root (default: current working directory).
+
+Examples:
+  gsd-resume-at +3h
+  gsd-resume-at 09:00
+  gsd-resume-at 2026-04-28T08:00 --project ~/code/myproject
+
+Rate-limited? When Claude Code shows "You've hit your limit", the
+/gsd:resume-at SKILL won't run (it needs tokens). Recover with:
+  /exit                    # leave the rate-limited Claude session first
+  gsd-resume-at 17:41      # then run this wrapper from a plain terminal
+EOF
+}
+
+# --- Argument parsing ---
+if [ $# -lt 1 ]; then
+  usage
+  exit 1
+fi
+
+TIME_ARG=""
+CMD_OVERRIDE="/gsd:resume-work"
+PROJECT_DIR="$(pwd)"
+
+# First positional: time arg
+TIME_ARG="$1"
+shift
+
+# Remaining flags
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --cmd)
+      if [ $# -lt 2 ]; then
+        echo "gsd-resume-at: --cmd requires a value" >&2
+        exit 1
+      fi
+      CMD_OVERRIDE="$2"
+      shift 2
+      ;;
+    --project)
+      if [ $# -lt 2 ]; then
+        echo "gsd-resume-at: --project requires a value" >&2
+        exit 1
+      fi
+      PROJECT_DIR="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "gsd-resume-at: unknown argument '$1'" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+# --- Platform gate ---
+if [ "$(uname -s)" != "Darwin" ]; then
+  echo "gsd-resume-at: macOS-only for v1. On Linux use cron/at, on Windows use Task Scheduler." >&2
+  exit 2
+fi
+
+# --- Resolve project dir to absolute path ---
+if [ ! -d "$PROJECT_DIR" ]; then
+  echo "gsd-resume-at: project dir '$PROJECT_DIR' does not exist" >&2
+  exit 1
+fi
+PROJECT_ABS="$(cd "$PROJECT_DIR" && pwd)"
+
+# --- Time computation ---
+NOW_EPOCH=$(date +%s)
+TARGET_EPOCH=""
+
+# Match against forms in order: +Nm/Nh/Nd, HH:MM, ISO 8601
+if [[ "$TIME_ARG" =~ ^\+([0-9]+)([mhd])$ ]]; then
+  N="${BASH_REMATCH[1]}"
+  UNIT="${BASH_REMATCH[2]}"
+  case "$UNIT" in
+    m) DELTA_SEC=$((N * 60)) ;;
+    h) DELTA_SEC=$((N * 3600)) ;;
+    d) DELTA_SEC=$((N * 86400)) ;;
+  esac
+  TARGET_EPOCH=$((NOW_EPOCH + DELTA_SEC))
+elif [[ "$TIME_ARG" =~ ^([0-9]{1,2}):([0-9]{2})$ ]]; then
+  # HH:MM today; if already passed, tomorrow
+  if ! TARGET_EPOCH=$(date -j -f "%H:%M" "$TIME_ARG" "+%s" 2>/dev/null); then
+    echo "gsd-resume-at: could not parse '$TIME_ARG' as HH:MM" >&2
+    exit 1
+  fi
+  if [ "$TARGET_EPOCH" -le "$NOW_EPOCH" ]; then
+    TARGET_EPOCH=$((TARGET_EPOCH + 86400))
+  fi
+elif [[ "$TIME_ARG" =~ ^[0-9]{4}- ]]; then
+  # ISO 8601 — try with seconds first, then without
+  if PARSED=$(date -j -f "%Y-%m-%dT%H:%M:%S" "$TIME_ARG" "+%s" 2>/dev/null); then
+    TARGET_EPOCH="$PARSED"
+  elif PARSED=$(date -j -f "%Y-%m-%dT%H:%M" "$TIME_ARG" "+%s" 2>/dev/null); then
+    TARGET_EPOCH="$PARSED"
+  else
+    echo "gsd-resume-at: could not parse '$TIME_ARG' as ISO 8601 (expected YYYY-MM-DDTHH:MM[:SS])" >&2
+    exit 1
+  fi
+else
+  echo "gsd-resume-at: could not parse '$TIME_ARG' as HH:MM, +Nm/Nh/Nd, or ISO 8601" >&2
+  exit 1
+fi
+
+# --- Past-time check ---
+DELTA=$((TARGET_EPOCH - NOW_EPOCH))
+if [ "$DELTA" -le 0 ]; then
+  PRETTY=$(date -r "$TARGET_EPOCH" "+%Y-%m-%d %H:%M %Z")
+  echo "gsd-resume-at: target time is in the past (parsed: $PRETTY). Refusing to schedule." >&2
+  exit 1
+fi
+
+# --- Soft warning if `claude` not on PATH ---
+if ! command -v claude >/dev/null 2>&1; then
+  echo "gsd-resume-at: warning — 'claude' not found on PATH. Schedule will still fire, but the Terminal window will surface the error." >&2
+fi
+
+# --- Build wakeup body ---
+# Escape the project path for AppleScript (inside double quotes).
+# Replace backslashes first, then double quotes.
+APPLESCRIPT_PROJECT="${PROJECT_ABS//\\/\\\\}"
+APPLESCRIPT_PROJECT="${APPLESCRIPT_PROJECT//\"/\\\"}"
+
+# The Terminal `do script` command needs the cd && claude invocation as a single
+# AppleScript string. We build it via printf so we can embed escaped quotes.
+TERMINAL_CMD=$(printf 'tell application "Terminal" to do script "cd \\"%s\\" && claude"' "$APPLESCRIPT_PROJECT")
+NOTIFY_CMD=$(printf 'display notification "Resuming GSD work in %s" with title "gsd-resume-at"' "$APPLESCRIPT_PROJECT")
+
+# Wakeup body: notify, then open Terminal.
+WAKEUP="osascript -e '$NOTIFY_CMD'; osascript -e '$TERMINAL_CMD'"
+
+# --- Schedule via nohup + sleep ---
+nohup sh -c "sleep $DELTA && $WAKEUP" >/dev/null 2>&1 &
+PID=$!
+disown "$PID" 2>/dev/null || true
+
+# --- Confirmation block ---
+TARGET_LOCAL=$(date -r "$TARGET_EPOCH" "+%Y-%m-%d %H:%M %Z")
+TARGET_UTC=$(date -ur "$TARGET_EPOCH" "+%Y-%m-%d %H:%M UTC")
+
+# Pretty delta: H M S
+DELTA_H=$((DELTA / 3600))
+DELTA_M=$(((DELTA % 3600) / 60))
+DELTA_S=$((DELTA % 60))
+DELTA_PRETTY="${DELTA_H}h ${DELTA_M}m ${DELTA_S}s"
+
+cat <<EOF
+✓ Resume scheduled (shell fallback — no tokens consumed)
+  Target:  $TARGET_LOCAL ($TARGET_UTC)
+  Delta:   $DELTA_PRETTY from now
+  Action:  open Terminal in $PROJECT_ABS and run \`claude\`
+          → SessionStart hook + HANDOFF.json auto-route to /gsd:resume-work
+  Project: $PROJECT_ABS
+  Command: $CMD_OVERRIDE (informational — custom commands run via the skill,
+           not the shell fallback — shell wrapper always launches /gsd:resume-work
+           via the SessionStart hook)
+  PID:     $PID
+  Cancel:  kill $PID
+
+  Note: nohup+sleep does NOT survive a reboot. If your Mac reboots before
+  target time, the schedule is lost. Use \`/gsd:resume-at\` (the skill, when
+  tokens are available) for durable cross-reboot scheduling via /schedule.
+EOF

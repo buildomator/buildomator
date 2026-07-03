@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/jnuyens/gsd-plugin/schema/handoff-v1.json",
+  "title": "GSD HANDOFF.json (v1)",
+  "$comment": "Describes the 19-field HANDOFF.json contract emitted by bin/lib/checkpoint.cjs. Split: 17 upstream-compat required fields + 2 optional plugin-only extensions (source, partial). The 17 required fields mirror upstream GSD's /gsd:pause-work output verbatim (field names + types) so plugin output is consumable upstream and vice versa. The 2 optional fields are plugin additions from v1.1 Phase 4 (auto-compact checkpointing). `additionalProperties: true` leaves room for future plugin extensions without schema churn — strictness is on required-fields + types, not on an allowlist. See .planning/phases/08-handoff-schema-detector/08-RESEARCH.md for the upstream-subset analysis.",
+  "type": "object",
+  "required": [
+    "version",
+    "timestamp",
+    "phase",
+    "phase_name",
+    "phase_dir",
+    "plan",
+    "task",
+    "total_tasks",
+    "status",
+    "completed_tasks",
+    "remaining_tasks",
+    "blockers",
+    "human_actions_pending",
+    "decisions",
+    "uncommitted_files",
+    "next_action",
+    "context_notes"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "$comment": "Schema marker. Pinned — if upstream ever bumps it, the validator surfaces the change."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "$comment": "ISO-8601 timestamp of when the checkpoint was written (new Date().toISOString())."
+    },
+    "source": {
+      "type": "string",
+      "enum": ["auto-compact", "manual-pause", "auto-postool"],
+      "$comment": "Plugin extension (not in upstream). Optional for upstream-compat. Values: auto-compact (PreCompact hook), manual-pause (/gsd:pause-work or `checkpoint --source manual-pause`), auto-postool (PostToolUse hook periodic checkpoint added 2026-04-25 to bridge the microcompact gap; throttled by HANDOFF.json mtime to at most once per 60s)."
+    },
+    "partial": {
+      "type": "boolean",
+      "$comment": "Plugin extension (not in upstream). Optional for upstream-compat. True when PreCompact's 5s budget ran out mid-gather; consumers should degrade gracefully."
+    },
+    "phase": {
+      "type": ["string", "null"]
+    },
+    "phase_name": {
+      "type": ["string", "null"]
+    },
+    "phase_dir": {
+      "type": ["string", "null"]
+    },
+    "plan": {
+      "type": ["string", "null"]
+    },
+    "task": {
+      "type": ["number", "string", "null"],
+      "$comment": "checkpoint.cjs returns parseInt(n) || raw-string || null. Schema accepts all three."
+    },
+    "total_tasks": {
+      "type": ["integer", "null"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["paused", "auto-checkpoint"]
+    },
+    "completed_tasks": {
+      "type": "array",
+      "items": { "type": "object" },
+      "$comment": "Each item is typically {id, name, status, commit?} but schema only enforces object shape — upstream allows flexibility."
+    },
+    "remaining_tasks": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "blockers": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "human_actions_pending": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "decisions": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "uncommitted_files": {
+      "type": "array",
+      "$comment": "Items not further constrained. checkpoint.cjs produces {status, path} objects; upstream shows [] as example. Schema stays permissive for consumer flexibility."
+    },
+    "next_action": {
+      "type": ["string", "null"]
+    },
+    "context_notes": {
+      "type": "string"
+    }
+  }
+}

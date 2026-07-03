@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Bundled gsd-sdk shim. The plugin ships its own SDK at sdk/dist/cli.js
+# so users no longer need `npm install -g get-shit-done-cc` (#4).
+#
+# Resolves the plugin root via:
+#   1. $CLAUDE_PLUGIN_ROOT (set by Claude Code's plugin loader)
+#   2. The directory containing this script's resolved symlink target
+#
+# Falls through to an external `gsd-sdk` on PATH if the bundled SDK is
+# absent for any reason -- preserves the legacy install path as a safety
+# net during the v2.42.0 cutover.
+
+set -e
+
+resolve_self_dir() {
+  # Resolve the directory containing this script, following symlinks.
+  # Avoids `readlink -f` (not on stock macOS); pure POSIX.
+  local source="${BASH_SOURCE[0]}"
+  while [ -L "$source" ]; do
+    local dir
+    dir="$(cd -P "$(dirname "$source")" && pwd)"
+    source="$(readlink "$source")"
+    case "$source" in /*) ;; *) source="$dir/$source" ;; esac
+  done
+  cd -P "$(dirname "$source")" && pwd
+}
+
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -f "${CLAUDE_PLUGIN_ROOT}/sdk/dist/cli.js" ]; then
+  PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT}"
+  PLUGIN_SDK="${CLAUDE_PLUGIN_ROOT}/sdk/dist/cli.js"
+else
+  SELF_DIR="$(resolve_self_dir)"
+  PLUGIN_ROOT="$(cd -P "${SELF_DIR}/.." && pwd)"
+  PLUGIN_SDK="${PLUGIN_ROOT}/sdk/dist/cli.js"
+fi
+
+if [ -f "$PLUGIN_SDK" ]; then
+  # [PLUGIN PATCH #PLUGIN-WRAPPER-ENV-EXPORT] Export plugin-layout env vars so the
+  # bundled SDK + dynamically-loaded bin/lib/core.cjs can resolve agents/, model
+  # catalog, etc. without depending on Claude Code setting CLAUDE_PLUGIN_ROOT in
+  # Bash tool environments (which it does NOT — verified empirically). Without
+  # this, gsd-sdk query init.new-project reports agents_installed:false on plugin
+  # installs, which trips the "GSD agents not installed" warning even though the
+  # bundled agents/ tree is right there.
+  export CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT"
+  if [ -d "$PLUGIN_ROOT/agents" ] && [ -z "${GSD_AGENTS_DIR:-}" ]; then
+    export GSD_AGENTS_DIR="$PLUGIN_ROOT/agents"
+  fi
+  exec node "$PLUGIN_SDK" "$@"
+fi
+
+# Fallback: try external gsd-sdk on PATH (legacy install).
+if command -v gsd-sdk >/dev/null 2>&1; then
+  # Avoid infinite recursion if PATH puts this wrapper first.
+  EXTERNAL="$(command -v gsd-sdk)"
+  if [ "$EXTERNAL" != "${BASH_SOURCE[0]}" ]; then
+    exec "$EXTERNAL" "$@"
+  fi
+fi
+
+echo "ERROR: bundled SDK not found at \$CLAUDE_PLUGIN_ROOT/sdk/dist/cli.js" >&2
+echo "       and no external gsd-sdk on PATH." >&2
+echo "       This is a plugin install bug -- please report it at" >&2
+echo "       https://github.com/jnuyens/gsd-plugin/issues" >&2
+exit 1

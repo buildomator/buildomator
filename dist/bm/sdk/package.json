@@ -1,0 +1,56 @@
+{
+  "name": "@gsd-build/sdk",
+  "version": "1.50.0-canary.0",
+  "description": "GSD SDK — programmatic interface for running GSD plans via the Agent SDK",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "bin": {
+    "gsd-sdk": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "prompts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gsd-build/get-shit-done.git",
+    "directory": "sdk"
+  },
+  "homepage": "https://github.com/gsd-build/get-shit-done/tree/main/sdk",
+  "bugs": {
+    "url": "https://github.com/gsd-build/get-shit-done/issues"
+  },
+  "author": "TÂCHES",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsc && npm run bundle",
+    "bundle": "esbuild dist/cli.js --bundle --platform=node --format=esm --outfile=dist/cli.js --allow-overwrite --banner:js=\"import { createRequire as _gsdCreateRequire } from 'module'; const require = _gsdCreateRequire(import.meta.url);\"",
+    "check:alias-drift": "npm run build && node scripts/check-command-aliases-fresh.mjs",
+    "prepublishOnly": "rm -rf dist && tsc && chmod +x dist/cli.js",
+    "test": "vitest run --project unit",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:all": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.84",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.18.1",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.1.1"
+  }
+}

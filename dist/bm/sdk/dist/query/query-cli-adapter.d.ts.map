@@ -1,0 +1,1 @@
+{"version":3,"file":"query-cli-adapter.d.ts","sourceRoot":"","sources":["../../src/query/query-cli-adapter.ts"],"names":[],"mappings":"AAKA,OAAO,EAAiE,KAAK,qBAAqB,EAAE,MAAM,uBAAuB,CAAC;AAElI,MAAM,WAAW,oBAAoB;IACnC,UAAU,EAAE,MAAM,CAAC;IACnB,EAAE,CAAC,EAAE,MAAM,CAAC;IACZ,SAAS,CAAC,EAAE,MAAM,EAAE,CAAC;CACtB;AASD,wBAAsB,kBAAkB,CAAC,KAAK,EAAE,oBAAoB,GAAG,OAAO,CAAC,qBAAqB,CAAC,CAkBpG"}

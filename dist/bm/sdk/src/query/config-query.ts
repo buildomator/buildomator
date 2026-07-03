@@ -1,0 +1,298 @@
+/**
+ * Config-get and resolve-model query handlers.
+ *
+ * Ported from get-shit-done/bin/lib/config.cjs and commands.cjs.
+ * Provides raw config.json traversal and model profile resolution.
+ *
+ * @example
+ * ```typescript
+ * import { configGet, resolveModel } from './config-query.js';
+ *
+ * const result = await configGet(['workflow.auto_advance'], '/project');
+ * // { data: true }
+ *
+ * const model = await resolveModel(['gsd-planner'], '/project');
+ * // { data: { model: 'opus', profile: 'balanced' } }
+ * ```
+ */
+
+import { existsSync, readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { GSDError, ErrorClassification } from '../errors.js';
+import { loadConfig } from '../config.js';
+import { planningPaths } from './helpers.js';
+import { maskIfSecret } from './secrets.js';
+import type { QueryHandler } from './utils.js';
+export { MODEL_PROFILES, VALID_PROFILES, getAgentToModelMapForProfile } from '../model-catalog.js';
+import {
+  AGENT_TO_PHASE_TYPE,
+  MODEL_PROFILES,
+  VALID_PROFILES,
+  getAgentToModelMapForProfile,
+  resolveRuntimeTierDefault,
+  runtimesWithReasoningEffort,
+} from '../model-catalog.js';
+
+const RUNTIMES_WITH_REASONING_EFFORT = runtimesWithReasoningEffort();
+
+// ─── configGet ──────────────────────────────────────────────────────────────
+
+/**
+ * Query handler for config-get command.
+ *
+ * Reads raw .planning/config.json and traverses dot-notation key paths.
+ * Does NOT merge with defaults (matches gsd-tools.cjs behavior).
+ *
+ * @param args - args[0] is the dot-notation key path (e.g., 'workflow.auto_advance')
+ * @param projectDir - Project root directory
+ * @returns QueryResult with the config value at the given path
+ * @throws GSDError with Validation classification if key missing or not found
+ */
+export const configGet: QueryHandler = async (args, projectDir, workstream) => {
+  // Support --default <value> flag (#2803): return this value (exit 0) when the
+  // key is absent, mirroring gsd-tools.cjs config-get behavior from #1893.
+  const defaultIdx = args.indexOf('--default');
+  let defaultValue: string | undefined;
+  let filteredArgs = args;
+  if (defaultIdx !== -1) {
+    if (defaultIdx + 1 >= args.length) {
+      throw new GSDError('Usage: config-get <key.path> [--default <value>]', ErrorClassification.Validation);
+    }
+    defaultValue = String(args[defaultIdx + 1]);
+    filteredArgs = [...args.slice(0, defaultIdx), ...args.slice(defaultIdx + 2)];
+  }
+
+  const keyPath = filteredArgs[0];
+  if (!keyPath) {
+    throw new GSDError('Usage: config-get <key.path> [--default <value>]', ErrorClassification.Validation);
+  }
+
+  const paths = planningPaths(projectDir, workstream);
+  let raw: string;
+  try {
+    raw = await readFile(paths.config, 'utf-8');
+  } catch {
+    throw new GSDError(`No config.json found at ${paths.config}`, ErrorClassification.Validation);
+  }
+
+  let config: Record<string, unknown>;
+  try {
+    config = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    throw new GSDError(`Malformed config.json at ${paths.config}`, ErrorClassification.Validation);
+  }
+
+  const keys = keyPath.split('.');
+  let current: unknown = config;
+  for (const key of keys) {
+    if (current === undefined || current === null || typeof current !== 'object') {
+      // UNIX convention (cf. `git config --get`): missing key exits 1, not 10.
+      // See issue #2544 — callers use `if ! gsd-sdk query config-get k; then` patterns.
+      if (defaultValue !== undefined) return { data: defaultValue };
+      throw new GSDError(`Key not found: ${keyPath}`, ErrorClassification.Execution);
+    }
+    current = (current as Record<string, unknown>)[key];
+  }
+  if (current === undefined) {
+    if (defaultValue !== undefined) return { data: defaultValue };
+    throw new GSDError(`Key not found: ${keyPath}`, ErrorClassification.Execution);
+  }
+
+  // Mask plaintext for keys in SECRET_CONFIG_KEYS to match CJS behavior at
+  // config.cjs:440-441 — without this, `gsd-sdk query config-get brave_search`
+  // would echo the plaintext credential into machine-readable output. (#2997)
+  return { data: maskIfSecret(keyPath, current) };
+};
+
+// ─── configPath ─────────────────────────────────────────────────────────────
+
+/**
+ * Query handler for config-path — resolved `.planning/config.json` path (workstream-aware via cwd).
+ *
+ * Port of `cmdConfigPath` from `config.cjs`. The JSON query API returns `{ path }`; the CJS CLI
+ * emits the path as plain text for shell substitution.
+ *
+ * @param _args - Unused
+ * @param projectDir - Project root directory
+ * @returns QueryResult with `{ path: string }` absolute or project-relative resolution via planningPaths
+ */
+export const configPath: QueryHandler = async (_args, projectDir, workstream) => {
+  const paths = planningPaths(projectDir, workstream);
+  return { data: { path: paths.config } };
+};
+
+// ─── resolveModel ───────────────────────────────────────────────────────────
+
+type RuntimeTierName = 'opus' | 'sonnet' | 'haiku';
+
+interface RuntimeTierEntry {
+  model?: string;
+  reasoning_effort?: string;
+}
+
+function isRuntimeTierName(value: string): value is RuntimeTierName {
+  return value === 'opus' || value === 'sonnet' || value === 'haiku';
+}
+
+function normalizeRuntimeTierEntry(entry: unknown): RuntimeTierEntry | null {
+  if (typeof entry === 'string') return { model: entry };
+  if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+    return entry as RuntimeTierEntry;
+  }
+  return null;
+}
+
+function resolveRuntimeTier(config: Record<string, unknown>, tier: string): RuntimeTierEntry | null {
+  if (!isRuntimeTierName(tier)) return null;
+
+  const runtime = typeof config.runtime === 'string' ? config.runtime : '';
+  if (!runtime || runtime === 'claude') return null;
+
+  const builtin = resolveRuntimeTierDefault(runtime, tier);
+  const profileOverrides = config.model_profile_overrides as Record<string, unknown> | undefined;
+  const runtimeOverrides = profileOverrides?.[runtime] as Record<string, unknown> | undefined;
+  const userEntry = normalizeRuntimeTierEntry(runtimeOverrides?.[tier]);
+
+  if (!builtin && !userEntry) return null;
+  const merged = { ...(builtin ?? {}), ...(userEntry ?? {}) };
+  if (!RUNTIMES_WITH_REASONING_EFFORT.has(runtime)) {
+    delete merged.reasoning_effort;
+  }
+  return merged;
+}
+
+/**
+ * Query handler for resolve-model command.
+ *
+ * Resolves the model alias for a given agent type based on the current profile.
+ * Uses loadConfig (with defaults) and MODEL_PROFILES for lookup.
+ *
+ * @param args - args[0] is the agent type (e.g., 'gsd-planner')
+ * @param projectDir - Project root directory
+ * @param workstream - Optional workstream name; forwarded to loadConfig so per-workstream
+ *   model_profile settings are respected (mirrors configGet/configPath behavior)
+ * @returns QueryResult with { model, profile } or { model, profile, unknown_agent: true }
+ * @throws GSDError with Validation classification if agent type not provided
+ */
+/**
+ * Claude Fable 5 sunset — SDK mirror of bin/lib/core.cjs applyFableSunset.
+ *
+ * Claude Fable 5 was withdrawn ~2026-06-12, then REDEPLOYED 2026-07-01 and
+ * included in plan usage only through 2026-07-07 (usage-credit-gated after); the
+ * `fable` tier is available again through 2026-07-07 and downgrades to `opus`
+ * from 2026-07-08. This is the live resolution path for `gsd-sdk query init.*`
+ * (the workflow spawn path), so the cutoff MUST match the CJS resolver.
+ * `GSD_FABLE_SUNSET_NOW` (ISO date) pins "now" for tests; an unparseable value
+ * stays available so a bad env var never forces the fallback early. The cutoff
+ * day is inclusive. Reversible: move the date if it changes again.
+ */
+const FABLE_SUNSET_DATE = '2026-07-07';
+
+// Tunable Fable knob, read straight from config.json (loadConfig builds a fixed
+// key set and drops `fable`). { mode, until }: mode 'auto'(default)|'on'|'off';
+// until = ISO date overriding the default cutoff in 'auto'. Lets Fable be flipped
+// back with one config-set when it returns, no code change. Mirrors core.cjs.
+function readFableKnob(projectDir: string, workstream?: string): { mode?: string; until?: string } {
+  try {
+    const p = planningPaths(projectDir, workstream).config;
+    const cfg = JSON.parse(readFileSync(p, 'utf8')) as Record<string, unknown>;
+    const f = (cfg.fable || {}) as Record<string, unknown>;
+    return {
+      mode: (f.mode ?? cfg['fable.mode']) as string | undefined,
+      until: (f.until ?? cfg['fable.until']) as string | undefined,
+    };
+  } catch { return {}; }
+}
+
+function fableAvailable(now?: Date, knob: { mode?: string; until?: string } = {}): boolean {
+  const mode = String(knob.mode ?? 'auto').toLowerCase();
+  if (mode === 'on' || mode === 'true' || mode === 'available') return true;
+  if (mode === 'off' || mode === 'false' || mode === 'unavailable') return false;
+  let ref = now instanceof Date ? now : null;
+  if (!ref) {
+    const envNow = process.env.GSD_FABLE_SUNSET_NOW;
+    ref = envNow ? new Date(envNow) : new Date();
+  }
+  if (Number.isNaN(ref.getTime())) return true;
+  const until = (typeof knob.until === 'string' && /^\d{4}-\d{2}-\d{2}/.test(knob.until))
+    ? knob.until.slice(0, 10)
+    : FABLE_SUNSET_DATE;
+  return ref.getTime() <= new Date(`${until}T23:59:59.999Z`).getTime();
+}
+
+function applyFableSunset(tier: string, knob: { mode?: string; until?: string } = {}): string {
+  return tier === 'fable' && !fableAvailable(undefined, knob) ? 'opus' : tier;
+}
+
+export const resolveModel: QueryHandler = async (args, projectDir, workstream) => {
+  const agentType = args[0];
+  if (!agentType) {
+    throw new GSDError('agent-type required', ErrorClassification.Validation);
+  }
+
+  const configFilePath = planningPaths(projectDir, workstream).config;
+  const configExists = existsSync(configFilePath);
+  const config = await loadConfig(projectDir, workstream);
+  const profile = String(config.model_profile || 'balanced').toLowerCase();
+
+  // Check per-agent override first
+  const overrides = (config as Record<string, unknown>).model_overrides as Record<string, string> | undefined;
+  const override = overrides?.[agentType];
+  if (override) {
+    const agentModels = MODEL_PROFILES[agentType];
+    const result = agentModels
+      ? { model: override, profile }
+      : { model: override, profile, unknown_agent: true };
+    return { data: result };
+  }
+
+  const agentModels = MODEL_PROFILES[agentType];
+
+  // No project config -> return empty model id (CJS parity)
+  const resolveModelIds = (config as Record<string, unknown>).resolve_model_ids;
+  if (!configExists) {
+    const result = agentModels
+      ? { model: '', profile }
+      : { model: '', profile, unknown_agent: true };
+    return { data: result };
+  }
+
+  // Fall back to profile lookup
+  if (!agentModels) {
+    const semanticFallback =
+      profile === 'quality' ? 'opus'
+      : profile === 'budget' ? 'haiku'
+      : profile === 'inherit' ? 'inherit'
+      : 'sonnet';
+    return { data: { model: semanticFallback, profile, unknown_agent: true } };
+  }
+
+  if (profile === 'inherit') {
+    return { data: { model: 'inherit', profile } };
+  }
+
+  // Fable availability: downgrade the `fable` tier to `opus` here (before the
+  // runtime / resolve_model_ids / alias exit points below) unless the tunable
+  // knob keeps it on. Mirrors CJS.
+  const fableKnob = readFableKnob(projectDir, workstream);
+  const alias = applyFableSunset(agentModels[profile] || agentModels['balanced'] || 'sonnet', fableKnob);
+  const phaseType = AGENT_TO_PHASE_TYPE[agentType];
+  const phaseTier = phaseType && typeof (config as Record<string, unknown>).models === 'object'
+    ? ((config as Record<string, unknown>).models as Record<string, unknown>)[phaseType]
+    : undefined;
+  const tier = applyFableSunset(typeof phaseTier === 'string' ? phaseTier : alias, fableKnob);
+  const runtimeTier = resolveRuntimeTier(config as Record<string, unknown>, tier);
+  if (runtimeTier?.model) {
+    const result: Record<string, unknown> = { model: runtimeTier.model, profile };
+    if (runtimeTier.reasoning_effort) {
+      result.reasoning_effort = runtimeTier.reasoning_effort;
+    }
+    return { data: result };
+  }
+
+  if (resolveModelIds === 'omit') {
+    return { data: { model: '', profile } };
+  }
+
+  return { data: { model: alias, profile } };
+};

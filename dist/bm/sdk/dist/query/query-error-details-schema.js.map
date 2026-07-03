@@ -1,0 +1,1 @@
+{"version":3,"file":"query-error-details-schema.js","sourceRoot":"","sources":["../../src/query/query-error-details-schema.ts"],"names":[],"mappings":"AAkBA,MAAM,UAAU,qBAAqB,CAAC,KAA4B;IAChE,OAAO,KAAK,CAAC;AACf,CAAC;AAED,MAAM,UAAU,kBAAkB,CAAC,KAAyB;IAC1D,OAAO,KAAK,CAAC;AACf,CAAC;AAED,MAAM,UAAU,oBAAoB,CAAC,KAA2B;IAC9D,OAAO,KAAK,CAAC;AACf,CAAC"}

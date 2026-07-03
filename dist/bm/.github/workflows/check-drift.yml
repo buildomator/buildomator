@@ -1,0 +1,125 @@
+name: Check drift
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  file-layout:
+    name: File-layout drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run file-layout drift detector
+        run: node bin/maintenance/check-file-layout.cjs
+
+  version-alignment:
+    name: Version alignment (internal milestone vs product version)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run version-alignment unit test
+        run: node tests/version-alignment.test.cjs
+      - name: Run version-alignment detector
+        run: node bin/maintenance/check-version-alignment.cjs
+
+  handoff-schema:
+    name: HANDOFF schema validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dev dependencies
+        run: npm ci
+      - name: Validate HANDOFF schema
+        run: node bin/maintenance/check-handoff-schema.cjs
+      - name: Run checkpoint write-guards test (regression for #17)
+        run: node tests/checkpoint-write-guards.test.cjs
+
+  mcp-stdio-framing:
+    name: MCP stdio framing (regression for #3)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run MCP stdio ndjson framing regression test
+        run: node tests/mcp-stdio-framing.test.cjs
+
+  mcp-write-tools:
+    name: MCP write-tools end-to-end (regression for #11)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run MCP write-tools end-to-end test
+        run: node tests/mcp-write-tools-end-to-end.test.cjs
+
+  conventions:
+    name: Convention derivation + conformance (Phase 10)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run conventions module test
+        run: node tests/conventions.test.cjs
+
+  drift-detectors:
+    name: Drift detectors and schema parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run drift detector tests
+        run: |
+          node tests/semantic-dup.test.cjs
+          node tests/phantom-scaffolding.test.cjs
+          node tests/drift-allowlist.test.cjs
+      - name: Run mktemp portability guard (gsd-core 1.6 #1520)
+        run: node tests/mktemp-portable.test.cjs
+      - name: Run CJS/SDK config-schema parity test
+        run: node tests/config-schema-sdk-parity.test.cjs
+      - name: Smoke test verify drift JSON output
+        run: |
+          node bin/gsd-tools.cjs verify drift --scope . --json | node -e \
+            "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const o=JSON.parse(s); if(typeof o!=='object'||!('skipped' in o))throw new Error('invalid drift JSON: '+s.slice(0,200)); process.exit(0);})"
+
+  bash-hook-retry:
+    name: Bash-hook fork-failure retry (regression for #16)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run bash-hook retry isolation test
+        run: node tests/run-bash-hook.test.cjs
+
+  user-docs-jargon:
+    name: User-docs jargon ratchet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run user-docs jargon detector
+        run: node bin/maintenance/check-user-docs-jargon.cjs
+      - name: Run user-docs jargon discrimination test
+        run: node tests/user-docs-jargon.test.cjs

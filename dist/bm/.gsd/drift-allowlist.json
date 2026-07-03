@@ -1,0 +1,9 @@
+{
+  "intentional": [
+    {
+      "a": "bin/lib/**",
+      "b": "sdk/src/**",
+      "reason": "Dual CJS/SDK runtime resolver — duplicated on purpose (two-resolver split; see CLAUDE.md / memory two-parallel-resolvers)"
+    }
+  ]
+}

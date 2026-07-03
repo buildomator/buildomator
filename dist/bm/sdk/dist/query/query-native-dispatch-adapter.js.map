@@ -1,0 +1,1 @@
+{"version":3,"file":"query-native-dispatch-adapter.js","sourceRoot":"","sources":["../../src/query/query-native-dispatch-adapter.ts"],"names":[],"mappings":"AAOA,MAAM,UAAU,gCAAgC,CAC9C,QAAuB,EACvB,UAAkB,EAClB,EAAW;IAEX,OAAO;QACL,QAAQ,EAAE,CAAC,OAAO,EAAE,IAAI,EAAE,EAAE,CAAC,QAAQ,CAAC,QAAQ,CAAC,OAAO,EAAE,IAAI,EAAE,UAAU,EAAE,EAAE,CAAC;KAC9E,CAAC;AACJ,CAAC"}
