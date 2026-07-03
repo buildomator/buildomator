@@ -136,6 +136,12 @@ None - no external service configuration required.
 - Deferred to plan 12-02 / later phases: the CI wiring (`bm-build-drift` job in check-drift.yml, a bm-path job in install-smoke.yml), the prepublish hook + RELEASING.md dual-package steps, and the per-plugin hook cache-fallback fix (RESEARCH A1).
 - At the 4.1.0 release bump, all four version sites move together via the build's single-source + the extended alignment guard.
 
+## Self-Check: PASSED
+
+- Created files verified present: bin/build-bm.cjs, tests/build-bm-drift.test.cjs, dist/bm/.claude-plugin/plugin.json, 12-01-SUMMARY.md
+- Commits verified present: 6b832c8, d615ef8, 946d57f, 24a645b
+- dist/bm committed: 1500 tracked files
+
 ---
 *Phase: 12-two-plugin-build-foundation*
 *Completed: 2026-07-03*
