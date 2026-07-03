@@ -77,6 +77,44 @@ function evaluateAlignment(pluginVersion, milestoneVersion) {
   };
 }
 
+/**
+ * Collect version-parity mismatches across every version site.
+ * Pure + exported so tests can exercise it without disk or process.exit.
+ *
+ * Flags: any marketplace plugins[] entry whose version differs from
+ * pluginVersion (named in the message), and (when bmManifestVersion is a
+ * non-null string) a dist/bm/.claude-plugin/plugin.json version differing from
+ * pluginVersion. A null bmManifestVersion means the built package is absent, so
+ * a pre-build tree still passes.
+ *
+ * @param {string} pluginVersion  the single source version (root plugin.json)
+ * @param {Array}  marketplaceEntries  marketplace.plugins array (or null/undefined)
+ * @param {string|null} bmManifestVersion  dist/bm plugin.json version, or null if absent
+ * @returns {string[]} human-readable mismatch strings ([] when aligned)
+ */
+function collectVersionMismatches(pluginVersion, marketplaceEntries, bmManifestVersion) {
+  const problems = [];
+  if (Array.isArray(marketplaceEntries)) {
+    for (const entry of marketplaceEntries) {
+      if (!entry || typeof entry.version !== 'string') continue;
+      if (entry.version !== pluginVersion) {
+        const label = entry.name ? `marketplace entry "${entry.name}"` : 'a marketplace entry';
+        problems.push(
+          `${label} version (${entry.version}) differs from plugin.json (${pluginVersion}): ` +
+            `bump every version site together on each release.`,
+        );
+      }
+    }
+  }
+  if (typeof bmManifestVersion === 'string' && bmManifestVersion !== pluginVersion) {
+    problems.push(
+      `dist/bm/.claude-plugin/plugin.json version (${bmManifestVersion}) differs from ` +
+        `plugin.json (${pluginVersion}): regenerate the bm package (node bin/build-bm.cjs).`,
+    );
+  }
+  return problems;
+}
+
 /** Read JSON, returning null on any failure. */
 function readJson(p) {
   try {
@@ -123,13 +161,12 @@ function main() {
   }
   const pluginVersion = plugin.version;
 
-  // Half 2: actual versioning must be internally consistent (plugin vs marketplace).
+  // Half 2: actual versioning must be internally consistent across every site
+  // (plugin.json vs EVERY marketplace entry vs the generated dist/bm manifest).
   const marketplace = readJson(path.join('.claude-plugin', 'marketplace.json'));
-  let marketplaceVersion = null;
-  if (marketplace && Array.isArray(marketplace.plugins)) {
-    const entry = marketplace.plugins.find((p) => p && typeof p.version === 'string');
-    if (entry) marketplaceVersion = entry.version;
-  }
+  const marketplaceEntries = marketplace && Array.isArray(marketplace.plugins) ? marketplace.plugins : null;
+  const bmManifest = readJson(path.join('dist', 'bm', '.claude-plugin', 'plugin.json'));
+  const bmManifestVersion = bmManifest && typeof bmManifest.version === 'string' ? bmManifest.version : null;
 
   const milestoneVersion = readMilestoneVersion();
   if (!milestoneVersion) {
@@ -139,17 +176,12 @@ function main() {
 
   const problems = [];
 
-  if (marketplaceVersion && marketplaceVersion !== pluginVersion) {
-    problems.push(
-      `plugin.json (${pluginVersion}) and marketplace.json (${marketplaceVersion}) disagree — ` +
-        `bump both together on every release.`,
-    );
-  }
+  problems.push(...collectVersionMismatches(pluginVersion, marketplaceEntries, bmManifestVersion));
 
   if (milestoneVersion) {
     const verdict = evaluateAlignment(pluginVersion, milestoneVersion);
     console.log(`  plugin version:    ${pluginVersion}`);
-    if (marketplaceVersion) console.log(`  marketplace:       ${marketplaceVersion}`);
+    if (bmManifestVersion) console.log(`  dist/bm manifest:  ${bmManifestVersion}`);
     console.log(`  milestone version: ${milestoneVersion}`);
     if (!verdict.ok) problems.push(verdict.reason);
   }
@@ -170,5 +202,5 @@ function main() {
 }
 
 // Export pure helpers for tests; run main only when invoked directly.
-module.exports = { parseMajor, evaluateAlignment };
+module.exports = { parseMajor, evaluateAlignment, collectVersionMismatches };
 if (require.main === module) main();

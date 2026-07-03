@@ -13,7 +13,11 @@
 
 const assert = require('node:assert');
 
-const { parseMajor, evaluateAlignment } = require('../bin/maintenance/check-version-alignment.cjs');
+const {
+  parseMajor,
+  evaluateAlignment,
+  collectVersionMismatches,
+} = require('../bin/maintenance/check-version-alignment.cjs');
 
 let failures = 0;
 function check(name, fn) {
@@ -26,6 +30,7 @@ function check(name, fn) {
 check('exports the pure helpers', () => {
   assert.strictEqual(typeof parseMajor, 'function', 'missing parseMajor');
   assert.strictEqual(typeof evaluateAlignment, 'function', 'missing evaluateAlignment');
+  assert.strictEqual(typeof collectVersionMismatches, 'function', 'missing collectVersionMismatches');
 });
 
 // ─── parseMajor ──────────────────────────────────────────────────────────────
@@ -78,6 +83,50 @@ check('milestone behind product fails (v3.0 vs 4.0.1)', () => {
 check('uncomparable inputs return ok so the caller can SKIP', () => {
   assert.strictEqual(evaluateAlignment('4.0.1', 'latest').ok, true);
   assert.strictEqual(evaluateAlignment(null, 'v4.1').ok, true);
+});
+
+// ─── collectVersionMismatches: multi-site parity ─────────────────────────────
+
+check('all entries equal to plugin version returns []', () => {
+  const entries = [
+    { name: 'gsd', version: '4.1.0' },
+    { name: 'bm', version: '4.1.0' },
+  ];
+  assert.deepStrictEqual(collectVersionMismatches('4.1.0', entries, '4.1.0'), []);
+});
+
+check('a lagging bm marketplace entry is flagged by name', () => {
+  const entries = [
+    { name: 'gsd', version: '4.1.0' },
+    { name: 'bm', version: '4.0.4' },
+  ];
+  const out = collectVersionMismatches('4.1.0', entries, null);
+  assert.strictEqual(out.length, 1);
+  assert.match(out[0], /bm/);
+  assert.match(out[0], /4\.0\.4/);
+});
+
+check('a lagging dist/bm manifest is flagged', () => {
+  const entries = [{ name: 'gsd', version: '4.1.0' }, { name: 'bm', version: '4.1.0' }];
+  const out = collectVersionMismatches('4.1.0', entries, '4.0.4');
+  assert.strictEqual(out.length, 1);
+  assert.match(out[0], /dist\/bm/);
+  assert.match(out[0], /4\.0\.4/);
+});
+
+check('null bmManifestVersion is not flagged (pre-build tree passes)', () => {
+  const entries = [{ name: 'gsd', version: '4.1.0' }, { name: 'bm', version: '4.1.0' }];
+  assert.deepStrictEqual(collectVersionMismatches('4.1.0', entries, null), []);
+});
+
+check('a lagging gsd entry AND a lagging bm manifest both flag', () => {
+  const entries = [{ name: 'gsd', version: '4.0.4' }, { name: 'bm', version: '4.1.0' }];
+  const out = collectVersionMismatches('4.1.0', entries, '4.0.4');
+  assert.strictEqual(out.length, 2);
+});
+
+check('null/missing marketplace entries are tolerated', () => {
+  assert.deepStrictEqual(collectVersionMismatches('4.1.0', null, null), []);
 });
 
 // ─── footer ──────────────────────────────────────────────────────────────────
