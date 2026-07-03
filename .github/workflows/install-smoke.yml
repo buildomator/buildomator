@@ -107,3 +107,106 @@ jobs:
           echo " Plugin: $(grep '\"version\"' package.json | head -1)"
           echo " Bundled SDK: $(stat -c%s sdk/dist/cli.js) bytes, no node_modules"
           echo "─────────────────────────────────────────────"
+
+  bm-package-smoke:
+    name: bm package resolves via its own CLAUDE_PLUGIN_ROOT (BUILD-03)
+    # Proves the committed dist/bm package (from plan 12-01) resolves its own
+    # SDK and hooks entirely via ${CLAUDE_PLUGIN_ROOT}=dist/bm, while the
+    # repo/cache identity stays gsd-plugin (D-10/D-11/D-12). Same fresh
+    # debian:trixie container and prereqs as the gsd job above, which is left
+    # byte-untouched.
+    runs-on: ubuntu-latest
+    container:
+      image: debian:trixie
+    steps:
+      - name: Install minimum prereqs (nodejs, ca-certificates, git for checkout)
+        run: |
+          apt-get update -qq
+          apt-get install -y --no-install-recommends nodejs ca-certificates git
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Manifest sanity - dist/bm manifest exists, name is bm, version matches root
+        run: |
+          set -e
+          node -e '
+            const fs=require("fs");
+            const bm=JSON.parse(fs.readFileSync("dist/bm/.claude-plugin/plugin.json","utf8"));
+            const root=JSON.parse(fs.readFileSync(".claude-plugin/plugin.json","utf8"));
+            if(bm.name!=="bm"){console.error("FAIL: dist/bm manifest name is "+bm.name+", expected bm");process.exit(1);}
+            if(bm.version!==root.version){console.error("FAIL: dist/bm version "+bm.version+" != root "+root.version);process.exit(1);}
+            console.log("OK bm manifest: name=bm version="+bm.version);
+          '
+
+      - name: bm Test 1 - dist/bm/bin/gsd-sdk resolves via its own CLAUDE_PLUGIN_ROOT
+        run: |
+          set -e
+          # chmod defensively in case the git copy lost the exec bit; report if it did.
+          if [ ! -x dist/bm/bin/gsd-sdk ]; then
+            echo "NOTE: dist/bm/bin/gsd-sdk lost its exec bit in the copy; restoring +x"
+            chmod +x dist/bm/bin/gsd-sdk
+          fi
+          out=$(CLAUDE_PLUGIN_ROOT="$PWD/dist/bm" dist/bm/bin/gsd-sdk --version)
+          echo "out: $out"
+          echo "$out" | grep -q "gsd-sdk v" || { echo "FAIL: expected 'gsd-sdk v...' from the bm wrapper"; exit 1; }
+
+      - name: "bm Test 3 - real query: state.load via the bm root on a synthetic project"
+        run: |
+          set -e
+          mkdir -p /tmp/bm-smoke-project && cd /tmp/bm-smoke-project
+          git init -q
+          mkdir -p .planning && echo '{}' > .planning/config.json
+          out=$(CLAUDE_PLUGIN_ROOT="$GITHUB_WORKSPACE/dist/bm" "$GITHUB_WORKSPACE/dist/bm/bin/gsd-sdk" query state.load 2>&1)
+          echo "$out" | head -10
+          echo "$out" | grep -q '"config"' || { echo "FAIL: bm state.load did not return a config block"; exit 1; }
+
+      - name: bm Test - primary-path-wins hook proof (tripwire fallback must NOT fire)
+        run: |
+          set -e
+          # Plant a tripwire in the ONLY gsd cache candidate the hook would fall
+          # back to. If the hook ever resolves via the hardcoded gsd fallback
+          # instead of ${CLAUDE_PLUGIN_ROOT}, this tripwire fires (marker to
+          # stderr, exit 7) and the assertions below catch it.
+          TRIP="$HOME/.claude/plugins/cache/gsd-plugin/gsd/9.9.9/bin"
+          mkdir -p "$TRIP"
+          printf '%s\n' 'process.stderr.write("FALLBACK-FIRED\n");process.exit(7);' > "$TRIP/gsd-tools.cjs"
+
+          # Extract the first SessionStart hook command verbatim from dist/bm.
+          cmd=$(node -e 'process.stdout.write(require("'"$GITHUB_WORKSPACE"'/dist/bm/hooks/hooks.json").hooks.SessionStart[0].hooks[0].command)')
+
+          mkdir -p /tmp/bm-hook-project && cd /tmp/bm-hook-project
+          git init -q
+          mkdir -p .planning
+
+          # Run the hook with the bm root as CLAUDE_PLUGIN_ROOT and {} on stdin.
+          set +e
+          err=$(echo '{}' | CLAUDE_PLUGIN_ROOT="$GITHUB_WORKSPACE/dist/bm" bash -c "$cmd" 2>&1 >/dev/null)
+          rc=$?
+          set -e
+          echo "hook exit: $rc"
+          echo "hook stderr: [$err]"
+          [ "$rc" -eq 0 ] || { echo "FAIL: bm SessionStart hook exited $rc (expected 0)"; exit 1; }
+          echo "$err" | grep -q "plugin path stale" && { echo "FAIL: hook resolved a non-primary path (stale-path message)"; exit 1; }
+          echo "$err" | grep -q "FALLBACK-FIRED" && { echo "FAIL: hook fell back to the gsd cache tripwire"; exit 1; }
+          echo "OK: bm hook resolved via the primary CLAUDE_PLUGIN_ROOT path; gsd fallback tripwire never fired"
+
+      - name: bm Test - cache-id invariant (marketplace name still gsd-plugin, bm source ./dist/bm)
+        run: |
+          set -e
+          node -e '
+            const m=require("./.claude-plugin/marketplace.json");
+            const bm=m.plugins.find(p=>p.name==="bm");
+            if(m.name!=="gsd-plugin"){console.error("FAIL: marketplace name is "+m.name+", expected gsd-plugin");process.exit(1);}
+            if(!bm||bm.source!=="./dist/bm"){console.error("FAIL: bm entry source is "+(bm&&bm.source)+", expected ./dist/bm");process.exit(1);}
+            console.log("OK: cache id gsd-plugin, bm source ./dist/bm (cache path ~/.claude/plugins/cache/gsd-plugin/bm/<version>/)");
+          '
+
+      - name: Summary
+        run: |
+          BMVER=$(node -e 'process.stdout.write(require("./dist/bm/.claude-plugin/plugin.json").version)')
+          echo "─────────────────────────────────────────────"
+          echo " bm package smoke PASS on debian:trixie"
+          echo " bm version tested: $BMVER (resolved via CLAUDE_PLUGIN_ROOT=dist/bm)"
+          echo " gsd fallback tripwire: never fired; cache id: gsd-plugin"
+          echo "─────────────────────────────────────────────"
