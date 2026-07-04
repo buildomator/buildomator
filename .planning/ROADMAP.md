@@ -218,7 +218,7 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 12. Two-Plugin Build Foundation | 2/2 | Complete   | 2026-07-04 |
+| 12. Two-Plugin Build Foundation | 2/2 | Complete    | 2026-07-04 |
 | 13. Buildomator Plugin | 0/? | Not started | - |
 | 14. Backward Compatibility and Coexistence | 0/? | Not started | - |
 | 15. Buildomator Identity and Communications | 0/? | Not started | - |

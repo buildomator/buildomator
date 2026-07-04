@@ -29,9 +29,9 @@ command surface additively, keeping `/gsd:*` fully working through the 4.x line.
 
 ### Build & Release
 
-- [ ] **BUILD-01**: A build step generates both the `bm` and `gsd` plugin packages from one source (stamping the `name` field) so the two never drift
-- [ ] **BUILD-02**: The release process publishes both plugins and bumps their versions in lockstep (4.1.0), updating both `plugin.json` and `marketplace.json`
-- [ ] **BUILD-03**: Repo and install/cache id remain `gsd-plugin`; `CLAUDE_PLUGIN_ROOT` and hook path resolution are verified unaffected by the rebrand
+- [x] **BUILD-01**: A build step generates both the `bm` and `gsd` plugin packages from one source (stamping the `name` field) so the two never drift
+- [x] **BUILD-02**: The release process publishes both plugins and bumps their versions in lockstep (4.1.0), updating both `plugin.json` and `marketplace.json`
+- [x] **BUILD-03**: Repo and install/cache id remain `gsd-plugin`; `CLAUDE_PLUGIN_ROOT` and hook path resolution are verified unaffected by the rebrand
 
 ## Future Requirements
 
@@ -68,9 +68,9 @@ Which phases cover which requirements. Filled during roadmap creation.
 | COMPAT-02 | Phase 14 | Pending |
 | COMPAT-03 | Phase 14 | Pending |
 | COMPAT-04 | Phase 14 | Pending |
-| BUILD-01 | Phase 12 | Pending |
-| BUILD-02 | Phase 12 | Pending |
-| BUILD-03 | Phase 12 | Pending |
+| BUILD-01 | Phase 12 | Complete |
+| BUILD-02 | Phase 12 | Complete |
+| BUILD-03 | Phase 12 | Complete |
 
 **Coverage:**
 - v4.1 requirements: 13 total
