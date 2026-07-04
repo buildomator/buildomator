@@ -123,3 +123,23 @@ jobs:
         run: node bin/maintenance/check-user-docs-jargon.cjs
       - name: Run user-docs jargon discrimination test
         run: node tests/user-docs-jargon.test.cjs
+
+  bm-build-drift:
+    name: bm package regenerate-and-diff (BUILD-01/BUILD-02)
+    # checkout@v4 provides git, which the drift test's integration cases
+    # need (they rebuild dist/bm into a temp dir and byte-compare). No npm ci:
+    # build-bm and its test are zero-dep Node built-ins only.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run build-bm drift test (unit + integration)
+        run: node tests/build-bm-drift.test.cjs
+      - name: Regenerate bm and fail on any drift from the committed dist/bm (D-06)
+        run: node bin/build-bm.cjs --check
+      - name: Validate the generated bm manifest stays schema-valid
+        run: node bin/validate-plugin.cjs dist/bm/.claude-plugin/plugin.json
+      - name: Verify all version sites agree (BUILD-02)
+        run: node bin/maintenance/check-version-alignment.cjs
