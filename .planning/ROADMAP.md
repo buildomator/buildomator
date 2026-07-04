@@ -125,7 +125,7 @@ Plans:
 
 **v4.1 Buildomator Rebrand (Phases 12-15) — IN PROGRESS**
 
-- [ ] **Phase 12: Two-Plugin Build Foundation** - One source generates both `bm` and `gsd` packages; release publishes them in lockstep; `gsd-plugin` repo/cache identity verified unaffected
+- [x] **Phase 12: Two-Plugin Build Foundation** - One source generates both `bm` and `gsd` packages; release publishes them in lockstep; `gsd-plugin` repo/cache identity verified unaffected (completed 2026-07-04)
 - [ ] **Phase 13: Buildomator Plugin** - The `/bm:` plugin is live with full command parity and identical agents, hooks, and MCP behavior
 - [ ] **Phase 14: Backward Compatibility and Coexistence** - `/gsd:*` keeps working with no re-enable; both plugins can run together without hook double-fire, duplicate MCP state, or data corruption; deprecation nudge surfaces in `/gsd:*`
 - [ ] **Phase 15: Buildomator Identity and Communications** - Project presents as Buildomator everywhere; buildomator.com wired into metadata; CHANGELOG documents migration path and retirement timeline
@@ -149,11 +149,11 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 12-01-PLAN.md — bin/build-bm.cjs generate-and-stamp + --check drift mode, bm marketplace entry, version-alignment extension, committed dist/bm (BUILD-01, BUILD-02)
+- [x] 12-01-PLAN.md — bin/build-bm.cjs generate-and-stamp + --check drift mode, bm marketplace entry, version-alignment extension, committed dist/bm (BUILD-01, BUILD-02)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 12-02-PLAN.md — CI gates: check-drift bm regenerate-and-diff job, install-smoke bm CLAUDE_PLUGIN_ROOT tripwire job, RELEASING.md dual-package release steps (BUILD-02, BUILD-03)
+- [x] 12-02-PLAN.md — CI gates: check-drift bm regenerate-and-diff job, install-smoke bm CLAUDE_PLUGIN_ROOT tripwire job, RELEASING.md dual-package release steps (BUILD-02, BUILD-03)
 
 ### Phase 13: Buildomator Plugin
 
@@ -218,7 +218,7 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 12. Two-Plugin Build Foundation | 0/? | Not started | - |
+| 12. Two-Plugin Build Foundation | 2/2 | Complete   | 2026-07-04 |
 | 13. Buildomator Plugin | 0/? | Not started | - |
 | 14. Backward Compatibility and Coexistence | 0/? | Not started | - |
 | 15. Buildomator Identity and Communications | 0/? | Not started | - |
