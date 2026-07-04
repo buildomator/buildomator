@@ -10,7 +10,7 @@ describe('routeNextAction', () => {
     await mkdir(join(dir, '.planning'), { recursive: true });
     const { data } = await routeNextAction([], dir);
     expect(data).toMatchObject({
-      command: '/gsd:new-project',
+      command: '/gsd-new-project',
       reason: expect.stringContaining('STATE.md'),
     });
   });
@@ -32,7 +32,7 @@ milestone: v1.0
     await writeFile(join(dir, '.planning', 'ROADMAP.md'), '# Roadmap\n', 'utf-8');
     const { data } = await routeNextAction([], dir);
     expect(data).toMatchObject({
-      command: '/gsd:resume-work',
+      command: '/gsd-resume-work',
     });
   });
 

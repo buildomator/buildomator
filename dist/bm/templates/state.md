@@ -153,7 +153,7 @@ Updated after each plan completion.
 
 **Decisions:** Reference to PROJECT.md Key Decisions table, plus recent decisions summary for quick access. Full decision log lives in PROJECT.md.
 
-**Pending Todos:** Ideas captured via /gsd:add-todo
+**Pending Todos:** Ideas captured via /gsd-add-todo
 - Count of pending todos
 - Reference to .planning/todos/pending/
 - Brief list if few, count if many (e.g., "5 pending todos — see /gsd:capture --list")

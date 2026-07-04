@@ -240,7 +240,7 @@ These handlers implement `.planning/research/decision-routing-audit.md` — **no
 | -------- | ------- |
 | `check.config-gates` / `check config-gates [workflow]` | Single JSON blob of merged `workflow.*` (+ `context_window`) for batch config gates. |
 | `check.phase-ready` / `check phase-ready <phase>` | Phase directory stats, `dependencies_met`, `next_step` (`discuss` / `plan` / `execute` / `verify` / `complete`). |
-| `route.next-action` / `route next-action` | Suggested next slash command from `next.md`-style rules (`/gsd:discuss-phase`, `/gsd:execute-phase`, `/gsd:resume-work`, gates, etc.). |
+| `route.next-action` / `route next-action` | Suggested next slash command from `next.md`-style rules (`/gsd-discuss-phase`, `/gsd-execute-phase`, `/gsd-resume-work`, gates, etc.). |
 
 ### Tier 2
 

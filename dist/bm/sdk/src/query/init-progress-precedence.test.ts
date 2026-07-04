@@ -8,7 +8,7 @@
  *
  * Pre-fix: initManager reported `complete` (explicit override at line ~451),
  * initProgress reported `pending` (disk-only policy). This mismatch meant
- * /gsd:manager and /gsd:progress disagreed on the same data. Post-fix:
+ * /gsd-manager and /gsd-progress disagreed on the same data. Post-fix:
  * both apply the ROADMAP-[x]-wins policy.
  */
 

@@ -89,7 +89,7 @@ export const workstreamCreate: QueryHandler = async (args, projectDir) => {
 
   const baseDir = planningRoot(projectDir);
   if (!existsSync(baseDir)) {
-    return { data: { created: false, reason: '.planning/ directory not found — run /gsd:new-project first' } };
+    return { data: { created: false, reason: '.planning/ directory not found — run /gsd-new-project first' } };
   }
 
   const wsRoot = workstreamsRoot(projectDir);

@@ -4,7 +4,7 @@
  * `tests/bug-2942-detect-custom-skills.test.cjs`.
  *
  * Without the fix, user-added skills under `<config-dir>/skills/<name>/`
- * are not detected and get silently wiped on `/gsd:update`.
+ * are not detected and get silently wiped on `/gsd-update`.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

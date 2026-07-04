@@ -444,7 +444,7 @@ describe('initPlanPhase', () => {
   });
 
   // #3569: init.plan-phase must surface a phase_status field so the
-  // /gsd:plan-phase workflow can short-circuit on closed phases instead of
+  // /gsd-plan-phase workflow can short-circuit on closed phases instead of
   // happily replanning over shipped code. Reuses the project-wide phase
   // lifecycle vocabulary from determinePhaseStatus (Pending | Planned |
   // In Progress | Executed | Complete | Needs Review).

@@ -49,7 +49,7 @@ describe('assertRuntimeSupportsAutoMode', () => {
     }
     expect(caught).toBeDefined();
     expect(caught!.message).toMatch(/#2832/);
-    expect(caught!.message).toMatch(/gsd:discuss-phase|gsd-plan-phase|gsd-execute-phase/);
+    expect(caught!.message).toMatch(/gsd-discuss-phase|gsd-plan-phase|gsd-execute-phase/);
   });
 
   it('throws for gemini runtime', () => {

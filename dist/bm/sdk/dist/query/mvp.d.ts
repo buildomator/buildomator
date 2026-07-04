@@ -16,7 +16,7 @@
  *
  * 3. **`user-story.validate`** — applies the canonical user-story regex
  *    `/^As a .+, I want to .+, so that .+\.$/` previously hardcoded in `verify-work.md`
- *    prose. Consumed by the verifier (phase-goal guard) and by `/gsd:mvp-phase`
+ *    prose. Consumed by the verifier (phase-goal guard) and by `/gsd-mvp-phase`
  *    (interactive-prompt validation).
  *
  * Domain terms: see CONTEXT.md → MVP Mode, User Story, Behavior-Adding Task.
@@ -102,7 +102,7 @@ interface UserStoryValidateResult {
 export declare const USER_STORY_REGEX: RegExp;
 /**
  * Validate that a string matches the User Story format used by MVP-mode phases.
- * Used by `gsd-verifier` (phase-goal guard) and `/gsd:mvp-phase` (interactive prompting).
+ * Used by `gsd-verifier` (phase-goal guard) and `/gsd-mvp-phase` (interactive prompting).
  *
  * @example
  *   gsd-sdk query user-story.validate "As a user, I want to log in, so that I can see my data."

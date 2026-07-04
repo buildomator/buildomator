@@ -312,7 +312,7 @@ export const phaseInsert = async (args, projectDir, workstream) => {
         // Create directory with .gitkeep
         await ensureDirectoryWithGitkeep(dirPath);
         // Build phase entry
-        const phaseEntry = `\n### Phase ${decimalPhase}: ${description} (INSERTED)\n\n**Goal:** [Urgent work - to be planned]\n**Requirements**: TBD\n**Depends on:** Phase ${afterPhase}\n**Plans:** 0 plans\n\nPlans:\n- [ ] TBD (run /gsd:plan-phase ${decimalPhase} to break down)\n`;
+        const phaseEntry = `\n### Phase ${decimalPhase}: ${description} (INSERTED)\n\n**Goal:** [Urgent work - to be planned]\n**Requirements**: TBD\n**Depends on:** Phase ${afterPhase}\n**Plans:** 0 plans\n\nPlans:\n- [ ] TBD (run /gsd-plan-phase ${decimalPhase} to break down)\n`;
         // Insert after the target phase section
         const headerPattern = new RegExp(`(#{2,4}\\s*Phase\\s+0*${afterPhaseEscaped}:[^\\n]*\\n)`, 'i');
         const headerMatch = rawContent.match(headerPattern);
@@ -459,7 +459,7 @@ export const phaseScaffold = async (args, projectDir, workstream) => {
     switch (type) {
         case 'context': {
             filePath = join(phaseDir, `${padded}-CONTEXT.md`);
-            content = `---\nphase: "${padded}"\nname: "${phaseName}"\ncreated: ${today}\n---\n\n# Phase ${phase}: ${phaseName} — Context\n\n## Decisions\n\n_Decisions will be captured during /gsd:discuss-phase ${phase}_\n\n## Discretion Areas\n\n_Areas where the executor can use judgment_\n\n## Deferred Ideas\n\n_Ideas to consider later_\n`;
+            content = `---\nphase: "${padded}"\nname: "${phaseName}"\ncreated: ${today}\n---\n\n# Phase ${phase}: ${phaseName} — Context\n\n## Decisions\n\n_Decisions will be captured during /gsd-discuss-phase ${phase}_\n\n## Discretion Areas\n\n_Areas where the executor can use judgment_\n\n## Deferred Ideas\n\n_Ideas to consider later_\n`;
             break;
         }
         case 'uat': {
@@ -1451,10 +1451,10 @@ export const milestoneComplete = async (args, projectDir, workstream) => {
             }
             const operatorPattern = /(##\s*Operator Next Steps\s*\n)([\s\S]*?)(?=\n##|$)/i;
             if (operatorPattern.test(next)) {
-                next = next.replace(operatorPattern, `$1\n- Start the next milestone with /gsd:new-milestone\n\n`);
+                next = next.replace(operatorPattern, `$1\n- Start the next milestone with /gsd-new-milestone\n\n`);
             }
             else {
-                next = `${next.trimEnd()}\n\n## Operator Next Steps\n\n- Start the next milestone with /gsd:new-milestone\n`;
+                next = `${next.trimEnd()}\n\n## Operator Next Steps\n\n- Start the next milestone with /gsd-new-milestone\n`;
             }
             return next;
         }, workstream);

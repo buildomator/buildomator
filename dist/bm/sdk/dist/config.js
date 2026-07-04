@@ -103,7 +103,7 @@ export async function loadConfig(projectDir, workstream) {
         throw new Error(`Config at ${configPath} must be a JSON object`);
     }
     // Project config exists — user-level defaults are ignored (CJS parity).
-    // `buildNewProjectConfig` already baked them into config.json at /gsd:new-project.
+    // `buildNewProjectConfig` already baked them into config.json at /gsd-new-project.
     return mergeDefaults(parsed);
 }
 function mergeDefaults(parsed) {

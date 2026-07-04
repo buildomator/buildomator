@@ -11505,7 +11505,7 @@ var routeNextAction = async (_args, projectDir, workstream) => {
   if (sjd.error) {
     return {
       data: {
-        command: "/gsd:new-project",
+        command: "/gsd-new-project",
         args: "",
         reason: "No STATE.md \u2014 initialize a GSD project first",
         current_phase: null,
@@ -11581,7 +11581,7 @@ var routeNextAction = async (_args, projectDir, workstream) => {
     const ctx2 = await buildContext(currentPhase);
     return {
       data: {
-        command: "/gsd:resume-work",
+        command: "/gsd-resume-work",
         args: "",
         reason: "Paused \u2014 resume work before other routing",
         current_phase: currentPhase,
@@ -11610,7 +11610,7 @@ var routeNextAction = async (_args, projectDir, workstream) => {
     const ctx2 = await buildContext(first);
     return {
       data: {
-        command: "/gsd:discuss-phase",
+        command: "/gsd-discuss-phase",
         args: first,
         reason: "ROADMAP has phases but no phase directories on disk yet",
         current_phase: first,
@@ -11647,7 +11647,7 @@ var routeNextAction = async (_args, projectDir, workstream) => {
     const ctx2 = await buildContext(currentPhase);
     return {
       data: {
-        command: "/gsd:discuss-phase",
+        command: "/gsd-discuss-phase",
         args: cp,
         reason: "Phase directory not found \u2014 start with discuss",
         current_phase: currentPhase,
@@ -11666,7 +11666,7 @@ var routeNextAction = async (_args, projectDir, workstream) => {
     const ctx2 = await buildContext(currentPhase);
     return {
       data: {
-        command: "/gsd:discuss-phase",
+        command: "/gsd-discuss-phase",
         args: cp,
         reason: "No CONTEXT.md or RESEARCH.md for this phase",
         current_phase: currentPhase,
@@ -11680,7 +11680,7 @@ var routeNextAction = async (_args, projectDir, workstream) => {
     const ctx2 = await buildContext(currentPhase);
     return {
       data: {
-        command: "/gsd:plan-phase",
+        command: "/gsd-plan-phase",
         args: cp,
         reason: "Context exists but no PLAN.md files",
         current_phase: currentPhase,
@@ -11694,7 +11694,7 @@ var routeNextAction = async (_args, projectDir, workstream) => {
     const ctx2 = await buildContext(currentPhase);
     return {
       data: {
-        command: "/gsd:execute-phase",
+        command: "/gsd-execute-phase",
         args: cp,
         reason: `${incomplete.length} plan(s) still need SUMMARY.md`,
         current_phase: currentPhase,
@@ -11710,7 +11710,7 @@ var routeNextAction = async (_args, projectDir, workstream) => {
     const ctx2 = await buildContext(currentPhase);
     return {
       data: {
-        command: "/gsd:verify-work",
+        command: "/gsd-verify-work",
         args: "",
         reason: "All plans have summaries \u2014 run verification",
         current_phase: currentPhase,
@@ -11727,7 +11727,7 @@ var routeNextAction = async (_args, projectDir, workstream) => {
     const ctx2 = await buildContext(nextNum);
     return {
       data: {
-        command: "/gsd:discuss-phase",
+        command: "/gsd-discuss-phase",
         args: nextNum,
         reason: "Current phase verified \u2014 advance to next phase",
         current_phase: nextNum,
@@ -11740,7 +11740,7 @@ var routeNextAction = async (_args, projectDir, workstream) => {
   const ctx = await buildContext(currentPhase);
   return {
     data: {
-      command: "/gsd:complete-milestone",
+      command: "/gsd-complete-milestone",
       args: "",
       reason: "Verified phase with no further phases \u2014 complete milestone",
       current_phase: currentPhase,
@@ -12605,7 +12605,7 @@ function buildPhaseRoadmapEntry(phaseId, description, namingMode) {
 **Plans:** 0 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase ${phaseId} to break down)
+- [ ] TBD (run /gsd-plan-phase ${phaseId} to break down)
 `;
 }
 function collectDecimalSuffixesFromDirNames(basePhase, dirNames) {
@@ -12941,7 +12941,7 @@ var phaseInsert = async (args, projectDir, workstream) => {
 **Plans:** 0 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase ${decimalPhase} to break down)
+- [ ] TBD (run /gsd-plan-phase ${decimalPhase} to break down)
 `;
     const headerPattern = new RegExp(`(#{2,4}\\s*Phase\\s+0*${afterPhaseEscaped}:[^\\n]*\\n)`, "i");
     const headerMatch = rawContent.match(headerPattern);
@@ -13074,7 +13074,7 @@ created: ${today}
 
 ## Decisions
 
-_Decisions will be captured during /gsd:discuss-phase ${phase}_
+_Decisions will be captured during /gsd-discuss-phase ${phase}_
 
 ## Discretion Areas
 
@@ -13905,7 +13905,7 @@ ${closedPositionBody}`;
       const operatorPattern = /(##\s*Operator Next Steps\s*\n)([\s\S]*?)(?=\n##|$)/i;
       if (operatorPattern.test(next)) {
         next = next.replace(operatorPattern, `$1
-- Start the next milestone with /gsd:new-milestone
+- Start the next milestone with /gsd-new-milestone
 
 `);
       } else {
@@ -13913,7 +13913,7 @@ ${closedPositionBody}`;
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd:new-milestone
+- Start the next milestone with /gsd-new-milestone
 `;
       }
       return next;
@@ -14460,7 +14460,7 @@ var workstreamCreate = async (args, projectDir) => {
     return { data: { created: false, reason: "invalid workstream name \u2014 must contain at least one alphanumeric character" } };
   const baseDir = planningRoot(projectDir);
   if (!existsSync23(baseDir)) {
-    return { data: { created: false, reason: ".planning/ directory not found \u2014 run /gsd:new-project first" } };
+    return { data: { created: false, reason: ".planning/ directory not found \u2014 run /gsd-new-project first" } };
   }
   const wsRoot = workstreamsRoot(projectDir);
   const wsDir = join29(wsRoot, slug);
@@ -17282,7 +17282,7 @@ var DIMENSION_KEYS = [
   "learning_style"
 ];
 var CLAUDE_MD_FALLBACKS = {
-  project: "Project not yet initialized. Run /gsd:new-project to set up.",
+  project: "Project not yet initialized. Run /gsd-new-project to set up.",
   stack: "Technology stack not yet documented. Will populate after codebase mapping or first phase.",
   conventions: "Conventions not yet established. Will populate as patterns emerge during development.",
   architecture: "Architecture not yet mapped. Follow existing patterns found in the codebase.",
@@ -17293,9 +17293,9 @@ var CLAUDE_MD_WORKFLOW_ENFORCEMENT = [
   "Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.",
   "",
   "Use these entry points:",
-  "- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks",
-  "- `/gsd:debug` for investigation and bug fixing",
-  "- `/gsd:execute-phase` for planned phase work",
+  "- `/gsd-quick` for small fixes, doc updates, and ad-hoc tasks",
+  "- `/gsd-debug` for investigation and bug fixing",
+  "- `/gsd-execute-phase` for planned phase work",
   "",
   "Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it."
 ].join("\n");
@@ -17303,7 +17303,7 @@ var CLAUDE_MD_PROFILE_PLACEHOLDER = [
   "<!-- GSD:profile-start -->",
   "## Developer Profile",
   "",
-  "> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.",
+  "> Profile not yet configured. Run `/gsd-profile-user` to generate your developer profile.",
   "> This section is managed by `generate-claude-profile` -- do not edit manually.",
   "<!-- GSD:profile-end -->"
 ].join("\n");
@@ -17799,7 +17799,7 @@ ${instruction} (${confidence} confidence)
   template = template.replace(/\{\{data_source\}\}/g, String(analysis.data_source ?? "session_analysis"));
   let stackBlock;
   if (analysis.data_source === "questionnaire") {
-    stackBlock = "Stack preferences not available (questionnaire-only profile). Run `/gsd:profile-user --refresh` with session data to populate.";
+    stackBlock = "Stack preferences not available (questionnaire-only profile). Run `/gsd-profile-user --refresh` with session data to populate.";
   } else if (stackOpt) {
     stackBlock = stackOpt;
   } else {
@@ -17898,7 +17898,7 @@ var generateClaudeProfile = async (args, projectDir) => {
     "<!-- GSD:profile-start -->",
     "## Developer Profile",
     "",
-    `> Generated by GSD from ${dataSource}. Run \`/gsd:profile-user --refresh\` to update.`,
+    `> Generated by GSD from ${dataSource}. Run \`/gsd-profile-user --refresh\` to update.`,
     "",
     "| Dimension | Rating | Confidence |",
     "|-----------|--------|------------|",
@@ -18091,7 +18091,7 @@ ${CLAUDE_MD_PROFILE_PLACEHOLDER}
   if (sectionsSkipped.length > 0)
     message += ` Skipped (manually edited): ${sectionsSkipped.join(", ")}.`;
   if (profileStatus === "placeholder_added")
-    message += " Run /gsd:profile-user to unlock Developer Profile.";
+    message += " Run /gsd-profile-user to unlock Developer Profile.";
   return {
     data: {
       claude_md_path: outputPath,
@@ -18789,7 +18789,7 @@ var validateHealth = async (args, projectDir, workstream) => {
       info.push(issue);
   };
   if (!existsSync36(planBase)) {
-    addIssue("error", "E001", ".planning/ directory not found", "Run /gsd:new-project to initialize");
+    addIssue("error", "E001", ".planning/ directory not found", "Run /gsd-new-project to initialize");
     return {
       data: {
         status: "broken",
@@ -18801,7 +18801,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     };
   }
   if (!existsSync36(projectPath)) {
-    addIssue("error", "E002", "PROJECT.md not found", "Run /gsd:new-project to create");
+    addIssue("error", "E002", "PROJECT.md not found", "Run /gsd-new-project to create");
   } else {
     try {
       const content = await readFile29(projectPath, "utf-8");
@@ -18815,10 +18815,10 @@ var validateHealth = async (args, projectDir, workstream) => {
     }
   }
   if (!existsSync36(roadmapPath)) {
-    addIssue("error", "E003", "ROADMAP.md not found", "Run /gsd:new-milestone to create roadmap");
+    addIssue("error", "E003", "ROADMAP.md not found", "Run /gsd-new-milestone to create roadmap");
   }
   if (!existsSync36(statePath)) {
-    addIssue("error", "E004", "STATE.md not found", "Run /gsd:health --repair to regenerate", true);
+    addIssue("error", "E004", "STATE.md not found", "Run /gsd-health --repair to regenerate", true);
     repairs.push("regenerateState");
   } else {
     try {
@@ -18868,7 +18868,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     }
   }
   if (!existsSync36(configPath2)) {
-    addIssue("warning", "W003", "config.json not found", "Run /gsd:health --repair to create with defaults", true);
+    addIssue("warning", "W003", "config.json not found", "Run /gsd-health --repair to create with defaults", true);
     repairs.push("createConfig");
   } else {
     try {
@@ -18880,7 +18880,7 @@ var validateHealth = async (args, projectDir, workstream) => {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      addIssue("error", "E005", `config.json: JSON parse error - ${msg}`, "Run /gsd:health --repair to reset to defaults", true);
+      addIssue("error", "E005", `config.json: JSON parse error - ${msg}`, "Run /gsd-health --repair to reset to defaults", true);
       repairs.push("resetConfig");
     }
   }
@@ -18890,7 +18890,7 @@ var validateHealth = async (args, projectDir, workstream) => {
       const configParsed = JSON.parse(configRaw);
       const workflow = configParsed.workflow;
       if (workflow && workflow.nyquist_validation === void 0) {
-        addIssue("warning", "W008", "config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip)", "Run /gsd:health --repair to add key", true);
+        addIssue("warning", "W008", "config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip)", "Run /gsd-health --repair to add key", true);
         if (!repairs.includes("addNyquistKey"))
           repairs.push("addNyquistKey");
       }
@@ -18944,7 +18944,7 @@ var validateHealth = async (args, projectDir, workstream) => {
           try {
             const researchContent = await readFile29(join42(phasesDir, e3.name, researchFile), "utf-8");
             if (researchContent.includes("## Validation Architecture")) {
-              addIssue("warning", "W009", `Phase ${e3.name}: has Validation Architecture in RESEARCH.md but no VALIDATION.md`, "Re-run /gsd:plan-phase with --research to regenerate");
+              addIssue("warning", "W009", `Phase ${e3.name}: has Validation Architecture in RESEARCH.md but no VALIDATION.md`, "Re-run /gsd-plan-phase with --research to regenerate");
             }
           } catch {
           }
@@ -19048,7 +19048,7 @@ var validateHealth = async (args, projectDir, workstream) => {
           const stateStatus = stateContent.match(/\*\*Status:\*\*\s*(.+)/i);
           const statusVal = stateStatus ? stateStatus[1].trim().toLowerCase() : "";
           if (statusVal !== "complete" && statusVal !== "done") {
-            addIssue("warning", "W011", `STATE.md says current phase is ${statePhase} (status: ${statusVal || "unknown"}) but ROADMAP.md shows it as [x] complete \u2014 state files may be out of sync`, "Run /gsd:progress to re-derive current position, or manually update STATE.md");
+            addIssue("warning", "W011", `STATE.md says current phase is ${statePhase} (status: ${statusVal || "unknown"}) but ROADMAP.md shows it as [x] complete \u2014 state files may be out of sync`, "Run /gsd-progress to re-derive current position, or manually update STATE.md");
           }
         }
       }
@@ -19143,7 +19143,7 @@ var validateHealth = async (args, projectDir, workstream) => {
             stateContent += `## Session Log
 
 `;
-            stateContent += `- ${(/* @__PURE__ */ new Date()).toISOString().split("T")[0]}: STATE.md regenerated by /gsd:health --repair
+            stateContent += `- ${(/* @__PURE__ */ new Date()).toISOString().split("T")[0]}: STATE.md regenerated by /gsd-health --repair
 `;
             await writeFile9(statePath, stateContent, "utf-8");
             repairActions.push({ action: repair, success: true, path: "STATE.md" });
@@ -19246,8 +19246,8 @@ function parseFlagInt(args, flag) {
 }
 var CONTEXT_RECOMMENDATIONS = {
   healthy: null,
-  warning: "Context is approaching the fracture zone \u2014 consider /gsd:thread to continue in a fresh window.",
-  critical: "Reasoning quality may degrade past 70% utilization (fracture point). Run /gsd:thread now to preserve output quality."
+  warning: "Context is approaching the fracture zone \u2014 consider /gsd-thread to continue in a fresh window.",
+  critical: "Reasoning quality may degrade past 70% utilization (fracture point). Run /gsd-thread now to preserve output quality."
 };
 var validateContext = async (args, _projectDir) => {
   const tokensUsed = parseFlagInt(args, "--tokens-used");
@@ -20638,7 +20638,7 @@ var initManager = async (_args, projectDir, workstream) => {
   try {
     rawContent = await readFile31(paths.roadmap, "utf-8");
   } catch {
-    return { data: { error: "No ROADMAP.md found. Run /gsd:new-milestone first." } };
+    return { data: { error: "No ROADMAP.md found. Run /gsd-new-milestone first." } };
   }
   const content = await extractCurrentMilestone(rawContent, projectDir, workstream);
   let phaseDirEntries = [];
@@ -20798,7 +20798,7 @@ var initManager = async (_args, projectDir, workstream) => {
         phase_name: phase.name,
         action: "execute",
         reason: `${phase.plan_count} plans ready, dependencies met`,
-        command: `/gsd:execute-phase ${phase.number}`
+        command: `/gsd-execute-phase ${phase.number}`
       };
       const isAllowed = activeExecuting.length === 0 || activeExecuting.every((a3) => !reaches(phase.number, a3.number) && !reaches(a3.number, phase.number));
       if (isAllowed)
@@ -20809,7 +20809,7 @@ var initManager = async (_args, projectDir, workstream) => {
         phase_name: phase.name,
         action: "plan",
         reason: "Context gathered, ready for planning",
-        command: `/gsd:plan-phase ${phase.number}`
+        command: `/gsd-plan-phase ${phase.number}`
       };
       const isAllowed = activePlanning.length === 0 || activePlanning.every((a3) => !reaches(phase.number, a3.number) && !reaches(a3.number, phase.number));
       if (isAllowed)
@@ -20820,7 +20820,7 @@ var initManager = async (_args, projectDir, workstream) => {
         phase_name: phase.name,
         action: "discuss",
         reason: "Unblocked, ready to gather context",
-        command: `/gsd:discuss-phase ${phase.number}`
+        command: `/gsd-discuss-phase ${phase.number}`
       });
     }
   }
@@ -40288,7 +40288,7 @@ function assertRuntimeSupportsAutoMode(config) {
   const env = process.env.GSD_RUNTIME;
   const envIsSupported = typeof env === "string" && SUPPORTED_RUNTIMES.includes(env);
   const source = envIsSupported ? `GSD_RUNTIME=${env}` : `config.runtime="${String(cfg.runtime ?? "")}"`;
-  throw new Error(`gsd-sdk auto currently supports the Claude runtime only (detected runtime=${runtime} via ${source}). Autonomous terminal runs through the Claude Agent SDK; non-Claude runtimes (Codex, Gemini, OpenCode, etc.) must drive GSD via the in-session slash commands (e.g. /gsd:discuss-phase, /gsd:plan-phase, /gsd:execute-phase) until issue #2832 lands a multi-runtime executor. To run on Claude anyway, unset GSD_RUNTIME and set runtime: "claude" in .planning/config.json.`);
+  throw new Error(`gsd-sdk auto currently supports the Claude runtime only (detected runtime=${runtime} via ${source}). Autonomous terminal runs through the Claude Agent SDK; non-Claude runtimes (Codex, Gemini, OpenCode, etc.) must drive GSD via the in-session slash commands (e.g. /gsd-discuss-phase, /gsd-plan-phase, /gsd-execute-phase) until issue #2832 lands a multi-runtime executor. To run on Claude anyway, unset GSD_RUNTIME and set runtime: "claude" in .planning/config.json.`);
 }
 
 // dist/query/query-fallback-bridge-adapter.js

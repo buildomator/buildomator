@@ -57,8 +57,8 @@ describe('sanitizePrompt', () => {
 
     it('strips various /gsd- skill formats', () => {
       const input = [
-        'Use /gsd:research-phase',
-        'Then /gsd:plan-phase --auto',
+        'Use /gsd-research-phase',
+        'Then /gsd-plan-phase --auto',
         'Finally /gsd-verify-phase',
       ].join('\n');
       expect(sanitizePrompt(input)).toBe('');
@@ -207,7 +207,7 @@ describe('sanitizePrompt', () => {
         '',
         'Investigate the codebase using @file:context.md for context.',
         '',
-        'When done, run /gsd:plan-phase to proceed.',
+        'When done, run /gsd-plan-phase to proceed.',
         '',
         'If unclear, AskUserQuestion("What should I focus on?")',
         '',

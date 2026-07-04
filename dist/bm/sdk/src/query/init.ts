@@ -120,7 +120,7 @@ function gitWorktreeInfo(base: string): { inside: boolean; worktreeRoot: string 
 /**
  * Compute the canonical phase directory name for a known phase entry from the
  * roadmap when no directory exists yet.  Applies the project_code prefix so
- * the first-touch creation path used by /gsd:discuss-phase and /gsd:plan-phase
+ * the first-touch creation path used by /gsd-discuss-phase and /gsd-plan-phase
  * stays consistent with the prefix produced by `phase.add` / `phase.insert`.
  *
  * Returns null when phaseNumber or phaseName cannot be determined.
@@ -472,7 +472,7 @@ export const initPlanPhase: QueryHandler = async (args, projectDir, workstream) 
   const plans = (phaseInfo?.plans || []) as string[];
   const summaries = (phaseInfo?.summaries || []) as string[];
 
-  // #3569: surface phase lifecycle status so /gsd:plan-phase can short-circuit
+  // #3569: surface phase lifecycle status so /gsd-plan-phase can short-circuit
   // on closed (Complete) phases instead of silently replanning over shipped
   // code. Reuses determinePhaseStatus — the project-wide vocabulary used by
   // `progress` (Pending | Planned | In Progress | Executed | Complete |
@@ -483,7 +483,7 @@ export const initPlanPhase: QueryHandler = async (args, projectDir, workstream) 
     : 'Pending';
 
   // #3287: compute the canonical directory name with project_code prefix so
-  // the first-touch mkdir in /gsd:plan-phase stays consistent with phase.add.
+  // the first-touch mkdir in /gsd-plan-phase stays consistent with phase.add.
   const rawProjectCode = (config as Record<string, unknown>).project_code as string || '';
   assertSafeProjectCode(rawProjectCode);
   const expectedPhaseDirName = phaseDir
@@ -802,7 +802,7 @@ export const initPhaseOp: QueryHandler = async (args, projectDir, workstream) =>
   const plans = (phaseInfo?.plans || []) as string[];
 
   // #3287: compute the canonical directory name with project_code prefix so
-  // the first-touch mkdir in /gsd:discuss-phase stays consistent with phase.add.
+  // the first-touch mkdir in /gsd-discuss-phase stays consistent with phase.add.
   const rawProjectCode = (config as Record<string, unknown>).project_code as string || '';
   assertSafeProjectCode(rawProjectCode);
   const expectedPhaseDirName = phaseDir

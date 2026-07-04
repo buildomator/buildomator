@@ -73,7 +73,7 @@ export const workstreamCreate = async (args, projectDir) => {
         return { data: { created: false, reason: 'invalid workstream name — must contain at least one alphanumeric character' } };
     const baseDir = planningRoot(projectDir);
     if (!existsSync(baseDir)) {
-        return { data: { created: false, reason: '.planning/ directory not found — run /gsd:new-project first' } };
+        return { data: { created: false, reason: '.planning/ directory not found — run /gsd-new-project first' } };
     }
     const wsRoot = workstreamsRoot(projectDir);
     const wsDir = join(wsRoot, slug);

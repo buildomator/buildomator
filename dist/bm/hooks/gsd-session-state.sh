@@ -41,7 +41,7 @@ node -e '
     headerLines.push("STATE.md exists - check for blockers and current phase.");
     if (stateHead) headerLines.push(stateHead);
   } else {
-    headerLines.push("No .planning/ found - suggest /gsd:new-project if starting new work.");
+    headerLines.push("No .planning/ found - suggest /gsd-new-project if starting new work.");
   }
   headerLines.push("");
   headerLines.push("Config: \"mode\": \"" + configMode + "\"");

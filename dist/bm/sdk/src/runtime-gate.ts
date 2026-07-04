@@ -44,8 +44,8 @@ export function assertRuntimeSupportsAutoMode(config?: Record<string, unknown> |
     `(detected runtime=${runtime} via ${source}). ` +
     `Autonomous terminal runs through the Claude Agent SDK; non-Claude ` +
     `runtimes (Codex, Gemini, OpenCode, etc.) must drive GSD via the ` +
-    `in-session slash commands (e.g. /gsd:discuss-phase, /gsd:plan-phase, ` +
-    `/gsd:execute-phase) until issue #2832 lands a multi-runtime executor. ` +
+    `in-session slash commands (e.g. /gsd-discuss-phase, /gsd-plan-phase, ` +
+    `/gsd-execute-phase) until issue #2832 lands a multi-runtime executor. ` +
     `To run on Claude anyway, unset GSD_RUNTIME and set runtime: "claude" ` +
     `in .planning/config.json.`,
   );

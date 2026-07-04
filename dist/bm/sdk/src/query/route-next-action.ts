@@ -1,5 +1,5 @@
 /**
- * Next slash-command suggestion for `/gsd:next`-style routing (`route.next-action`).
+ * Next slash-command suggestion for `/gsd-next`-style routing (`route.next-action`).
  *
  * Deterministic routing from STATE.md, ROADMAP, and phase directories.
  * See `.planning/research/decision-routing-audit.md` §3.1 and `get-shit-done/workflows/next.md`.
@@ -61,7 +61,7 @@ export const routeNextAction: QueryHandler = async (_args, projectDir, workstrea
   if (sjd.error) {
     return {
       data: {
-        command: '/gsd:new-project',
+        command: '/gsd-new-project',
         args: '',
         reason: 'No STATE.md — initialize a GSD project first',
         current_phase: null,
@@ -146,7 +146,7 @@ export const routeNextAction: QueryHandler = async (_args, projectDir, workstrea
     const ctx = await buildContext(currentPhase);
     return {
       data: {
-        command: '/gsd:resume-work',
+        command: '/gsd-resume-work',
         args: '',
         reason: 'Paused — resume work before other routing',
         current_phase: currentPhase,
@@ -182,7 +182,7 @@ export const routeNextAction: QueryHandler = async (_args, projectDir, workstrea
     const ctx = await buildContext(first);
     return {
       data: {
-        command: '/gsd:discuss-phase',
+        command: '/gsd-discuss-phase',
         args: first,
         reason: 'ROADMAP has phases but no phase directories on disk yet',
         current_phase: first,
@@ -226,7 +226,7 @@ export const routeNextAction: QueryHandler = async (_args, projectDir, workstrea
     const ctx = await buildContext(currentPhase);
     return {
       data: {
-        command: '/gsd:discuss-phase',
+        command: '/gsd-discuss-phase',
         args: cp,
         reason: 'Phase directory not found — start with discuss',
         current_phase: currentPhase,
@@ -248,7 +248,7 @@ export const routeNextAction: QueryHandler = async (_args, projectDir, workstrea
     const ctx = await buildContext(currentPhase);
     return {
       data: {
-        command: '/gsd:discuss-phase',
+        command: '/gsd-discuss-phase',
         args: cp,
         reason: 'No CONTEXT.md or RESEARCH.md for this phase',
         current_phase: currentPhase,
@@ -264,7 +264,7 @@ export const routeNextAction: QueryHandler = async (_args, projectDir, workstrea
     const ctx = await buildContext(currentPhase);
     return {
       data: {
-        command: '/gsd:plan-phase',
+        command: '/gsd-plan-phase',
         args: cp,
         reason: 'Context exists but no PLAN.md files',
         current_phase: currentPhase,
@@ -280,7 +280,7 @@ export const routeNextAction: QueryHandler = async (_args, projectDir, workstrea
     const ctx = await buildContext(currentPhase);
     return {
       data: {
-        command: '/gsd:execute-phase',
+        command: '/gsd-execute-phase',
         args: cp,
         reason: `${incomplete.length} plan(s) still need SUMMARY.md`,
         current_phase: currentPhase,
@@ -299,7 +299,7 @@ export const routeNextAction: QueryHandler = async (_args, projectDir, workstrea
     const ctx = await buildContext(currentPhase);
     return {
       data: {
-        command: '/gsd:verify-work',
+        command: '/gsd-verify-work',
         args: '',
         reason: 'All plans have summaries — run verification',
         current_phase: currentPhase,
@@ -319,7 +319,7 @@ export const routeNextAction: QueryHandler = async (_args, projectDir, workstrea
     const ctx = await buildContext(nextNum);
     return {
       data: {
-        command: '/gsd:discuss-phase',
+        command: '/gsd-discuss-phase',
         args: nextNum,
         reason: 'Current phase verified — advance to next phase',
         current_phase: nextNum,
@@ -333,7 +333,7 @@ export const routeNextAction: QueryHandler = async (_args, projectDir, workstrea
   const ctx = await buildContext(currentPhase);
   return {
     data: {
-      command: '/gsd:complete-milestone',
+      command: '/gsd-complete-milestone',
       args: '',
       reason: 'Verified phase with no further phases — complete milestone',
       current_phase: currentPhase,

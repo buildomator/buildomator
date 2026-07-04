@@ -373,7 +373,7 @@ export const validateHealth = async (args, projectDir, workstream) => {
     };
     // ─── Check 1: .planning/ exists ───────────────────────────────────────────
     if (!existsSync(planBase)) {
-        addIssue('error', 'E001', '.planning/ directory not found', 'Run /gsd:new-project to initialize');
+        addIssue('error', 'E001', '.planning/ directory not found', 'Run /gsd-new-project to initialize');
         return {
             data: {
                 status: 'broken',
@@ -386,7 +386,7 @@ export const validateHealth = async (args, projectDir, workstream) => {
     }
     // ─── Check 2: PROJECT.md exists and has required sections ─────────────────
     if (!existsSync(projectPath)) {
-        addIssue('error', 'E002', 'PROJECT.md not found', 'Run /gsd:new-project to create');
+        addIssue('error', 'E002', 'PROJECT.md not found', 'Run /gsd-new-project to create');
     }
     else {
         try {
@@ -402,11 +402,11 @@ export const validateHealth = async (args, projectDir, workstream) => {
     }
     // ─── Check 3: ROADMAP.md exists ───────────────────────────────────────────
     if (!existsSync(roadmapPath)) {
-        addIssue('error', 'E003', 'ROADMAP.md not found', 'Run /gsd:new-milestone to create roadmap');
+        addIssue('error', 'E003', 'ROADMAP.md not found', 'Run /gsd-new-milestone to create roadmap');
     }
     // ─── Check 4: STATE.md exists and references valid phases ─────────────────
     if (!existsSync(statePath)) {
-        addIssue('error', 'E004', 'STATE.md not found', 'Run /gsd:health --repair to regenerate', true);
+        addIssue('error', 'E004', 'STATE.md not found', 'Run /gsd-health --repair to regenerate', true);
         repairs.push('regenerateState');
     }
     else {
@@ -470,7 +470,7 @@ export const validateHealth = async (args, projectDir, workstream) => {
     }
     // ─── Check 5: config.json valid JSON + valid schema ───────────────────────
     if (!existsSync(configPath)) {
-        addIssue('warning', 'W003', 'config.json not found', 'Run /gsd:health --repair to create with defaults', true);
+        addIssue('warning', 'W003', 'config.json not found', 'Run /gsd-health --repair to create with defaults', true);
         repairs.push('createConfig');
     }
     else {
@@ -484,7 +484,7 @@ export const validateHealth = async (args, projectDir, workstream) => {
         }
         catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
-            addIssue('error', 'E005', `config.json: JSON parse error - ${msg}`, 'Run /gsd:health --repair to reset to defaults', true);
+            addIssue('error', 'E005', `config.json: JSON parse error - ${msg}`, 'Run /gsd-health --repair to reset to defaults', true);
             repairs.push('resetConfig');
         }
     }
@@ -495,7 +495,7 @@ export const validateHealth = async (args, projectDir, workstream) => {
             const configParsed = JSON.parse(configRaw);
             const workflow = configParsed.workflow;
             if (workflow && workflow.nyquist_validation === undefined) {
-                addIssue('warning', 'W008', 'config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip)', 'Run /gsd:health --repair to add key', true);
+                addIssue('warning', 'W008', 'config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip)', 'Run /gsd-health --repair to add key', true);
                 if (!repairs.includes('addNyquistKey'))
                     repairs.push('addNyquistKey');
             }
@@ -552,7 +552,7 @@ export const validateHealth = async (args, projectDir, workstream) => {
                     try {
                         const researchContent = await readFile(join(phasesDir, e.name, researchFile), 'utf-8');
                         if (researchContent.includes('## Validation Architecture')) {
-                            addIssue('warning', 'W009', `Phase ${e.name}: has Validation Architecture in RESEARCH.md but no VALIDATION.md`, 'Re-run /gsd:plan-phase with --research to regenerate');
+                            addIssue('warning', 'W009', `Phase ${e.name}: has Validation Architecture in RESEARCH.md but no VALIDATION.md`, 'Re-run /gsd-plan-phase with --research to regenerate');
                         }
                     }
                     catch { /* intentionally empty */ }
@@ -661,7 +661,7 @@ export const validateHealth = async (args, projectDir, workstream) => {
                     const stateStatus = stateContent.match(/\*\*Status:\*\*\s*(.+)/i);
                     const statusVal = stateStatus ? stateStatus[1].trim().toLowerCase() : '';
                     if (statusVal !== 'complete' && statusVal !== 'done') {
-                        addIssue('warning', 'W011', `STATE.md says current phase is ${statePhase} (status: ${statusVal || 'unknown'}) but ROADMAP.md shows it as [x] complete — state files may be out of sync`, 'Run /gsd:progress to re-derive current position, or manually update STATE.md');
+                        addIssue('warning', 'W011', `STATE.md says current phase is ${statePhase} (status: ${statusVal || 'unknown'}) but ROADMAP.md shows it as [x] complete — state files may be out of sync`, 'Run /gsd-progress to re-derive current position, or manually update STATE.md');
                     }
                 }
             }
@@ -746,7 +746,7 @@ export const validateHealth = async (args, projectDir, workstream) => {
                         stateContent += `**Current phase:** (determining...)\n`;
                         stateContent += `**Status:** Resuming\n\n`;
                         stateContent += `## Session Log\n\n`;
-                        stateContent += `- ${new Date().toISOString().split('T')[0]}: STATE.md regenerated by /gsd:health --repair\n`;
+                        stateContent += `- ${new Date().toISOString().split('T')[0]}: STATE.md regenerated by /gsd-health --repair\n`;
                         await writeFile(statePath, stateContent, 'utf-8');
                         repairActions.push({ action: repair, success: true, path: 'STATE.md' });
                         break;
@@ -861,7 +861,7 @@ export const validateAgents = async (_args, _projectDir) => {
  * Classify the running session's context utilization against the
  * thresholds documented in #2792:
  *   < 60%   healthy
- *   60–70%  warning   → recommend /gsd:thread
+ *   60–70%  warning   → recommend /gsd-thread
  *   ≥ 70%   critical  → reasoning quality may degrade ("fracture point")
  *
  * Args: --tokens-used <int> --context-window <int>
@@ -882,8 +882,8 @@ function parseFlagInt(args, flag) {
 }
 const CONTEXT_RECOMMENDATIONS = {
     healthy: null,
-    warning: 'Context is approaching the fracture zone — consider /gsd:thread to continue in a fresh window.',
-    critical: 'Reasoning quality may degrade past 70% utilization (fracture point). Run /gsd:thread now to preserve output quality.',
+    warning: 'Context is approaching the fracture zone — consider /gsd-thread to continue in a fresh window.',
+    critical: 'Reasoning quality may degrade past 70% utilization (fracture point). Run /gsd-thread now to preserve output quality.',
 };
 export const validateContext = async (args, _projectDir) => {
     const tokensUsed = parseFlagInt(args, '--tokens-used');
