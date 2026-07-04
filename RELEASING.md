@@ -2,6 +2,8 @@
 
 The pre-release gate is **CI**: `.github/workflows/check-drift.yml` and `install-smoke.yml` run on every push and pull request, so the full regression suite must be green before any release tag is cut. Treat a red CI run as a hard block on releasing.
 
+This repo now ships **two plugins from one source**: `gsd` (source `./`) and `bm` / Buildomator (source `./dist/bm`, a generate-and-stamp copy of the gsd source). A release must move both to the same version, and CI gates that they stay in lockstep. `check-drift.yml` runs a `bm-build-drift` job that regenerates `dist/bm` and hard-fails on any divergence from the committed tree, and `install-smoke.yml` runs a `bm-package-smoke` job that proves the bm package resolves via its own `${CLAUDE_PLUGIN_ROOT}`. A stale or hand-edited `dist/bm/` fails one of these jobs and blocks the tag, which is what makes forgetting the regeneration step impossible in a repo with no npm publish lifecycle.
+
 ## Pre-release checklist
 
 1. **CI is green on the release commit.** This is the source of truth. The node regression suite that CI runs includes:
@@ -15,10 +17,14 @@ The pre-release gate is **CI**: `.github/workflows/check-drift.yml` and `install
    - To run the whole node suite locally: `for t in tests/*.test.cjs; do node "$t" || break; done`
 2. **`verify drift` and `verify conventions` exit 0** on the repo (`node bin/gsd-tools.cjs verify drift --scope . --json`).
 3. **Rebuild `sdk/dist`** if any `sdk/src/**` changed: `cd sdk && npm run build`.
-4. **Bump the version in BOTH** `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`.
+4. **Bump the version and regenerate the bm package.** Bump only `.claude-plugin/plugin.json` `version` (the single source), then run `npm run build:bm`. That regenerates `dist/bm/` and syncs the version into both marketplace entries and the bm manifest, so you no longer hand-edit `.claude-plugin/marketplace.json`. Commit the regenerated `dist/bm/` together with the bump and the updated `marketplace.json`. Before tagging, run the local pre-tag commands `npm run check:bm-drift` (fresh regeneration must equal the committed `dist/bm/`) and `npm run validate:bm-plugin` (the generated bm manifest is schema-valid).
 5. **Update `CHANGELOG.md`** with the new version section.
 6. **Update the README** "Added features beyond upstream" table for any new user-facing capability.
 7. **Tag and publish:** `git push origin master && git push origin vX.Y.Z`, then `gh release create vX.Y.Z --notes-file <changelog-section>`.
+
+## Known limitation: bm hook fallback
+
+`dist/bm/hooks/hooks.json` keeps the hardcoded `~/.claude/plugins/cache/gsd-plugin/gsd` fallback path verbatim from the gsd source while the two packages are byte-identical apart from their stamped identity fields. The `bm-package-smoke` job proves the primary `${CLAUDE_PLUGIN_ROOT}` path always wins, so this fallback never fires in normal use, but it still points at the gsd cache dir rather than a per-plugin bm path. The per-plugin fallback fix is scheduled with the Phase 13/14 divergence work.
 
 ## Versioning
 
