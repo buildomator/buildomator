@@ -56,7 +56,7 @@ When contributing a change to a repository you do not own (upstream gsd-core, Vi
 
 ## Generated Code Hygiene
 
-GSD agents must never leave GSD workflow metadata in the product code they write. Code and its comments describe the code's behavior, not the GSD process that produced it. No phase/plan numbers, wave, "skeleton only", or status/housekeeping notes in product source or comments (e.g. `# Phase 1: skeleton only ...`). Those identifiers belong only in the commit-message `{phase}-{plan}` prefix and `.planning/` artifacts. This rule is enforced in `agents/gsd-executor.md` (the `<project_context>` block); keep the two in sync.
+GSD agents must never leave GSD workflow metadata in the product code they write. Code and its comments describe the code's behavior, not the GSD process that produced it. No phase/plan numbers, wave, "skeleton only", or status/housekeeping notes in product source or comments (e.g. `# Phase 1: skeleton only ...`). These are GSD bookkeeping and belong only in `.planning/` artifacts, never in the product's code, comments, or commit messages. This rule is enforced in `agents/gsd-executor.md` (the `<project_context>` block); keep the two in sync.
 
 
 
