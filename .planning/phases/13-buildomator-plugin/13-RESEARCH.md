@@ -300,17 +300,19 @@ const leaks = execFileSync('grep', ['-rIl', '/gsd:', 'dist/bm'], { encoding: 'ut
 | A2 | Rewriting `/gsd:foo` placeholder comments inside `bin/maintenance/*.cjs` to `/bm:foo` in `dist/bm` is harmless | F-1 | Negligible: those are internal maintenance-script comments shipped but never user-facing; parity still holds because the transform is deterministic. |
 | A3 | No file in scope must retain a `/gsd:` reference in Phase 13 | Pitfall 3 | Low: intentional cross-references (deprecation nudge) are explicitly Phase 14. If one exists now it would surface as a parity failure and can be allowlisted. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Token source for the command rewrite (the one decision worth a sentence of confirmation).**
    - What we know: D-02 says reuse the skill-name alternation; investigation shows it under-rewrites real refs (F-1). The anchored colon substitution is simpler and complete.
    - What's unclear: whether the CONTEXT author intended the alternation's under-coverage or assumed it covered everything.
    - Recommendation: adopt the anchored substitution; note the refinement to D-02 in the plan. This is Claude's-discretion territory ("exact module boundary / regex") but the coverage delta is material, so flag it for the plan-checker.
+   - **RESOLVED:** plan 13-01 adopts the anchored substitution and flags the D-02 refinement in its objective for the checker.
 
 2. **`extract_learnings` dash/underscore mismatch.**
    - What we know: the skill dir is `extract_learnings`; refs use `/gsd:extract-learnings`. The anchored substitution rewrites the ref text to `/bm:extract-learnings` regardless. The command itself (dir name) is unaffected.
    - What's unclear: whether `/gsd:extract-learnings` is even a valid command (the dir uses underscore). This is a pre-existing gsd doc inconsistency, not created by Phase 13.
    - Recommendation: rewrite the ref as-is (the anchored form does this automatically); do not try to "fix" the underscore here (out of scope, would be a content change beyond the prefix rewrite).
+   - **RESOLVED:** plan 13-01 rewrites the ref as-is via the anchored form; the underscore dir name stays untouched.
 
 ## Environment Availability
 
