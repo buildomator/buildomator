@@ -13,7 +13,7 @@ set -euo pipefail
 
 # --- Configuration ---
 REPO="jnuyens/gsd-plugin"
-PLUGIN_CACHE="$HOME/.claude/plugins/cache/gsd-plugin/gsd"
+PLUGIN_CACHE="$HOME/.claude/plugins/cache/gsd-plugin/bm"
 # Tracks the latest release we have already notified about, so a given release
 # is announced once (not re-nagged weekly) while every NEW release still fires.
 NOTIFIED_FILE="$HOME/.gsd-plugin-last-notified"
@@ -36,7 +36,7 @@ $CURL -sf --max-time 5 https://api.github.com/zen >/dev/null 2>&1 || exit 0
 
 # --- Fetch the latest version from TAGS, not releases ---
 # This repo ships releases as git tags; the GitHub Releases feed lags behind, so
-# /gsd:version and this watch both use tags as the version signal. Take the
+# /bm:version and this watch both use tags as the version signal. Take the
 # highest semver tag (tags come back newest-first; 100/page covers the head).
 LATEST=$($GH api "repos/$REPO/tags?per_page=100" --jq '.[].name' 2>/dev/null \
   | sed 's/^v//' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1) || exit 0
@@ -78,7 +78,7 @@ Latest release:    v${LATEST}
 Checked at:        ${TIMESTAMP}
 
 To update: open Claude Code, run /plugins, refresh the gsd marketplace, and
-reinstall/update gsd-plugin. Then confirm with /gsd:version.
+reinstall/update gsd-plugin. Then confirm with /bm:version.
 
 ───── Release Notes (v${LATEST}) ─────────────────────────────────
 

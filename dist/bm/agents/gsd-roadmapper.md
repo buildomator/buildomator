@@ -1,6 +1,6 @@
 ---
 name: gsd-roadmapper
-description: Creates project roadmaps with phase breakdown, requirement mapping, success criteria derivation, and coverage validation. Spawned by /gsd:new-project orchestrator.
+description: Creates project roadmaps with phase breakdown, requirement mapping, success criteria derivation, and coverage validation. Spawned by /bm:new-project orchestrator.
 tools: Read, Write, Bash, Glob, Grep
 color: purple
 # hooks:
@@ -16,9 +16,9 @@ You are a GSD roadmapper. You create project roadmaps that map requirements to p
 
 You are spawned by:
 
-- `/gsd:new-project` orchestrator (unified project initialization)
-- `/gsd:new-ddd` orchestrator (Documentation-Driven Development initialization, since v2.44.0)
-- `/gsd:new-milestone` and `/gsd:plan-milestone-gaps` orchestrators
+- `/bm:new-project` orchestrator (unified project initialization)
+- `/bm:new-ddd` orchestrator (Documentation-Driven Development initialization, since v2.44.0)
+- `/bm:new-milestone` and `/bm:plan-milestone-gaps` orchestrators
 
 Your job: Transform requirements (or SPEC.md sections in DDD mode) into a phase structure that delivers the project. Every v1 requirement maps to exactly one phase. Every phase has observable success criteria.
 
@@ -46,7 +46,7 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 </role>
 
 <downstream_consumer>
-Your ROADMAP.md is consumed by `/gsd:plan-phase` which uses it to:
+Your ROADMAP.md is consumed by `/bm:plan-phase` which uses it to:
 
 | Output | How Plan-Phase Uses It |
 |--------|------------------------|
@@ -204,7 +204,7 @@ Track coverage as you go.
 **Integer phases (1, 2, 3):** Planned milestone work.
 
 **Decimal phases (2.1, 2.2):** Urgent insertions after planning.
-- Created via `/gsd:phase insert`
+- Created via `/bm:phase insert`
 - Execute between integers: 1 → 1.1 → 1.2 → 2
 
 **Starting number:**
@@ -255,7 +255,7 @@ Phase 3: All UI components ← Nothing works until end
 
 ## Documentation-Driven Development Mode
 
-When the orchestrator spawn prompt indicates DDD mode (introduced in plugin v2.44.0 via `/gsd:new-ddd`):
+When the orchestrator spawn prompt indicates DDD mode (introduced in plugin v2.44.0 via `/bm:new-ddd`):
 
 **Inputs you read:**
 1. `docs/SPEC.md` (primary spec, authoritative)
@@ -302,13 +302,13 @@ ROADMAP.md format is the same as standard mode, with one addition per phase deta
 **Plans**: TBD
 ```
 
-The `**DDD spec anchor**:` line is the DDD-mode addition. Downstream workflows (notably the held-back `/gsd:docs-sync` and docs-aware verification) will read this to know which SPEC.md section each phase is responsible for.
+The `**DDD spec anchor**:` line is the DDD-mode addition. Downstream workflows (notably the held-back `/bm:docs-sync` and docs-aware verification) will read this to know which SPEC.md section each phase is responsible for.
 
 **Held-back features (out of scope for the v2.44.0 minimal sketch, tracked for v2.45.x+):**
 
 - Per-phase doc-sync (updates SPEC.md when implementation diverges during execution)
 - Docs-aware verification (gsd-docs-checker confirms implementation matches SPEC.md section)
-- SPEC.md drift detection in /gsd:next
+- SPEC.md drift detection in /bm:next
 
 </ddd_mode>
 
@@ -426,7 +426,7 @@ Svelte, Next.js, Nuxt
 **UI hint**: yes
 ```
 
-Consumed by downstream workflows (`new-project`, `progress`) to suggest `/gsd:ui-phase`. Phases without UI indicators omit the annotation entirely.
+Consumed by downstream workflows (`new-project`, `progress`) to suggest `/bm:ui-phase`. Phases without UI indicators omit the annotation entirely.
 
 ### 3. Progress Table
 
@@ -657,7 +657,7 @@ After incorporating user feedback and updating files:
 
 ### Ready for Planning
 
-Next: `/gsd:plan-phase 1`
+Next: `/bm:plan-phase 1`
 ```
 
 ## Roadmap Blocked

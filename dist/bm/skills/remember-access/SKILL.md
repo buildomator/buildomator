@@ -14,8 +14,8 @@ Auth setup is one of those things every project does once and then forgets the d
 
 **Two modes:**
 
-- `/gsd:remember-access <system-name>`: manual capture. Walks you through documenting how to authenticate to a system, writes to `.planning/AUTH-RECIPES.md` (per-project), optionally promotes to `~/.claude/auth-recipes/<system>.md` (cross-project).
-- `/gsd:remember-access --review`: surface the auto-detection inbox (`.planning/.pending-auth-captures.jsonl`, populated by the `gsd-auth-detector` PostToolUse hook), let you confirm each detection and save it as a recipe.
+- `/bm:remember-access <system-name>`: manual capture. Walks you through documenting how to authenticate to a system, writes to `.planning/AUTH-RECIPES.md` (per-project), optionally promotes to `~/.claude/auth-recipes/<system>.md` (cross-project).
+- `/bm:remember-access --review`: surface the auto-detection inbox (`.planning/.pending-auth-captures.jsonl`, populated by the `gsd-auth-detector` PostToolUse hook), let you confirm each detection and save it as a recipe.
 
 **Auto-detection** runs continuously: every Bash command you execute is checked against auth-shaped patterns (`gh auth login`, `aws configure`, `ssh-keygen`, `export GITHUB_TOKEN=...`, etc.). Secret-looking content is redacted before the inbox entry is written. Review at your own pace.
 

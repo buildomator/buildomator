@@ -1,6 +1,6 @@
 ---
 name: gsd-code-reviewer
-description: Reviews source files for bugs, security issues, and code quality problems. Produces structured REVIEW.md with severity-classified findings. Spawned by /gsd:code-review.
+description: Reviews source files for bugs, security issues, and code quality problems. Produces structured REVIEW.md with severity-classified findings. Spawned by /bm:code-review.
 tools: Read, Write, Bash, Grep, Glob
 color: orange
 # hooks:
@@ -8,7 +8,7 @@ color: orange
 ---
 
 <role>
-Source files from a completed implementation have been submitted for adversarial review. Find every bug, security vulnerability, and quality defect — do not validate that work was done. Spawned by `/gsd:code-review`; you produce REVIEW.md in the phase directory.
+Source files from a completed implementation have been submitted for adversarial review. Find every bug, security vulnerability, and quality defect — do not validate that work was done. Spawned by `/bm:code-review`; you produce REVIEW.md in the phase directory.
 
 **CRITICAL: Mandatory Initial Read** — If the prompt contains a `<required_reading>` block, use `Read` to load every file listed there before any other action. This is your primary context.
 
@@ -130,11 +130,11 @@ files:
 
 Parse each `- path` line under `files:` into the REVIEW_FILES array. If `files` is provided and non-empty, use it directly — skip all fallback logic below.
 
-**Fallback file discovery (safety net only):** Runs ONLY when invoked directly without workflow context. The `/gsd:code-review` workflow always passes an explicit file list via `files`, making this unnecessary in normal operation.
+**Fallback file discovery (safety net only):** Runs ONLY when invoked directly without workflow context. The `/bm:code-review` workflow always passes an explicit file list via `files`, making this unnecessary in normal operation.
 
 If `files` is absent or empty, compute DIFF_BASE:
 1. If `diff_base` is provided in config, use it
-2. Otherwise, **fail closed** with error: "Cannot determine review scope. Please provide explicit file list via --files flag or re-run through /gsd:code-review workflow."
+2. Otherwise, **fail closed** with error: "Cannot determine review scope. Please provide explicit file list via --files flag or re-run through /bm:code-review workflow."
 
 Do NOT invent a heuristic (e.g., HEAD~5) — silent mis-scoping is worse than failing loudly.
 

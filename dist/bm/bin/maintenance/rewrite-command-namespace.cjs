@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * Rewrite `/gsd-<skill>` → `/gsd:<skill>` across tracked plugin content.
+ * Rewrite `/gsd-<skill>` → `/bm:<skill>` across tracked plugin content.
  *
  * Upstream GSD registers its commands without a plugin namespace, so its
  * skill bodies, agent prompts, and references use the dash form. Under this
- * plugin, commands are namespaced as `/gsd:<skill>` and the dash form is
- * dead text ("Unknown command: /gsd-foo. Did you mean /gsd:foo?"). Every
+ * plugin, commands are namespaced as `/bm:<skill>` and the dash form is
+ * dead text ("Unknown command: /gsd-foo. Did you mean /bm:foo?"). Every
  * upstream sync reintroduces dash-style references — run this script after
  * each sync to normalize them.
  *
@@ -88,7 +88,7 @@ for (const f of included) {
   const before = fs.readFileSync(f, 'utf-8');
   const matches = before.match(pattern);
   if (!matches) continue;
-  const after = before.replace(pattern, (_, name) => `/gsd:${name}`);
+  const after = before.replace(pattern, (_, name) => `/bm:${name}`);
   hits.push({ file: f, count: matches.length });
   totalReplacements += matches.length;
   if (!DRY) fs.writeFileSync(f, after);

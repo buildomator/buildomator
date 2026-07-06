@@ -6,7 +6,7 @@
  *   e.g. node run-bash-hook.cjs gsd-session-state.sh
  *
  * Path resolution: CLAUDE_PLUGIN_ROOT first, then newest semver dir under
- * ~/.claude/plugins/cache/gsd-plugin/gsd/ (same logic as the inline node -e
+ * ~/.claude/plugins/cache/gsd-plugin/bm/ (same logic as the inline node -e
  * bootstraps in hooks.json).
  *
  * On Windows with BLODA antivirus (e.g. Kaspersky), Cygwin/MSYS2 bash can
@@ -48,7 +48,7 @@ function resolveCandidates(hookName) {
     candidates.push(path.join(process.env.CLAUDE_PLUGIN_ROOT, 'hooks', hookName));
   }
 
-  const cacheBase = path.join(os.homedir(), '.claude', 'plugins', 'cache', 'gsd-plugin', 'gsd');
+  const cacheBase = path.join(os.homedir(), '.claude', 'plugins', 'cache', 'gsd-plugin', 'bm');
   try {
     const versions = fs.readdirSync(cacheBase)
       .filter((x) => /^\d+\.\d+\.\d+$/.test(x))

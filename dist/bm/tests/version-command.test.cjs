@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
-// Regression test for the /gsd:version command.
+// Regression test for the /bm:version command.
 //
-// /gsd:version is a read-only command that prints the installed plugin version
+// /bm:version is a read-only command that prints the installed plugin version
 // and checks GitHub (git tags) for the latest, then shows update guidance only
 // when behind. The logic is INLINED in skills/version/SKILL.md (no separate
 // workflow.md @-include) to keep the per-invocation token cost minimal.
@@ -55,8 +55,8 @@ check('SKILL.md update guidance: gated, /plugins flow + /reload-plugins (not /pl
   assert.ok(!SKILL.includes('/plugin install gsd@gsd-plugin'), 'still shows the deprecated /plugin install step');
 });
 
-check('help.md lists /gsd:version', () => {
-  assert.ok(read('workflows/help.md').includes('/gsd:version'), 'help.md does not list the command');
+check('help.md lists /bm:version', () => {
+  assert.ok(read('workflows/help.md').includes('/bm:version'), 'help.md does not list the command');
 });
 
 check('plugin.json and marketplace.json versions agree', () => {

@@ -4,11 +4,16 @@
  * `gsd` source.
  *
  * The repo root IS the authored `gsd` plugin (marketplace source "./"). This
- * script copies the tracked source tree into dist/bm/, stamps ONLY the manifest
- * identity/branding fields (name gsd->bm, displayName/description -> Buildomator),
- * and single-sources the version from .claude-plugin/plugin.json so every
- * manifest site stays in lockstep. Every other file is byte-identical between the
- * two packages (D-02).
+ * script copies the tracked source tree into dist/bm/ and applies one
+ * deterministic transform so the copy is a self-consistent bm plugin:
+ *   - the manifest identity/branding fields (name gsd->bm, displayName/description
+ *     -> Buildomator) plus the mcpServers key (gsd -> bm) are stamped;
+ *   - command self-references /bm:<skill> become /bm:<skill> in every text file;
+ *   - the hook cache-fallback plugin segment is stamped to bm in the three files
+ *     that carry it (hooks/hooks.json, hooks/run-bash-hook.cjs, bin/check-plugin-update.sh);
+ *   - the version is single-sourced from .claude-plugin/plugin.json so every
+ *     manifest site stays in lockstep.
+ * Binary files and text files with no matching tokens are byte-identical copies.
  *
  * Source list = `git ls-files` (TRACKED files only), filtered through
  * shouldExclude. Using the git index instead of an fs walk makes the build
@@ -17,11 +22,9 @@
  * (threat T-12-02).
  *
  * The root .claude-plugin/marketplace.json owns BOTH plugin entries, so a nested
- * copy inside dist/bm is skipped (RESEARCH A2). hooks/hooks.json is copied
- * verbatim including its hardcoded gsd cache fallback (RESEARCH A1): harmless
- * while both packages are byte-identical because the fallback runs identical
- * code, and the primary ${CLAUDE_PLUGIN_ROOT} path wins in normal operation. The
- * per-plugin fallback fix is deferred to Phase 13/14.
+ * copy inside dist/bm is skipped. The transform lives inside generate() so the
+ * --check regenerate-and-diff path runs identical logic and cannot silently pass
+ * drifted output.
  *
  * Usage (from repo root):
  *   node bin/build-bm.cjs            build dist/bm and sync the marketplace versions
@@ -40,11 +43,27 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { rewriteCommandRefs, stampHookFallback } = require('./lib/bm-transform.cjs');
 
 // First path segments that must NEVER enter the published package payload.
 const EXCLUDE_ROOTS = new Set(['.git', '.planning', '.claude', 'node_modules', 'dist', 'scratchpad']);
 // The root marketplace.json owns both plugin entries; a nested copy is skipped.
 const EXCLUDE_EXACT = new Set(['.claude-plugin/marketplace.json']);
+// Text files receive the /bm: -> /bm: command-ref rewrite; every other file is
+// copied verbatim. Extension set mirrors bin/maintenance/rewrite-command-namespace.cjs;
+// extensionless files that open with a shebang (e.g. bin/gsd-resume-at) are text too.
+const TEXT_EXT = /\.(md|json|cjs|js|ts|tsx|txt|yml|yaml|sh|html)$/i;
+function isTextFile(rel, buf) {
+  if (TEXT_EXT.test(rel)) return true;
+  return buf.length >= 2 && buf[0] === 0x23 && buf[1] === 0x21; // "#!"
+}
+// Files carrying the hook cache-fallback plugin segment. On top of the command-ref
+// rewrite they get the stampHookFallback pass so bm hooks fall back to the bm cache dir.
+const FALLBACK_STAMP_FILES = new Set([
+  'hooks/hooks.json',
+  'hooks/run-bash-hook.cjs',
+  'bin/check-plugin-update.sh',
+]);
 
 /**
  * Decide whether a repo-relative path is kept out of dist/bm.
@@ -64,21 +83,28 @@ function shouldExclude(relPath) {
 
 /**
  * Return a stamped copy of the authored manifest for the bm package.
- * Mutates ONLY name, displayName, description; every other key (version,
- * author, repository, license, keywords, mcpServers) is carried through
- * unchanged. The mcpServers key stays "gsd" per D-02 (byte-identical policy).
- * Does not mutate its input.
+ * Stamps the identity fields name, displayName, description, and rekeys the
+ * single mcpServers entry from "gsd" to "bm" so each plugin registers a
+ * distinctly-keyed server; the server config object itself is carried through
+ * unchanged. Every other key (version, author, repository, license, keywords)
+ * is preserved. Does not mutate its input.
  */
 function stampBmManifest(srcManifest) {
   const brandedDescription =
     'Buildomator -- ' + String(srcManifest.description || '').replace(/^Get Shit Done -- /, '');
-  return {
+  const stamped = {
     ...srcManifest,
     name: 'bm',
     displayName: 'Buildomator',
     description: brandedDescription,
     version: srcManifest.version,
   };
+  const servers = stamped.mcpServers;
+  if (servers && servers.gsd && !servers.bm) {
+    const { gsd, ...rest } = servers;
+    stamped.mcpServers = { bm: gsd, ...rest };
+  }
+  return stamped;
 }
 
 /** Repo root guard: require .git and .claude-plugin, else exit 2. */
@@ -108,7 +134,17 @@ function generate(root, outDir) {
     const src = path.join(root, rel);
     const dest = path.join(outDir, rel);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(src, dest);
+    const buf = fs.readFileSync(src);
+    if (isTextFile(rel, buf)) {
+      let text = rewriteCommandRefs(buf.toString('utf8'));
+      if (FALLBACK_STAMP_FILES.has(rel)) text = stampHookFallback(text);
+      fs.writeFileSync(dest, text);
+      // Preserve the source file mode (writeFileSync creates 0644 by default,
+      // which would strip the executable bit from scripts and hooks).
+      fs.chmodSync(dest, fs.statSync(src).mode & 0o777);
+    } else {
+      fs.copyFileSync(src, dest);
+    }
   }
   const srcManifest = JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin', 'plugin.json'), 'utf8'));
   const bmManifest = stampBmManifest(srcManifest);
@@ -219,5 +255,5 @@ function main() {
 }
 
 // Export pure helpers for tests; run main only when invoked directly.
-module.exports = { stampBmManifest, shouldExclude };
+module.exports = { stampBmManifest, shouldExclude, rewriteCommandRefs, stampHookFallback, isTextFile };
 if (require.main === module) main();

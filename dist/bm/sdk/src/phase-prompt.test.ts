@@ -474,7 +474,7 @@ describe('PromptFactory', () => {
         join(workflowsDir, 'research-phase.md'),
         makeWorkflowContent('Research the codebase thoroughly.', [
           'Gather data from the project.\nAskUserQuestion("what?")\nAnalyze findings.',
-          'Run the analysis.\n/gsd:analyze --deep\nDocument results.',
+          'Run the analysis.\n/bm:analyze --deep\nDocument results.',
         ]),
       );
       await writeFile(
@@ -489,7 +489,7 @@ describe('PromptFactory', () => {
 
       // Interactive patterns should be stripped by sanitizePrompt()
       expect(prompt).not.toContain('AskUserQuestion');
-      expect(prompt).not.toContain('/gsd:');
+      expect(prompt).not.toContain('/bm:');
       expect(prompt).not.toMatch(/\bSTOP\s+and\s+wait/);
 
       // Non-interactive content on separate lines should remain

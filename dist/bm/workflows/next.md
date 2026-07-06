@@ -28,7 +28,7 @@ Extract:
 
 If no `.planning/` directory exists:
 ```
-No GSD project detected. Run `/gsd:new-project` to get started.
+No GSD project detected. Run `/bm:new-project` to get started.
 ```
 Exit.
 </step>
@@ -64,7 +64,7 @@ If found:
 ⛔ Hard stop: Project in error state
 
 STATE.md shows status: {status}. Resolve the error before advancing.
-Run `/gsd:health` to diagnose, or manually fix STATE.md.
+Run `/bm:health` to diagnose, or manually fix STATE.md.
 Use `--force` to bypass this check.
 ```
 Exit.
@@ -120,7 +120,7 @@ Choice [S]:
 
 **Goal:** Resolve plans that ran without producing summaries during Phase {src} execution
 **Source phase:** {src}
-**Deferred at:** {date} during /gsd:progress --next advancement to Phase {dest}
+**Deferred at:** {date} during /bm:progress --next advancement to Phase {dest}
 **Plans:**
 - [ ] {N}-{M}: {slug} (ran, no SUMMARY.md)
 ```
@@ -134,7 +134,7 @@ gsd-sdk query commit "docs: defer incomplete Phase {src} items to backlog"
 </step>
 
 <step name="resume_incomplete_phase">
-**Hard invariant: any phase with PLAN.md files lacking matching SUMMARY.md files must be completed before /gsd:next routes to any forward action.** This catches the failure mode where a session died mid-execution and STATE.md's `current_phase` advanced past the phase with unfinished work; without this gate, `/gsd:next` would route by `current_phase` and skip the partially-executed phase.
+**Hard invariant: any phase with PLAN.md files lacking matching SUMMARY.md files must be completed before /bm:next routes to any forward action.** This catches the failure mode where a session died mid-execution and STATE.md's `current_phase` advanced past the phase with unfinished work; without this gate, `/bm:next` would route by `current_phase` and skip the partially-executed phase.
 
 **Skip if `--force` or `--no-resume` was passed.**
 
@@ -159,11 +159,11 @@ for PHASE_NUM in $(echo "$PHASES" | jq -r '.[].number // .[].phase_number // emp
 done
 ```
 
-**If `INCOMPLETE_PHASE` is non-empty:** route to `/gsd:execute-phase $INCOMPLETE_PHASE` and exit. Display a one-line notice before invoking:
+**If `INCOMPLETE_PHASE` is non-empty:** route to `/bm:execute-phase $INCOMPLETE_PHASE` and exit. Display a one-line notice before invoking:
 
 ```
 ▶ Resuming incomplete Phase ${INCOMPLETE_PHASE} (plans without summaries detected)
-  /gsd:execute-phase ${INCOMPLETE_PHASE}
+  /bm:execute-phase ${INCOMPLETE_PHASE}
   (use --no-resume to skip this check and defer via the prior-phase prompt; --force to skip both)
 ```
 
@@ -175,7 +175,7 @@ Then invoke via SlashCommand. Do not continue to subsequent steps.
 </step>
 
 <step name="resume_partial_uat">
-**Hard invariant (Route 0.5): any phase with a started-but-unfinished UAT (`{phase}-UAT.md` with `status: testing` or `status: partial`) must be finished before /gsd:next routes to any forward action.** This catches the failure mode where a UAT was interrupted by a detour (a bug surfaced -> `/gsd:quick`, feature requests -> `/gsd:add-phase` / `/gsd:explore`) and `current_phase` advanced past it; without this gate the partial UAT goes silently incomplete and is found out late. Runs AFTER the execution invariant (finish executing, then finish verifying) and BEFORE any `current_phase`-based routing.
+**Hard invariant (Route 0.5): any phase with a started-but-unfinished UAT (`{phase}-UAT.md` with `status: testing` or `status: partial`) must be finished before /bm:next routes to any forward action.** This catches the failure mode where a UAT was interrupted by a detour (a bug surfaced -> `/bm:quick`, feature requests -> `/bm:add-phase` / `/bm:explore`) and `current_phase` advanced past it; without this gate the partial UAT goes silently incomplete and is found out late. Runs AFTER the execution invariant (finish executing, then finish verifying) and BEFORE any `current_phase`-based routing.
 
 **Skip if `--force` or `--no-resume` was passed.**
 
@@ -187,11 +187,11 @@ PARTIAL_UAT_PHASE=""
 [ -n "$PARTIAL_UAT_FILE" ] && PARTIAL_UAT_PHASE=$(basename "$PARTIAL_UAT_FILE" | grep -oE '^[0-9]+(\.[0-9]+)?')
 ```
 
-**If `PARTIAL_UAT_PHASE` is non-empty:** route to `/gsd:verify-work $PARTIAL_UAT_PHASE` and exit. Display a one-line notice before invoking:
+**If `PARTIAL_UAT_PHASE` is non-empty:** route to `/bm:verify-work $PARTIAL_UAT_PHASE` and exit. Display a one-line notice before invoking:
 
 ```
 ▶ Resuming unfinished UAT for Phase ${PARTIAL_UAT_PHASE} (verification was interrupted)
-  /gsd:verify-work ${PARTIAL_UAT_PHASE}
+  /bm:verify-work ${PARTIAL_UAT_PHASE}
   (use --no-resume to skip and route forward; --force to skip all resume gates)
 ```
 
@@ -215,7 +215,7 @@ If either count is > 0, display before routing:
   {PENDING_SPIKES} spike(s) with unresolved verdicts in .planning/spikes/
   {PENDING_SKETCHES} sketch(es) without a winning variant in .planning/sketches/
 
-  Resume with `/gsd:spike` or `/gsd:sketch`, or continue with phase work below.
+  Resume with `/bm:spike` or `/bm:sketch`, or continue with phase work below.
 ```
 
 Only show lines for non-zero counts. If both are 0, skip this notice entirely.
@@ -226,35 +226,35 @@ Apply routing rules based on state:
 
 **Route 1: No phases exist yet → discuss**
 If ROADMAP has phases but no phase directories exist on disk:
-→ Next action: `/gsd:discuss-phase <first-phase>`
+→ Next action: `/bm:discuss-phase <first-phase>`
 
 **Route 2: Phase exists but has no CONTEXT.md or RESEARCH.md → discuss**
 If the current phase directory exists but has neither CONTEXT.md nor RESEARCH.md:
-→ Next action: `/gsd:discuss-phase <current-phase>`
+→ Next action: `/bm:discuss-phase <current-phase>`
 
 **Route 3: Phase has context but no plans → plan**
 If the current phase has CONTEXT.md (or RESEARCH.md) but no PLAN.md files:
-→ Next action: `/gsd:plan-phase <current-phase>`
+→ Next action: `/bm:plan-phase <current-phase>`
 
 **Route 4: Phase has plans but incomplete summaries → execute**
 If plans exist but not all have matching summaries:
-→ Next action: `/gsd:execute-phase <current-phase>`
+→ Next action: `/bm:execute-phase <current-phase>`
 
 **Route 5: All plans have summaries → verify and complete**
 If all plans in the current phase have summaries:
-→ Next action: `/gsd:verify-work`
+→ Next action: `/bm:verify-work`
 
 **Route 6: Phase complete, next phase exists → advance**
 If the current phase is complete and the next phase exists in ROADMAP:
-→ Next action: `/gsd:discuss-phase <next-phase>`
+→ Next action: `/bm:discuss-phase <next-phase>`
 
 **Route 7: All phases complete → complete milestone**
 If all phases are complete:
-→ Next action: `/gsd:complete-milestone`
+→ Next action: `/bm:complete-milestone`
 
 **Route 8: Paused → resume**
 If STATE.md shows paused_at:
-→ Next action: `/gsd:resume-work`
+→ Next action: `/bm:resume-work`
 </step>
 
 <step name="show_and_execute">
@@ -271,7 +271,7 @@ Display the determination:
 ```
 
 Then immediately invoke the determined command via SlashCommand.
-Do not ask for confirmation — `/gsd:progress --next` is zero-friction advancement.
+Do not ask for confirmation — `/bm:progress --next` is zero-friction advancement.
 </step>
 
 </process>

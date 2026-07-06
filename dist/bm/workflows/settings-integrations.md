@@ -5,7 +5,7 @@ agent-skill injection (`agent_skills.<agent-type>`). Writes to
 `.planning/config.json` via `gsd-sdk`/`gsd-tools` so unrelated keys are
 preserved, never clobbered.
 
-Separate from `/gsd:settings` (workflow toggles): API keys and cross-tool
+Separate from `/bm:settings` (workflow toggles): API keys and cross-tool
 routing are connectivity concerns, not workflow knobs.
 </purpose>
 
@@ -291,8 +291,8 @@ Notes:
   and not displayed in error messages.
 
 Quick commands:
-- /gsd:settings, workflow toggles and model profile
-- /gsd:set-profile <profile>, switch model profile
+- /bm:settings, workflow toggles and model profile
+- /bm:set-profile <profile>, switch model profile
 ```
 </step>
 

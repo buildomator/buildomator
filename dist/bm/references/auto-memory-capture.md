@@ -1,6 +1,6 @@
 # Auto-capture of durable decisions (ad-hoc close-out)
 
-Shared protocol for `/gsd:quick`, `/gsd:debug`, and `/gsd:fast`. Run at task close-out to
+Shared protocol for `/bm:quick`, `/bm:debug`, and `/bm:fast`. Run at task close-out to
 save durable decisions from ad-hoc work to auto-memory without the user typing "remember".
 Phase work has its own capture (`gsd-tools write-phase-memory`); this fills the gap between milestones.
 

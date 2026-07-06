@@ -1,7 +1,7 @@
 <purpose>
 Spike an idea through experiential exploration — build focused experiments to feel the pieces
 of a future app, validate feasibility, and produce verified knowledge for the real build.
-Saves artifacts to `.planning/spikes/`. Companion to `/gsd:spike --wrap-up`.
+Saves artifacts to `.planning/spikes/`. Companion to `/bm:spike --wrap-up`.
 
 Supports two modes:
 - **Idea mode** (default) — user describes an idea to spike
@@ -401,14 +401,14 @@ GSD ► SPIKE COMPLETE ✓
 
 **Package findings** — wrap spike knowledge into an implementation blueprint
 
-`/gsd:spike --wrap-up`
+`/bm:spike --wrap-up`
 
 ───────────────────────────────────────────────────────────────
 
 **Also available:**
-- `/gsd:spike` — spike more ideas (or run with no argument for frontier mode)
-- `/gsd:plan-phase` — start planning the real implementation
-- `/gsd:explore` — continue exploring the idea
+- `/bm:spike` — spike more ideas (or run with no argument for frontier mode)
+- `/bm:plan-phase` — start planning the real implementation
+- `/bm:explore` — continue exploring the idea
 
 ───────────────────────────────────────────────────────────────
 </step>

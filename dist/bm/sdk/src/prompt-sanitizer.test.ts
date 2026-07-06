@@ -64,19 +64,19 @@ describe('sanitizePrompt', () => {
       expect(sanitizePrompt(input)).toBe('');
     });
 
-    it('strips legacy /gsd: slash commands for backward compatibility', () => {
-      const input = 'Before\nRun /gsd:execute-plan to proceed\nAfter';
+    it('strips legacy /bm: slash commands for backward compatibility', () => {
+      const input = 'Before\nRun /bm:execute-plan to proceed\nAfter';
       const result = sanitizePrompt(input);
-      expect(result).not.toContain('/gsd:');
+      expect(result).not.toContain('/bm:');
       expect(result).toContain('Before');
       expect(result).toContain('After');
     });
 
-    it('strips various legacy /gsd: command formats', () => {
+    it('strips various legacy /bm: command formats', () => {
       const input = [
-        'Use /gsd:research-phase',
-        'Then /gsd:plan-phase --auto',
-        'Finally /gsd:verify-phase',
+        'Use /bm:research-phase',
+        'Then /bm:plan-phase --auto',
+        'Finally /bm:verify-phase',
       ].join('\n');
       expect(sanitizePrompt(input)).toBe('');
     });
@@ -108,7 +108,7 @@ describe('sanitizePrompt', () => {
 
   describe('SlashCommand() calls', () => {
     it('strips SlashCommand lines', () => {
-      const input = 'Before\nSlashCommand("/gsd:execute")\nAfter';
+      const input = 'Before\nSlashCommand("/bm:execute")\nAfter';
       const result = sanitizePrompt(input);
       expect(result).not.toContain('SlashCommand');
       expect(result).toContain('Before');
@@ -223,7 +223,7 @@ describe('sanitizePrompt', () => {
       const result = sanitizePrompt(input);
       expect(result).not.toContain('@file:');
       expect(result).not.toContain('/gsd-');
-      expect(result).not.toContain('/gsd:');
+      expect(result).not.toContain('/bm:');
       expect(result).not.toContain('AskUserQuestion');
       expect(result).not.toContain('SlashCommand');
       expect(result).not.toMatch(/\bSTOP\b/);

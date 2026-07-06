@@ -2,7 +2,7 @@
 /**
  * Upstream HANDOFF Schema Drift Detector (SCHEMA-03)
  *
- * Compares upstream GSD's /gsd:pause-work declared HANDOFF.json fields
+ * Compares upstream GSD's /bm:pause-work declared HANDOFF.json fields
  * against the plugin's schema/handoff-v1.json. Exits 0 if upstream is a
  * subset of plugin's required+optional fields; 1 on drift; 2 on env error.
  *

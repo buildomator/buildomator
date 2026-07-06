@@ -35,7 +35,7 @@ const repoRoot = join(__dirname, '..', '..');
 const BLOCKED_PATTERNS: Array<[string, RegExp]> = [
   ['AskUserQuestion', /AskUserQuestion\s*\(/],
   ['SlashCommand', /SlashCommand\s*\(/],
-  ['/gsd: command', /\/gsd:\S+/],
+  ['/bm: command', /\/bm:\S+/],
   ['@file: reference', /@file:\S+/],
   ['STOP + wait directive', /\bSTOP\b\s+(?:and\s+)?(?:wait|ask)/i],
   ['bare STOP directive', /^\s*STOP\s*[.!]?\s*$/m],

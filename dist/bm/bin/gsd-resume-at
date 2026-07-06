@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-# gsd-resume-at — pure-shell scheduling primitive for /gsd:resume-work
+# gsd-resume-at — pure-shell scheduling primitive for /bm:resume-work
 #
 # Schedules a future Claude Code session WITHOUT consuming Claude tokens.
-# Use this when the /gsd:resume-at skill can't run (e.g. usage cap hit).
+# Use this when the /bm:resume-at skill can't run (e.g. usage cap hit).
 #
 # Mechanism: nohup + sleep + osascript. No daemon, no plist, no cron entry.
 # Survives shell exit; does NOT survive reboot.
@@ -18,7 +18,7 @@ set -euo pipefail
 #   bin/gsd-resume-at 2026-04-28T08:00 --project ~/code/myproject
 #
 # Rate-limited? When Claude Code shows "You've hit your limit", the
-# /gsd:resume-at SKILL won't run (it needs tokens). Recover with:
+# /bm:resume-at SKILL won't run (it needs tokens). Recover with:
 #   /exit                    # leave the rate-limited Claude session first
 #   gsd-resume-at 17:41      # then run this wrapper from a plain terminal
 #
@@ -35,9 +35,9 @@ Time forms:
   ISO 8601          Absolute timestamp, e.g. 2026-04-28T08:00.
 
 Options:
-  --cmd <command>     Informational override (default: /gsd:resume-work).
+  --cmd <command>     Informational override (default: /bm:resume-work).
                       The shell fallback always launches `claude`; the
-                      SessionStart hook + HANDOFF.json route to /gsd:resume-work.
+                      SessionStart hook + HANDOFF.json route to /bm:resume-work.
   --project <dir>     Project root (default: current working directory).
 
 Examples:
@@ -46,7 +46,7 @@ Examples:
   gsd-resume-at 2026-04-28T08:00 --project ~/code/myproject
 
 Rate-limited? When Claude Code shows "You've hit your limit", the
-/gsd:resume-at SKILL won't run (it needs tokens). Recover with:
+/bm:resume-at SKILL won't run (it needs tokens). Recover with:
   /exit                    # leave the rate-limited Claude session first
   gsd-resume-at 17:41      # then run this wrapper from a plain terminal
 EOF
@@ -59,7 +59,7 @@ if [ $# -lt 1 ]; then
 fi
 
 TIME_ARG=""
-CMD_OVERRIDE="/gsd:resume-work"
+CMD_OVERRIDE="/bm:resume-work"
 PROJECT_DIR="$(pwd)"
 
 # First positional: time arg
@@ -195,15 +195,15 @@ cat <<EOF
   Target:  $TARGET_LOCAL ($TARGET_UTC)
   Delta:   $DELTA_PRETTY from now
   Action:  open Terminal in $PROJECT_ABS and run \`claude\`
-          → SessionStart hook + HANDOFF.json auto-route to /gsd:resume-work
+          → SessionStart hook + HANDOFF.json auto-route to /bm:resume-work
   Project: $PROJECT_ABS
   Command: $CMD_OVERRIDE (informational — custom commands run via the skill,
-           not the shell fallback — shell wrapper always launches /gsd:resume-work
+           not the shell fallback — shell wrapper always launches /bm:resume-work
            via the SessionStart hook)
   PID:     $PID
   Cancel:  kill $PID
 
   Note: nohup+sleep does NOT survive a reboot. If your Mac reboots before
-  target time, the schedule is lost. Use \`/gsd:resume-at\` (the skill, when
+  target time, the schedule is lost. Use \`/bm:resume-at\` (the skill, when
   tokens are available) for durable cross-reboot scheduling via /schedule.
 EOF

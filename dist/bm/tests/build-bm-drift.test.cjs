@@ -22,7 +22,25 @@ const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, 'dist', 'bm');
 const SCRIPT = path.join(ROOT, 'bin', 'build-bm.cjs');
 
-const { stampBmManifest, shouldExclude } = require('../bin/build-bm.cjs');
+const {
+  stampBmManifest, shouldExclude, rewriteCommandRefs, stampHookFallback, isTextFile,
+} = require('../bin/build-bm.cjs');
+
+// Fallback-carrier set mirrors the build so the drift walk computes the same
+// expected transform generate() applies. Text/binary classification reuses the
+// build's exported isTextFile predicate directly.
+const FALLBACK_STAMP_FILES = new Set([
+  'hooks/hooks.json',
+  'hooks/run-bash-hook.cjs',
+  'bin/check-plugin-update.sh',
+]);
+
+// The expected transformed bytes for a source text file, matching generate().
+function expectedText(rel, srcText) {
+  let text = rewriteCommandRefs(srcText);
+  if (FALLBACK_STAMP_FILES.has(rel)) text = stampHookFallback(text);
+  return text;
+}
 
 let failures = 0;
 function check(name, fn) {
@@ -76,15 +94,19 @@ check('stampBmManifest preserves version from source', () => {
   assert.strictEqual(stampBmManifest({ ...SRC_MANIFEST, version: '9.9.9' }).version, '9.9.9');
 });
 
-check('stampBmManifest leaves every other key deep-equal (incl. gsd mcpServers)', () => {
+check('stampBmManifest leaves non-identity keys deep-equal', () => {
   const out = stampBmManifest(SRC_MANIFEST);
   assert.deepStrictEqual(out.author, SRC_MANIFEST.author);
   assert.deepStrictEqual(out.repository, SRC_MANIFEST.repository);
   assert.deepStrictEqual(out.license, SRC_MANIFEST.license);
   assert.deepStrictEqual(out.keywords, SRC_MANIFEST.keywords);
-  // mcpServers stays "gsd" per D-02 (byte-identical policy).
-  assert.deepStrictEqual(out.mcpServers, SRC_MANIFEST.mcpServers);
-  assert.ok(out.mcpServers.gsd, 'mcpServers.gsd must survive');
+});
+
+check('stampBmManifest rekeys mcpServers gsd -> bm with the same server config', () => {
+  const out = stampBmManifest(SRC_MANIFEST);
+  assert.ok(out.mcpServers.bm, 'mcpServers.bm must exist');
+  assert.strictEqual(out.mcpServers.gsd, undefined, 'mcpServers.gsd must be absent');
+  assert.deepStrictEqual(out.mcpServers.bm, SRC_MANIFEST.mcpServers.gsd);
 });
 
 check('stampBmManifest does not mutate its input', () => {
@@ -153,15 +175,56 @@ check('dist/bm excludes .git, .planning, node_modules, scratchpad, and nested di
   }
 });
 
-check('sdk/dist/cli.js and hooks/hooks.json are byte-equal copies', () => {
-  for (const rel of ['sdk/dist/cli.js', 'hooks/hooks.json']) {
-    const a = fs.readFileSync(path.join(ROOT, rel));
-    const b = fs.readFileSync(path.join(OUT, rel));
-    assert.ok(a.equals(b), `dist/bm/${rel} differs from source`);
+check('sdk/dist/cli.js is a byte-equal copy (no command refs to rewrite)', () => {
+  const a = fs.readFileSync(path.join(ROOT, 'sdk/dist/cli.js'), 'utf8');
+  const b = fs.readFileSync(path.join(OUT, 'sdk/dist/cli.js'), 'utf8');
+  assert.strictEqual(b, expectedText('sdk/dist/cli.js', a), 'sdk/dist/cli.js differs from source');
+});
+
+check('the three fallback carriers ship stamped (command-ref rewrite + hook fallback)', () => {
+  for (const rel of ['hooks/hooks.json', 'hooks/run-bash-hook.cjs', 'bin/check-plugin-update.sh']) {
+    const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+    const dist = fs.readFileSync(path.join(OUT, rel), 'utf8');
+    assert.strictEqual(dist, expectedText(rel, src), `dist/bm/${rel} is not the stamped transform of source`);
   }
 });
 
-check('whitelist walk: every included source file has a byte-equal copy (except stamped plugin.json)', () => {
+check('the fallback carriers target the bm cache dir with zero gsd-form literals', () => {
+  const hooks = fs.readFileSync(path.join(OUT, 'hooks/hooks.json'), 'utf8');
+  assert.strictEqual((hooks.match(/cache\/gsd-plugin\/bm/g) || []).length, 17);
+  assert.strictEqual((hooks.match(/cache\/gsd-plugin\/gsd/g) || []).length, 0);
+  const launcher = fs.readFileSync(path.join(OUT, 'hooks/run-bash-hook.cjs'), 'utf8');
+  assert.strictEqual((launcher.match(/'gsd-plugin', 'bm'/g) || []).length, 1);
+  assert.strictEqual((launcher.match(/'gsd-plugin', 'gsd'/g) || []).length, 0);
+  assert.strictEqual((launcher.match(/cache\/gsd-plugin\/bm/g) || []).length, 1);
+  assert.strictEqual((launcher.match(/cache\/gsd-plugin\/gsd/g) || []).length, 0);
+  const notifier = fs.readFileSync(path.join(OUT, 'bin/check-plugin-update.sh'), 'utf8');
+  assert.strictEqual((notifier.match(/cache\/gsd-plugin\/bm/g) || []).length, 1);
+  assert.strictEqual((notifier.match(/cache\/gsd-plugin\/gsd/g) || []).length, 0);
+});
+
+check('mcp/server.cjs is a byte-identical copy', () => {
+  const a = fs.readFileSync(path.join(ROOT, 'mcp/server.cjs'));
+  const b = fs.readFileSync(path.join(OUT, 'mcp/server.cjs'));
+  assert.ok(a.equals(b), 'dist/bm/mcp/server.cjs must be byte-identical to source');
+});
+
+check('no /bm: leaks anywhere in dist/bm text files', () => {
+  const leaks = [];
+  function walk(dir, prefix) {
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      const rel = prefix ? `${prefix}/${ent.name}` : ent.name;
+      if (ent.isDirectory()) { walk(path.join(dir, ent.name), rel); continue; }
+      const buf = fs.readFileSync(path.join(dir, ent.name));
+      if (!isTextFile(rel, buf)) continue;
+      if (buf.toString('utf8').includes('/bm:')) leaks.push(rel);
+    }
+  }
+  walk(OUT, '');
+  assert.deepStrictEqual(leaks, [], `dist/bm has /bm: leaks: ${leaks.slice(0, 5).join(', ')}`);
+});
+
+check('whitelist walk: every included file equals the deterministic transform of source', () => {
   const listed = spawnSync('git', ['ls-files', '-z'], { cwd: ROOT });
   assert.strictEqual(listed.status, 0, 'git ls-files failed');
   const files = listed.stdout.toString('utf8').split('\0').filter(Boolean);
@@ -171,16 +234,25 @@ check('whitelist walk: every included source file has a byte-equal copy (except 
     const dest = path.join(OUT, rel);
     if (!fs.existsSync(dest)) { mismatches.push(`missing: ${rel}`); continue; }
     if (rel === '.claude-plugin/plugin.json') {
-      // Equal after deleting the stamped keys from both sides.
+      // Equal after normalizing the stamped identity keys and the mcpServers rekey.
       const a = readJson(path.join(ROOT, rel));
       const b = readJson(dest);
-      for (const k of ['name', 'displayName', 'description']) { delete a[k]; delete b[k]; }
+      try {
+        assert.ok(b.mcpServers.bm && !b.mcpServers.gsd, 'bm manifest must rekey mcpServers to bm');
+        assert.deepStrictEqual(b.mcpServers.bm, a.mcpServers.gsd);
+      } catch { mismatches.push(`mcp-rekey: ${rel}`); }
+      for (const k of ['name', 'displayName', 'description', 'mcpServers']) { delete a[k]; delete b[k]; }
       try { assert.deepStrictEqual(a, b); } catch { mismatches.push(`stamp-diff: ${rel}`); }
       continue;
     }
-    const src = fs.readFileSync(path.join(ROOT, rel));
+    const srcBuf = fs.readFileSync(path.join(ROOT, rel));
+    if (isTextFile(rel, srcBuf)) {
+      const cpy = fs.readFileSync(dest, 'utf8');
+      if (cpy !== expectedText(rel, srcBuf.toString('utf8'))) mismatches.push(`transform: ${rel}`);
+      continue;
+    }
     const cpy = fs.readFileSync(dest);
-    if (!src.equals(cpy)) mismatches.push(`bytes: ${rel}`);
+    if (!srcBuf.equals(cpy)) mismatches.push(`bytes: ${rel}`);
   }
   assert.deepStrictEqual(mismatches, [], `whitelist walk mismatches: ${mismatches.slice(0, 5).join(', ')}`);
 });

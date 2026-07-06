@@ -6,7 +6,7 @@
 // Watches Bash invocations for auth-shaped command patterns (login flows,
 // credential setup, SSH key generation, env-var-based credentials, etc.)
 // and logs detections to `.planning/.pending-auth-captures.jsonl` for later
-// review via `/gsd:remember-access --review`.
+// review via `/bm:remember-access --review`.
 //
 // Does NOT prompt the user inline. Hooks cannot use AskUserQuestion. The
 // inbox pattern lets the user review captures at their convenience and
@@ -133,7 +133,7 @@ function main() {
   }
 
   // Dedupe captures per session by command-hash (rough). The inbox is small;
-  // we can re-process duplicates during /gsd:remember-access --review.
+  // we can re-process duplicates during /bm:remember-access --review.
   const entry = {
     timestamp: new Date().toISOString(),
     command_redacted: redact(cmd),

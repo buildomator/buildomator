@@ -186,7 +186,7 @@ Example configured sections:
 Create the PR using the generated body. Write the body to a temp file first so large generated PRD sections do not hit shell argument limits:
 
 ```bash
-PR_BODY_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd:pr-body-XXXXXX")
+PR_BODY_FILE=$(mktemp "${TMPDIR:-/tmp}/bm:pr-body-XXXXXX")
 trap 'rm -f "${PR_BODY_FILE:-}"' EXIT
 printf '%s\n' "${PR_BODY}" > "${PR_BODY_FILE}"
 
@@ -316,8 +316,8 @@ Requirements: {N} REQ-IDs addressed
 Next steps:
 - Review/approve PR
 - Merge when CI passes
-- /gsd:complete-milestone (if last phase in milestone)
-- /gsd:progress (to see what's next)
+- /bm:complete-milestone (if last phase in milestone)
+- /bm:progress (to see what's next)
 ```
 </step>
 
@@ -326,9 +326,9 @@ Next steps:
 <offer_next>
 After shipping:
 
-- /gsd:complete-milestone, if all phases in milestone are done
-- /gsd:progress, see overall project state
-- /gsd:execute-phase {next}, continue to next phase
+- /bm:complete-milestone, if all phases in milestone are done
+- /bm:progress, see overall project state
+- /bm:execute-phase {next}, continue to next phase
 </offer_next>
 
 <success_criteria>

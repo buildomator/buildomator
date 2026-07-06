@@ -81,7 +81,7 @@ function main() {
         'The shadowing binary will be used INSTEAD of the plugin\'s bundled SDK',
         'whenever workflows call bare `gsd-sdk`. The global SDK does not honor',
         '`CLAUDE_PLUGIN_ROOT`, so init queries report `agents_installed: false`',
-        'and skills like `/gsd:new-project` skip the parallel research path.',
+        'and skills like `/bm:new-project` skip the parallel research path.',
         '',
         'To fix, remove the shadowing global:',
         '  npm uninstall -g @gsd-build/sdk',

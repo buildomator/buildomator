@@ -115,7 +115,7 @@ Use AskUserQuestion:
 - options:
   - "Let's go" -- Proceed to step 3 (session analysis)
   - "Use questionnaire instead" -- Jump to step 4b (questionnaire path)
-  - "Not now" -- Display "No worries. Run /gsd:profile-user when ready." and exit
+  - "Not now" -- Display "No worries. Run /bm:profile-user when ready." and exit
 
 ---
 
@@ -330,7 +330,7 @@ Use AskUserQuestion with multiSelect:
 - header: "Artifacts"
 - question: "Which artifacts should I generate?"
 - options (ALL pre-selected by default):
-  - "/gsd:dev-preferences command file" -- "Load your preferences in any session"
+  - "/bm:dev-preferences command file" -- "Load your preferences in any session"
   - "CLAUDE.md profile section" -- "Add profile to this project's CLAUDE.md"
   - "Global CLAUDE.md" -- "Add profile to $HOME/.claude/CLAUDE.md for all projects"
 
@@ -342,13 +342,13 @@ Use AskUserQuestion with multiSelect:
 
 Generate selected artifacts sequentially:
 
-**For /gsd:dev-preferences (if selected):**
+**For /bm:dev-preferences (if selected):**
 
 ```bash
 gsd-sdk query generate-dev-preferences --analysis "$ANALYSIS_PATH" --json
 ```
 
-Display: "✓ Generated /gsd:dev-preferences at $HOME/.claude/skills/gsd:dev-preferences/SKILL.md"
+Display: "✓ Generated /bm:dev-preferences at $HOME/.claude/skills/bm:dev-preferences/SKILL.md"
 
 **For CLAUDE.md profile section (if selected):**
 
@@ -405,7 +405,7 @@ Your profile:    ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/cu
 Then list paths for each generated artifact:
 ```
 Artifacts:
-  ✓ /gsd:dev-preferences   $HOME/.claude/skills/gsd:dev-preferences/SKILL.md
+  ✓ /bm:dev-preferences   $HOME/.claude/skills/bm:dev-preferences/SKILL.md
   ✓ CLAUDE.md section       ./CLAUDE.md
   ✓ Global CLAUDE.md        $HOME/.claude/CLAUDE.md
 ```

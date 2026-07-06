@@ -609,8 +609,8 @@ Before writing VERIFICATION.md, verify that the status field matches the decisio
 
 Structure gaps in YAML frontmatter so the orchestrator can AUTO-route them: any
 **blocking** gap (a failed must-have that invalidates the phase goal) routes to a
-follow-up phase (escalation, `/gsd:plan-phase --gaps`); when only **minor**
-(non-goal-blocking) gaps remain, they route to backlog (`/gsd:add-backlog`). Emit
+follow-up phase (escalation, `/bm:plan-phase --gaps`); when only **minor**
+(non-goal-blocking) gaps remain, they route to backlog (`/bm:add-backlog`). Emit
 the FACTUAL blocking signal from your existing BLOCKER/WARNING judgment — do not
 editorialize the routing; the handler acts on `has_blocking_gaps`. The same YAML
 shape feeds both downstream paths:
@@ -829,7 +829,7 @@ All must-haves verified. Phase goal achieved. Ready to proceed.
 1. **{Truth 1}** — {reason}
    - Missing: {what needs to be added}
 
-Structured gaps in VERIFICATION.md frontmatter feed the orchestrator's gap-handling choice (default: park to backlog via `/gsd:add-backlog`; escalation: `/gsd:plan-phase --gaps`).
+Structured gaps in VERIFICATION.md frontmatter feed the orchestrator's gap-handling choice (default: park to backlog via `/bm:add-backlog`; escalation: `/bm:plan-phase --gaps`).
 
 {If human_needed:}
 ### Human Verification Required

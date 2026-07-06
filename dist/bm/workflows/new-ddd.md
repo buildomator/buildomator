@@ -1,5 +1,5 @@
 <purpose>
-Documentation-Driven Development (DDD) mode for `/gsd:new-project`. Research, write user-facing docs as the spec, have the user validate the docs, then derive phases from doc sections rather than from REQ-ID clusters.
+Documentation-Driven Development (DDD) mode for `/bm:new-project`. Research, write user-facing docs as the spec, have the user validate the docs, then derive phases from doc sections rather than from REQ-ID clusters.
 
 Minimal sketch (v2.44.0): per-phase doc-sync automation and docs-aware verification are held for a future release. Manual doc updates during execution are expected; the DDD model is encoded in the project-initialization sequence and the roadmapper's source-of-truth choice.
 </purpose>
@@ -38,7 +38,7 @@ The answer determines SPEC.md's structure in Step 6.
 
 ## 3. Brownfield Mapping (optional)
 
-**Do exactly as in `workflows/new-project.md` Step 3 (Brownfield Mapping).** If the project has existing code and the user opts in, run `/gsd:map-codebase` first. No DDD-specific changes.
+**Do exactly as in `workflows/new-project.md` Step 3 (Brownfield Mapping).** If the project has existing code and the user opts in, run `/bm:map-codebase` first. No DDD-specific changes.
 
 ## 4. Config Capture
 
@@ -168,7 +168,7 @@ To require interactive approval on these prompts, set \`workflow.auto_approve_no
 |---|---|---|---|
 EOF
 fi
-echo "| ${TS} | /gsd:new-ddd | Auto-approved SPEC.md draft | docs/SPEC.md |" >> .planning/AUTO-DECISIONS.md
+echo "| ${TS} | /bm:new-ddd | Auto-approved SPEC.md draft | docs/SPEC.md |" >> .planning/AUTO-DECISIONS.md
 ```
 
 Emit: `▶ Auto-approved SPEC.md draft (workflow.auto_approve_non_critical=true). Logged to .planning/AUTO-DECISIONS.md. Set the config to false to require interactive approval.`
@@ -184,14 +184,14 @@ AskUserQuestion(
   options: [
     { label: "Approve (Recommended)", description: "SPEC.md is locked; proceed to roadmap generation." },
     { label: "Request revision", description: "Provide feedback; orchestrator revises SPEC.md and re-presents." },
-    { label: "Edit manually", description: "Pause workflow so user can edit SPEC.md directly; re-invoke /gsd:new-ddd to resume from this point." }
+    { label: "Edit manually", description: "Pause workflow so user can edit SPEC.md directly; re-invoke /bm:new-ddd to resume from this point." }
   ]
 )
 ```
 
 **If "Request revision":** capture the user's feedback inline (freeform), apply targeted edits to SPEC.md (use `Edit` tool, not rewrite), re-present this approval prompt. Cap at 3 revision rounds before falling through to "Edit manually."
 
-**If "Edit manually":** pause workflow. User edits SPEC.md, then re-invokes `/gsd:new-ddd` (which resumes from this validation step since SPEC.md exists and PROJECT.md is in place).
+**If "Edit manually":** pause workflow. User edits SPEC.md, then re-invokes `/bm:new-ddd` (which resumes from this validation step since SPEC.md exists and PROJECT.md is in place).
 
 **If "Approve":** commit SPEC.md and continue:
 
@@ -201,7 +201,7 @@ gsd-sdk query commit "docs(ddd): lock SPEC.md as v1 spec" --files docs/SPEC.md
 
 ## 8. Generate Thin REQUIREMENTS.md (traceability shell)
 
-Several downstream workflows (notably `/gsd:plan-phase` and `/gsd:ship`) reference REQUIREMENTS.md for traceability tables and PR-body content. Generating a thin REQUIREMENTS.md from SPEC.md keeps those workflows working without changes.
+Several downstream workflows (notably `/bm:plan-phase` and `/bm:ship`) reference REQUIREMENTS.md for traceability tables and PR-body content. Generating a thin REQUIREMENTS.md from SPEC.md keeps those workflows working without changes.
 
 For each major section in SPEC.md (each H2 heading), create one REQ-ID with the form `DOC-{NN}` and a description that points back to the SPEC.md section:
 
@@ -276,7 +276,7 @@ GSD > PROJECT INITIALIZED (DDD MODE)
 SPEC.md is the spec. Each phase implements a section.
 When implementation diverges, update SPEC.md and re-validate.
 
-▶ Next: /gsd:plan-phase 1
+▶ Next: /bm:plan-phase 1
 ```
 
 </process>
@@ -302,9 +302,9 @@ When implementation diverges, update SPEC.md and re-validate.
 
 **Held for a future release (intentionally NOT in v2.44.0):**
 
-- **Per-phase doc-sync workflow.** A `/gsd:docs-sync <phase>` step invoked between `execute-phase` and `verify-work` that detects implementation-vs-SPEC.md drift and updates SPEC.md sections that changed. Currently the user is expected to update SPEC.md manually during execution.
+- **Per-phase doc-sync workflow.** A `/bm:docs-sync <phase>` step invoked between `execute-phase` and `verify-work` that detects implementation-vs-SPEC.md drift and updates SPEC.md sections that changed. Currently the user is expected to update SPEC.md manually during execution.
 - **Docs-aware verification.** A `gsd-docs-checker` agent (or extension of `gsd-verifier`) that confirms the implementation actually matches the corresponding SPEC.md section, not just that tests pass.
-- **SPEC.md drift detection in `/gsd:next`.** A check that warns if SPEC.md has been edited since the last phase's verification, prompting re-approval.
+- **SPEC.md drift detection in `/bm:next`.** A check that warns if SPEC.md has been edited since the last phase's verification, prompting re-approval.
 - **Auto-decomposition of SPEC.md into fine-grained REQ-IDs.** Currently REQUIREMENTS.md gets one DOC-NN per H2 section. A richer mapping (one REQ-ID per command, endpoint, extension point, etc.) would improve traceability in larger projects.
 - **`gsd-ddd-docs-writer` subagent.** If inline orchestrator drafting becomes context-pressure problematic on large projects, extract SPEC.md generation to a dedicated agent.
 

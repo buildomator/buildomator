@@ -84,8 +84,8 @@ When the conversation reaches natural conclusions or the developer signals readi
 | Research question | `.planning/research/questions.md` (append) | Open questions that need deeper investigation |
 | Requirement | `REQUIREMENTS.md` (append) | Clear requirements that emerged from discussion |
 | New phase | `ROADMAP.md` (append) | Scope large enough to warrant its own phase |
-| Spike | `/gsd:spike` (invoke) | Feasibility uncertainty surfaced, "will this API work?", "can we do X?" |
-| Sketch | `/gsd:sketch` (invoke) | Design direction unclear, "what should this look like?", "how should this feel?" |
+| Spike | `/bm:spike` (invoke) | Feasibility uncertainty surfaced, "will this API work?", "can we do X?" |
+| Sketch | `/bm:sketch` (invoke) | Design direction unclear, "what should this look like?", "how should this feel?" |
 
 Present suggestions:
 ```
@@ -111,7 +111,7 @@ For each selected output, write the file:
 - **Seeds:** Create `.planning/seeds/{slug}.md` with frontmatter (title, trigger_condition, planted_date)
 - **Research questions:** Append to `.planning/research/questions.md`
 - **Requirements:** Append to `.planning/REQUIREMENTS.md` with next available REQ ID
-- **Phases:** Use existing `/gsd:add-phase` command via SlashCommand
+- **Phases:** Use existing `/bm:add-phase` command via SlashCommand
 
 Commit if `commit_docs` is enabled:
 ```bash
@@ -120,7 +120,7 @@ gsd-sdk query commit "docs: capture exploration — {topic_slug}" --files {file_
 
 ## Step 6: Close
 
-**Unfinished-UAT breadcrumb:** exploring is a common detour from a UAT (feature ideas surfaced mid-verification). Apply rule 8 of `references/continuation-format.md` — if any phase has a `testing`/`partial` UAT, lead with `↩ Resume UAT for Phase {N}: /gsd:verify-work {N}` ABOVE the close block, so the interrupted verification is not silently abandoned.
+**Unfinished-UAT breadcrumb:** exploring is a common detour from a UAT (feature ideas surfaced mid-verification). Apply rule 8 of `references/continuation-format.md` — if any phase has a `testing`/`partial` UAT, lead with `↩ Resume UAT for Phase {N}: /bm:verify-work {N}` ABOVE the close block, so the interrupted verification is not silently abandoned.
 
 ```
 ## Exploration Complete
@@ -129,7 +129,7 @@ gsd-sdk query commit "docs: capture exploration — {topic_slug}" --files {file_
 **Outputs:** {count} artifact(s) created
 {list of created files}
 
-Continue exploring with `/gsd:explore` or start working with `/gsd:progress --next`.
+Continue exploring with `/bm:explore` or start working with `/bm:progress --next`.
 ```
 
 </process>

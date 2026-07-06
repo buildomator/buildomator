@@ -38,52 +38,52 @@ Evaluate `$ARGUMENTS` against these routing rules. Apply the **first matching** 
 
 | If the text describes... | Route to | Why |
 |--------------------------|----------|-----|
-| Explicit DDD mode: "DDD", "docs-driven", "documentation-driven development", "docs-first", "spec by docs", "API-first", "write the docs first", "README-driven" | `/gsd:new-ddd` | Explicit Documentation-Driven Development intent |
-| Starting a new CLI / library / SDK / API / plugin system (project shape with a well-defined user-facing surface), and the text does NOT explicitly mention requirements / REQ-IDs / requirements-first | `/gsd:new-ddd` | DDD-shape project where docs-as-spec fits naturally; if shape is ambiguous, route to ambiguity handling between `/gsd:new-ddd` and `/gsd:new-project` |
-| Starting a new project (generic), "set up", "initialize", or any new-project intent that does not match the two DDD rules above | `/gsd:new-project` | Default project-initialization path |
-| Mapping or analyzing an existing codebase | `/gsd:map-codebase` | Codebase discovery |
-| A bug, error, crash, failure, or something broken | `/gsd:debug` | Needs systematic investigation |
-| Spiking, "test if", "will this work", "experiment", "prove this out", validate feasibility | `/gsd:spike` | Throwaway experiment to validate feasibility |
-| Sketching, "mockup", "what would this look like", "prototype the UI", "design this", explore visual direction | `/gsd:sketch` | Throwaway HTML mockups to explore design |
-| Wrapping up spikes, "package the spikes", "consolidate spike findings" | `/gsd:spike --wrap-up` | Package spike findings into reusable skill |
-| Wrapping up sketches, "package the designs", "consolidate sketch findings" | `/gsd:sketch --wrap-up` | Package sketch findings into reusable skill |
-| Exploring, researching, comparing, or "how does X work" | `/gsd:explore` | Socratic ideation and idea routing |
-| Discussing vision, "how should X look", brainstorming | `/gsd:discuss-phase` | Needs context gathering |
-| A complex task: refactoring, migration, multi-file architecture, system redesign | `/gsd:phase` | Needs a full phase with plan/build cycle |
-| Planning a specific phase or "plan phase N" | `/gsd:plan-phase` | Direct planning request |
-| Executing a phase or "build phase N", "run phase N" | `/gsd:execute-phase` | Direct execution request |
-| Running all remaining phases automatically | `/gsd:autonomous` | Full autonomous execution |
-| A review or quality concern about existing work | `/gsd:verify-work` | Needs verification |
-| Checking progress, status, "where am I" | `/gsd:progress` | Status check |
-| Resuming work, "pick up where I left off" | `/gsd:resume-work` | Session restoration |
-| A note, idea, or "remember to..." | `/gsd:capture` | Capture for later |
-| Adding tests, "write tests", "test coverage" | `/gsd:add-tests` | Test generation |
-| Completing a milestone, shipping, releasing | `/gsd:complete-milestone` | Milestone lifecycle |
-| A specific, actionable, small task (add feature, fix typo, update config) | `/gsd:quick` | Self-contained, single executor |
+| Explicit DDD mode: "DDD", "docs-driven", "documentation-driven development", "docs-first", "spec by docs", "API-first", "write the docs first", "README-driven" | `/bm:new-ddd` | Explicit Documentation-Driven Development intent |
+| Starting a new CLI / library / SDK / API / plugin system (project shape with a well-defined user-facing surface), and the text does NOT explicitly mention requirements / REQ-IDs / requirements-first | `/bm:new-ddd` | DDD-shape project where docs-as-spec fits naturally; if shape is ambiguous, route to ambiguity handling between `/bm:new-ddd` and `/bm:new-project` |
+| Starting a new project (generic), "set up", "initialize", or any new-project intent that does not match the two DDD rules above | `/bm:new-project` | Default project-initialization path |
+| Mapping or analyzing an existing codebase | `/bm:map-codebase` | Codebase discovery |
+| A bug, error, crash, failure, or something broken | `/bm:debug` | Needs systematic investigation |
+| Spiking, "test if", "will this work", "experiment", "prove this out", validate feasibility | `/bm:spike` | Throwaway experiment to validate feasibility |
+| Sketching, "mockup", "what would this look like", "prototype the UI", "design this", explore visual direction | `/bm:sketch` | Throwaway HTML mockups to explore design |
+| Wrapping up spikes, "package the spikes", "consolidate spike findings" | `/bm:spike --wrap-up` | Package spike findings into reusable skill |
+| Wrapping up sketches, "package the designs", "consolidate sketch findings" | `/bm:sketch --wrap-up` | Package sketch findings into reusable skill |
+| Exploring, researching, comparing, or "how does X work" | `/bm:explore` | Socratic ideation and idea routing |
+| Discussing vision, "how should X look", brainstorming | `/bm:discuss-phase` | Needs context gathering |
+| A complex task: refactoring, migration, multi-file architecture, system redesign | `/bm:phase` | Needs a full phase with plan/build cycle |
+| Planning a specific phase or "plan phase N" | `/bm:plan-phase` | Direct planning request |
+| Executing a phase or "build phase N", "run phase N" | `/bm:execute-phase` | Direct execution request |
+| Running all remaining phases automatically | `/bm:autonomous` | Full autonomous execution |
+| A review or quality concern about existing work | `/bm:verify-work` | Needs verification |
+| Checking progress, status, "where am I" | `/bm:progress` | Status check |
+| Resuming work, "pick up where I left off" | `/bm:resume-work` | Session restoration |
+| A note, idea, or "remember to..." | `/bm:capture` | Capture for later |
+| Adding tests, "write tests", "test coverage" | `/bm:add-tests` | Test generation |
+| Completing a milestone, shipping, releasing | `/bm:complete-milestone` | Milestone lifecycle |
+| A specific, actionable, small task (add feature, fix typo, update config) | `/bm:quick` | Self-contained, single executor |
 
-**Requires `.planning/` directory:** All routes except `/gsd:new-project`, `/gsd:new-ddd`, `/gsd:map-codebase`, `/gsd:spike`, `/gsd:sketch`, and `/gsd:help`. If the project doesn't exist and the route requires it, suggest `/gsd:new-project` first (or `/gsd:new-ddd` if the user's text indicates a DDD-shape project).
+**Requires `.planning/` directory:** All routes except `/bm:new-project`, `/bm:new-ddd`, `/bm:map-codebase`, `/bm:spike`, `/bm:sketch`, and `/bm:help`. If the project doesn't exist and the route requires it, suggest `/bm:new-project` first (or `/bm:new-ddd` if the user's text indicates a DDD-shape project).
 
 **Ambiguity handling:** If the text could reasonably match multiple routes, ask the user via AskUserQuestion with the top 2-3 options. For example:
 
 ```
 "Refactor the authentication system" could be:
-1. /gsd:phase, Full planning cycle (recommended for multi-file refactors)
-2. /gsd:quick, Quick execution (if scope is small and clear)
+1. /bm:phase, Full planning cycle (recommended for multi-file refactors)
+2. /bm:quick, Quick execution (if scope is small and clear)
 
 Which approach fits better?
 ```
 
-**Common ambiguity: `/gsd:new-project` vs. `/gsd:new-ddd`.** When the user's intent matches a "starting a new project" pattern AND the project shape could plausibly fit DDD (CLI, library, SDK, API, plugin system), but the user did not explicitly request DDD mode, ask:
+**Common ambiguity: `/bm:new-project` vs. `/bm:new-ddd`.** When the user's intent matches a "starting a new project" pattern AND the project shape could plausibly fit DDD (CLI, library, SDK, API, plugin system), but the user did not explicitly request DDD mode, ask:
 
 ```
 "I want to build a CLI tool for syncing config files" could initialize as:
-1. /gsd:new-ddd, Documentation-Driven Development. Write user-facing docs (SPEC.md) as the spec, then derive phases from doc sections. Recommended for CLIs / libraries / SDKs / APIs / plugin systems where the user-facing surface is the deliverable.
-2. /gsd:new-project, Standard initialization. Write REQUIREMENTS.md with REQ-IDs and acceptance criteria, then derive phases from REQ-ID clusters. Recommended for exploratory work or projects where the system shape is not yet clear.
+1. /bm:new-ddd, Documentation-Driven Development. Write user-facing docs (SPEC.md) as the spec, then derive phases from doc sections. Recommended for CLIs / libraries / SDKs / APIs / plugin systems where the user-facing surface is the deliverable.
+2. /bm:new-project, Standard initialization. Write REQUIREMENTS.md with REQ-IDs and acceptance criteria, then derive phases from REQ-ID clusters. Recommended for exploratory work or projects where the system shape is not yet clear.
 
 Which approach fits better?
 ```
 
-If the user picks an option, route there. If unclear, default to `/gsd:new-project` (the older, more general mode).
+If the user picks an option, route there. If unclear, default to `/bm:new-project` (the older, more general mode).
 </step>
 
 <step name="display">

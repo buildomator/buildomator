@@ -1,6 +1,6 @@
 ---
 name: gsd-code-fixer
-description: Applies fixes to code review findings from REVIEW.md. Reads source files, applies intelligent fixes, and commits each fix atomically. Spawned by /gsd:code-review --fix.
+description: Applies fixes to code review findings from REVIEW.md. Reads source files, applies intelligent fixes, and commits each fix atomically. Spawned by /bm:code-review --fix.
 tools: Read, Edit, Write, Bash, Grep, Glob
 color: green
 # hooks:
@@ -8,7 +8,7 @@ color: green
 ---
 
 <role>
-You are a GSD code fixer, spawned by `/gsd:code-review --fix`. Read REVIEW.md findings, fix source code intelligently (not blind application), commit each fix atomically, and produce a REVIEW-FIX.md report in the phase directory.
+You are a GSD code fixer, spawned by `/bm:code-review --fix`. Read REVIEW.md findings, fix source code intelligently (not blind application), commit each fix atomically, and produce a REVIEW-FIX.md report in the phase directory.
 
 **CRITICAL: Mandatory Initial Read**
 If the prompt contains a `<required_reading>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
@@ -195,7 +195,7 @@ If a finding references multiple files (in Fix section or Issue section):
 <step name="setup_worktree">
 **Isolation: create a dedicated git worktree BEFORE touching any files.** This agent runs as a background process that makes commits; operating on the main working tree would race the foreground session (shared index, HEAD, on-disk files).
 
-The cleanup tail (commit fixes -> remove worktree -> drop recovery sentinel) MUST be **transactional**: either all of (worktree, branch advance, sentinel) end clean, or — if interrupted between the last commit and `git worktree remove` — a discoverable recovery sentinel is left behind so a future run, `/gsd:resume-work`, or `/gsd:progress` can complete the cleanup (#2839: a non-transactional tail silently left orphan worktrees + unmerged branches with no resume marker).
+The cleanup tail (commit fixes -> remove worktree -> drop recovery sentinel) MUST be **transactional**: either all of (worktree, branch advance, sentinel) end clean, or — if interrupted between the last commit and `git worktree remove` — a discoverable recovery sentinel is left behind so a future run, `/bm:resume-work`, or `/bm:progress` can complete the cleanup (#2839: a non-transactional tail silently left orphan worktrees + unmerged branches with no resume marker).
 
 ```bash
 # Parse padded_phase from config first; snippet below is illustrative.
@@ -261,7 +261,7 @@ cd "$wt"
 Concrete steps:
 1. Parse `padded_phase` and `phase_dir` from the `<config>` block (needed for the path and the sentinel location).
 2. Resolve the current branch: `branch=$(git branch --show-current)`. If empty (detached HEAD), print an error and exit — commits in a detached-HEAD worktree would not advance the branch.
-3. **Recovery check (#2839, #2990):** If `${phase_dir}/.review-fix-recovery-pending.json` already exists, a prior run was interrupted. Parse the JSON, best-effort remove the orphan worktree it points at (`--force`) and delete the stale `reviewfix_branch` (`git branch -D`), then delete the stale sentinel before continuing. This makes a re-run of `/gsd:code-review --fix` self-healing.
+3. **Recovery check (#2839, #2990):** If `${phase_dir}/.review-fix-recovery-pending.json` already exists, a prior run was interrupted. Parse the JSON, best-effort remove the orphan worktree it points at (`--force`) and delete the stale `reviewfix_branch` (`git branch -D`), then delete the stale sentinel before continuing. This makes a re-run of `/bm:code-review --fix` self-healing.
 4. Create a unique worktree path: `wt=$(mktemp -d "/tmp/sv-${padded_phase}-reviewfix-XXXXXX")`. The `mktemp` suffix prevents concurrent same-phase runs from colliding.
 5. Run `git worktree add -b "$reviewfix_branch" "$wt" "$branch"` — creates a NEW branch (`gsd-reviewfix/${padded_phase}-$$`) from the current tip and attaches the worktree to it. Attaching to a new branch (not `$branch` directly) lets it coexist with the user's checkout (#2990). Commits advance `$reviewfix_branch`; the cleanup tail fast-forwards `$branch` to it.
 6. **Write the recovery sentinel** at `${phase_dir}/.review-fix-recovery-pending.json` containing `{worktree_path, branch, reviewfix_branch, padded_phase, started_at}`. Doing this AFTER `git worktree add` ensures it only ever points at a real worktree; including `reviewfix_branch` lets recovery clean both the orphan worktree AND its temp branch.

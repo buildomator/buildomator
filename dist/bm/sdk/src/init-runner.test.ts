@@ -707,34 +707,34 @@ describe('InitRunner', () => {
       expect(researchPrompt).toContain('You are researching the');
     });
 
-    it('buildProjectPrompt output passes through sanitizePrompt (no /gsd: patterns)', async () => {
+    it('buildProjectPrompt output passes through sanitizePrompt (no /bm: patterns)', async () => {
       const { runner } = createRunnerWithSdkPrompts();
       await runner.run('build a todo app');
 
       const projectPrompt = mockRunSession.mock.calls[0]![0] as string;
-      // sanitizePrompt should strip any /gsd: patterns from the assembled prompt
-      expect(projectPrompt).not.toMatch(/\/gsd:\S+/);
+      // sanitizePrompt should strip any /bm: patterns from the assembled prompt
+      expect(projectPrompt).not.toMatch(/\/bm:\S+/);
       expect(projectPrompt).toContain('PROJECT.md');
     });
 
-    it('buildResearchPrompt output passes through sanitizePrompt (no /gsd: patterns)', async () => {
+    it('buildResearchPrompt output passes through sanitizePrompt (no /bm: patterns)', async () => {
       const { runner } = createRunnerWithSdkPrompts();
       await runner.run('build a todo app');
 
       const researchPrompt = mockRunSession.mock.calls[1]![0] as string;
-      // sanitizePrompt should strip any /gsd: patterns from the assembled prompt
-      expect(researchPrompt).not.toMatch(/\/gsd:\S+/);
+      // sanitizePrompt should strip any /bm: patterns from the assembled prompt
+      expect(researchPrompt).not.toMatch(/\/bm:\S+/);
       expect(researchPrompt).toContain('You are researching the');
     });
 
-    it('buildRoadmapPrompt output passes through sanitizePrompt (no /gsd: patterns)', async () => {
+    it('buildRoadmapPrompt output passes through sanitizePrompt (no /bm: patterns)', async () => {
       const { runner } = createRunnerWithSdkPrompts();
       await runner.run('build a todo app');
 
       // Roadmap prompt is the last session call (index 7)
       const roadmapPrompt = mockRunSession.mock.calls[7]![0] as string;
-      // sanitizePrompt should strip any /gsd: patterns from the assembled prompt
-      expect(roadmapPrompt).not.toMatch(/\/gsd:\S+/);
+      // sanitizePrompt should strip any /bm: patterns from the assembled prompt
+      expect(roadmapPrompt).not.toMatch(/\/bm:\S+/);
     });
   });
 });
