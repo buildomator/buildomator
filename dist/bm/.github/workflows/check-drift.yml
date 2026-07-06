@@ -139,6 +139,8 @@ jobs:
         run: node tests/build-bm-drift.test.cjs
       - name: Regenerate bm and fail on any drift from the committed dist/bm (D-06)
         run: node bin/build-bm.cjs --check
+      - name: Run bm command-inventory parity test
+        run: node tests/bm-parity.test.cjs
       - name: Validate the generated bm manifest stays schema-valid
         run: node bin/validate-plugin.cjs dist/bm/.claude-plugin/plugin.json
       - name: Verify all version sites agree (BUILD-02)

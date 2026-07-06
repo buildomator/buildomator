@@ -22,9 +22,11 @@ This repo now ships **two plugins from one source**: `gsd` (source `./`) and `bm
 6. **Update the README** "Added features beyond upstream" table for any new user-facing capability.
 7. **Tag and publish:** `git push origin master && git push origin vX.Y.Z`, then `gh release create vX.Y.Z --notes-file <changelog-section>`.
 
-## Known limitation: bm hook fallback
+## How the bm package diverges from gsd
 
-`dist/bm/hooks/hooks.json` keeps the hardcoded `~/.claude/plugins/cache/gsd-plugin/gsd` fallback path verbatim from the gsd source while the two packages are byte-identical apart from their stamped identity fields. The `bm-package-smoke` job proves the primary `${CLAUDE_PLUGIN_ROOT}` path always wins, so this fallback never fires in normal use, but it still points at the gsd cache dir rather than a per-plugin bm path. The per-plugin fallback fix is scheduled with the Phase 13/14 divergence work.
+`dist/bm` is a deterministic transform of the gsd source, not a byte copy. The build applies three passes: an identity stamp (`name` gsd -> bm, `displayName`/`description` -> Buildomator, and the `mcpServers` key gsd -> bm), a command-reference rewrite (`/bm:` -> `/bm:` across every text file so a bm-only user never gets bounced into the sibling plugin), and a hook cache-fallback stamp to `cache/gsd-plugin/bm` across the three carriers that hold it (`hooks/hooks.json`, the `run-bash-hook` launcher, and the update notifier). `mcp/server.cjs` stays byte-identical, so both plugins expose the same tools and resources under their own manifest key.
+
+CI gates the divergence. `bm-build-drift` runs the drift test, the parity test, and `build-bm.cjs --check`, so a stale, hand-edited, or under-transformed `dist/bm` (including any leaked `/bm:` command reference) fails the job and blocks the tag. `bm-package-smoke` proves it at runtime: the hook fallback literals target the bm cache dir in both carriers, the primary `${CLAUDE_PLUGIN_ROOT}` path always wins over planted gsd and bm cache tripwires, and the bm MCP server lists the same tools and resources as the gsd server.
 
 ## Versioning
 

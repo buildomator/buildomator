@@ -164,13 +164,16 @@ jobs:
       - name: bm Test - primary-path-wins hook proof (tripwire fallback must NOT fire)
         run: |
           set -e
-          # Plant a tripwire in the ONLY gsd cache candidate the hook would fall
-          # back to. If the hook ever resolves via the hardcoded gsd fallback
-          # instead of ${CLAUDE_PLUGIN_ROOT}, this tripwire fires (marker to
-          # stderr, exit 7) and the assertions below catch it.
-          TRIP="$HOME/.claude/plugins/cache/gsd-plugin/gsd/9.9.9/bin"
-          mkdir -p "$TRIP"
-          printf '%s\n' 'process.stderr.write("FALLBACK-FIRED\n");process.exit(7);' > "$TRIP/gsd-tools.cjs"
+          # Plant a tripwire in BOTH cache candidates the hook could fall back
+          # to: the legacy gsd path and the stamped bm path. If the hook ever
+          # resolves via either hardcoded fallback instead of
+          # ${CLAUDE_PLUGIN_ROOT}, that tripwire fires (marker to stderr, exit 7)
+          # and the assertions below catch it.
+          for seg in gsd bm; do
+            TRIP="$HOME/.claude/plugins/cache/gsd-plugin/$seg/9.9.9/bin"
+            mkdir -p "$TRIP"
+            printf '%s\n' 'process.stderr.write("FALLBACK-FIRED\n");process.exit(7);' > "$TRIP/gsd-tools.cjs"
+          done
 
           # Extract the first SessionStart hook command verbatim from dist/bm.
           cmd=$(node -e 'process.stdout.write(require("'"$GITHUB_WORKSPACE"'/dist/bm/hooks/hooks.json").hooks.SessionStart[0].hooks[0].command)')
@@ -188,8 +191,8 @@ jobs:
           echo "hook stderr: [$err]"
           [ "$rc" -eq 0 ] || { echo "FAIL: bm SessionStart hook exited $rc (expected 0)"; exit 1; }
           echo "$err" | grep -q "plugin path stale" && { echo "FAIL: hook resolved a non-primary path (stale-path message)"; exit 1; }
-          echo "$err" | grep -q "FALLBACK-FIRED" && { echo "FAIL: hook fell back to the gsd cache tripwire"; exit 1; }
-          echo "OK: bm hook resolved via the primary CLAUDE_PLUGIN_ROOT path; gsd fallback tripwire never fired"
+          echo "$err" | grep -q "FALLBACK-FIRED" && { echo "FAIL: hook fell back to a cache tripwire (gsd or bm)"; exit 1; }
+          echo "OK: bm hook resolved via the primary CLAUDE_PLUGIN_ROOT path; neither the gsd nor the bm fallback tripwire fired"
 
       - name: bm Test - cache-id invariant (marketplace name still gsd-plugin, bm source ./dist/bm)
         run: |
@@ -200,6 +203,75 @@ jobs:
             if(m.name!=="gsd-plugin"){console.error("FAIL: marketplace name is "+m.name+", expected gsd-plugin");process.exit(1);}
             if(!bm||bm.source!=="./dist/bm"){console.error("FAIL: bm entry source is "+(bm&&bm.source)+", expected ./dist/bm");process.exit(1);}
             console.log("OK: cache id gsd-plugin, bm source ./dist/bm (cache path ~/.claude/plugins/cache/gsd-plugin/bm/<version>/)");
+          '
+
+      - name: bm hook fallbacks target the bm cache dir (both runtime carriers)
+        run: |
+          set -e
+          node -e '
+            const fs=require("fs");
+            const count=(s,needle)=>s.split(needle).length-1;
+            const fail=(m)=>{console.error("FAIL: "+m);process.exit(1);};
+
+            // Carrier 1: the inline node resolvers in hooks.json.
+            const hooks=fs.readFileSync("dist/bm/hooks/hooks.json","utf8");
+            if(count(hooks,"cache/gsd-plugin/bm")!==17) fail("hooks.json bm-path occurrences != 17 (got "+count(hooks,"cache/gsd-plugin/bm")+")");
+            if(count(hooks,"cache/gsd-plugin/gsd")!==0) fail("hooks.json still has gsd-path fallbacks (got "+count(hooks,"cache/gsd-plugin/gsd")+")");
+            if(count(hooks,"gsd-tools.cjs")<1) fail("hooks.json lost the gsd-tools.cjs identity token");
+
+            // Carrier 2: the run-bash-hook launcher resolves the cache dir itself.
+            const launcher=fs.readFileSync("dist/bm/hooks/run-bash-hook.cjs","utf8");
+            if(count(launcher,"\x27gsd-plugin\x27, \x27bm\x27")!==1) fail("run-bash-hook quoted bm pair != 1 (got "+count(launcher,"\x27gsd-plugin\x27, \x27bm\x27")+")");
+            if(count(launcher,"\x27gsd-plugin\x27, \x27gsd\x27")!==0) fail("run-bash-hook still has the quoted gsd pair");
+            if(count(launcher,"cache/gsd-plugin/gsd")!==0) fail("run-bash-hook still has a gsd-path literal");
+
+            console.log("OK: both hook fallback carriers target the bm cache dir; identity tokens survive");
+          '
+
+      - name: bm MCP server lists identical tools and resources (dynamic gsd-vs-bm)
+        run: |
+          set -e
+          node -e '
+            const { spawn } = require("child_process");
+            // Spawn a server, send initialize + tools/list + resources/list over
+            // ndjson stdio, and return sorted tool-name and resource-uri arrays.
+            // No tool names, resource URIs, or counts are hardcoded anywhere: the
+            // proof is that the two servers report identical, non-empty surfaces.
+            function surface(script){
+              return new Promise((resolve,reject)=>{
+                const child=spawn(process.execPath,[script],{stdio:["pipe","pipe","pipe"]});
+                let out="";let err="";
+                const timer=setTimeout(()=>{child.kill("SIGKILL");reject(new Error("timeout ("+script+") stderr="+err.trim()));},5000);
+                child.stdout.on("data",b=>out+=b.toString("utf8"));
+                child.stderr.on("data",b=>err+=b.toString("utf8"));
+                child.on("error",e=>{clearTimeout(timer);reject(e);});
+                child.on("close",()=>{
+                  clearTimeout(timer);
+                  const msgs=out.split("\n").filter(l=>l.trim().startsWith("{")).map(l=>{try{return JSON.parse(l);}catch{return null;}}).filter(Boolean);
+                  const byId=id=>msgs.find(m=>m.id===id);
+                  const toolsResp=byId(2), resResp=byId(3);
+                  if(!toolsResp||!toolsResp.result||!Array.isArray(toolsResp.result.tools)) return reject(new Error("no tools/list array from "+script));
+                  if(!resResp||!resResp.result||!Array.isArray(resResp.result.resources)) return reject(new Error("no resources/list array from "+script));
+                  const tools=toolsResp.result.tools.map(t=>t.name).sort();
+                  const resources=resResp.result.resources.map(r=>r.uri).sort();
+                  resolve({tools,resources});
+                });
+                child.stdin.write(JSON.stringify({jsonrpc:"2.0",id:1,method:"initialize",params:{protocolVersion:"2024-11-05",capabilities:{},clientInfo:{name:"bm-parity-smoke",version:"1.0"}}})+"\n");
+                child.stdin.write(JSON.stringify({jsonrpc:"2.0",id:2,method:"tools/list"})+"\n");
+                child.stdin.write(JSON.stringify({jsonrpc:"2.0",id:3,method:"resources/list"})+"\n");
+                setTimeout(()=>{child.stdin.end();setTimeout(()=>child.kill("SIGTERM"),200);},800);
+              });
+            }
+            (async()=>{
+              const assert=require("assert");
+              const gsd=await surface("mcp/server.cjs");
+              const bm=await surface("dist/bm/mcp/server.cjs");
+              assert.ok(gsd.tools.length>0,"gsd server listed 0 tools");
+              assert.ok(gsd.resources.length>0,"gsd server listed 0 resources");
+              assert.deepStrictEqual(bm.tools,gsd.tools,"bm tool list differs from gsd");
+              assert.deepStrictEqual(bm.resources,gsd.resources,"bm resource list differs from gsd");
+              console.log("OK: bm MCP server lists the same "+bm.tools.length+" tools and "+bm.resources.length+" resources as gsd");
+            })().catch(e=>{console.error("FAIL: "+e.message);process.exit(1);});
           '
 
       - name: Summary
