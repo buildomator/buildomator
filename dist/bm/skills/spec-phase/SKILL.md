@@ -54,5 +54,5 @@ Execute the spec-phase workflow from @${CLAUDE_PLUGIN_ROOT}/workflows/spec-phase
 - Gate passed: ambiguity ≤ 0.20 AND all dimension minimums met
 - SPEC.md written with falsifiable requirements, explicit boundaries, and acceptance criteria
 - SPEC.md committed atomically
-- User knows they can now run /gsd:discuss-phase which will load SPEC.md automatically
+- User knows they can now run /bm:discuss-phase which will load SPEC.md automatically
 </success_criteria>

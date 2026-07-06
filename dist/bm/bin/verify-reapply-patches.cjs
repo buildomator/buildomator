@@ -2,7 +2,7 @@
 'use strict';
 
 /**
- * Deterministic verifier for the /gsd:reapply-patches Step 5 "Hunk Verification
+ * Deterministic verifier for the /bm:reapply-patches Step 5 "Hunk Verification
  * Gate". For each backed-up patch file, asserts that the user's added lines
  * (computed from a real diff against the pristine baseline, not from the
  * LLM's prose summary) survive into the merged output.

@@ -60,7 +60,7 @@ When this workflow completes, emit a Next Up continuation block following the pa
 - Show completion status (e.g., `## ✓ Phase N Complete` with plan/task tally)
 - Emit a `## ▶ Next Up` heading with the next likely command
 - Use **`` `/clear` then: ``** before the command
-- Include a parenthetical: *(`/clear` is safe — `/gsd:resume-work` restores position from `HANDOFF.json` if you change your mind)*
+- Include a parenthetical: *(`/clear` is safe — `/bm:resume-work` restores position from `HANDOFF.json` if you change your mind)*
 - Add an "Also available:" section with 1-3 alternatives where relevant
 
 Phase boundaries are the highest-value places to clear context. Always suggest `/clear` on completion.

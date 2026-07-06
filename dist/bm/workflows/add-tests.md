@@ -13,15 +13,15 @@ Parse `$ARGUMENTS` for:
 - Phase number (integer, decimal, or letter-suffix) → store as `$PHASE_ARG`
 - Remaining text after phase number → store as `$EXTRA_INSTRUCTIONS` (optional)
 
-Example: `/gsd:add-tests 12 focus on edge cases` → `$PHASE_ARG=12`, `$EXTRA_INSTRUCTIONS="focus on edge cases"`
+Example: `/bm:add-tests 12 focus on edge cases` → `$PHASE_ARG=12`, `$EXTRA_INSTRUCTIONS="focus on edge cases"`
 
 If no phase argument provided:
 
 ```
 ERROR: Phase number required
-Usage: /gsd:add-tests <phase> [additional instructions]
-Example: /gsd:add-tests 12
-Example: /gsd:add-tests 12 focus on edge cases in the pricing module
+Usage: /bm:add-tests <phase> [additional instructions]
+Example: /bm:add-tests 12
+Example: /bm:add-tests 12 focus on edge cases in the pricing module
 ```
 
 Exit.
@@ -52,7 +52,7 @@ Read the phase artifacts (in order of priority):
 If no SUMMARY.md exists:
 ```
 ERROR: No SUMMARY.md found for phase ${PHASE_ARG}
-This command works on completed phases. Run /gsd:execute-phase first.
+This command works on completed phases. Run /bm:execute-phase first.
 ```
 Exit.
 
@@ -312,7 +312,7 @@ Present next steps:
 ## ▶ Next Up — [${PROJECT_CODE}] ${PROJECT_TITLE}
 
 {if bugs discovered:}
-**Fix discovered bugs:** `/gsd:quick fix the {N} test failures discovered in phase ${phase_number}`
+**Fix discovered bugs:** `/bm:quick fix the {N} test failures discovered in phase ${phase_number}`
 
 {if blocked tests:}
 **Resolve test blockers:** {description of what's needed}
@@ -323,8 +323,8 @@ Present next steps:
 ---
 
 **Also available:**
-- `/gsd:add-tests {next_phase}` — test another phase
-- `/gsd:verify-work {phase_number}` — run UAT verification
+- `/bm:add-tests {next_phase}` — test another phase
+- `/bm:verify-work {phase_number}` — run UAT verification
 
 ---
 ```

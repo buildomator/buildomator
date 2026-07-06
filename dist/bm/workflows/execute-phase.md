@@ -387,7 +387,7 @@ Execute each selected wave in sequence. Within a wave: parallel if `PARALLELIZAT
 
 **Stream-idle-timeout prevention — checkpoint heartbeats (#2410):**
 
-To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeout` at ~200K+ cache_read), emit short assistant-text heartbeats — **no tool call, just a literal line** — at every wave and plan boundary. Each heartbeat MUST start with `[checkpoint]` so tooling and `/gsd:manager`'s background-completion handler can grep partial transcripts. `{P}/{Q}` is the phase-wide completed/total plans counter, increasing monotonically across waves. `{status}` is `complete` (success), `failed` (executor error), or `checkpoint` (human-gate returned).
+To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeout` at ~200K+ cache_read), emit short assistant-text heartbeats — **no tool call, just a literal line** — at every wave and plan boundary. Each heartbeat MUST start with `[checkpoint]` so tooling and `/bm:manager`'s background-completion handler can grep partial transcripts. `{P}/{Q}` is the phase-wide completed/total plans counter, increasing monotonically across waves. `{status}` is `complete` (success), `failed` (executor error), or `checkpoint` (human-gate returned).
 
 ```
 [checkpoint] phase {PHASE_NUMBER} wave {N}/{M} starting, {wave_plan_count} plan(s), {P}/{Q} plans done
@@ -981,7 +981,7 @@ To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeou
    2. Switch to a different runtime / model and resume
    3. Abort phase and report partial state
    ```
-   Re-run `/gsd:execute-phase` after quota reset for Option 1.
+   Re-run `/bm:execute-phase` after quota reset for Option 1.
    **Step 7.2 — `class == "classify-handoff-bug"`:**
    If error contains `classifyHandoffIfNeeded is not defined`, treat as Claude runtime bug. Run the same step-5 spot-checks; PASS => treat as success, FAIL => fall through.
    **Step 7.3 — `class == "unknown-failure"`:**
@@ -1072,13 +1072,13 @@ If `SECURITY_CFG` is `true` AND `SECURITY_FILE` is empty (no SECURITY.md yet):
 Include in the next-steps routing output:
 ```
 ⚠ Security enforcement enabled — run before advancing:
-  /gsd:secure-phase {PHASE} ${GSD_WS}
+  /bm:secure-phase {PHASE} ${GSD_WS}
 ```
 
 If `SECURITY_CFG` is `true` AND SECURITY.md exists: check frontmatter `threats_open`. If > 0:
 ```
 ⚠ Security gate: {threats_open} threats open
-  /gsd:secure-phase {PHASE} — resolve before advancing
+  /bm:secure-phase {PHASE} — resolve before advancing
 ```
 </step>
 
@@ -1155,8 +1155,8 @@ Apply the same "incomplete" filtering rules as earlier:
 
 Selected wave finished successfully. This phase still has incomplete plans, so phase-level verification and completion were intentionally skipped.
 
-/gsd:execute-phase {phase} ${GSD_WS}                # Continue remaining waves
-/gsd:execute-phase {phase} --wave {next} ${GSD_WS}  # Run the next wave explicitly
+/bm:execute-phase {phase} ${GSD_WS}                # Continue remaining waves
+/bm:execute-phase {phase} --wave {next} ${GSD_WS}  # Run the next wave explicitly
 ```
 
 **If no incomplete plans remain after the selected wave finishes:**
@@ -1189,7 +1189,7 @@ REVIEW_STATUS=$(sed -n '/^---$/,/^---$/p' "$REVIEW_FILE" | grep "^status:" | hea
 If REVIEW_STATUS is not "clean" and not "skipped" and not empty, display:
 ```
 Code review found issues. Consider running:
-/gsd:code-review ${PHASE_NUMBER} --fix
+/bm:code-review ${PHASE_NUMBER} --fix
 ```
 
 **Error handling:** If the Skill invocation fails or throws, catch the error, display "Code review encountered an error (non-blocking): {error}" and proceed to next step. Review failures must never block execution.
@@ -1443,7 +1443,7 @@ grep "^status:" "$PHASE_DIR"/*-VERIFICATION.md | cut -d: -f2 | tr -d ' '
 |--------|--------|
 | `passed` | → update_roadmap |
 | `human_needed` | Persist and present human testing items; keep phase pending until verification reruns as `passed` |
-| `gaps_found` | Present gap summary, then AUTO-route by `has_blocking_gaps` (from VERIFICATION.md frontmatter) — no prompt: **blocking** gaps escalate to a follow-up phase (`/gsd:plan-phase {phase} --gaps ${GSD_WS}`); **minor-only** gaps park to backlog (`/gsd:add-backlog`, milestone ships when remaining phases close). Each path prints the inverse as a one-line override. Minor-only parking still prevents unbounded phase multiplication; goal-blocking gaps escalate because they must close before ship. |
+| `gaps_found` | Present gap summary, then AUTO-route by `has_blocking_gaps` (from VERIFICATION.md frontmatter) — no prompt: **blocking** gaps escalate to a follow-up phase (`/bm:plan-phase {phase} --gaps ${GSD_WS}`); **minor-only** gaps park to backlog (`/bm:add-backlog`, milestone ships when remaining phases close). Each path prints the inverse as a one-line override. Minor-only parking still prevents unbounded phase multiplication; goal-blocking gaps escalate because they must close before ship. |
 
 **If human_needed:**
 
@@ -1498,12 +1498,12 @@ All automated checks passed. {N} items need human testing:
 
 {From VERIFICATION.md human_verification section}
 
-Items saved to `{phase_num}-HUMAN-UAT.md` — they will appear in `/gsd:progress` and `/gsd:audit-uat`.
+Items saved to `{phase_num}-HUMAN-UAT.md` — they will appear in `/bm:progress` and `/bm:audit-uat`.
 
 "approved" → continue | Report issues → gap closure
 ```
 
-**If user says "approved":** Proceed to `update_roadmap`. The HUMAN-UAT.md file persists with `status: partial` and will surface in future progress checks until the user runs `/gsd:verify-work` on it.
+**If user says "approved":** Proceed to `update_roadmap`. The HUMAN-UAT.md file persists with `status: partial` and will surface in future progress checks until the user runs `/bm:verify-work` on it.
 
 **If user reports issues:** Proceed to gap closure as currently implemented.
 
@@ -1544,14 +1544,14 @@ escalation hand-off directly:
 
 `/clear` then:
 
-`/gsd:plan-phase {X} --gaps ${GSD_WS}`
+`/bm:plan-phase {X} --gaps ${GSD_WS}`
 
 Also: `cat {phase_dir}/{phase_num}-VERIFICATION.md` — full report
-Also (park instead): `/gsd:add-backlog` the gaps if you accept shipping without them
+Also (park instead): `/bm:add-backlog` the gaps if you accept shipping without them
 ```
 
 **If `has_blocking_gaps` is false (only minor gaps — auto-park, do NOT prompt):**
-For each gap, run `/gsd:add-backlog "{gap.truth}: {gap.evidence}"`. Mark the phase
+For each gap, run `/bm:add-backlog "{gap.truth}: {gap.evidence}"`. Mark the phase
 as `gaps_parked` in STATE.md (continuation allowed; ship not blocked). Print:
 
 ```
@@ -1560,14 +1560,14 @@ as `gaps_parked` in STATE.md (continuation allowed; ship not blocked). Print:
 
 {N} minor gap(s) parked as backlog items (999.{next}-999.{last}). Milestone can ship when remaining in-scope phases close.
 
-`/gsd:next` — continue with next pending phase
+`/bm:next` — continue with next pending phase
 Also: `cat .planning/ROADMAP.md` — review parked items
-Also (escalate instead): `/gsd:plan-phase {X} --gaps ${GSD_WS}`
+Also (escalate instead): `/bm:plan-phase {X} --gaps ${GSD_WS}`
 ```
 
-Gap closure cycle (escalation path): `/gsd:plan-phase {X} --gaps ${GSD_WS}` reads VERIFICATION.md → creates gap plans with `gap_closure: true` → user runs `/gsd:execute-phase {X} --gaps-only ${GSD_WS}` → verifier re-runs.
+Gap closure cycle (escalation path): `/bm:plan-phase {X} --gaps ${GSD_WS}` reads VERIFICATION.md → creates gap plans with `gap_closure: true` → user runs `/bm:execute-phase {X} --gaps-only ${GSD_WS}` → verifier re-runs.
 
-Parking path: gaps land in `.planning/ROADMAP.md` under `## Backlog` as 999.x entries. They surface naturally at `/gsd:new-milestone` planning time, when scope decisions for the next milestone are made deliberately rather than as an in-flight reaction.
+Parking path: gaps land in `.planning/ROADMAP.md` under `## Backlog` as 999.x entries. They surface naturally at `/bm:new-milestone` planning time, when scope decisions for the next milestone are made deliberately rather than as an in-flight reaction.
 </step>
 
 <step name="update_roadmap">
@@ -1593,7 +1593,7 @@ Extract from result: `next_phase`, `next_phase_name`, `is_last_phase`, `warnings
 
 {list each warning}
 
-These items are tracked and will appear in `/gsd:progress` and `/gsd:audit-uat`.
+These items are tracked and will appear in `/bm:progress` and `/bm:audit-uat`.
 ```
 
 ```bash
@@ -1741,10 +1741,10 @@ If CONTEXT.md does **not** exist for the next phase, present:
 ```
 ## ✓ Phase {X}: {Name} Complete
 
-/gsd:progress ${GSD_WS} — see updated roadmap
-/gsd:discuss-phase {next} ${GSD_WS} — start here: discuss next phase before planning  ← recommended
-/gsd:plan-phase {next} ${GSD_WS} — plan next phase (skip discuss)
-/gsd:execute-phase {next} ${GSD_WS} — execute next phase (skip discuss and plan)
+/bm:progress ${GSD_WS} — see updated roadmap
+/bm:discuss-phase {next} ${GSD_WS} — start here: discuss next phase before planning  ← recommended
+/bm:plan-phase {next} ${GSD_WS} — plan next phase (skip discuss)
+/bm:execute-phase {next} ${GSD_WS} — execute next phase (skip discuss and plan)
 ```
 
 If CONTEXT.md **exists** for the next phase, present:
@@ -1752,10 +1752,10 @@ If CONTEXT.md **exists** for the next phase, present:
 ```
 ## ✓ Phase {X}: {Name} Complete
 
-/gsd:progress ${GSD_WS} — see updated roadmap
-/gsd:plan-phase {next} ${GSD_WS} — start here: plan next phase (CONTEXT.md already present)  ← recommended
-/gsd:discuss-phase {next} ${GSD_WS} — re-discuss next phase
-/gsd:execute-phase {next} ${GSD_WS} — execute next phase (skip planning)
+/bm:progress ${GSD_WS} — see updated roadmap
+/bm:plan-phase {next} ${GSD_WS} — start here: plan next phase (CONTEXT.md already present)  ← recommended
+/bm:discuss-phase {next} ${GSD_WS} — re-discuss next phase
+/bm:execute-phase {next} ${GSD_WS} — execute next phase (skip planning)
 ```
 
 Only suggest the commands listed above. Do not invent or hallucinate command names.
@@ -1783,7 +1783,7 @@ For 1M+ context models, consider:
 </failure_handling>
 
 <resumption>
-Re-run `/gsd:execute-phase {phase}` → discover_plans finds completed SUMMARYs → skips them → resumes from first incomplete plan → continues wave execution.
+Re-run `/bm:execute-phase {phase}` → discover_plans finds completed SUMMARYs → skips them → resumes from first incomplete plan → continues wave execution.
 
 STATE.md tracks: last completed plan, current wave, pending checkpoints.
 </resumption>

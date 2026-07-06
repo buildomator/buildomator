@@ -67,7 +67,7 @@
 
    /clear then:
 
-   /gsd:plan-phase ${PHASE} ${GSD_WS}
+   /bm:plan-phase ${PHASE} ${GSD_WS}
 
    (/clear sheds the discussion transcript; plan-phase reads CONTEXT.md fresh with
     its scope prompts live. Default auto-advance keeps planning interactive — pass
@@ -84,22 +84,22 @@
 
      /clear then:
 
-     Next: /gsd:discuss-phase ${NEXT_PHASE} ${WAS_CHAIN ? "--chain" : "--auto"} ${GSD_WS}
+     Next: /bm:discuss-phase ${NEXT_PHASE} ${WAS_CHAIN ? "--chain" : "--auto"} ${GSD_WS}
      ```
    - **PLANNING COMPLETE** → Planning done, execution didn't complete:
      ```
      Auto-advance partial: Planning complete, execution did not finish.
-     Continue: /gsd:execute-phase ${PHASE} ${GSD_WS}
+     Continue: /bm:execute-phase ${PHASE} ${GSD_WS}
      ```
    - **PLANNING INCONCLUSIVE / CHECKPOINT** → Stop chain:
      ```
      Auto-advance stopped: Planning needs input.
-     Continue: /gsd:plan-phase ${PHASE} ${GSD_WS}
+     Continue: /bm:plan-phase ${PHASE} ${GSD_WS}
      ```
    - **GAPS FOUND** → Stop chain:
      ```
      Auto-advance stopped: Gaps found during execution.
-     Continue: /gsd:plan-phase ${PHASE} --gaps ${GSD_WS}
+     Continue: /bm:plan-phase ${PHASE} --gaps ${GSD_WS}
      ```
 
 7. **If none of `--auto`, `--chain`, nor config enabled:** route to

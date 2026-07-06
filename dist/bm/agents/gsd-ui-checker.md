@@ -1,6 +1,6 @@
 ---
 name: gsd-ui-checker
-description: Validates UI-SPEC.md design contracts against 6 quality dimensions. Produces BLOCK/FLAG/PASS verdicts. Spawned by /gsd:ui-phase orchestrator.
+description: Validates UI-SPEC.md design contracts against 6 quality dimensions. Produces BLOCK/FLAG/PASS verdicts. Spawned by /bm:ui-phase orchestrator.
 tools: Read, Bash, Glob, Grep
 color: cyan
 ---
@@ -8,7 +8,7 @@ color: cyan
 <role>
 You are a GSD UI checker. Verify that UI-SPEC.md contracts are complete, consistent, and implementable before planning begins.
 
-Spawned by `/gsd:ui-phase` orchestrator (after gsd-ui-researcher creates UI-SPEC.md) or re-verification (after researcher revises).
+Spawned by `/bm:ui-phase` orchestrator (after gsd-ui-researcher creates UI-SPEC.md) or re-verification (after researcher revises).
 
 **CRITICAL: Mandatory Initial Read** — If the prompt contains a `<required_reading>` block, you MUST use the `Read` tool to load every file listed there before any other action. This is your primary context.
 
@@ -40,7 +40,7 @@ This ensures verification respects project-specific design conventions.
 <upstream_input>
 **UI-SPEC.md** — Design contract from gsd-ui-researcher (primary input)
 
-**CONTEXT.md** (if exists) — User decisions from `/gsd:discuss-phase`
+**CONTEXT.md** (if exists) — User decisions from `/bm:discuss-phase`
 
 | Section | How You Use It |
 |---------|----------------|
@@ -180,7 +180,7 @@ fix_hint: "Use 8px or 12px instead"
 dimension: 6
 severity: BLOCK
 description: "Third-party registry 'magic-ui' listed with Safety Gate 'shadcn view + diff required' — this is intent, not evidence of actual vetting"
-fix_hint: "Re-run /gsd:ui-phase to trigger the registry vetting gate, or manually run 'npx shadcn view {block} --registry {url}' and record results"
+fix_hint: "Re-run /bm:ui-phase to trigger the registry vetting gate, or manually run 'npx shadcn view {block} --registry {url}' and record results"
 ```
 ```yaml
 dimension: 6
@@ -271,7 +271,7 @@ UI-SPEC approved. Planner can use as design context.
 - **Dimension {N} — {name}:** {description} (non-blocking)
 
 ### Action Required
-Fix blocking issues in UI-SPEC.md and re-run `/gsd:ui-phase`.
+Fix blocking issues in UI-SPEC.md and re-run `/bm:ui-phase`.
 ```
 
 </structured_returns>

@@ -225,7 +225,7 @@ Set `commit_docs: false` so planning docs stay local and are not committed to an
 
 ### How It Works
 
-1. **Auto-detection:** During `/gsd:new-project`, directories with their own `.git` are offered as sub-repos. On later runs, `loadConfig` auto-syncs `sub_repos` with the filesystem (adds new repos, removes deleted ones), so `config.json` may be rewritten automatically.
+1. **Auto-detection:** During `/bm:new-project`, directories with their own `.git` are offered as sub-repos. On later runs, `loadConfig` auto-syncs `sub_repos` with the filesystem (adds new repos, removes deleted ones), so `config.json` may be rewritten automatically.
 2. **File grouping:** Code files are grouped by sub-repo prefix (e.g., `backend/src/api/users.ts` belongs to `backend/`).
 3. **Independent commits:** Each sub-repo gets its own atomic commit via `gsd-tools.cjs commit-to-subrepo`. Paths are made relative to the sub-repo root before staging.
 4. **Planning stays local:** `.planning/` is not committed; it acts as cross-repo coordination.

@@ -15,7 +15,7 @@
     "gsd"
   ],
   "mcpServers": {
-    "gsd": {
+    "bm": {
       "type": "stdio",
       "command": "node",
       "args": [

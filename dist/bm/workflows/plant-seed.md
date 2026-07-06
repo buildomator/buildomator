@@ -1,6 +1,6 @@
 <purpose>
 Capture a forward-looking idea as a structured seed file with trigger conditions.
-Seeds auto-surface during /gsd:new-milestone when trigger conditions match the new milestone's scope.
+Seeds auto-surface during /bm:new-milestone when trigger conditions match the new milestone's scope.
 
 Seeds beat deferred items: they preserve WHY (not just WHAT), define WHEN to surface (trigger conditions), track breadcrumbs (code refs, decisions), and auto-present via the new-milestone scan.
 
@@ -74,17 +74,17 @@ scope: unknown
 
 ## Why This Matters
 
-_To be filled in. Run `/gsd:capture --seed --enrich SEED-{PADDED}` to add context._
+_To be filled in. Run `/bm:capture --seed --enrich SEED-{PADDED}` to add context._
 
 ## When to Surface
 
 **Trigger:** when relevant
 
-This seed will surface during `/gsd:new-milestone` when the milestone scope matches.
+This seed will surface during `/bm:new-milestone` when the milestone scope matches.
 
 ## Scope Estimate
 
-**Unknown** — run `/gsd:capture --seed --enrich SEED-{PADDED}` to estimate effort.
+**Unknown** — run `/bm:capture --seed --enrich SEED-{PADDED}` to estimate effort.
 
 ## Breadcrumbs
 
@@ -138,10 +138,10 @@ gsd-sdk query commit "docs: plant seed — {$IDEA}" --files .planning/seeds/SEED
 "{$IDEA}"
 File: .planning/seeds/SEED-{PADDED}-{slug}.md
 
-Trigger and scope are set to defaults. Run `/gsd:capture --seed --enrich SEED-{PADDED}`
+Trigger and scope are set to defaults. Run `/bm:capture --seed --enrich SEED-{PADDED}`
 to add trigger conditions, rationale, and scope estimate at your convenience.
 
-This seed will surface automatically when you run /gsd:new-milestone.
+This seed will surface automatically when you run /bm:new-milestone.
 ```
 </step>
 

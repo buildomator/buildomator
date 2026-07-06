@@ -72,9 +72,9 @@ For each item in "Testable Now", use Grep/Read to check if the underlying featur
 
 ## Recommended Actions
 
-1. **Close stale items:** `/gsd:verify-work {phase}` — mark stale tests as resolved
+1. **Close stale items:** `/bm:verify-work {phase}` — mark stale tests as resolved
 2. **Run active tests:** Human UAT test plan below
-3. **When prerequisites met:** Retest blocked items with `/gsd:verify-work {phase}`
+3. **When prerequisites met:** Retest blocked items with `/bm:verify-work {phase}`
 ```
 </step>
 

@@ -4,7 +4,7 @@
 // Guard: an interrupted UAT (verify-work status: testing/partial) must be
 // surfaced/resumed, not silently abandoned after a detour (quick/add-phase/explore).
 // Two mechanisms:
-//  1. /gsd:next hard invariant (Route 0.5) routes to verify-work before forward work.
+//  1. /bm:next hard invariant (Route 0.5) routes to verify-work before forward work.
 //  2. detour commands' Next-Up leads with a "resume UAT" breadcrumb (rule 8 in
 //     references/continuation-format.md).
 // See feedback_resume_uat_after_detours memory.
@@ -24,7 +24,7 @@ const has = (src, n, m) => src.includes(n) ? ok(m) : fail(`${m} (missing: ${n})`
   const src = read(f);
   has(src, 'resume_partial_uat', `${f}: has the resume_partial_uat step`);
   has(src, "status:[[:space:]]*(testing|partial)", `${f}: detects testing/partial UAT`);
-  has(src, '/gsd:verify-work $PARTIAL_UAT_PHASE', `${f}: routes to verify-work for the partial UAT`);
+  has(src, '/bm:verify-work $PARTIAL_UAT_PHASE', `${f}: routes to verify-work for the partial UAT`);
   // runs before forward routing
   has(src, 'continue to `resume_partial_uat`', `${f}: chained after the incomplete-phase invariant`);
 }
@@ -35,7 +35,7 @@ const has = (src, n, m) => src.includes(n) ? ok(m) : fail(`${m} (missing: ${n})`
   const src = read(f);
   has(src, 'Unfinished-UAT breadcrumb', `${f}: rule 8 breadcrumb present`);
   has(src, 'Unfinished UAT', `${f}: emits an unfinished-UAT resume line`);
-  has(src, '/gsd:verify-work', `${f}: breadcrumb points at verify-work`);
+  has(src, '/bm:verify-work', `${f}: breadcrumb points at verify-work`);
 }
 
 // 3. detour commands apply the breadcrumb

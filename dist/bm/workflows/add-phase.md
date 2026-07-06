@@ -11,14 +11,14 @@ Read all files referenced by the invoking prompt's execution_context before star
 <step name="parse_arguments">
 Parse the command arguments:
 - All arguments become the phase description
-- Example: `/gsd:add-phase Add authentication` → description = "Add authentication"
+- Example: `/bm:add-phase Add authentication` → description = "Add authentication"
 
 If no arguments provided:
 
 ```
 ERROR: Phase description required
-Usage: /gsd:add-phase <description>
-Example: /gsd:add-phase Add authentication system
+Usage: /bm:add-phase <description>
+Example: /bm:add-phase Add authentication system
 ```
 
 Exit.
@@ -35,7 +35,7 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 Check `roadmap_exists` from init JSON. If false:
 ```
 ERROR: No roadmap found (.planning/ROADMAP.md)
-Run /gsd:new-project to initialize.
+Run /bm:new-project to initialize.
 ```
 Exit.
 </step>
@@ -78,7 +78,7 @@ Phase {N} added to current milestone:
 
 Roadmap updated: .planning/ROADMAP.md
 
-**Unfinished-UAT breadcrumb:** adding a phase is a common detour from a UAT. Apply rule 8 of `references/continuation-format.md` — if any phase has a `testing`/`partial` UAT, lead with `↩ Resume UAT for Phase {M}: /gsd:verify-work {M}` ABOVE the Next-Up below, so the interrupted verification is not lost behind the new phase.
+**Unfinished-UAT breadcrumb:** adding a phase is a common detour from a UAT. Apply rule 8 of `references/continuation-format.md` — if any phase has a `testing`/`partial` UAT, lead with `↩ Resume UAT for Phase {M}: /bm:verify-work {M}` ABOVE the Next-Up below, so the interrupted verification is not lost behind the new phase.
 
 ---
 
@@ -88,12 +88,12 @@ Roadmap updated: .planning/ROADMAP.md
 
 `/clear` then:
 
-`/gsd:plan-phase {N}`
+`/bm:plan-phase {N}`
 
 ---
 
 **Also available:**
-- `/gsd:add-phase <description>`, add another phase
+- `/bm:add-phase <description>`, add another phase
 - Review roadmap
 
 ---

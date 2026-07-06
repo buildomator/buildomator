@@ -2,7 +2,7 @@
  * Checkpoint — Shared HANDOFF.json generation for manual pause and auto-compact
  *
  * Single source of truth for the HANDOFF.json schema (D-10, D-12). Both the
- * PreCompact hook and the /gsd:pause-work skill call into this library so the
+ * PreCompact hook and the /bm:pause-work skill call into this library so the
  * two code paths stay in sync.
  *
  * Schema matches skills/pause-work/SKILL.md (lines 89-121) plus the
@@ -371,7 +371,7 @@ function generateCheckpoint(cwd, options = {}) {
  *       trivial skeleton -- writing it would blank out any hand-authored
  *       HANDOFF.json that may exist. Skip the write.
  * Manual pause (source: "manual-pause") bypasses guard (b) so an explicit
- * /gsd:pause-work in an idle project still produces the expected file.
+ * /bm:pause-work in an idle project still produces the expected file.
  */
 function writeCheckpoint(cwd, options = {}) {
   const data = generateCheckpoint(cwd, options);

@@ -100,7 +100,7 @@ If you're using Claude Code with OpenRouter, a local model, or any non-Anthropic
 
 ```bash
 # Via settings command
-/gsd:settings
+/bm:settings
 # → Select "Inherit" for model profile
 
 # Or manually in .planning/config.json

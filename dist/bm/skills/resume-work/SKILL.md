@@ -10,13 +10,13 @@ allowed-tools:
 ---
 
 <objective>
-Restore complete project context from a previous session. Handle manual-pause (`/gsd:pause-work`) and auto-compact (PreCompact hook) handoffs identically.
+Restore complete project context from a previous session. Handle manual-pause (`/bm:pause-work`) and auto-compact (PreCompact hook) handoffs identically.
 </objective>
 
 <process>
 
 1. **Detect handoff state.**
-   Check for `.planning/HANDOFF.json` via Read tool. If missing, the session has no handoff — announce "No handoff found" and proceed to normal `/gsd:progress` routing.
+   Check for `.planning/HANDOFF.json` via Read tool. If missing, the session has no handoff — announce "No handoff found" and proceed to normal `/bm:progress` routing.
 
 2. **Load STATE.md.**
    Read `.planning/STATE.md` to restore the big-picture project position. If missing, reconstruct from `.planning/ROADMAP.md` and the latest phase directory's SUMMARY.md files; if reconstruction fails, surface the error and stop.
@@ -36,8 +36,8 @@ Restore complete project context from a previous session. Handle manual-pause (`
 
 5. **Route to the next action.**
    Offer 1-3 concrete options based on handoff state. Common patterns:
-   - If task was mid-execute: offer `/gsd:execute-phase` with the current phase.
-   - If phase is at plan boundary: offer `/gsd:plan-phase` or `/gsd:execute-phase` for the next phase.
+   - If task was mid-execute: offer `/bm:execute-phase` with the current phase.
+   - If phase is at plan boundary: offer `/bm:plan-phase` or `/bm:execute-phase` for the next phase.
    - If there are uncommitted files that look in-progress: call attention to them before offering continuation.
 
 6. **Clean up the handoff (LIFE-01).**

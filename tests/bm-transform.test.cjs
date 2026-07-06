@@ -89,6 +89,17 @@ check('rewriteCommandRefs spares a bare gsd: with an identifier char before it',
   assert.strictEqual(rewriteCommandRefs('abcgsd:foo'), 'abcgsd:foo');
 });
 
+check('rewriteCommandRefs rewrites a /gsd: path segment (plugin-owned artifact path)', () => {
+  assert.strictEqual(
+    rewriteCommandRefs('$HOME/.config/kilo/gsd:local-patches'),
+    '$HOME/.config/kilo/bm:local-patches',
+  );
+});
+
+check('rewriteCommandRefs rewrites /gsd: adjacent to an escaped newline', () => {
+  assert.strictEqual(rewriteCommandRefs('Run this.\\n/gsd:analyze --deep'), 'Run this.\\n/bm:analyze --deep');
+});
+
 check('rewriteCommandRefs is idempotent', () => {
   const once = rewriteCommandRefs('run /gsd:plan-phase and /gsd:capture');
   assert.strictEqual(rewriteCommandRefs(once), once);

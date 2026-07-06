@@ -40,12 +40,12 @@ Write machine-parseable, evidence-based intelligence. Prefer structured JSON ove
 <upstream_input>
 ## Upstream Input
 
-Spawned by `/gsd:map-codebase --query`.
+Spawned by `/bm:map-codebase --query`.
 
 - **Receives:** Focus directive -- either `full` (all 5 files) or `partial --files <paths>` (update specific file entries only)
 - **Input format:** Spawn prompt with `focus: full|partial` directive and project root path
 
-**Config gate:** /gsd:map-codebase --query has already confirmed intel.enabled is true before spawning this agent. Proceed directly to Step 1.
+**Config gate:** /bm:map-codebase --query has already confirmed intel.enabled is true before spawning this agent. Proceed directly to Step 1.
 </upstream_input>
 
 ## Project Scope

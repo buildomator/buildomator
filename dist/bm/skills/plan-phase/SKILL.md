@@ -36,7 +36,7 @@ Phase number: $ARGUMENTS (optional — auto-detects next unplanned phase if omit
 - `--gaps` — Gap closure mode (reads VERIFICATION.md, skips research)
 - `--skip-verify` — Skip verification loop
 - `--prd <file>` — Use a PRD/acceptance criteria file instead of discuss-phase. Parses requirements into CONTEXT.md automatically. Skips discuss-phase entirely.
-- `--reviews` — Replan incorporating cross-AI review feedback from REVIEWS.md (produced by `/gsd:review`)
+- `--reviews` — Replan incorporating cross-AI review feedback from REVIEWS.md (produced by `/bm:review`)
 - `--text` — Use plain-text numbered lists instead of TUI menus (required for `/rc` remote sessions)
 
 Normalize phase input in step 2 before any directory lookups.
@@ -51,10 +51,10 @@ Preserve all workflow gates (validation, research, planning, verification loop, 
 When planning concludes (PLAN.md files written, plan-checker passed, STATE.md updated), emit a Next Up continuation block following the pattern in `references/continuation-format.md`:
 
 - Show planning status (e.g., `## ✓ Phase N Planned — M plans, K tasks` with brief plan list)
-- Emit a `## ▶ Next Up` heading with `/gsd:execute-phase N`
+- Emit a `## ▶ Next Up` heading with `/bm:execute-phase N`
 - Use **`` `/clear` then: ``** before the command
-- Include a parenthetical: *(`/clear` is safe — `/gsd:resume-work` restores position from `HANDOFF.json` if you change your mind)*
-- Add an "Also available:" section: review the plan files, run `/gsd:list-phase-assumptions N`, etc.
+- Include a parenthetical: *(`/clear` is safe — `/bm:resume-work` restores position from `HANDOFF.json` if you change your mind)*
+- Add an "Also available:" section: review the plan files, run `/bm:list-phase-assumptions N`, etc.
 
 Plan-to-execute is a clean boundary; `/clear` keeps execution starting with a tight, plan-focused context.
 </output_format>

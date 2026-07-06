@@ -28,7 +28,7 @@ AUDITOR_MODEL=$(gsd-sdk query resolve-model gsd-security-auditor --raw)
 SECURITY_CFG=$(gsd-sdk query config-get workflow.security_enforcement --raw 2>/dev/null || echo "true")
 ```
 
-If `SECURITY_CFG` is `false`: exit with "Security enforcement disabled. Enable via /gsd:settings."
+If `SECURITY_CFG` is `false`: exit with "Security enforcement disabled. Enable via /bm:settings."
 
 Display banner: `GSD > SECURE PHASE {N}: {name}`
 
@@ -42,7 +42,7 @@ SUMMARY_FILES=$(ls "${PHASE_DIR}"/*-SUMMARY.md 2>/dev/null)
 
 - **State A** (`SECURITY_FILE` non-empty): Audit existing
 - **State B** (`SECURITY_FILE` empty, `PLAN_FILES` and `SUMMARY_FILES` non-empty): Run from artifacts
-- **State C** (`SUMMARY_FILES` empty): Exit — "Phase {N} not executed. Run /gsd:execute-phase {N} first."
+- **State C** (`SUMMARY_FILES` empty): Exit — "Phase {N} not executed. Run /bm:execute-phase {N} first."
 
 ## 2. Discovery
 
@@ -80,7 +80,7 @@ Build: `{ threat_id, category, component, disposition, status, evidence }`
 
 
 **Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Gemini CLI, etc.) where `AskUserQuestion` is not available.
-Verifying the open threats is the whole purpose of `/gsd:secure-phase`, and the
+Verifying the open threats is the whole purpose of `/bm:secure-phase`, and the
 auditor only verifies (it never modifies code), so it is the recommended path (not
 a neutral menu). Accepting risk stays a deliberate security choice, never the
 default. Display the threat table, then AskUserQuestion in plain language:
@@ -140,7 +140,7 @@ Handle return:
 ```
 GSD > PHASE {N} SECURITY BLOCKED
 {K} threats open — phase advancement blocked until threats_open: 0
-▶ Fix mitigations then re-run: /gsd:secure-phase {N}
+▶ Fix mitigations then re-run: /bm:secure-phase {N}
 ▶ Or document accepted risks in SECURITY.md and re-run.
 ```
 
@@ -158,8 +158,8 @@ gsd-sdk query commit "docs(phase-${PHASE}): add/update security threat verificat
 ```
 GSD > PHASE {N} THREAT-SECURE
 threats_open: 0 — all threats have dispositions.
-▶ /gsd:validate-phase {N}    validate test coverage
-▶ /gsd:verify-work {N}       run UAT
+▶ /bm:validate-phase {N}    validate test coverage
+▶ /bm:verify-work {N}       run UAT
 ```
 
 Display `/clear` reminder.

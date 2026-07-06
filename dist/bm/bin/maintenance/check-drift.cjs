@@ -5,7 +5,7 @@
  * Umbrella orchestrator that spawns the per-category detectors:
  *   1. bin/maintenance/check-file-layout.cjs       (dangling @~/.claude/... refs)
  *   2. bin/maintenance/check-handoff-schema.cjs    (HANDOFF.json schema validation)
- *   3. bin/maintenance/rewrite-command-namespace.cjs --dry  (/gsd-<skill> → /gsd:<skill> drift)
+ *   3. bin/maintenance/rewrite-command-namespace.cjs --dry  (/gsd-<skill> → /bm:<skill> drift)
  *   4. bin/maintenance/check-version-alignment.cjs (internal milestone vs product version)
  *
  * Aggregates exit codes and reports a consolidated PASS/FAIL. Intended for local

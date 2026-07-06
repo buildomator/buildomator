@@ -69,7 +69,7 @@ Enable it with:
 
   gsd config-set workflow.plan_review_convergence true
 
-Then re-run: /gsd:plan-review-convergence {PHASE}
+Then re-run: /bm:plan-review-convergence {PHASE}
 ```
 
 ## 2. Initialize
@@ -142,7 +142,7 @@ Display: `◆ Cycle {cycle}/{MAX_CYCLES} — spawning review agent...`
 ```text
 Agent(
   description="Cross-AI review Phase {PHASE} cycle {cycle}",
-  prompt="Run /gsd:review for Phase {PHASE}.
+  prompt="Run /bm:review for Phase {PHASE}.
 
 Execute: Skill(skill='gsd-review', args='--phase {PHASE} {REVIEWER_FLAGS} {GSD_WS}')
 
@@ -227,7 +227,7 @@ GSD ► CONVERGENCE COMPLETE ✓
  No HIGH concerns remaining.
 
  REVIEWS.md: {REVIEWS_FILE}
- Next: /gsd:execute-phase {PHASE}
+ Next: /bm:execute-phase {PHASE}
 ```
 
 Exit — convergence achieved.
@@ -281,8 +281,8 @@ If "Manual review":
 ```text
 Review the concerns in: {REVIEWS_FILE}
 
-To replan manually:  /gsd:plan-phase {PHASE} --reviews
-To restart loop:     /gsd:plan-review-convergence {PHASE} {REVIEWER_FLAGS}
+To replan manually:  /bm:plan-phase {PHASE} --reviews
+To restart loop:     /bm:plan-review-convergence {PHASE} {REVIEWER_FLAGS}
 ```
 Exit workflow.
 

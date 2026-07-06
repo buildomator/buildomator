@@ -1,6 +1,6 @@
 # Add Backlog Item Workflow
 
-Invoked by `/gsd:capture --backlog` (`commands/gsd/capture.md`).
+Invoked by `/bm:capture --backlog` (`commands/gsd/capture.md`).
 
 Adds an idea to the ROADMAP.md backlog parking lot using 999.x numbering. Backlog items are unsequenced ideas outside the normal phase sequence.
 
@@ -37,7 +37,7 @@ Add under a `## Backlog` section. If the section doesn't exist, create it at the
 **Plans:** 0 plans
 
 Plans:
-- [ ] TBD (promote with /gsd:review-backlog when ready)
+- [ ] TBD (promote with /bm:review-backlog when ready)
 ```
 
 ## Step 4: Create the phase directory
@@ -68,14 +68,14 @@ Phase {NEXT}: {description}
 Directory: {PHASE_DIR}/
 
 This item lives in the backlog parking lot.
-Use /gsd:discuss-phase {NEXT} to explore it further.
-Use /gsd:review-backlog to promote items to active milestone.
+Use /bm:discuss-phase {NEXT} to explore it further.
+Use /bm:review-backlog to promote items to active milestone.
 ```
 
 </process>
 
 <notes>
 - 999.x numbering keeps backlog items out of the active phase sequence
-- Phase directories are created immediately so /gsd:discuss-phase and /gsd:plan-phase work on them
+- Phase directories are created immediately so /bm:discuss-phase and /bm:plan-phase work on them
 - No `Depends on:` field — backlog items are unsequenced by definition
 </notes>

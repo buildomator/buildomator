@@ -41,7 +41,7 @@ Knowledge graph is disabled. To activate:
 
   node ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/bin/gsd-tools.cjs config-set graphify.enabled true
 
-Then run /gsd:graphify build to create the initial graph.
+Then run /bm:graphify build to create the initial graph.
 ```
 
 ---
@@ -63,7 +63,7 @@ Parse `$ARGUMENTS` to determine the operation mode:
 ```
 GSD > GRAPHIFY
 
-Usage: /gsd:graphify <mode>
+Usage: /bm:graphify <mode>
 
 Modes:
   build           Build or rebuild the knowledge graph
@@ -83,7 +83,7 @@ node ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/bin/g
 Parse the JSON output and display results:
 - If the output contains `"disabled": true`, display the disabled message from Step 1 and **STOP**
 - If the output contains `"error"` field, display the error message and **STOP**
-- If no nodes found, display: `No graph matches for '<term>'. Try /gsd:graphify build to create or rebuild the graph.`
+- If no nodes found, display: `No graph matches for '<term>'. Try /bm:graphify build to create or rebuild the graph.`
 - Otherwise, display matched nodes grouped by type, with edge relationships and confidence tiers (EXTRACTED/INFERRED/AMBIGUOUS)
 
 **STOP** after displaying results. Do not spawn an agent.

@@ -1,7 +1,7 @@
 <purpose>
 Explore design directions through throwaway HTML mockups before committing to implementation.
 Each sketch produces 2-3 variants for comparison. Saves artifacts to `.planning/sketches/`.
-Companion to `/gsd:sketch --wrap-up`.
+Companion to `/bm:sketch --wrap-up`.
 
 Supports two modes:
 - **Idea mode** (default) — user describes a design idea to sketch
@@ -323,14 +323,14 @@ GSD > SKETCH COMPLETE ✓
 
 **Package findings** — wrap design decisions into a reusable skill
 
-`/gsd:sketch --wrap-up`
+`/bm:sketch --wrap-up`
 
 ───────────────────────────────────────────────────────────────
 
 **Also available:**
-- `/gsd:sketch` — sketch more (or run with no argument for frontier mode)
-- `/gsd:plan-phase` — start building the real UI
-- `/gsd:spike` — spike technical feasibility of a design pattern
+- `/bm:sketch` — sketch more (or run with no argument for frontier mode)
+- `/bm:plan-phase` — start building the real UI
+- `/bm:spike` — spike technical feasibility of a design pattern
 
 ───────────────────────────────────────────────────────────────
 </step>

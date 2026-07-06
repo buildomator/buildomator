@@ -21,7 +21,7 @@
  *   - Never silently deletes data
  *   - Audit mode is the default (read-only)
  *   - --clean mode prints what will be removed and asks for confirmation
- *   - The /gsd:update command is retired; plugin-managed updates replace it
+ *   - The /bm:update command is retired; plugin-managed updates replace it
  */
 
 'use strict';
@@ -257,7 +257,7 @@ function printHeader() {
   console.log('  - ~/.claude/settings.json (legacy hook entries)');
   console.log('  - ~/.claude/hooks/gsd-*.js (legacy hook scripts)');
   console.log('  - get-shit-done-cc npm package (legacy installer)');
-  console.log('  - /gsd:update command (retired, now plugin-managed)');
+  console.log('  - /bm:update command (retired, now plugin-managed)');
   console.log('');
 }
 
@@ -517,7 +517,7 @@ async function main() {
   console.log('');
   console.log('Cleanup complete. Verify your plugin install:');
   console.log('  1. Start a new Claude Code session');
-  console.log('  2. Run /gsd:status');
+  console.log('  2. Run /bm:status');
   console.log('');
 }
 

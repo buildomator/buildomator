@@ -37,7 +37,7 @@ UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
 UI_REVIEW_FILE=$(ls "${PHASE_DIR}"/*-UI-REVIEW.md 2>/dev/null | head -1)
 ```
 
-**If `SUMMARY_FILES` empty:** Exit — "Phase {N} not executed. Run /gsd:execute-phase {N} first."
+**If `SUMMARY_FILES` empty:** Exit — "Phase {N} not executed. Run /bm:execute-phase {N} first."
 
 
 **Parse flags from `$ARGUMENTS`:** `--refresh` (force re-audit, re-spawn ui-auditor), `--view` (print existing to stdout and exit).
@@ -143,8 +143,8 @@ Full review: {path to UI-REVIEW.md}
 
 `/clear` then one of:
 
-- `/gsd:verify-work {N}` — UAT testing
-- `/gsd:plan-phase {N+1}` — plan next phase
+- `/bm:verify-work {N}` — UAT testing
+- `/bm:plan-phase {N+1}` — plan next phase
 
 ───────────────────────────────────────────────────────────────
 ```

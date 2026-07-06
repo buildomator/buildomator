@@ -41,19 +41,19 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
 0. **Check for audit:**
 
    - Look for `.planning/v{{version}}-MILESTONE-AUDIT.md`
-   - If missing or stale: recommend `/gsd:audit-milestone` first
-   - If audit status is `gaps_found`: recommend `/gsd:plan-milestone-gaps` first
+   - If missing or stale: recommend `/bm:audit-milestone` first
+   - If audit status is `gaps_found`: recommend `/bm:plan-milestone-gaps` first
    - If audit status is `passed`: proceed to step 1
 
    ```markdown
    ## Pre-flight Check
 
    {If no v{{version}}-MILESTONE-AUDIT.md:}
-   ⚠ No milestone audit found. Run `/gsd:audit-milestone` first to verify
+   ⚠ No milestone audit found. Run `/bm:audit-milestone` first to verify
    requirements coverage, cross-phase integration, and E2E flows.
 
    {If audit has gaps:}
-   ⚠ Milestone audit found gaps. Run `/gsd:plan-milestone-gaps` to create
+   ⚠ Milestone audit found gaps. Run `/bm:plan-milestone-gaps` to create
    phases that close the gaps, or proceed anyway to accept as tech debt.
 
    {If audit passed:}
@@ -107,7 +107,7 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
    - Ask about pushing tag
 
 8. **Offer next steps:**
-   - `/gsd:new-milestone` — start next milestone (questioning → research → requirements → roadmap)
+   - `/bm:new-milestone` — start next milestone (questioning → research → requirements → roadmap)
 
 </process>
 
@@ -117,9 +117,9 @@ After the milestone is archived and tagged, emit a Milestone Complete continuati
 - `## 🎉 Milestone v{{version}} Complete` with phase/plan/task summary
 - Brief one-paragraph "what shipped" recap
 - `## ▶ Next Up` heading
-- Use **`` `/clear` then: ``** before `/gsd:new-milestone`
-- Parenthetical: *(`/clear` is safe — `/gsd:resume-work` restores position from `HANDOFF.json` if you change your mind)*
-- Optional "Also available:" with `/gsd:audit-milestone` (retrospective audit) or `/gsd:review-backlog` (deferred items review)
+- Use **`` `/clear` then: ``** before `/bm:new-milestone`
+- Parenthetical: *(`/clear` is safe — `/bm:resume-work` restores position from `HANDOFF.json` if you change your mind)*
+- Optional "Also available:" with `/bm:audit-milestone` (retrospective audit) or `/bm:review-backlog` (deferred items review)
 
 Milestone close is the biggest context-shed point; always suggest `/clear`.
 </output_format>
@@ -144,5 +144,5 @@ Milestone close is the biggest context-shed point; always suggest `/clear`.
 - **Archive before deleting:** Always create archive files before updating/deleting originals
 - **One-line summary:** Collapsed milestone in ROADMAP.md should be single line with link
 - **Context efficiency:** Archive keeps ROADMAP.md and REQUIREMENTS.md constant size per milestone
-- **Fresh requirements:** Next milestone starts with `/gsd:new-milestone` which includes requirements definition
+- **Fresh requirements:** Next milestone starts with `/bm:new-milestone` which includes requirements definition
   </critical_rules>

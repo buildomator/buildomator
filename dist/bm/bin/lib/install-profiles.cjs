@@ -25,7 +25,7 @@
  *  - mostRestrictiveProfile: resolve multi-runtime disagreement to smallest set
  *
  * Companion module (Phase 2): get-shit-done/bin/lib/surface.cjs owns the
- * runtime /gsd:surface command. It reuses stageSkillsForProfile and
+ * runtime /bm:surface command. It reuses stageSkillsForProfile and
  * stageAgentsForProfile from this module for cluster-level enable/disable
  * without reinstall, persisting state in <runtimeConfigDir>/.gsd-surface.json.
  *

@@ -1295,7 +1295,7 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
                 const systemMsg = [
                   'GSD session continuity: Found checkpoint from previous session.',
                   `Phase: ${phase}, Plan: ${plan}, Task: ${task} (source: ${handoffSource}).`,
-                  'Run /gsd:resume-work to restore context and continue.',
+                  'Run /bm:resume-work to restore context and continue.',
                   'Do this immediately without waiting for user input.'
                 ].join(' ');
                 process.stdout.write(systemMsg);

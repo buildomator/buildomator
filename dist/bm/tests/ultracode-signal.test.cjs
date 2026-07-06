@@ -78,7 +78,7 @@ check('reference doc references/ultracode-mode.md exists and documents the auto 
   assert.ok(/auto/i.test(body) && /override/i.test(body), 'doc does not explain auto + override');
 });
 
-check('/gsd:settings documents workflow.ultracode', () => {
+check('/bm:settings documents workflow.ultracode', () => {
   const body = read('workflows/settings.md');
   assert.ok(body.includes('workflow.ultracode'), 'settings.md does not list the key');
 });

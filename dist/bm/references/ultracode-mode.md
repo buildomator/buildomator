@@ -37,7 +37,7 @@ TODAY=$(date +%F)
 - **Runtime:** Claude Code only. This plugin targets Claude Code; the signal is
   not wired to any non-Claude runtime.
 - **Override:** `gsd-sdk query config-set workflow.ultracode true|false` (or via
-  `/gsd:settings`). Leave it unset to get the automatic window behavior.
+  `/bm:settings`). Leave it unset to get the automatic window behavior.
 
 ## Good-fit commands
 
@@ -46,14 +46,14 @@ and are listed so users know ultracode does not change them.
 
 | Command | Default behavior | Under ultracode |
 |---------|------------------|-----------------|
-| `/gsd:map-codebase` | Spawns the standard mapper set | Spawn the **full** mapper set (never a trimmed subset) and reconcile overlapping findings before writing the summary |
-| `/gsd:code-review` | Reviews the changed files at the configured depth | Run **every** review dimension regardless of depth, then adversarially refute each finding before reporting |
-| `/gsd:review` (plan-review convergence) | Single reviewer panel, one convergence pass | Add a second, independent reviewer panel and an extra convergence pass; keep findings only when panels agree |
-| `/gsd:execute-phase` | Already wave-parallel | Unchanged (already maximal) |
-| `/gsd:new-project` research | Already runs 4 parallel researchers | Unchanged (already maximal) |
+| `/bm:map-codebase` | Spawns the standard mapper set | Spawn the **full** mapper set (never a trimmed subset) and reconcile overlapping findings before writing the summary |
+| `/bm:code-review` | Reviews the changed files at the configured depth | Run **every** review dimension regardless of depth, then adversarially refute each finding before reporting |
+| `/bm:review` (plan-review convergence) | Single reviewer panel, one convergence pass | Add a second, independent reviewer panel and an extra convergence pass; keep findings only when panels agree |
+| `/bm:execute-phase` | Already wave-parallel | Unchanged (already maximal) |
+| `/bm:new-project` research | Already runs 4 parallel researchers | Unchanged (already maximal) |
 
 ## Not a good fit
 
 Commands that are inherently sequential, single-shot, or cheap (for example
-`/gsd:note`, `/gsd:add-todo`, `/gsd:fast`, `/gsd:settings`) ignore the signal.
+`/bm:note`, `/bm:add-todo`, `/bm:fast`, `/bm:settings`) ignore the signal.
 Fanning them out adds cost without improving the result.

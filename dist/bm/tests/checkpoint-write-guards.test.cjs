@@ -139,7 +139,7 @@ check('trivial guard preserves existing hand-authored HANDOFF.json', () => {
 
 check('writes HANDOFF.json when .planning/ exists and source is manual-pause', () => {
   // Guard (b) only applies to automatic sources (auto-postool, auto-compact).
-  // manual-pause must always write so /gsd:pause-work works in idle projects.
+  // manual-pause must always write so /bm:pause-work works in idle projects.
   withTempDir((dir) => {
     const planningDir = path.join(dir, '.planning');
     fs.mkdirSync(planningDir);

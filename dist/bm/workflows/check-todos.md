@@ -22,14 +22,14 @@ If `todo_count` is 0:
 ```
 No pending todos.
 
-Todos are captured during work sessions with /gsd:add-todo.
+Todos are captured during work sessions with /bm:add-todo.
 
 ---
 
 Would you like to:
 
-1. Continue with current phase (/gsd:progress)
-2. Add a todo now (/gsd:add-todo)
+1. Continue with current phase (/bm:progress)
+2. Add a todo now (/bm:add-todo)
 ```
 
 Exit.
@@ -37,8 +37,8 @@ Exit.
 
 <step name="parse_filter">
 Check for area filter in arguments:
-- `/gsd:capture --list` → show all
-- `/gsd:capture --list api` → filter to area:api only
+- `/bm:capture --list` → show all
+- `/bm:capture --list api` → filter to area:api only
 </step>
 
 <step name="list_todos">
@@ -56,7 +56,7 @@ Pending Todos:
 ---
 
 Reply with a number to view details, or:
-- `/gsd:capture --list [area]` to filter by area
+- `/bm:capture --list [area]` to filter by area
 - `q` to exit
 ```
 
@@ -119,7 +119,7 @@ Use AskUserQuestion:
 - question: "What would you like to do with this todo?"
 - options:
   - "Work on it now" — move to done, start working
-  - "Create a phase", /gsd:add-phase with this scope
+  - "Create a phase", /bm:add-phase with this scope
   - "Brainstorm approach" — think through before deciding
   - "Put it back" — return to list
 </step>
@@ -135,7 +135,7 @@ Update STATE.md todo count. Present problem/solution context. Begin work or ask 
 Note todo reference in phase planning notes. Keep in pending. Return to list or exit.
 
 **Create a phase:**
-Display: `/gsd:add-phase [description from todo]`
+Display: `/bm:add-phase [description from todo]`
 Keep in pending. User runs command in fresh context.
 
 **Brainstorm approach:**

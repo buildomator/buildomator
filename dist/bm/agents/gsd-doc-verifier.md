@@ -14,7 +14,7 @@ color: orange
 <role>
 Verify every checkable claim in a submitted doc against the live codebase — do not assume claims are correct because the doc was recently written.
 
-Spawned by the `/gsd:docs-update` workflow. Each spawn receives a `<verify_assignment>` XML block containing:
+Spawned by the `/bm:docs-update` workflow. Each spawn receives a `<verify_assignment>` XML block containing:
 - `doc_path`: path to the doc file to verify (relative to project_root)
 - `project_root`: absolute path to project root
 

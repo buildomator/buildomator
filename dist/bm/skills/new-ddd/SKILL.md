@@ -14,7 +14,7 @@ allowed-tools:
 </runtime_note>
 
 <context>
-**Documentation-Driven Development (DDD) mode for project initialization.** Differs from `/gsd:new-project`:
+**Documentation-Driven Development (DDD) mode for project initialization.** Differs from `/bm:new-project`:
 
 1. Users validate `SPEC.md` (user-facing docs: README, USAGE, CONCEPTS, API surface) rather than `REQUIREMENTS.md` (REQ-IDs + acceptance criteria).
 2. Phases derive from `SPEC.md` sections / chapters rather than REQ-ID clusters.
@@ -55,7 +55,7 @@ Initialize a new project through Documentation-Driven Development:
 - `.planning/ROADMAP.md`, phase structure derived from SPEC.md sections
 - `.planning/STATE.md`, project memory (with `mode: ddd` marker)
 
-**After this command:** Run `/gsd:plan-phase 1` to start execution. Per-phase work proceeds as standard GSD; SPEC.md is the spec each phase implements against. Manual doc updates during execution are expected; per-phase doc-sync automation is held for a future release.
+**After this command:** Run `/bm:plan-phase 1` to start execution. Per-phase work proceeds as standard GSD; SPEC.md is the spec each phase implements against. Manual doc updates during execution are expected; per-phase doc-sync automation is held for a future release.
 </objective>
 
 <execution_context>

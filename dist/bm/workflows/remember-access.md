@@ -1,8 +1,8 @@
 <purpose>
 Capture or review authentication / access recipes for the current project. Two modes:
 
-1. **Manual capture:** `/gsd:remember-access <system-name>` documents how to authenticate to a named system (e.g., github, aws, npm, ssh).
-2. **Inbox review:** `/gsd:remember-access --review` surfaces detections captured by the `gsd-auth-detector` PostToolUse hook for confirm/discard.
+1. **Manual capture:** `/bm:remember-access <system-name>` documents how to authenticate to a named system (e.g., github, aws, npm, ssh).
+2. **Inbox review:** `/bm:remember-access --review` surfaces detections captured by the `gsd-auth-detector` PostToolUse hook for confirm/discard.
 
 Confirmed recipes go to `.planning/AUTH-RECIPES.md` (per-project) and optionally `~/.claude/auth-recipes/<system>.md` (cross-project memory).
 </purpose>
@@ -22,7 +22,7 @@ Parse `$ARGUMENTS`:
 
 ## 2. Ensure .planning/ exists
 
-If `.planning/` does not exist, error: `Auth recipes require a GSD project. Run /gsd:new-project or /gsd:new-ddd first.` Exit.
+If `.planning/` does not exist, error: `Auth recipes require a GSD project. Run /bm:new-project or /bm:new-ddd first.` Exit.
 
 ## 3. Manual capture mode
 
@@ -120,7 +120,7 @@ Append a row to `.planning/AUTO-DECISIONS.md`:
 
 ```bash
 TS=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-echo "| ${TS} | /gsd:remember-access | Captured auth recipe for ${system} | .planning/AUTH-RECIPES.md |" >> .planning/AUTO-DECISIONS.md
+echo "| ${TS} | /bm:remember-access | Captured auth recipe for ${system} | .planning/AUTH-RECIPES.md |" >> .planning/AUTO-DECISIONS.md
 ```
 
 (Create the file with the header if missing; same pattern as the `workflow.auto_approve_non_critical` flow in `new-project.md` and `new-ddd.md`.)
@@ -155,7 +155,7 @@ INBOX=".planning/.pending-auth-captures.jsonl"
 wc -l < "$INBOX"
 ```
 
-If empty, exit with `No pending captures. Run /gsd:remember-access <system> to capture manually.`
+If empty, exit with `No pending captures. Run /bm:remember-access <system> to capture manually.`
 
 ### 4b. Display each entry
 
@@ -218,16 +218,16 @@ If recipes were saved during the review, the manual-capture flow already committ
 If `$ARGUMENTS` is empty AND no inbox file exists AND no recipes file exists yet, display usage:
 
 ```
-/gsd:remember-access: capture auth recipes for external systems
+/bm:remember-access: capture auth recipes for external systems
 
 Usage:
-  /gsd:remember-access github          Capture how to authenticate to GitHub
-  /gsd:remember-access aws             Capture how to authenticate to AWS
-  /gsd:remember-access --review        Review auto-detected captures
-  /gsd:remember-access                 (no args, no inbox, no recipes yet) show this help
+  /bm:remember-access github          Capture how to authenticate to GitHub
+  /bm:remember-access aws             Capture how to authenticate to AWS
+  /bm:remember-access --review        Review auto-detected captures
+  /bm:remember-access                 (no args, no inbox, no recipes yet) show this help
 
 Auto-detection runs continuously via the gsd-auth-detector PostToolUse hook.
-Run /gsd:remember-access --review to surface pending captures.
+Run /bm:remember-access --review to surface pending captures.
 
 Recipes live at:
   .planning/AUTH-RECIPES.md           (per-project)

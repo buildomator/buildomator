@@ -1,7 +1,7 @@
 'use strict';
 
 // Resolution environment variable surface for #3541 — when the installer
-// runs without a TTY (typical /gsd:update path via Claude Code or any
+// runs without a TTY (typical /bm:update path via Claude Code or any
 // scripted update), prompt-user migration actions cannot be answered
 // interactively. We resolve them by classification:
 //   - Stale SDK build artifacts (get-shit-done/sdk/{dist,src}/gsd-*):

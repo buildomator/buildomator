@@ -32,8 +32,8 @@ When **active**, run in ultracode mode: spawn the FULL mapper set (never a trimm
 
 <step name="parse_paths_flag" priority="first">
 Parse an optional `--paths <p1,p2,...>` argument. When supplied (by the
-post-execute codebase-drift gate in `/gsd:execute-phase` or by a user running
-`/gsd:map-codebase --paths apps/accounting,packages/ui`), the workflow
+post-execute codebase-drift gate in `/bm:execute-phase` or by a user running
+`/bm:map-codebase --paths apps/accounting,packages/ui`), the workflow
 operates in **incremental-remap mode**:
 
 - Pass `--paths <p1>,<p2>,...` through to each spawned `gsd-codebase-mapper`
@@ -366,12 +366,12 @@ Created .planning/codebase/:
 
 `/clear` then:
 
-`/gsd:new-project`
+`/bm:new-project`
 
 ---
 
 **Also available:**
-- Re-run mapping: `/gsd:map-codebase`
+- Re-run mapping: `/bm:map-codebase`
 - Review specific file: `cat .planning/codebase/STACK.md`
 - Edit any document before proceeding
 

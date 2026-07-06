@@ -25,9 +25,9 @@ Loaded on demand by GSD commands.
 <!-- GSD:session-continuity-start source:GSD defaults -->
 ## Session Continuity
 
-If `.planning/HANDOFF.json` exists at the start of a session, a previous session was interrupted (for example by `/compact` or `/gsd:pause-work`) and its state is captured there.
+If `.planning/HANDOFF.json` exists at the start of a session, a previous session was interrupted (for example by `/compact` or `/bm:pause-work`) and its state is captured there.
 
-Run `/gsd:resume-work` immediately — before anything else, without waiting for user input. The resume skill will restore context, show project status, and clean up the handoff file.
+Run `/bm:resume-work` immediately — before anything else, without waiting for user input. The resume skill will restore context, show project status, and clean up the handoff file.
 
 This instruction is a backup path. When the SessionStart hook fires it emits the same directive via systemMessage; either trigger is sufficient.
 <!-- GSD:session-continuity-end -->
@@ -38,9 +38,9 @@ This instruction is a backup path. When the SessionStart hook fires it emits the
 Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
 
 Use these entry points:
-- `/gsd:quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd:debug` for investigation and bug fixing
-- `/gsd:execute-phase` for planned phase work
+- `/bm:quick` for small fixes, doc updates, and ad-hoc tasks
+- `/bm:debug` for investigation and bug fixing
+- `/bm:execute-phase` for planned phase work
 
 Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
 <!-- GSD:workflow-end -->
@@ -63,6 +63,6 @@ GSD agents must never leave GSD workflow metadata in the product code they write
 <!-- GSD:profile-start -->
 ## Developer Profile
 
-> Profile not yet configured. Run `/gsd:profile-user` to generate your developer profile.
+> Profile not yet configured. Run `/bm:profile-user` to generate your developer profile.
 > This section is managed by `generate-claude-profile` -- do not edit manually.
 <!-- GSD:profile-end -->

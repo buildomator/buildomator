@@ -17,7 +17,7 @@
  *   - plan_files: NN-NN-name-PLAN.md canonical plan file names
  *   - generic_phase_num: "phase N" in prose (medium)
  *
- * Fenced code blocks are stripped before scanning so `/gsd:foo` examples and
+ * Fenced code blocks are stripped before scanning so `/bm:foo` examples and
  * file-path examples inside ``` blocks don't pollute the ratchet. Inline
  * `code spans` are NOT stripped (they often appear in flowing prose making
  * a leak claim).
@@ -109,7 +109,7 @@ function writeBaseline(aggregate) {
     note:
       'Counts-based ratchet for GSD-jargon mentions in user-facing plugin docs ' +
       '(README.md, CHANGELOG.md). Fenced code blocks are stripped before scanning ' +
-      'so /gsd: examples and file-path examples inside ``` blocks do not pollute ' +
+      'so /bm: examples and file-path examples inside ``` blocks do not pollute ' +
       'the ratchet. Regenerate with --write-baseline when a legitimate addition ' +
       'lands (e.g., a CHANGELOG entry describing internal work).',
   };

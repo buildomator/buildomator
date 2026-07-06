@@ -36,7 +36,7 @@ Format for presenting next steps after completing a command or workflow.
 5. **"Also available" not "Other options"** — sounds more app-like
 6. **Visual separators** — `---` above and below to make it stand out
 7. **Project identity in heading** — include `[PROJECT_CODE] PROJECT_TITLE` from init context so handoffs are self-identifying across sessions. If `project_code` is not set, omit the suffix entirely (just `## ▶ Next Up`)
-8. **Unfinished-UAT breadcrumb (detour-safe)** — before the main Next-Up, if any phase has a started-but-unfinished UAT, lead with a resume line so an interrupted UAT is never silently abandoned (it would otherwise be found out late). Especially important after detour commands (`/gsd:quick`, `/gsd:add-phase`, `/gsd:explore`, `/gsd:debug`) that may have interrupted a UAT. Detect and prepend:
+8. **Unfinished-UAT breadcrumb (detour-safe)** — before the main Next-Up, if any phase has a started-but-unfinished UAT, lead with a resume line so an interrupted UAT is never silently abandoned (it would otherwise be found out late). Especially important after detour commands (`/bm:quick`, `/bm:add-phase`, `/bm:explore`, `/bm:debug`) that may have interrupted a UAT. Detect and prepend:
    ```bash
    UAT_F=$(grep -lE '^status:[[:space:]]*(testing|partial)[[:space:]]*$' .planning/phases/*/*-UAT.md 2>/dev/null | sort | head -1)
    [ -n "$UAT_F" ] && UAT_N=$(basename "$UAT_F" | grep -oE '^[0-9]+(\.[0-9]+)?')
@@ -44,7 +44,7 @@ Format for presenting next steps after completing a command or workflow.
    If `UAT_N` is set, emit ABOVE the normal Next-Up:
    ```
    ↩ **Unfinished UAT — Phase {UAT_N}.** Verification was interrupted; finish it before moving on:
-   `/gsd:verify-work {UAT_N}`
+   `/bm:verify-work {UAT_N}`
    ───────────────────────────────────────────────
    ```
 
@@ -61,7 +61,7 @@ Format for presenting next steps after completing a command or workflow.
 
 `/clear` then:
 
-`/gsd:execute-phase 2`
+`/bm:execute-phase 2`
 
 ---
 
@@ -86,7 +86,7 @@ Add note that this is the last plan and what comes after:
 
 `/clear` then:
 
-`/gsd:execute-phase 2`
+`/bm:execute-phase 2`
 
 ---
 
@@ -108,13 +108,13 @@ Add note that this is the last plan and what comes after:
 
 `/clear` then:
 
-`/gsd:plan-phase 2`
+`/bm:plan-phase 2`
 
 ---
 
 **Also available:**
-- `/gsd:discuss-phase 2` — gather context first
-- `/gsd:plan-phase --research-phase 2` — investigate unknowns
+- `/bm:discuss-phase 2` — gather context first
+- `/bm:plan-phase --research-phase 2` — investigate unknowns
 - Review roadmap
 
 ---
@@ -137,13 +137,13 @@ Show completion status before next action:
 
 `/clear` then:
 
-`/gsd:plan-phase 3`
+`/bm:plan-phase 3`
 
 ---
 
 **Also available:**
-- `/gsd:discuss-phase 3` — gather context first
-- `/gsd:plan-phase --research-phase 3` — investigate unknowns
+- `/bm:discuss-phase 3` — gather context first
+- `/bm:plan-phase --research-phase 3` — investigate unknowns
 - Review what Phase 2 built
 
 ---
@@ -162,11 +162,11 @@ When there's no clear primary action:
 
 `/clear` then one of:
 
-**To plan directly:** `/gsd:plan-phase 3`
+**To plan directly:** `/bm:plan-phase 3`
 
-**To discuss context first:** `/gsd:discuss-phase 3`
+**To discuss context first:** `/bm:discuss-phase 3`
 
-**To research unknowns:** `/gsd:plan-phase --research-phase 3`
+**To research unknowns:** `/bm:plan-phase --research-phase 3`
 
 ---
 ```
@@ -186,7 +186,7 @@ All 4 phases shipped
 
 `/clear` then:
 
-`/gsd:new-milestone`
+`/bm:new-milestone`
 
 ---
 ```
@@ -229,7 +229,7 @@ Extract: `**02-03: Refresh Token Rotation** — Add /api/auth/refresh with slidi
 ## To Continue
 
 Run `/clear`, then paste:
-/gsd:execute-phase 2
+/bm:execute-phase 2
 ```
 
 User has no idea what 02-03 is about.
@@ -237,7 +237,7 @@ User has no idea what 02-03 is about.
 ### Don't: Missing /clear explanation
 
 ```
-`/gsd:plan-phase 3`
+`/bm:plan-phase 3`
 
 Run /clear first.
 ```
@@ -257,7 +257,7 @@ Sounds like an afterthought. Use "Also available:" instead.
 
 ```
 ```
-/gsd:plan-phase 3
+/bm:plan-phase 3
 ```
 ```
 

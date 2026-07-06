@@ -116,7 +116,7 @@ Status: {status from SUMMARY.md frontmatter, or "no summary yet"}
 Description: {first non-empty line from PLAN.md after frontmatter}
 Last action: {last meaningful line of SUMMARY.md, or "none"}
 ─────────────────────────────────────
-Resume with: /gsd:quick resume {slug}
+Resume with: /bm:quick resume {slug}
 ```
 
 No agent spawn. STOP after printing.
@@ -161,10 +161,10 @@ When the quick task completes (SUMMARY.md written, STATE.md updated), emit a Nex
 
 - Show completion status (e.g., `## ✓ Quick Task Complete — {slug}`)
 - Brief one-line recap of what shipped (file count + commit hash)
-- Emit a `## ▶ Next Up` heading suggesting the next likely action (often `/gsd:next` or returning to a paused phase)
+- Emit a `## ▶ Next Up` heading suggesting the next likely action (often `/bm:next` or returning to a paused phase)
 - Use **`` `/clear` then: ``** before the command **only for quick tasks that ran for >5 tool calls or >10 minutes** — short trivial tasks don't accumulate enough context to warrant a clear
-- When `/clear` IS suggested, include the parenthetical: *(`/clear` is safe — `/gsd:resume-work` restores position from `HANDOFF.json` if you change your mind)*
-- **Unfinished-UAT breadcrumb:** a quick task is a common detour from a UAT (a bug surfaced mid-verification). Apply rule 8 of `references/continuation-format.md` — if any phase has a `testing`/`partial` UAT, lead with `↩ Resume UAT for Phase {N}: /gsd:verify-work {N}` ABOVE the Next-Up, so the interrupted verification is not silently abandoned.
+- When `/clear` IS suggested, include the parenthetical: *(`/clear` is safe — `/bm:resume-work` restores position from `HANDOFF.json` if you change your mind)*
+- **Unfinished-UAT breadcrumb:** a quick task is a common detour from a UAT (a bug surfaced mid-verification). Apply rule 8 of `references/continuation-format.md` — if any phase has a `testing`/`partial` UAT, lead with `↩ Resume UAT for Phase {N}: /bm:verify-work {N}` ABOVE the Next-Up, so the interrupted verification is not silently abandoned.
 </output_format>
 
 <notes>

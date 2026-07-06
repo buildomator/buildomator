@@ -3,7 +3,7 @@
 
 // Unit tests for bin/lib/bm-transform.cjs, the pure string helpers that make the
 // generated bm package self-consistent:
-//   rewriteCommandRefs  -- /gsd:<skill> command self-refs become /bm:<skill>
+//   rewriteCommandRefs  -- /bm:<skill> command self-refs become /bm:<skill>
 //   stampHookFallback   -- the hook cache-fallback plugin segment becomes bm
 //
 // Zero-dep harness mirroring tests/build-bm-drift.test.cjs: node:assert, a bare
@@ -22,48 +22,48 @@ function check(name, fn) {
 
 // ─── rewriteCommandRefs: full command coverage ───────────────────────────────
 
-check('rewriteCommandRefs rewrites /gsd:plan-phase', () => {
-  assert.strictEqual(rewriteCommandRefs('run /gsd:plan-phase now'), 'run /bm:plan-phase now');
+check('rewriteCommandRefs rewrites /bm:plan-phase', () => {
+  assert.strictEqual(rewriteCommandRefs('run /bm:plan-phase now'), 'run /bm:plan-phase now');
 });
 
 // The four commands the old skill-name alternation under-covered (RESEARCH F-1).
-check('rewriteCommandRefs rewrites /gsd:capture', () => {
-  assert.strictEqual(rewriteCommandRefs('use /gsd:capture'), 'use /bm:capture');
+check('rewriteCommandRefs rewrites /bm:capture', () => {
+  assert.strictEqual(rewriteCommandRefs('use /bm:capture'), 'use /bm:capture');
 });
 
-check('rewriteCommandRefs rewrites /gsd:local-patches', () => {
-  assert.strictEqual(rewriteCommandRefs('use /gsd:local-patches'), 'use /bm:local-patches');
+check('rewriteCommandRefs rewrites /bm:local-patches', () => {
+  assert.strictEqual(rewriteCommandRefs('use /bm:local-patches'), 'use /bm:local-patches');
 });
 
-check('rewriteCommandRefs rewrites /gsd:edit-phase', () => {
-  assert.strictEqual(rewriteCommandRefs('use /gsd:edit-phase'), 'use /bm:edit-phase');
+check('rewriteCommandRefs rewrites /bm:edit-phase', () => {
+  assert.strictEqual(rewriteCommandRefs('use /bm:edit-phase'), 'use /bm:edit-phase');
 });
 
-check('rewriteCommandRefs rewrites /gsd:extract-learnings', () => {
-  assert.strictEqual(rewriteCommandRefs('use /gsd:extract-learnings'), 'use /bm:extract-learnings');
+check('rewriteCommandRefs rewrites /bm:extract-learnings', () => {
+  assert.strictEqual(rewriteCommandRefs('use /bm:extract-learnings'), 'use /bm:extract-learnings');
 });
 
 // ─── rewriteCommandRefs: boundary contexts ───────────────────────────────────
 
 check('rewriteCommandRefs rewrites at string start', () => {
-  assert.strictEqual(rewriteCommandRefs('/gsd:next'), '/bm:next');
+  assert.strictEqual(rewriteCommandRefs('/bm:next'), '/bm:next');
 });
 
 check('rewriteCommandRefs rewrites after whitespace', () => {
-  assert.strictEqual(rewriteCommandRefs('then /gsd:next'), 'then /bm:next');
+  assert.strictEqual(rewriteCommandRefs('then /bm:next'), 'then /bm:next');
 });
 
 check('rewriteCommandRefs rewrites after a backtick', () => {
-  assert.strictEqual(rewriteCommandRefs('`/gsd:next`'), '`/bm:next`');
+  assert.strictEqual(rewriteCommandRefs('`/bm:next`'), '`/bm:next`');
 });
 
 check('rewriteCommandRefs rewrites after a paren', () => {
-  assert.strictEqual(rewriteCommandRefs('(/gsd:next)'), '(/bm:next)');
+  assert.strictEqual(rewriteCommandRefs('(/bm:next)'), '(/bm:next)');
 });
 
 check('rewriteCommandRefs rewrites every occurrence on a line', () => {
   assert.strictEqual(
-    rewriteCommandRefs('/gsd:plan-phase then /gsd:execute-phase'),
+    rewriteCommandRefs('/bm:plan-phase then /bm:execute-phase'),
     '/bm:plan-phase then /bm:execute-phase',
   );
 });
@@ -89,8 +89,19 @@ check('rewriteCommandRefs spares a bare gsd: with an identifier char before it',
   assert.strictEqual(rewriteCommandRefs('abcgsd:foo'), 'abcgsd:foo');
 });
 
+check('rewriteCommandRefs rewrites a /bm: path segment (plugin-owned artifact path)', () => {
+  assert.strictEqual(
+    rewriteCommandRefs('$HOME/.config/kilo/bm:local-patches'),
+    '$HOME/.config/kilo/bm:local-patches',
+  );
+});
+
+check('rewriteCommandRefs rewrites /bm: adjacent to an escaped newline', () => {
+  assert.strictEqual(rewriteCommandRefs('Run this.\\n/bm:analyze --deep'), 'Run this.\\n/bm:analyze --deep');
+});
+
 check('rewriteCommandRefs is idempotent', () => {
-  const once = rewriteCommandRefs('run /gsd:plan-phase and /gsd:capture');
+  const once = rewriteCommandRefs('run /bm:plan-phase and /bm:capture');
   assert.strictEqual(rewriteCommandRefs(once), once);
 });
 

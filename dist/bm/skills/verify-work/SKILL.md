@@ -16,7 +16,7 @@ Validate built features through conversational testing with persistent state.
 
 Purpose: Confirm what Claude built actually works from user's perspective. One test at a time, plain text responses, no interrogation. When issues are found, automatically diagnose, plan fixes, and prepare for execution.
 
-Output: {phase_num}-UAT.md tracking all test results. If issues found: diagnosed gaps, verified fix plans ready for /gsd:execute-phase
+Output: {phase_num}-UAT.md tracking all test results. If issues found: diagnosed gaps, verified fix plans ready for /bm:execute-phase
 </objective>
 
 <execution_context>
@@ -41,9 +41,9 @@ Preserve all workflow gates (session management, test presentation, diagnosis, f
 When this workflow concludes (verification passed or routed to gap closure), emit a Next Up continuation block following the pattern in `references/continuation-format.md`:
 
 - Show verification status (e.g., `## ✓ Verification Passed` or `## ⚠ Gaps Found — Routing to Plan` with details)
-- Emit a `## ▶ Next Up` heading with the next likely command (`/gsd:complete-milestone` if all phases verified, `/gsd:plan-phase --gaps` if gaps found, `/gsd:next` if unsure)
+- Emit a `## ▶ Next Up` heading with the next likely command (`/bm:complete-milestone` if all phases verified, `/bm:plan-phase --gaps` if gaps found, `/bm:next` if unsure)
 - Use **`` `/clear` then: ``** before the command
-- Include a parenthetical: *(`/clear` is safe — `/gsd:resume-work` restores position from `HANDOFF.json` if you change your mind)*
+- Include a parenthetical: *(`/clear` is safe — `/bm:resume-work` restores position from `HANDOFF.json` if you change your mind)*
 - Add an "Also available:" section with 1-3 alternatives where relevant
 
 Verification accumulates lots of test/UAT prose that won't help downstream; phase-end is a clean boundary for `/clear`.
