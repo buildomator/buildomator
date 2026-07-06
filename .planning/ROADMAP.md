@@ -166,8 +166,17 @@ Plans:
   2. Running a `/bm:` command against a project produces the same result as the equivalent `/gsd:` command (same skill content, same plan/state mutations)
   3. The `bm` plugin's agents respond correctly, its hooks fire, and its MCP server exposes the same resources and tools as the `gsd` plugin
 
-**Plans**: TBD
+**Plans**: 2 plans
 **UI hint**: yes
+
+Plans:
+**Wave 1**
+
+- [ ] 13-01-PLAN.md - bin/lib/bm-transform.cjs helpers + unit tests, transform wired into generate() (command rewrite + hook-fallback stamp + mcpServers rekey), widened drift test, regenerated dist/bm (BM-02, BM-03)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 13-02-PLAN.md - tests/bm-parity.test.cjs acceptance gate, bm-build-drift parity step, bm-package-smoke hook-fallback + MCP tools/resources parity steps, RELEASING.md update (BM-01, BM-02, BM-03)
 
 ### Phase 14: Backward Compatibility and Coexistence
 
