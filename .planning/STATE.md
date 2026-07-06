@@ -4,12 +4,12 @@ milestone: v4.1
 milestone_name: Buildomator Rebrand
 status: planning
 stopped_at: Phase 13 context gathered
-last_updated: "2026-07-04T16:40:51.304Z"
-last_activity: 2026-07-04
+last_updated: "2026-07-06T00:31:06.563Z"
+last_activity: 2026-07-06 -- Phase 13 planning complete
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 2
+  total_plans: 4
   completed_plans: 2
   percent: 25
 ---
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 Phase: 13
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-07-04
+Last activity: 2026-07-06 -- Phase 13 planning complete
 
 Progress: [░░░░░░░░░░] 0% (0/4 phases)
 
@@ -151,6 +151,7 @@ None.
 | 260701-wxe | Re-enabled Claude Fable 5 tier through its redeploy free-usage window (redeployed 2026-07-01, plan-included through 2026-07-07). Bumped FABLE_SUNSET_DATE 2026-06-12 -> 2026-07-07 in both resolvers + tests + dist; heavy agents ride Fable through 07-07 then auto-downgrade to Opus. Shipped as 4.0.4. | 2026-07-01 | v4.0.4 | Done | [260701-wxe-re-enable-fable-5-through-2026-07-07-red](./quick/260701-wxe-re-enable-fable-5-through-2026-07-07-red/) |
 
 | 260703-2zr | Discoverability fix: /gsd:scan --drift was implemented in workflows/scan.md but invisible (scan had no argument-hint). Added argument-hint to scan (+ --drift in description), explore, workstreams, next; audited all 23 hint-less skills, rest take no user args. No workflow logic changed. | 2026-07-03 | f00ac99 | Done | [260703-2zr-add-argument-hint-to-scan-skill-advertis](./quick/260703-2zr-add-argument-hint-to-scan-skill-advertis/) |
+| 260706-2jy | Guardrail: GSD agents must not write phase/housekeeping metadata into generated product code or comments (user flagged `# Phase 1: skeleton only ...` in a generated project). Root cause: rule was never encoded. Added "No GSD metadata in product code" to agents/gsd-executor.md `<project_context>` + "## Generated Code Hygiene" in CLAUDE.md + memory. flashsystem project cleanup + planner-agent hardening left for user. | 2026-07-05 | 2548d54 | Done | [260706-2jy-executor-must-not-write-gsd-phase-housek](./quick/260706-2jy-executor-must-not-write-gsd-phase-housek/) |
 
 ## Session Continuity
 
