@@ -140,6 +140,12 @@ None - no external service configuration required.
 - Phase 14 (coexistence: double-fire dedup, dual-writer STATE.md coordination) can build on the distinct `gsd`/`bm` MCP keys.
 - Phase 15 (branding prose, `GSD:` stderr prefix) is deliberately untouched; the `GSD:` prefixes and repo/marketplace identifiers survive by design.
 
+## Self-Check: PASSED
+
+- Created files exist: bin/lib/bm-transform.cjs, tests/bm-transform.test.cjs, 13-01-SUMMARY.md
+- Commits exist: 85dd90a, 2fbb60c, a9b2f95
+- STATE.md / ROADMAP.md untouched (orchestrator-owned)
+
 ---
 *Phase: 13-buildomator-plugin*
 *Completed: 2026-07-06*
