@@ -54,6 +54,10 @@ When contributing a change to a repository you do not own (upstream gsd-core, Vi
 3. Produce a patch file. Generate a `.patch` (for example `git format-patch` or `git diff > NNNN-description.patch`) instead of pushing or opening a PR directly.
 4. Hand it to the user for manual review. Surface the patch and wait for explicit approval before anything is submitted (PR, push, or a diff comment on an issue). Never auto-submit to a third-party repo.
 
+## Generated Code Hygiene
+
+GSD agents must never leave GSD workflow metadata in the product code they write. Code and its comments describe the code's behavior, not the GSD process that produced it. No phase/plan numbers, wave, "skeleton only", or status/housekeeping notes in product source or comments (e.g. `# Phase 1: skeleton only ...`). These are GSD bookkeeping and belong only in `.planning/` artifacts, never in the product's code, comments, or commit messages. This rule is enforced in `agents/gsd-executor.md` (the `<project_context>` block); keep the two in sync.
+
 
 
 <!-- GSD:profile-start -->
