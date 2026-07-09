@@ -126,7 +126,7 @@ Plans:
 **v4.1 Buildomator Rebrand (Phases 12-15) — IN PROGRESS**
 
 - [x] **Phase 12: Two-Plugin Build Foundation** - One source generates both `bm` and `gsd` packages; release publishes them in lockstep; `gsd-plugin` repo/cache identity verified unaffected (completed 2026-07-04)
-- [ ] **Phase 13: Buildomator Plugin** - The `/bm:` plugin is live with full command parity and identical agents, hooks, and MCP behavior
+- [x] **Phase 13: Buildomator Plugin** - The `/bm:` plugin is live with full command parity and identical agents, hooks, and MCP behavior (completed 2026-07-06)
 - [ ] **Phase 14: Backward Compatibility and Coexistence** - `/gsd:*` keeps working with no re-enable; both plugins can run together without hook double-fire, duplicate MCP state, or data corruption; deprecation nudge surfaces in `/gsd:*`
 - [ ] **Phase 15: Buildomator Identity and Communications** - Project presents as Buildomator everywhere; buildomator.com wired into metadata; CHANGELOG documents migration path and retirement timeline
 
@@ -166,17 +166,22 @@ Plans:
   2. Running a `/bm:` command against a project produces the same result as the equivalent `/gsd:` command (same skill content, same plan/state mutations)
   3. The `bm` plugin's agents respond correctly, its hooks fire, and its MCP server exposes the same resources and tools as the `gsd` plugin
 
-**Plans**: 2 plans
+**Plans**: 4 plans (2 shipped + 2 gap-closure from code review)
 **UI hint**: yes
 
 Plans:
 **Wave 1**
 
-- [ ] 13-01-PLAN.md - bin/lib/bm-transform.cjs helpers + unit tests, transform wired into generate() (command rewrite + hook-fallback stamp + mcpServers rekey), widened drift test, regenerated dist/bm (BM-02, BM-03)
+- [x] 13-01-PLAN.md - bin/lib/bm-transform.cjs helpers + unit tests, transform wired into generate() (command rewrite + hook-fallback stamp + mcpServers rekey), widened drift test, regenerated dist/bm (BM-02, BM-03)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 13-02-PLAN.md - tests/bm-parity.test.cjs acceptance gate, bm-build-drift parity step, bm-package-smoke hook-fallback + MCP tools/resources parity steps, RELEASING.md update (BM-01, BM-02, BM-03)
+- [x] 13-02-PLAN.md - tests/bm-parity.test.cjs acceptance gate, bm-build-drift parity step, bm-package-smoke hook-fallback + MCP tools/resources parity steps, RELEASING.md update (BM-01, BM-02, BM-03)
+
+**Gap closure** *(from 13-REVIEW.md CR-01/CR-02/WR-01/WR-04 + D-08 namespace scope)*
+
+- [ ] 13-03-PLAN.md - broaden the namespace rewrite to gsd:(?!/) (69 agent refs + frontmatter names + slash commands), CR-01 broad hook-fallback stamp with shared STAMP_EXCLUDE, CR-02 sanitizer literal, mcp/server.cjs excluded from rewrite for D-05 byte-identity, regenerated dist/bm (BM-02, BM-03)
+- [ ] 13-04-PLAN.md - fail-closed census in bm-parity.test.cjs (positive control + real dist/bm scan), WR-01 BM_DIST_DIR test-race isolation, WR-04 install-smoke hygiene, regenerated dist/bm (BM-01, BM-02, BM-03)
 
 ### Phase 14: Backward Compatibility and Coexistence
 
@@ -228,6 +233,6 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 12. Two-Plugin Build Foundation | 2/2 | Complete    | 2026-07-04 |
-| 13. Buildomator Plugin | 0/? | Not started | - |
+| 13. Buildomator Plugin | 2/2 | Complete   | 2026-07-06 |
 | 14. Backward Compatibility and Coexistence | 0/? | Not started | - |
 | 15. Buildomator Identity and Communications | 0/? | Not started | - |

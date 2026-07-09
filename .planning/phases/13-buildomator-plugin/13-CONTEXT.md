@@ -46,6 +46,7 @@ of a gsd clone whose docs and hook fallback still point at gsd. Covers BM-01/02/
   longest-first, negative lookbehind `(?<![a-zA-Z0-9/])` to skip path contexts,
   negative lookahead to block partial matches), retargeted `gsd:` -> `bm:`. Prefer
   factoring one shared transform used by both the maintenance rewriter and the build.
+  **Superseded in part by D-08** (the leading-slash anchor is broadened; see below).
 - **D-03:** The Phase 12 byte-drift guard widens from "identical except
   name/displayName/description" to "identical after applying the deterministic bm
   transform (identity stamp + command-prefix self-ref rewrite + hook-path stamp)."
@@ -66,7 +67,8 @@ of a gsd clone whose docs and hook fallback still point at gsd. Covers BM-01/02/
   so only the FALLBACK literal needs the stamp. This is the "per-plugin hook
   cache-fallback fix" Phase 12 deferred here. The "GSD:" stderr prefix in those
   resolvers is branding and stays for Phase 15. Double-fire when both plugins are
-  enabled stays Phase 14.
+  enabled stays Phase 14. **Extended by D-08** (the stamp now covers every runtime
+  carrier of the fallback literal, not only the three hooks files).
 
 ### MCP server identity (BM-03)
 - **D-05:** Stamp the manifest `mcpServers` key `gsd` -> `bm` in the bm `plugin.json`
@@ -91,6 +93,8 @@ of a gsd clone whose docs and hook fallback still point at gsd. Covers BM-01/02/
   leaks into bm, and no bm divergence that the transform doesn't explain. This is
   effectively the widened `--check` drift gate expressed as parity. Wire it into
   `.github/workflows/check-drift.yml` (extend the existing `bm-build-drift` job).
+  **Hardened by D-08** (the parity test gains a fail-closed census with a positive
+  control).
 - **D-07:** Extend the Phase 12 `bm-package-smoke` job in `install-smoke.yml` to prove
   runtime parity for BM-03: the bm MCP server starts and lists the same tools/
   resources under its own key, and a bm hook fires resolving via the bm
@@ -105,6 +109,35 @@ of a gsd clone whose docs and hook fallback still point at gsd. Covers BM-01/02/
 - Whether the parity test is a new `tests/bm-parity.test.cjs` or folded into
   `tests/build-bm-drift.test.cjs`.
 - Exact smoke assertions for the MCP tool-list comparison.
+
+### Namespace rewrite scope revision (BM-02/BM-03) - added 2026-07-09 post code-review
+- **D-08:** The bm transform's command/namespace rewrite broadens from the
+  leading-slash-anchored `/\/gsd:/g` to `gsd:(?!/)`: every `gsd:` namespace prefix
+  becomes `bm:` (slash-commands `/gsd:`, `subagent_type=`/`type=` agent refs
+  `gsd:gsd-<agent>`, and agent/skill frontmatter `name: gsd:<x>`), while the negative
+  lookahead spares `gsd://` MCP resource URIs (D-05). Verified against Claude Code
+  docs: `subagent_type` is the plugin-scoped id `plugin-name:agent-name`, so a bm
+  workflow calling `gsd:gsd-executor` resolves the GSD plugin's agent (and fails on a
+  bm-only install). bm MUST use `bm:gsd-executor` - this is a functional BM-03
+  requirement (69 refs). Skill frontmatter `name:` is display-only for skills in
+  `skills/` subdirs but is rewritten too so the fail-closed census needs no `gsd:`
+  exception. Also stamped: the `cache/gsd-plugin/gsd` resolver fallback in every
+  runtime carrier (dash form; D-04 extended from the hooks-only 3-file allowlist to
+  all carriers), and the `/gsd[:-]` SDK headless-prompt sanitizer pattern (rewritten
+  to `/bm[:-]`). Preserved (allow-list): the `gsd-plugin` marketplace id, `gsd-*`
+  filenames, `gsd://`, `gsd_*` MCP tools, camelCase `gsd[A-Z]` identifiers,
+  `open-gsd`/`.gsd`/`gsd/{milestone}` branch template, and branding prose
+  "GSD"/"Get Shit Done" (Phase 15).
+  - **Implementation note (D-05 interaction):** `mcp/server.cjs` must stay
+    byte-identical (D-05, guarded by `cmp`). It carries the MCP URIs in two shapes:
+    real `gsd://...` (spared by the `(?!/)` lookahead) and regex-source-escaped
+    `gsd:\/\/...` at two `uri.match(...)` sites, where the char after `gsd:` is a
+    backslash that the bare `(?!/)` lookahead would wrongly flip. Because server.cjs
+    contains ONLY URI-form `gsd:` tokens (no command/agent refs to rewrite), it is
+    excluded from the command-ref rewrite entirely so its byte-identity is guaranteed
+    regardless of regex shape. This implements D-08's stated intent of sparing MCP
+    resource URIs without regressing the zero-leak scan of the same-shaped `/gsd:\S+`
+    tokens that legitimately appear in SDK test files and must still flip.
 </decisions>
 
 <specifics>
