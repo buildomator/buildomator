@@ -406,3 +406,51 @@ None. Every file has a concrete in-repo analog from Phase 12. This is a pure ext
 **Measured facts:** 17 `cache/gsd-plugin/gsd` stamp targets in `hooks/hooks.json`;
 8 `gsd_*` MCP tools; 5 `gsd://` resource URIs; 1 `mcpServers.gsd` manifest entry.
 **Pattern extraction date:** 2026-07-06
+
+## Gap-Closure Addendum (2026-07-09)
+
+Added while planning the code-review gap-closure plans 13-03/13-04. Three new named
+constants join the transform. Each reuses `bin/build-bm.cjs`'s own exact-self analog (the
+existing exported-Set + `check()` shape), so there is still NO no-analog file.
+
+### `STAMP_EXCLUDE` (bin/build-bm.cjs, exported Set) - replaces `FALLBACK_STAMP_FILES`
+
+**Analog:** the existing `FALLBACK_STAMP_FILES` Set in `bin/build-bm.cjs` (same module,
+same export-and-import-into-drift-test shape). Inverts the sense: instead of a 3-file
+allowlist that GETS stamped, it is the set of files that must NOT be stamped because they
+legitimately embed the `cache/gsd-plugin/gsd` literal. `stampHookFallback` is applied to
+every text file whose rel path is NOT in `STAMP_EXCLUDE`. Members: the transform helper,
+the four tests that carry the literal, `.github/workflows/install-smoke.yml` (planted
+decoy), and `CHANGELOG.md` (historical release entries, IN-01 - do not revisionist-rewrite).
+The 13-04 census imports this same Set so the real scan skips exactly the same carriers.
+
+### `COMMAND_REWRITE_EXCLUDE` (bin/build-bm.cjs, exported Set) - new
+
+**Analog:** same exported-Set shape as `STAMP_EXCLUDE` / `FALLBACK_STAMP_FILES`. Names the
+files whose `gsd:` tokens must survive the broadened `gsd:(?!/)` command rewrite:
+`mcp/server.cjs` (D-05 byte-identity; its regex-escaped `gsd:\/\/` would otherwise flip),
+`CHANGELOG.md` (IN-01; ~89 historical `/gsd:` mentions), and `tests/bm-parity.test.cjs`
+(the census positive-control fixtures must stay intact in the dist copy). `generate()`
+guards the `rewriteCommandRefs` call on membership; the drift test's `expectedText` mirrors
+the same guard.
+
+### `BM_DIST_DIR` (bin/build-bm.cjs `check()` env override) - new
+
+**Analog:** `check(root)` itself - it already resolves `committed = path.join(root, 'dist',
+'bm')` and byte-diffs a fresh temp build against it. The only change is reading that diff
+target from `process.env.BM_DIST_DIR` when set, else the same default. This lets the drift
+tamper case point `--check` at an isolated `cp -R` copy so it never mutates the committed
+tree (WR-01), removing the shared-mutable-state race with the parity census.
+
+### Census detector shape (tests/bm-parity.test.cjs) - per-class raw-text match
+
+**Analog:** the existing zero-leak grep case in `tests/bm-parity.test.cjs` (same file), and
+`rewriteCommandRefs`'s `gsd:(?!/)` lookahead for the sparing technique. The detector matches
+each of the four violation classes with a DIRECT anchored pattern against RAW text (never
+pre-stripping the allow-list, which would destroy the substring-superset classes
+`cache/gsd-plugin/gsd` and `gsd:gsd-<x>`). Allow-list sparing lives inside each pattern (the
+char after the colon), mirroring the transform. The `namespace-prefix` class uses
+`/gsd:[a-z]/i` (letter after colon) so it spares `gsd://` and the escaped `gsd:\/` in
+server.cjs, verified collision-free (server.cjs has zero `gsd:[a-z]`). It replaces the
+blanket `grep -rIl '/gsd:'` case, which would now false-positive on the deliberately-retained
+tokens in the `COMMAND_REWRITE_EXCLUDE` files.
