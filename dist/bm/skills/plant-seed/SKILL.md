@@ -1,5 +1,5 @@
 ---
-name: gsd:plant-seed
+name: bm:plant-seed
 description: Capture a forward-looking idea with trigger conditions — surfaces automatically at the right milestone
 argument-hint: "[idea summary]"
 allowed-tools:

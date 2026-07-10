@@ -7,7 +7,7 @@ Orchestrator coordinates, not executes. Each subagent loads the full execute-pla
 </core_principle>
 
 <runtime_compatibility>
-`Agent(subagent_type="gsd:gsd-executor", ...)` blocks until complete and returns the result.
+`Agent(subagent_type="bm:gsd-executor", ...)` blocks until complete and returns the result.
 
 **Fallback rule:** If a spawned agent completes its work (commits visible, SUMMARY.md exists) but the orchestrator never receives the completion signal, treat it as successful based on spot-checks and continue. Never block indefinitely waiting for a signal — always verify via filesystem and git state.
 </runtime_compatibility>
@@ -23,18 +23,18 @@ Read STATE.md before any operation to load project context.
 These are the valid GSD subagent types registered in .claude/agents/ (or equivalent for your runtime).
 Always use the exact name from this list — do not fall back to 'general-purpose' or other built-in types:
 
-- gsd:gsd-executor — Executes plan tasks, commits, creates SUMMARY.md
-- gsd:gsd-verifier — Verifies phase completion, checks quality gates
-- gsd:gsd-planner — Creates detailed plans from phase scope
-- gsd:gsd-phase-researcher — Researches technical approaches for a phase
-- gsd:gsd-plan-checker — Reviews plan quality before execution
-- gsd:gsd-debugger — Diagnoses and fixes issues
-- gsd:gsd-codebase-mapper — Maps project structure and dependencies
-- gsd:gsd-integration-checker — Checks cross-phase integration
-- gsd:gsd-nyquist-auditor — Validates verification coverage
-- gsd:gsd-ui-researcher — Researches UI/UX approaches
-- gsd:gsd-ui-checker — Reviews UI implementation quality
-- gsd:gsd-ui-auditor — Audits UI against design requirements
+- bm:gsd-executor — Executes plan tasks, commits, creates SUMMARY.md
+- bm:gsd-verifier — Verifies phase completion, checks quality gates
+- bm:gsd-planner — Creates detailed plans from phase scope
+- bm:gsd-phase-researcher — Researches technical approaches for a phase
+- bm:gsd-plan-checker — Reviews plan quality before execution
+- bm:gsd-debugger — Diagnoses and fixes issues
+- bm:gsd-codebase-mapper — Maps project structure and dependencies
+- bm:gsd-integration-checker — Checks cross-phase integration
+- bm:gsd-nyquist-auditor — Validates verification coverage
+- bm:gsd-ui-researcher — Researches UI/UX approaches
+- bm:gsd-ui-checker — Reviews UI implementation quality
+- bm:gsd-ui-auditor — Audits UI against design requirements
 </available_agent_types>
 
 <process>
@@ -243,7 +243,7 @@ Check `branching_strategy` from init:
 Fork the new phase branch off `origin/HEAD` (the project's default branch), not the current HEAD — otherwise consecutive phases compound and stay unpushed (#2916). If `$BRANCH_NAME` already exists locally, reuse it as-is.
 
 ```bash
-DEFAULT_BRANCH=$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" base-branch)
+DEFAULT_BRANCH=$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" base-branch)
 
 if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
   git switch "$BRANCH_NAME" || { echo "ERROR: Could not switch to existing branch '$BRANCH_NAME'." >&2; exit 1; }
@@ -501,7 +501,7 @@ To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeou
 
    ```text
    Agent(
-     subagent_type="gsd:gsd-executor",
+     subagent_type="bm:gsd-executor",
      description="Execute plan {plan_number} of phase {phase_number}",
      # Only include model= when executor_model is an explicit model name.
      # When executor_model is "inherit", omit this parameter entirely so
@@ -1427,7 +1427,7 @@ ${CONTEXT_WINDOW >= 500000 ? `- {phase_dir}/*-CONTEXT.md (User decisions — ver
 </files_to_read>
 
 ${VERIFIER_SKILLS}",
-  subagent_type="gsd:gsd-verifier",
+  subagent_type="bm:gsd-verifier",
   model="{verifier_model}"
 )
 ```

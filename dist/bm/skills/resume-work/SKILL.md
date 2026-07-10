@@ -1,5 +1,5 @@
 ---
-name: gsd:resume-work
+name: bm:resume-work
 description: Resume work from previous session with full context restoration
 allowed-tools:
   - Read
@@ -44,7 +44,7 @@ Restore complete project context from a previous session. Handle manual-pause (`
    After routing — once steps 1-5 have completed without error — remove the handoff file:
 
    ```bash
-   node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" checkpoint --clear
+   node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" checkpoint --clear
    ```
 
    If the command is unavailable for any reason, fall back to direct removal:

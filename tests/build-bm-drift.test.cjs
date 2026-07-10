@@ -24,21 +24,17 @@ const SCRIPT = path.join(ROOT, 'bin', 'build-bm.cjs');
 
 const {
   stampBmManifest, shouldExclude, rewriteCommandRefs, stampHookFallback, isTextFile,
+  STAMP_EXCLUDE, COMMAND_REWRITE_EXCLUDE,
 } = require('../bin/build-bm.cjs');
 
-// Fallback-carrier set mirrors the build so the drift walk computes the same
-// expected transform generate() applies. Text/binary classification reuses the
-// build's exported isTextFile predicate directly.
-const FALLBACK_STAMP_FILES = new Set([
-  'hooks/hooks.json',
-  'hooks/run-bash-hook.cjs',
-  'bin/check-plugin-update.sh',
-]);
-
-// The expected transformed bytes for a source text file, matching generate().
+// The expected transformed bytes for a source text file, mirroring generate()
+// exactly: the command-ref rewrite runs UNLESS rel is in COMMAND_REWRITE_EXCLUDE,
+// then the hook stamp runs UNLESS rel is in STAMP_EXCLUDE. Both exclusion sets are
+// imported from the build so the drift walk and the build never diverge.
 function expectedText(rel, srcText) {
-  let text = rewriteCommandRefs(srcText);
-  if (FALLBACK_STAMP_FILES.has(rel)) text = stampHookFallback(text);
+  let text = srcText;
+  if (!COMMAND_REWRITE_EXCLUDE.has(rel)) text = rewriteCommandRefs(text);
+  if (!STAMP_EXCLUDE.has(rel)) text = stampHookFallback(text);
   return text;
 }
 
@@ -209,7 +205,7 @@ check('mcp/server.cjs is a byte-identical copy', () => {
   assert.ok(a.equals(b), 'dist/bm/mcp/server.cjs must be byte-identical to source');
 });
 
-check('no /gsd: leaks anywhere in dist/bm text files', () => {
+check('no /gsd: leaks in dist/bm text files outside COMMAND_REWRITE_EXCLUDE', () => {
   const leaks = [];
   function walk(dir, prefix) {
     for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -217,6 +213,9 @@ check('no /gsd: leaks anywhere in dist/bm text files', () => {
       if (ent.isDirectory()) { walk(path.join(dir, ent.name), rel); continue; }
       const buf = fs.readFileSync(path.join(dir, ent.name));
       if (!isTextFile(rel, buf)) continue;
+      // COMMAND_REWRITE_EXCLUDE files legitimately retain /gsd: (CHANGELOG.md
+      // shipped history, the parity positive-control fixtures) by design.
+      if (COMMAND_REWRITE_EXCLUDE.has(rel)) continue;
       if (buf.toString('utf8').includes('/gsd:')) leaks.push(rel);
     }
   }

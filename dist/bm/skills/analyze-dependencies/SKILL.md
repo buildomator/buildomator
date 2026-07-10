@@ -1,5 +1,5 @@
 ---
-name: gsd:analyze-dependencies
+name: bm:analyze-dependencies
 description: Analyze phase dependencies and suggest Depends on entries for ROADMAP.md
 allowed-tools:
   - Read

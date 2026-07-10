@@ -1,5 +1,5 @@
 ---
-name: gsd:audit-uat
+name: bm:audit-uat
 description: Cross-phase audit of all outstanding UAT and verification items
 allowed-tools:
   - Read

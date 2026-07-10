@@ -14,10 +14,10 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-phase-researcher — Researches technical approaches for a phase
-- gsd:gsd-pattern-mapper — Analyzes codebase for existing patterns, produces PATTERNS.md
-- gsd:gsd-planner — Creates detailed plans from phase scope
-- gsd:gsd-plan-checker — Reviews plan quality before execution
+- bm:gsd-phase-researcher — Researches technical approaches for a phase
+- bm:gsd-pattern-mapper — Analyzes codebase for existing patterns, produces PATTERNS.md
+- bm:gsd-planner — Creates detailed plans from phase scope
+- bm:gsd-plan-checker — Reviews plan quality before execution
 </available_agent_types>
 
 <runtime_compatibility>
@@ -515,7 +515,7 @@ Write to: {phase_dir}/{phase_num}-RESEARCH.md
 ```
 Agent(
   prompt=research_prompt,
-  subagent_type="gsd:gsd-phase-researcher",
+  subagent_type="bm:gsd-phase-researcher",
   model="{researcher_model}",
   description="Research Phase {phase}"
 )
@@ -828,7 +828,7 @@ Spawn with:
 ```
 Agent(
   prompt="{above}",
-  subagent_type="gsd:gsd-pattern-mapper",
+  subagent_type="bm:gsd-pattern-mapper",
   model="{researcher_model}",
 )
 ```
@@ -968,7 +968,7 @@ Every task MUST include these fields — they are NOT optional:
 ```text
 Agent(
   prompt=filled_prompt,
-  subagent_type="gsd:gsd-planner",
+  subagent_type="bm:gsd-planner",
   model="{planner_model}",
   description="Plan Phase {phase}"
 )
@@ -1024,7 +1024,7 @@ Agent(
   Plan ID | Objective | Wave | Depends On | Requirements
 
   Return: ## OUTLINE COMPLETE with plan count.",
-  subagent_type="gsd:gsd-planner",
+  subagent_type="bm:gsd-planner",
   model="{planner_model}",
   description="Outline Phase {phase} (chunked)"
 )
@@ -1068,7 +1068,7 @@ For each plan entry extracted from `PLAN-OUTLINE.md`:
      Phase requirement IDs to cover in this plan: {plan_requirements}
 
      Return: ## PLAN COMPLETE with the plan ID.",
-     subagent_type="gsd:gsd-planner",
+     subagent_type="bm:gsd-planner",
      model="{planner_model}",
      description="Plan {plan_id} (chunked {k}/{N})"
    )
@@ -1224,7 +1224,7 @@ ${AGENT_SKILLS_CHECKER}
 ```
 Agent(
   prompt=checker_prompt,
-  subagent_type="gsd:gsd-plan-checker",
+  subagent_type="bm:gsd-plan-checker",
   model="{checker_model}",
   description="Verify Phase {phase} plans"
 )
@@ -1339,7 +1339,7 @@ Return what changed.
 ```
 Agent(
   prompt=revision_prompt,
-  subagent_type="gsd:gsd-planner",
+  subagent_type="bm:gsd-planner",
   model="{planner_model}",
   description="Revise Phase {phase} plans"
 )
@@ -1602,7 +1602,7 @@ After all plans are generated, committed, and the Requirements Coverage Gate (§
 ```bash
 POST_PLANNING_GAPS=$(gsd-sdk query config-get workflow.post_planning_gaps --default true 2>/dev/null || echo true)
 if [ "$POST_PLANNING_GAPS" = "true" ]; then
-  node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" gap-analysis --phase-dir "${PHASE_DIR}"
+  node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" gap-analysis --phase-dir "${PHASE_DIR}"
 fi
 ```
 

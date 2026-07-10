@@ -8,7 +8,7 @@ Verify threat mitigations for a completed phase. Confirm PLAN.md threat register
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-security-auditor — Verifies threat mitigation coverage
+- bm:gsd-security-auditor — Verifies threat mitigation coverage
 </available_agent_types>
 
 <process>
@@ -103,7 +103,7 @@ Agent(
     "<config>asvs_level: {SECURITY_ASVS}, block_on: {SECURITY_BLOCK_ON}</config>" +
     "<constraints>Never modify implementation files. Verify mitigations exist — do not scan for new threats. Escalate implementation gaps.</constraints>" +
     "${AGENT_SKILLS_AUDITOR}",
-  subagent_type="gsd:gsd-security-auditor",
+  subagent_type="bm:gsd-security-auditor",
   model="{AUDITOR_MODEL}",
   description="Verify threat mitigations for Phase {N}"
 )

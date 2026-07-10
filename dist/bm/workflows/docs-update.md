@@ -4,8 +4,8 @@ Generate, update, and verify all project documentation (known doc types and exis
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-doc-writer — Writes and updates project documentation files
-- gsd:gsd-doc-verifier — Verifies factual claims in docs against the live codebase
+- bm:gsd-doc-writer — Writes and updates project documentation files
+- bm:gsd-doc-verifier — Verifies factual claims in docs against the live codebase
 </available_agent_types>
 
 <process>
@@ -377,7 +377,7 @@ Spawn 3 parallel gsd-doc-writer agents for Wave 1 docs: README, ARCHITECTURE, CO
 
 ```
 Agent(
-  subagent_type="gsd:gsd-doc-writer",
+  subagent_type="bm:gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate README.md for target project",
@@ -399,7 +399,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd:gsd-doc-writer",
+  subagent_type="bm:gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate ARCHITECTURE.md for target project",
@@ -421,7 +421,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd:gsd-doc-writer",
+  subagent_type="bm:gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate CONFIGURATION.md for target project",
@@ -502,7 +502,7 @@ Spawn agents for all queued Wave 2 docs: GETTING-STARTED, DEVELOPMENT, TESTING, 
 
 ```
 Agent(
-  subagent_type="gsd:gsd-doc-writer",
+  subagent_type="bm:gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate GETTING-STARTED.md for target project",
@@ -528,7 +528,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd:gsd-doc-writer",
+  subagent_type="bm:gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate DEVELOPMENT.md for target project",
@@ -554,7 +554,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd:gsd-doc-writer",
+  subagent_type="bm:gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate TESTING.md for target project",
@@ -580,7 +580,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd:gsd-doc-writer",
+  subagent_type="bm:gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate API.md for target project",
@@ -606,7 +606,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd:gsd-doc-writer",
+  subagent_type="bm:gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate DEPLOYMENT.md for target project",
@@ -633,7 +633,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd:gsd-doc-writer",
+  subagent_type="bm:gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate CONTRIBUTING.md for target project",
@@ -722,7 +722,7 @@ Spawn a `gsd-doc-writer` agent with `run_in_background=true`:
 
 ```
 Agent(
-  subagent_type="gsd:gsd-doc-writer",
+  subagent_type="bm:gsd-doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate per-package README for {package_dir}",

@@ -605,7 +605,7 @@ Extract `branching_strategy`, `phase_branch_template`, `milestone_branch_templat
 
 Detect base branch:
 ```bash
-BASE_BRANCH=$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" base-branch)
+BASE_BRANCH=$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" base-branch)
 ```
 
 **If "none":** Skip to git_tag.

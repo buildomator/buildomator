@@ -94,7 +94,7 @@ Run on every mode. These emit only **CONVENTION**-tier findings (never BLOCKER/W
 
 Invoke the SAME shared module the mapper uses, scoped to the changed `files`, via Bash:
 ```bash
-ROOT="${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}"
+ROOT="${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}"
 node "$ROOT/bin/gsd-tools.cjs" verify conventions --check --files "<comma-separated-changed-files>"
 ```
 Parse the JSON `findings` array (each `{ tier: "CONVENTION", blocking: false, file, line, deviation, convention, fix }`) and emit them into REVIEW.md at the CONVENTION tier. Never-throws; on `{ "skipped": true }` emit nothing. The three rule packs run on `.cjs/.js/.mjs/.ts/.tsx` and **skip gracefully** on languages with no pack (D-05):

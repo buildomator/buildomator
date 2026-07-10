@@ -9,7 +9,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-codebase-mapper — Maps project structure and dependencies
+- bm:gsd-codebase-mapper — Maps project structure and dependencies
 </available_agent_types>
 
 <process>
@@ -133,7 +133,7 @@ Spawn a single `gsd-codebase-mapper` agent with the selected focus area:
 ```
 Agent(
   prompt="Scan this codebase with focus: {focus}. Write results to .planning/codebase/. Produce only: {document_list}",
-  subagent_type="gsd:gsd-codebase-mapper",
+  subagent_type="bm:gsd-codebase-mapper",
   model="{resolved_model}"
 )
 ```

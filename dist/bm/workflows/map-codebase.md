@@ -4,7 +4,7 @@ Orchestrate parallel codebase mapper agents to analyze the codebase and produce 
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-codebase-mapper — Maps project structure and dependencies
+- bm:gsd-codebase-mapper — Maps project structure and dependencies
 </available_agent_types>
 
 <philosophy>
@@ -125,7 +125,7 @@ Continue to spawn_agents.
 </step>
 
 <step name="spawn_agents">
-Spawn 4 parallel gsd-codebase-mapper agents using the Agent tool with `subagent_type="gsd:gsd-codebase-mapper"`, `model="{mapper_model}"`, and `run_in_background=true`.
+Spawn 4 parallel gsd-codebase-mapper agents using the Agent tool with `subagent_type="bm:gsd-codebase-mapper"`, `model="{mapper_model}"`, and `run_in_background=true`.
 
 **CRITICAL:** Use the dedicated `gsd-codebase-mapper` agent, NOT `Explore` or `browser_subagent`. The mapper agent writes documents directly.
 
@@ -133,7 +133,7 @@ Spawn 4 parallel gsd-codebase-mapper agents using the Agent tool with `subagent_
 
 ```text
 Agent(
-  subagent_type="gsd:gsd-codebase-mapper",
+  subagent_type="bm:gsd-codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase tech stack",
@@ -159,7 +159,7 @@ ${AGENT_SKILLS_MAPPER}"
 
 ```text
 Agent(
-  subagent_type="gsd:gsd-codebase-mapper",
+  subagent_type="bm:gsd-codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase architecture",
@@ -185,7 +185,7 @@ ${AGENT_SKILLS_MAPPER}"
 
 ```text
 Agent(
-  subagent_type="gsd:gsd-codebase-mapper",
+  subagent_type="bm:gsd-codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase conventions",
@@ -211,7 +211,7 @@ ${AGENT_SKILLS_MAPPER}"
 
 ```
 Agent(
-  subagent_type="gsd:gsd-codebase-mapper",
+  subagent_type="bm:gsd-codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase concerns",

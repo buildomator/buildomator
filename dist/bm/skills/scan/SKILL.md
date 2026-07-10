@@ -1,5 +1,5 @@
 ---
-name: gsd:scan
+name: bm:scan
 description: Rapid codebase assessment — lightweight alternative to /bm:map-codebase
 argument-hint: "[--focus tech|arch|quality|concerns|tech+arch] | --drift [--top N] [--fail-on-score N]"
 allowed-tools:

@@ -1,14 +1,14 @@
 'use strict';
 
 // Regression test for issue #14: workflow subagent spawns must use the
-// plugin-namespaced agent id (gsd:gsd-<name>), not the bare upstream form
+// plugin-namespaced agent id (bm:gsd-<name>), not the bare upstream form
 // (gsd-<name>).
 //
 // The plugin's plugin.json declares "name": "gsd", so Claude Code registers
-// every agent under the `gsd:` namespace (e.g. gsd:gsd-planner). Workflow
+// every agent under the `bm:` namespace (e.g. bm:gsd-planner). Workflow
 // bodies inherited from the npx install spawn agents by bare name
 // (subagent_type="gsd-planner"), which fails on a plugin install with
-// "Agent type 'gsd-planner' not found. Available: ... gsd:gsd-planner". The
+// "Agent type 'gsd-planner' not found. Available: ... bm:gsd-planner". The
 // orchestrator usually retries with the prefix, but every spawn eats a failed
 // attempt first and an unattended run can dead-end.
 //
@@ -37,8 +37,8 @@ function walk(dir) {
 const files = [...walk(path.join(ROOT, 'workflows')), ...walk(path.join(ROOT, 'skills')), ...walk(path.join(ROOT, 'agents'))];
 
 // ─── 1. No bare subagent_type="gsd-<name>" anywhere ──────────────────────────
-const bareSpawnRe = /subagent_type=["']gsd-[a-z][a-z-]*["']/;            // bare (no gsd: prefix)
-const nsSpawnRe = /subagent_type=["']gsd:gsd-[a-z][a-z-]*["']/;          // namespaced
+const bareSpawnRe = /subagent_type=["']gsd-[a-z][a-z-]*["']/;            // bare (no bm: prefix)
+const nsSpawnRe = /subagent_type=["']bm:gsd-[a-z][a-z-]*["']/;          // namespaced
 const bareSpawnOffenders = [];
 let nsSpawnCount = 0;
 for (const f of files) {
@@ -63,7 +63,7 @@ for (const f of walk(path.join(ROOT, 'workflows'))) {
     else if (inBlock && /^- gsd-[a-z]/.test(line)) bareProseOffenders.push(`${path.relative(ROOT, f)}: ${line.trim().slice(0, 60)}`);
   }
 }
-ok(`available_agent_types lists use gsd:gsd-* (offenders: ${bareProseOffenders.length})`, bareProseOffenders.length === 0);
+ok(`available_agent_types lists use bm:gsd-* (offenders: ${bareProseOffenders.length})`, bareProseOffenders.length === 0);
 if (bareProseOffenders.length) bareProseOffenders.slice(0, 10).forEach((o) => console.log('   ' + o));
 
 for (const [pass, label] of checks) console.log(`${pass ? 'PASS' : 'FAIL'}  ${label}`);

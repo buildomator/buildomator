@@ -1,5 +1,5 @@
 ---
-name: gsd:new-workspace
+name: bm:new-workspace
 description: Create an isolated workspace with repo copies and independent .planning/
 argument-hint: "--name <name> [--repos repo1,repo2] [--path /target] [--strategy worktree|clone] [--branch name] [--auto]"
 allowed-tools:

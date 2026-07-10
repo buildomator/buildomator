@@ -8,8 +8,8 @@ Generate a UI design contract (UI-SPEC.md) for frontend phases. Orchestrates gsd
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-ui-researcher — Researches UI/UX approaches
-- gsd:gsd-ui-checker — Reviews UI implementation quality
+- bm:gsd-ui-researcher — Researches UI/UX approaches
+- bm:gsd-ui-checker — Reviews UI implementation quality
 </available_agent_types>
 
 <process>
@@ -157,7 +157,7 @@ Omit null file paths from `<files_to_read>`.
 ```
 Agent(
   prompt=ui_research_prompt,
-  subagent_type="gsd:gsd-ui-researcher",
+  subagent_type="bm:gsd-ui-researcher",
   model="{UI_RESEARCHER_MODEL}",
   description="UI Design Contract Phase {N}"
 )
@@ -207,7 +207,7 @@ ui_safety_gate: {ui_safety_gate config value}
 ```
 Agent(
   prompt=ui_checker_prompt,
-  subagent_type="gsd:gsd-ui-checker",
+  subagent_type="bm:gsd-ui-checker",
   model="{UI_CHECKER_MODEL}",
   description="Verify UI-SPEC Phase {N}"
 )

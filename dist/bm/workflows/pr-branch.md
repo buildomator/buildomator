@@ -9,7 +9,7 @@ Parse `$ARGUMENTS` for target branch (default: `main`).
 
 ```bash
 CURRENT_BRANCH=$(git branch --show-current)
-TARGET=${1:-$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" base-branch)}
+TARGET=${1:-$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" base-branch)}
 ```
 
 Check preconditions:

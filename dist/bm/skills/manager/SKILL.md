@@ -1,5 +1,5 @@
 ---
-name: gsd:manager
+name: bm:manager
 description: Interactive command center for managing multiple phases from one terminal
 allowed-tools:
   - Read

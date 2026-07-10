@@ -1,5 +1,5 @@
 ---
-name: gsd:workstreams
+name: bm:workstreams
 description: Manage parallel workstreams — list, create, switch, status, progress, complete, and resume
 argument-hint: "[list|create|switch|status|progress|complete|resume] [args]"
 allowed-tools:

@@ -12,9 +12,9 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-project-researcher — Researches project-level technical decisions
-- gsd:gsd-research-synthesizer — Synthesizes findings from parallel research agents
-- gsd:gsd-roadmapper — Creates phased execution roadmaps
+- bm:gsd-project-researcher — Researches project-level technical decisions
+- bm:gsd-research-synthesizer — Synthesizes findings from parallel research agents
+- bm:gsd-roadmapper — Creates phased execution roadmaps
 </available_agent_types>
 
 <process>
@@ -310,7 +310,7 @@ ${AGENT_SKILLS_RESEARCHER}
 Write to: .planning/research/{FILE}
 Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/{FILE}
 </output>
-", subagent_type="gsd:gsd-project-researcher", model="{researcher_model}", description="{DIMENSION} research")
+", subagent_type="bm:gsd-project-researcher", model="{researcher_model}", description="{DIMENSION} research")
 ```
 
 **Dimension-specific fields:**
@@ -343,7 +343,7 @@ ${AGENT_SKILLS_SYNTHESIZER}
 Write to: .planning/research/SUMMARY.md
 Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/SUMMARY.md
 Commit after writing.
-", subagent_type="gsd:gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
+", subagent_type="bm:gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
@@ -471,7 +471,7 @@ Create roadmap for milestone v[X.Y]:
 
 Write files first, then return.
 </instructions>
-", subagent_type="gsd:gsd-roadmapper", model="{roadmapper_model}", description="Create roadmap")
+", subagent_type="bm:gsd-roadmapper", model="{roadmapper_model}", description="Create roadmap")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.

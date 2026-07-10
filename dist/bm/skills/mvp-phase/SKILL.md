@@ -1,5 +1,5 @@
 ---
-name: gsd:mvp-phase
+name: bm:mvp-phase
 description: Plan an MVP-mode phase — captures an "As a / I want to / So that" user story, runs SPIDR splitting, then delegates to plan-phase
 argument-hint: "<phase> [--force] [--text]"
 agent: gsd-planner

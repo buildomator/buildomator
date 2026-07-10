@@ -10,9 +10,9 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names, do not fall back to 'general-purpose'):
-- gsd:gsd-project-researcher, Researches project-level technical decisions
-- gsd:gsd-research-synthesizer, Synthesizes findings from parallel research agents
-- gsd:gsd-roadmapper, Creates phased execution roadmaps (accepts SPEC.md input when `mode: ddd`)
+- bm:gsd-project-researcher, Researches project-level technical decisions
+- bm:gsd-research-synthesizer, Synthesizes findings from parallel research agents
+- bm:gsd-roadmapper, Creates phased execution roadmaps (accepts SPEC.md input when `mode: ddd`)
 </available_agent_types>
 
 <process>

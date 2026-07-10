@@ -8,9 +8,11 @@
  * deterministic transform so the copy is a self-consistent bm plugin:
  *   - the manifest identity/branding fields (name gsd->bm, displayName/description
  *     -> Buildomator) plus the mcpServers key (gsd -> bm) are stamped;
- *   - command self-references /gsd:<skill> become /bm:<skill> in every text file;
- *   - the hook cache-fallback plugin segment is stamped to bm in the three files
- *     that carry it (hooks/hooks.json, hooks/run-bash-hook.cjs, bin/check-plugin-update.sh);
+ *   - every gsd: namespace prefix becomes bm: in every text file (slash commands,
+ *     agent refs, frontmatter names), sparing gsd:// URIs and the files in
+ *     COMMAND_REWRITE_EXCLUDE (mcp/server.cjs, CHANGELOG.md, the parity fixtures);
+ *   - the hook cache-fallback plugin segment is stamped to bm in every text file
+ *     except STAMP_EXCLUDE (the files that legitimately embed the gsd-form literal);
  *   - the version is single-sourced from .claude-plugin/plugin.json so every
  *     manifest site stays in lockstep.
  * Binary files and text files with no matching tokens are byte-identical copies.
@@ -57,12 +59,43 @@ function isTextFile(rel, buf) {
   if (TEXT_EXT.test(rel)) return true;
   return buf.length >= 2 && buf[0] === 0x23 && buf[1] === 0x21; // "#!"
 }
-// Files carrying the hook cache-fallback plugin segment. On top of the command-ref
-// rewrite they get the stampHookFallback pass so bm hooks fall back to the bm cache dir.
-const FALLBACK_STAMP_FILES = new Set([
-  'hooks/hooks.json',
-  'hooks/run-bash-hook.cjs',
-  'bin/check-plugin-update.sh',
+// stampHookFallback is applied to EVERY text file except these. It is idempotent
+// and a no-op on files without the cache/gsd-plugin/gsd literal, so broad
+// application is safe; the exclusions are the files that legitimately embed that
+// FROM literal and would be corrupted (or have their meaning inverted) by the
+// stamp. Every runtime carrier of the fallback therefore resolves to the bm cache
+// dir (D-08 extends D-04 beyond the former hooks-only 3-file allowlist).
+const STAMP_EXCLUDE = new Set([
+  // The transform itself and its unit tests hardcode the gsd-form FROM literal.
+  'bin/lib/bm-transform.cjs',
+  'tests/bm-transform.test.cjs',
+  'tests/build-bm-drift.test.cjs',
+  'tests/bm-parity.test.cjs',
+  // These carry the gsd-form cache literal as fixtures / expected values.
+  'tests/context-monitor-hook-event.test.cjs',
+  'tests/version-command.test.cjs',
+  // Its install tripwire plants a gsd decoy on purpose.
+  '.github/workflows/install-smoke.yml',
+  // Historical release entries mention cache/gsd-plugin/gsd; stamping would
+  // revisionist-rewrite shipped history, so the changelog is preserved verbatim (IN-01).
+  'CHANGELOG.md',
+]);
+
+// Files whose gsd: tokens must survive the command-ref rewrite. Each is excluded
+// for a documented reason; every other text file gets rewriteCommandRefs.
+const COMMAND_REWRITE_EXCLUDE = new Set([
+  // Its only gsd: tokens are MCP resource URIs, including the regex-escaped
+  // gsd:\/\/ at two match sites that the broadened gsd:(?!/) rewrite would flip.
+  // Skipping the rewrite here guarantees byte-identity (D-05) and loses nothing:
+  // server.cjs has no command/agent self-refs.
+  'mcp/server.cjs',
+  // ~89 historical /gsd: command mentions in shipped release notes; rewriting
+  // would revisionist-rewrite them, so the bm changelog preserves history (IN-01).
+  'CHANGELOG.md',
+  // Houses the census positive-control fixtures (/gsd:plan-phase, gsd:gsd-executor,
+  // the /gsd[:-] literal) that must stay intact in the dist/bm copy for parity
+  // consistency; without this exclusion the fixtures get flipped in the copy.
+  'tests/bm-parity.test.cjs',
 ]);
 
 /**
@@ -136,8 +169,9 @@ function generate(root, outDir) {
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     const buf = fs.readFileSync(src);
     if (isTextFile(rel, buf)) {
-      let text = rewriteCommandRefs(buf.toString('utf8'));
-      if (FALLBACK_STAMP_FILES.has(rel)) text = stampHookFallback(text);
+      let text = buf.toString('utf8');
+      if (!COMMAND_REWRITE_EXCLUDE.has(rel)) text = rewriteCommandRefs(text);
+      if (!STAMP_EXCLUDE.has(rel)) text = stampHookFallback(text);
       fs.writeFileSync(dest, text);
       // Preserve the source file mode (writeFileSync creates 0644 by default,
       // which would strip the executable bit from scripts and hooks).
@@ -255,5 +289,8 @@ function main() {
 }
 
 // Export pure helpers for tests; run main only when invoked directly.
-module.exports = { stampBmManifest, shouldExclude, rewriteCommandRefs, stampHookFallback, isTextFile };
+module.exports = {
+  stampBmManifest, shouldExclude, rewriteCommandRefs, stampHookFallback, isTextFile,
+  STAMP_EXCLUDE, COMMAND_REWRITE_EXCLUDE,
+};
 if (require.main === module) main();

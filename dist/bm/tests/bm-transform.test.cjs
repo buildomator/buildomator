@@ -3,7 +3,9 @@
 
 // Unit tests for bin/lib/bm-transform.cjs, the pure string helpers that make the
 // generated bm package self-consistent:
-//   rewriteCommandRefs  -- /bm:<skill> command self-refs become /bm:<skill>
+//   rewriteCommandRefs  -- every bm: namespace prefix (slash-commands, agent refs,
+//                          frontmatter names) becomes bm:, plus the /bm[:-] SDK
+//                          headless-sanitizer literal becomes /bm[:-]; gsd:// URIs spared
 //   stampHookFallback   -- the hook cache-fallback plugin segment becomes bm
 //
 // Zero-dep harness mirroring tests/build-bm-drift.test.cjs: node:assert, a bare
@@ -85,10 +87,6 @@ check('rewriteCommandRefs spares the cache path literal cache/gsd-plugin/gsd', (
   assert.strictEqual(rewriteCommandRefs('cache/gsd-plugin/gsd'), 'cache/gsd-plugin/gsd');
 });
 
-check('rewriteCommandRefs spares a bare gsd: with an identifier char before it', () => {
-  assert.strictEqual(rewriteCommandRefs('abcgsd:foo'), 'abcgsd:foo');
-});
-
 check('rewriteCommandRefs rewrites a /bm: path segment (plugin-owned artifact path)', () => {
   assert.strictEqual(
     rewriteCommandRefs('$HOME/.config/kilo/bm:local-patches'),
@@ -102,6 +100,50 @@ check('rewriteCommandRefs rewrites /bm: adjacent to an escaped newline', () => {
 
 check('rewriteCommandRefs is idempotent', () => {
   const once = rewriteCommandRefs('run /bm:plan-phase and /bm:capture');
+  assert.strictEqual(rewriteCommandRefs(once), once);
+});
+
+// ─── rewriteCommandRefs: broadened namespace scope (D-08) ────────────────────
+
+check('rewriteCommandRefs flips a subagent_type agent ref, sparing the dash name', () => {
+  assert.strictEqual(
+    rewriteCommandRefs('subagent_type=bm:gsd-executor'),
+    'subagent_type=bm:gsd-executor',
+  );
+});
+
+check('rewriteCommandRefs flips a type= agent ref', () => {
+  assert.strictEqual(rewriteCommandRefs('type: bm:gsd-planner'), 'type: bm:gsd-planner');
+});
+
+check('rewriteCommandRefs flips a frontmatter name: bm:<x>', () => {
+  assert.strictEqual(rewriteCommandRefs('name: bm:plan-phase'), 'name: bm:plan-phase');
+});
+
+check('rewriteCommandRefs flips the SDK regex token /bm:\\S+ so zero-leak holds', () => {
+  assert.strictEqual(rewriteCommandRefs('/bm:\\S+'), '/bm:\\S+');
+});
+
+check('rewriteCommandRefs spares gsd:// even without a leading slash (real URI)', () => {
+  assert.strictEqual(rewriteCommandRefs('gsd://config'), 'gsd://config');
+  assert.strictEqual(rewriteCommandRefs('uri: gsd://phase/3'), 'uri: gsd://phase/3');
+});
+
+// ─── rewriteCommandRefs: SDK headless-sanitizer literal (CR-02) ──────────────
+
+check('rewriteCommandRefs rewrites the /bm[:-] sanitizer literal to /bm[:-]', () => {
+  const out = rewriteCommandRefs('const RE = /\\n\\s*\\/bm[:-]\\S+/g;');
+  assert.ok(out.includes('/bm[:-]'), 'sanitizer literal must become /bm[:-]');
+  assert.ok(!out.includes('/bm[:-]'), 'no /bm[:-] literal may remain');
+});
+
+check('rewriteCommandRefs handles the /bm: command and the /bm[:-] literal together', () => {
+  const out = rewriteCommandRefs('run /bm:next; strip /bm[:-] lines');
+  assert.strictEqual(out, 'run /bm:next; strip /bm[:-] lines');
+});
+
+check('rewriteCommandRefs is idempotent across the broadened scope', () => {
+  const once = rewriteCommandRefs('subagent_type=bm:gsd-executor and /bm:next and /bm[:-]');
   assert.strictEqual(rewriteCommandRefs(once), once);
 });
 
