@@ -8,7 +8,7 @@ Retroactive 6-pillar visual audit of implemented frontend code. Standalone comma
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-ui-auditor — Audits UI against design requirements
+- bm:gsd-ui-auditor — Audits UI against design requirements
 </available_agent_types>
 
 <process>
@@ -102,7 +102,7 @@ Omit null file paths.
 ```
 Agent(
   prompt=ui_audit_prompt,
-  subagent_type="gsd:gsd-ui-auditor",
+  subagent_type="bm:gsd-ui-auditor",
   model="{UI_AUDITOR_MODEL}",
   description="UI Audit Phase {N}"
 )

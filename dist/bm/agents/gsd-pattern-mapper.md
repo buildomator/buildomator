@@ -148,7 +148,7 @@ Derive the repo's actual conventions (majority-vote + entropy) and add them to P
 
 Run the shared deterministic module (the SAME one `gsd-code-reviewer` uses) via Bash:
 ```bash
-ROOT="${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}"
+ROOT="${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}"
 # --scope <dir> derives within a subtree (e.g. the new files' directory); omit for repo-wide.
 node "$ROOT/bin/gsd-tools.cjs" verify conventions --derive --scope <relevant-dir>
 ```

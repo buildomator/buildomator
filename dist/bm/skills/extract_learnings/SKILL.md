@@ -1,5 +1,5 @@
 ---
-name: gsd:extract-learnings
+name: bm:extract-learnings
 description: Extract decisions, lessons, patterns, and surprises from completed phase artifacts
 argument-hint: <phase-number>
 allowed-tools:

@@ -874,7 +874,7 @@ ls .planning/graphs/graph.json 2>/dev/null
 If graph.json exists, check freshness:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" graphify status
+node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" graphify status
 ```
 
 If the status response has `stale: true`, note for later: "Graph is {age_hours}h old -- treat semantic relationships as approximate." Include this annotation inline with any graph context injected below.
@@ -882,7 +882,7 @@ If the status response has `stale: true`, note for later: "Graph is {age_hours}h
 Query the graph for phase-relevant dependency context (single query per D-06):
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" graphify query "<phase-goal-keyword>" --budget 2000
+node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" graphify query "<phase-goal-keyword>" --budget 2000
 ```
 
 (graphify is not exposed on `gsd-sdk query` yet; use `gsd-tools.cjs` for graphify only.)

@@ -1,5 +1,5 @@
 ---
-name: gsd:code-review-fix
+name: bm:code-review-fix
 description: Auto-fix issues found by code review in REVIEW.md. Spawns fixer agent, commits each fix atomically, produces REVIEW-FIX.md summary.
 argument-hint: "<phase-number> [--all] [--auto]"
 allowed-tools:

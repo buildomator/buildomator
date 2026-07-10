@@ -12,7 +12,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-phase-researcher — Researches specific questions and returns concise findings
+- bm:gsd-phase-researcher — Researches specific questions and returns concise findings
 </available_agent_types>
 
 <process>
@@ -62,7 +62,7 @@ If yes, spawn a research agent:
 ```
 Agent(
   prompt="Quick research: {specific_question}. Return 3-5 key findings, no more than 200 words.",
-  subagent_type="gsd:gsd-phase-researcher"
+  subagent_type="bm:gsd-phase-researcher"
 )
 ```
 

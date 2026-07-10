@@ -1,5 +1,5 @@
 ---
-name: gsd:remove-phase
+name: bm:remove-phase
 description: Remove a future phase from roadmap and renumber subsequent phases
 argument-hint: <phase-number>
 allowed-tools:

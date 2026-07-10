@@ -8,7 +8,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-integration-checker — Checks cross-phase integration
+- bm:gsd-integration-checker — Checks cross-phase integration
 </available_agent_types>
 
 <process>
@@ -81,7 +81,7 @@ MUST map each integration finding to affected requirement IDs where applicable.
 
 Verify cross-phase wiring and E2E user flows.
 ${AGENT_SKILLS_CHECKER}",
-  subagent_type="gsd:gsd-integration-checker",
+  subagent_type="bm:gsd-integration-checker",
   model="{integration_checker_model}"
 )
 ```

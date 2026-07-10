@@ -69,7 +69,7 @@ const LINE_PATTERNS: RegExp[] = [
   /^.*@file:\S+.*$/gm,
 
   // /gsd-command references — entire line containing a skill command
-  /^.*\/gsd[:-]\S+.*$/gm,
+  /^.*\/bm[:-]\S+.*$/gm,
 
   // AskUserQuestion(...) calls — entire line
   /^.*AskUserQuestion\s*\(.*$/gm,

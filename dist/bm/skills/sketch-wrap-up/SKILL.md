@@ -1,5 +1,5 @@
 ---
-name: gsd:sketch-wrap-up
+name: bm:sketch-wrap-up
 description: Package sketch design findings into a persistent project skill for future build conversations
 allowed-tools:
   - Read

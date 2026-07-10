@@ -6,8 +6,8 @@ Systematic debugging (scientific method, subagent isolation): orchestrates sympt
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-debug-session-manager — manages debug checkpoint/continuation loop in isolated context
-- gsd:gsd-debugger — investigates bugs using scientific method
+- bm:gsd-debug-session-manager — manages debug checkpoint/continuation loop in isolated context
+- bm:gsd-debugger — investigates bugs using scientific method
 </available_agent_types>
 
 <process>
@@ -121,7 +121,7 @@ goal: find_and_fix
 specialist_dispatch_enabled: true
 </session_params>
 """,
-  subagent_type="gsd:gsd-debug-session-manager",
+  subagent_type="bm:gsd-debug-session-manager",
   model="{debugger_model}",
   description="Continue debug session {SLUG}"
 )
@@ -199,7 +199,7 @@ goal: {if diagnose_only: "find_root_cause_only", else: "find_and_fix"}
 specialist_dispatch_enabled: true
 </session_params>
 """,
-  subagent_type="gsd:gsd-debug-session-manager",
+  subagent_type="bm:gsd-debug-session-manager",
   model="{debugger_model}",
   description="Debug session {slug}"
 )

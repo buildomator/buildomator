@@ -1,5 +1,5 @@
 ---
-name: gsd:note
+name: bm:note
 description: Zero-friction idea capture. Append, list, or promote notes to todos.
 argument-hint: "<text> | list | promote <N> [--global]"
 allowed-tools:

@@ -1,5 +1,5 @@
 ---
-name: gsd:reapply-patches
+name: bm:reapply-patches
 description: Reapply local modifications after a GSD update
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
@@ -210,7 +210,7 @@ d. **If ALL differences appear to be mechanical drift → still flag as CONFLICT
 
 When the config directory is a git repo but the pristine install commit can't be found, use commit history to identify user changes:
 ```bash
-git -C "$CONFIG_DIR" log --oneline --no-merges -- "{file_path}" | grep -v "gsd:update\|GSD update\|gsd-install"
+git -C "$CONFIG_DIR" log --oneline --no-merges -- "{file_path}" | grep -v "bm:update\|GSD update\|gsd-install"
 ```
 Each matching commit is an intentional user modification. Use the messages and diffs to understand what changed and why.
 

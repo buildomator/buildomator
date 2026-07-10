@@ -1,5 +1,5 @@
 ---
-name: gsd:ui-phase
+name: bm:ui-phase
 description: Generate UI design contract (UI-SPEC.md) for frontend phases
 argument-hint: "[phase]"
 allowed-tools:

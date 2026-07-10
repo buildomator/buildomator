@@ -1,5 +1,5 @@
 ---
-name: gsd:spec-phase
+name: bm:spec-phase
 description: Socratic spec refinement — clarify WHAT a phase delivers with ambiguity scoring before discuss-phase. Produces a SPEC.md with falsifiable requirements locked before implementation decisions begin.
 argument-hint: "<phase> [--auto] [--text]"
 allowed-tools:

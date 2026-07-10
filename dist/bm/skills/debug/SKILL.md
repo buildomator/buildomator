@@ -1,5 +1,5 @@
 ---
-name: gsd:debug
+name: bm:debug
 description: Systematic debugging with persistent state across context resets
 argument-hint: [list | status <slug> | continue <slug> | --diagnose] [issue description]
 allowed-tools:
@@ -154,7 +154,7 @@ goal: find_and_fix
 specialist_dispatch_enabled: true
 </session_params>
 """,
-  subagent_type="gsd:gsd-debug-session-manager",
+  subagent_type="bm:gsd-debug-session-manager",
   model="{debugger_model}",
   description="Continue debug session {SLUG}"
 )
@@ -232,7 +232,7 @@ goal: {if diagnose_only: "find_root_cause_only", else: "find_and_fix"}
 specialist_dispatch_enabled: true
 </session_params>
 """,
-  subagent_type="gsd:gsd-debug-session-manager",
+  subagent_type="bm:gsd-debug-session-manager",
   model="{debugger_model}",
   description="Debug session {slug}"
 )

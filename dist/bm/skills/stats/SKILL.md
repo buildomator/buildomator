@@ -1,5 +1,5 @@
 ---
-name: gsd:stats
+name: bm:stats
 description: Display project statistics — phases, plans, requirements, git metrics, and timeline
 effort: low
 allowed-tools:

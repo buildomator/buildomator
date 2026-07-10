@@ -1,5 +1,5 @@
 ---
-name: gsd:ai-integration-phase
+name: bm:ai-integration-phase
 description: Generate AI design contract (AI-SPEC.md) for phases that involve building AI systems — framework selection, implementation guidance from official docs, and evaluation strategy
 argument-hint: "[phase number]"
 allowed-tools:

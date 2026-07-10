@@ -1,5 +1,5 @@
 ---
-name: gsd:join-discord
+name: bm:join-discord
 description: Join the GSD Discord community
 allowed-tools: []
 ---

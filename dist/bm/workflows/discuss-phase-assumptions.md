@@ -8,7 +8,7 @@ believe based on evidence, and ask the user only to correct what's wrong.
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-assumptions-analyzer — Analyzes codebase to surface implementation assumptions
+- bm:gsd-assumptions-analyzer — Analyzes codebase to surface implementation assumptions
 </available_agent_types>
 
 <downstream_awareness>
@@ -254,7 +254,7 @@ If no USER-PROFILE.md: calibration_tier = "standard"
 **Spawn Explore subagent:**
 
 ```
-Agent(subagent_type="gsd:gsd-assumptions-analyzer", prompt="""
+Agent(subagent_type="bm:gsd-assumptions-analyzer", prompt="""
 Analyze the codebase for Phase {PHASE}: {phase_name}.
 
 Phase goal: {roadmap_description}

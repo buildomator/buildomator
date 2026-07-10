@@ -114,7 +114,7 @@ function makeAnalysis(phases: RoadmapPhaseInfo[]): RoadmapAnalysis {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('GSD.run()', () => {
-  let gsd: GSD;
+  let bm: GSD;
   let mockRoadmapAnalyze: ReturnType<typeof vi.fn>;
   let events: GSDEvent[];
 

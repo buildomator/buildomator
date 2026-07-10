@@ -1,5 +1,5 @@
 ---
-name: gsd:profile-user
+name: bm:profile-user
 description: Generate developer behavioral profile and create Claude-discoverable artifacts
 argument-hint: "[--questionnaire] [--refresh]"
 allowed-tools:

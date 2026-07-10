@@ -1,5 +1,5 @@
 ---
-name: gsd:ultraplan-phase
+name: bm:ultraplan-phase
 description: "[BETA] Offload plan phase to Claude Code's ultraplan cloud — drafts remotely while terminal stays free, review in browser with inline comments, import back via /bm:import. Claude Code only."
 argument-hint: "[phase-number]"
 allowed-tools:

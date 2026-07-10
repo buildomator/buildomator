@@ -7,7 +7,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-- gsd:gsd-code-reviewer: Reviews source files for bugs and quality issues
+- bm:gsd-code-reviewer: Reviews source files for bugs and quality issues
 </available_agent_types>
 
 <ultracode_gate>
@@ -333,7 +333,7 @@ Exit workflow. Do NOT spawn agent or create REVIEW.md.
 <step name="structural_pre_pass">
 Optional structural cross-module pass powered by fallow.
 
-Note: the reviewer self-invokes the advisory convention checks for the changed-`files` set (D-04 standalone) via `node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" verify conventions --check --files ...`. No workflow pre-pass needed; CONVENTION-tier findings never block.
+Note: the reviewer self-invokes the advisory convention checks for the changed-`files` set (D-04 standalone) via `node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" verify conventions --check --files ...`. No workflow pre-pass needed; CONVENTION-tier findings never block.
 
 Read fallow config gates:
 ```bash
@@ -354,7 +354,7 @@ When `FALLOW_ENABLED=true`:
 1) Resolve binary via PATH first, then `node_modules/.bin/fallow`.
 ```bash
 FALLOW_BIN=$(FALLOW_CWD="$(pwd)" node -e "
-const { resolveFallowBinary } = require('${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/lib/fallow-runner.cjs');
+const { resolveFallowBinary } = require('${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}/bin/lib/fallow-runner.cjs');
 const resolved = resolveFallowBinary({ cwd: process.env.FALLOW_CWD });
 if (resolved) process.stdout.write(resolved);
 ")
@@ -455,7 +455,7 @@ fi
 Spawn the gsd-code-reviewer agent:
 
 ```
-Agent(subagent_type="gsd:gsd-code-reviewer", prompt="
+Agent(subagent_type="bm:gsd-code-reviewer", prompt="
 <files_to_read>
 ${FILES_TO_READ}
 </files_to_read>

@@ -5,7 +5,7 @@ after each fix, and commits atomically with finding IDs for traceability.
 </purpose>
 
 <available_agent_types>
-- gsd:gsd-executor — executes a specific, scoped code change
+- bm:gsd-executor — executes a specific, scoped code change
 </available_agent_types>
 
 <process>
@@ -97,7 +97,7 @@ For each **auto-fixable** finding (up to `--max`, ordered by severity desc):
 ```
 Agent(
   prompt="Fix finding {ID}: {description}. Files: {file_refs}. Make the minimal change to resolve this specific finding. Do not refactor surrounding code.",
-  subagent_type="gsd:gsd-executor"
+  subagent_type="bm:gsd-executor"
 )
 ```
 

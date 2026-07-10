@@ -3,7 +3,7 @@
  * Regression test for issue #3:
  * mcp/server.cjs must speak newline-delimited JSON over stdio (not LSP-style
  * Content-Length framing). If this test fails, claude mcp list will report
- * "gsd: ✗ Failed to connect" and the gsd_* MCP tools become unreachable.
+ * "bm: ✗ Failed to connect" and the gsd_* MCP tools become unreachable.
  */
 
 'use strict';

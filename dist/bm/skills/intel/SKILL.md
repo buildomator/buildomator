@@ -1,5 +1,5 @@
 ---
-name: gsd:intel
+name: bm:intel
 description: "Query, inspect, or refresh codebase intelligence files in .planning/intel/"
 argument-hint: "[query <term>|status|diff|refresh]"
 allowed-tools:

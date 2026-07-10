@@ -1,5 +1,5 @@
 ---
-name: gsd:undo
+name: bm:undo
 description: "Safe git revert. Roll back phase or plan commits using the phase manifest with dependency checks."
 argument-hint: "--last N | --phase NN | --plan NN-MM"
 allowed-tools:

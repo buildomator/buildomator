@@ -1,5 +1,5 @@
 ---
-name: gsd:cleanup
+name: bm:cleanup
 description: Archive accumulated phase directories from completed milestones
 allowed-tools:
   - Read

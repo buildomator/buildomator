@@ -1,5 +1,5 @@
 ---
-name: gsd:code-review
+name: bm:code-review
 description: Review source files changed during a phase for bugs, security issues, and code quality problems
 argument-hint: "<phase-number> [--depth=quick|standard|deep] [--files file1,file2,...]"
 allowed-tools:

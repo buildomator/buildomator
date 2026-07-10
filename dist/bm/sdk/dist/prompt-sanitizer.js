@@ -62,7 +62,7 @@ const LINE_PATTERNS = [
     // @file:path/to/something references (explicit @file: directive, not @~/...)
     /^.*@file:\S+.*$/gm,
     // /gsd-command references — entire line containing a skill command
-    /^.*\/gsd[:-]\S+.*$/gm,
+    /^.*\/bm[:-]\S+.*$/gm,
     // AskUserQuestion(...) calls — entire line
     /^.*AskUserQuestion\s*\(.*$/gm,
     // SlashCommand() calls — entire line

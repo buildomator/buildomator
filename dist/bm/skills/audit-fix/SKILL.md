@@ -1,6 +1,6 @@
 ---
 type: prompt
-name: gsd:audit-fix
+name: bm:audit-fix
 description: Autonomous audit-to-fix pipeline — find issues, classify, fix, test, commit
 argument-hint: "--source <audit-uat> [--severity <medium|high|all>] [--max N] [--dry-run]"
 allowed-tools:

@@ -23,8 +23,8 @@ function check(name, fn) {
 
 const SKILL = read('skills/version/SKILL.md');
 
-check('SKILL.md: gsd:version, Bash tool, effort: low', () => {
-  assert.ok(/^name:\s*gsd:version\s*$/m.test(SKILL), 'frontmatter name is not gsd:version');
+check('SKILL.md: bm:version, Bash tool, effort: low', () => {
+  assert.ok(/^name:\s*bm:version\s*$/m.test(SKILL), 'frontmatter name is not bm:version');
   assert.ok(/allowed-tools:/.test(SKILL) && /\bBash\b/.test(SKILL), 'Bash not in allowed-tools');
   assert.ok(/^effort:\s*low\s*$/m.test(SKILL), 'effort: low missing (cheap read-only report)');
 });

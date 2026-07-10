@@ -1296,7 +1296,7 @@ function _warnUnknownProfileOverrides(parsed, configLabel) {
       _warnedConfigKeys.add(key);
       try {
         process.stderr.write(
-          `gsd: warning — config key "runtime" has unknown value "${runtime}". ` +
+          `bm: warning — config key "runtime" has unknown value "${runtime}". ` +
           `Known runtimes: ${[...KNOWN_RUNTIMES].sort().join(', ')}. ` +
           `Resolution will fall back to safe defaults. (#2517)\n`
         );
@@ -1313,7 +1313,7 @@ function _warnUnknownProfileOverrides(parsed, configLabel) {
         _warnedConfigKeys.add(key);
         try {
           process.stderr.write(
-            `gsd: warning — model_profile_overrides.${overrideRuntime}.* uses ` +
+            `bm: warning — model_profile_overrides.${overrideRuntime}.* uses ` +
             `unknown runtime "${overrideRuntime}". Known runtimes: ` +
             `${[...KNOWN_RUNTIMES].sort().join(', ')}. (#2517)\n`
           );
@@ -1328,7 +1328,7 @@ function _warnUnknownProfileOverrides(parsed, configLabel) {
           _warnedConfigKeys.add(key);
           try {
             process.stderr.write(
-              `gsd: warning — model_profile_overrides.${overrideRuntime}.${tierName} ` +
+              `bm: warning — model_profile_overrides.${overrideRuntime}.${tierName} ` +
               `uses unknown tier "${tierName}". Allowed tiers: opus, sonnet, haiku. (#2517)\n`
             );
           } catch { /* ok */ }

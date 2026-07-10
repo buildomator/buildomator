@@ -18,12 +18,12 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-phase-researcher — Researches technical approaches for a phase
-- gsd:gsd-planner — Creates detailed plans from phase scope
-- gsd:gsd-plan-checker — Reviews plan quality before execution
-- gsd:gsd-executor — Executes plan tasks, commits, creates SUMMARY.md
-- gsd:gsd-verifier — Verifies phase completion, checks quality gates
-- gsd:gsd-code-reviewer — Reviews source files for bugs, security issues, and code quality
+- bm:gsd-phase-researcher — Researches technical approaches for a phase
+- bm:gsd-planner — Creates detailed plans from phase scope
+- bm:gsd-plan-checker — Reviews plan quality before execution
+- bm:gsd-executor — Executes plan tasks, commits, creates SUMMARY.md
+- bm:gsd-verifier — Verifies phase completion, checks quality gates
+- bm:gsd-code-reviewer — Reviews source files for bugs, security issues, and code quality
 </available_agent_types>
 
 <process>
@@ -162,7 +162,7 @@ compound on top of each other and stay unpushed (#2916). If `$branch_name`
 already exists locally, reuse it as-is so resumed work is not rebased.
 
 ```bash
-DEFAULT_BRANCH=$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" base-branch)
+DEFAULT_BRANCH=$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" base-branch)
 
 if git show-ref --verify --quiet "refs/heads/$branch_name"; then
   git switch "$branch_name" \
@@ -393,7 +393,7 @@ Use standard research format but keep it lean — skip sections that don't apply
 Return: ## RESEARCH COMPLETE with file path
 </output>
 ",
-  subagent_type="gsd:gsd-phase-researcher",
+  subagent_type="bm:gsd-phase-researcher",
   model="{planner_model}",
   description="Research: ${DESCRIPTION}"
 )
@@ -451,7 +451,7 @@ Write plan to: ${QUICK_DIR}/${quick_id}-PLAN.md
 Return: ## PLANNING COMPLETE with plan path
 </output>
 ",
-  subagent_type="gsd:gsd-planner",
+  subagent_type="bm:gsd-planner",
   model="{planner_model}",
   description="Quick plan: ${DESCRIPTION}"
 )
@@ -514,7 +514,7 @@ ${DISCUSS_MODE ? '- Context compliance: Does the plan honor locked decisions fro
 ```
 Agent(
   prompt=checker_prompt,
-  subagent_type="gsd:gsd-plan-checker",
+  subagent_type="bm:gsd-plan-checker",
   model="{checker_model}",
   description="Check quick plan: ${DESCRIPTION}"
 )
@@ -561,7 +561,7 @@ Return what changed.
 ```
 Agent(
   prompt=revision_prompt,
-  subagent_type="gsd:gsd-planner",
+  subagent_type="bm:gsd-planner",
   model="{planner_model}",
   description="Revise quick plan: ${DESCRIPTION}"
 )
@@ -712,7 +712,7 @@ SUMMARY.md and stop — the user must rerun with worktrees disabled.
 - Do NOT update ROADMAP.md (quick tasks are separate from planned phases)
 </constraints>
 ",
-  subagent_type="gsd:gsd-executor",
+  subagent_type="bm:gsd-executor",
   model="{executor_model}",
   ${USE_WORKTREES !== "false" ? 'isolation="worktree",' : ''}
   description="Execute: ${DESCRIPTION}"
@@ -897,7 +897,7 @@ Agent(
   Files: ${CHANGED_FILES}
   Output: ${QUICK_DIR}/${quick_id}-REVIEW.md
   Depth: quick",
-  subagent_type="gsd:gsd-code-reviewer",
+  subagent_type="bm:gsd-code-reviewer",
   model="{executor_model}"
 )
 ```
@@ -931,7 +931,7 @@ Task goal: ${DESCRIPTION}
 ${AGENT_SKILLS_VERIFIER}
 
 Check must_haves against actual codebase. Create VERIFICATION.md at ${QUICK_DIR}/${quick_id}-VERIFICATION.md.",
-  subagent_type="gsd:gsd-verifier",
+  subagent_type="bm:gsd-verifier",
   model="{verifier_model}",
   description="Verify: ${DESCRIPTION}"
 )

@@ -1,5 +1,5 @@
 ---
-name: gsd:set-profile
+name: bm:set-profile
 description: Switch model profile for GSD agents (quality/balanced/budget/inherit)
 argument-hint: <profile (quality|balanced|budget|inherit)>
 model: haiku

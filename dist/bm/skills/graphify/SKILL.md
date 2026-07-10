@@ -1,5 +1,5 @@
 ---
-name: gsd:graphify
+name: bm:graphify
 description: "Build, query, and inspect the project knowledge graph in .planning/graphs/"
 argument-hint: "[build|query <term>|status|diff]"
 allowed-tools:
@@ -125,7 +125,7 @@ If no snapshot exists, suggest running `build` twice (first to create, second to
 Run pre-flight check first:
 
 ```
-PREFLIGHT=$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" graphify build)
+PREFLIGHT=$(node "${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/bm/"*/ 2>/dev/null|sort -V|tail -1)}/bin/gsd-tools.cjs" graphify build)
 ```
 
 If pre-flight returns `disabled: true` or `error`, display the message and **STOP**.

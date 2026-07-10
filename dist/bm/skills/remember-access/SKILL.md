@@ -1,5 +1,5 @@
 ---
-name: gsd:remember-access
+name: bm:remember-access
 description: Capture or review how this project connects to external systems (GitHub, AWS, npm, SSH, etc.) so future sessions know the auth recipe. Auto-detection hook logs candidate captures to an inbox; this skill promotes them to permanent recipes in `.planning/AUTH-RECIPES.md` and optionally to user-global memory at `~/.claude/auth-recipes/`.
 argument-hint: "[--review] [<system-name>]"
 allowed-tools:

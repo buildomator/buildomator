@@ -1,5 +1,5 @@
 ---
-name: gsd:new-project
+name: bm:new-project
 description: Initialize a new project with deep context gathering and PROJECT.md
 argument-hint: "[--auto]"
 allowed-tools:

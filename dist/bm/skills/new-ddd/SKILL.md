@@ -1,5 +1,5 @@
 ---
-name: gsd:new-ddd
+name: bm:new-ddd
 description: Initialize a new project using Documentation-Driven Development. Research, then write user-facing docs (SPEC.md) as the spec, then user validates docs, then phases derive from doc sections. Best for CLIs, libraries, SDKs, APIs, plugin systems, anything with a well-defined user-facing surface.
 argument-hint: "[--auto]"
 allowed-tools:

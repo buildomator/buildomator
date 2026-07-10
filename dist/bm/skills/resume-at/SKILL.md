@@ -1,5 +1,5 @@
 ---
-name: gsd:resume-at
+name: bm:resume-at
 description: Schedule a future resume of work - e.g. '/bm:resume-at 09:00', '/bm:resume-at +2h', or '/bm:resume-at 04:00 --cmd /bm:execute-phase 9'
 argument-hint: "<HH:MM | ISO 8601 | +<duration>> [--cmd <command>]"
 allowed-tools:
@@ -21,7 +21,7 @@ Schedule a future Claude Code session that automatically resumes the current GSD
 > # if `gsd-resume-at` isn't on PATH:
 > $CLAUDE_PLUGIN_ROOT/bin/gsd-resume-at +3h
 > # or fully absolute:
-> ~/.claude/plugins/cache/gsd-plugin/gsd/<version>/bin/gsd-resume-at +3h
+> ~/.claude/plugins/cache/gsd-plugin/bm/<version>/bin/gsd-resume-at +3h
 > ```
 >
 > Pure shell — uses `nohup sleep` for an OS-level timer, no Claude tokens consumed. macOS only for v1; the script reports if you're on another platform. Does NOT survive a reboot — for durable cross-reboot scheduling, use this skill (`/bm:resume-at`) when tokens are available. The plugin's `Stop` hook surfaces this hint automatically when it detects a rate-limit message in the transcript.

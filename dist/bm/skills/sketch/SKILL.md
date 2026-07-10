@@ -1,5 +1,5 @@
 ---
-name: gsd:sketch
+name: bm:sketch
 description: Sketch UI/design ideas with throwaway HTML mockups, or propose what to sketch next (frontier mode)
 argument-hint: "[design idea to explore] [--quick] [--text] or [frontier]"
 allowed-tools:
