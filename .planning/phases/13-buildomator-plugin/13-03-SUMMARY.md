@@ -90,3 +90,8 @@ Task 1 followed RED -> GREEN: `test(13-03)` commit `c773f08` (5 cases failing ag
 ## Notes for Next Plan (13-04)
 
 The fail-closed census with a positive control, the test-race, and hygiene fixes remain for plan 13-04. The `COMMAND_REWRITE_EXCLUDE` and `STAMP_EXCLUDE` sets are now exported from `bin/build-bm.cjs` and can be imported by the census so it skips the same files (the plan already anticipated "the 13-04 census skips STAMP_EXCLUDE files").
+
+## Self-Check: PASSED
+
+- SUMMARY.md exists at `.planning/phases/13-buildomator-plugin/13-03-SUMMARY.md`.
+- All commits present: c773f08, 17566af, d715657, 140835a, 6cb263a.
