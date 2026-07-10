@@ -180,8 +180,8 @@ Plans:
 
 **Gap closure** *(from 13-REVIEW.md CR-01/CR-02/WR-01/WR-04 + D-08 namespace scope)*
 
-- [ ] 13-03-PLAN.md - broaden the namespace rewrite to gsd:(?!/) (69 agent refs + frontmatter names + slash commands), CR-01 broad hook-fallback stamp with shared STAMP_EXCLUDE, CR-02 sanitizer literal, mcp/server.cjs excluded from rewrite for D-05 byte-identity, regenerated dist/bm (BM-02, BM-03)
-- [ ] 13-04-PLAN.md - fail-closed census in bm-parity.test.cjs (positive control + real dist/bm scan), WR-01 BM_DIST_DIR test-race isolation, WR-04 install-smoke hygiene, regenerated dist/bm (BM-01, BM-02, BM-03)
+- [x] 13-03-PLAN.md - broaden the namespace rewrite to gsd:(?!/) (69 agent refs + frontmatter names + slash commands), CR-01 broad hook-fallback stamp with shared STAMP_EXCLUDE, CR-02 sanitizer literal, mcp/server.cjs excluded from rewrite for D-05 byte-identity, regenerated dist/bm (BM-02, BM-03)
+- [x] 13-04-PLAN.md - fail-closed census in bm-parity.test.cjs (positive control + real dist/bm scan), WR-01 BM_DIST_DIR test-race isolation, WR-04 install-smoke hygiene, regenerated dist/bm (BM-01, BM-02, BM-03)
 
 ### Phase 14: Backward Compatibility and Coexistence
 
@@ -233,6 +233,6 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 12. Two-Plugin Build Foundation | 2/2 | Complete    | 2026-07-04 |
-| 13. Buildomator Plugin | 2/2 | Complete   | 2026-07-06 |
+| 13. Buildomator Plugin | 4/4 | Complete   | 2026-07-10 |
 | 14. Backward Compatibility and Coexistence | 0/? | Not started | - |
 | 15. Buildomator Identity and Communications | 0/? | Not started | - |
