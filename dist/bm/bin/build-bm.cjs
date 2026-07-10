@@ -33,6 +33,12 @@
  *   node bin/build-bm.cjs --check    regenerate into a temp dir and diff against
  *                                    the committed dist/bm; exit 1 on any drift
  *
+ * BM_DIST_DIR overrides the target tree for BOTH the build output and the --check
+ * diff target, so an integration test can build into and diff against an isolated
+ * copy and never mutate the committed dist/bm. An overridden build also skips the
+ * root marketplace version sync (it must not touch shared repo files); a real
+ * build (no override) writes dist/bm and syncs the marketplace versions.
+ *
  * Exit codes (maintenance-script convention):
  *   0 - build succeeded, or --check found no drift
  *   1 - --check found drift (committed dist/bm differs from a fresh build)
@@ -232,9 +238,14 @@ function listFiles(dir) {
  * missing / extra / differing relative path. Exit 1 on any difference, else 0.
  * Additionally flags a marketplace entry whose version differs from plugin.json,
  * since check mode does not rewrite it.
+ *
+ * The diff target defaults to <root>/dist/bm but is overridable via BM_DIST_DIR
+ * so an integration test can point --check at an isolated copy and tamper it
+ * without ever mutating the shared committed tree. generate() always writes to
+ * its own fresh temp; only the comparison target moves.
  */
 function check(root) {
-  const committed = path.join(root, 'dist', 'bm');
+  const committed = process.env.BM_DIST_DIR || path.join(root, 'dist', 'bm');
   if (!fs.existsSync(committed)) {
     console.error('drift: committed dist/bm does not exist (run node bin/build-bm.cjs).');
     return 1;
@@ -283,9 +294,12 @@ function main() {
   if (process.argv.includes('--check')) {
     process.exit(check(root));
   }
-  const version = generate(root, path.join(root, 'dist', 'bm'));
-  const changed = syncMarketplaceVersions(root, version);
-  console.log(`built dist/bm (version ${version})${changed ? '; synced marketplace versions' : ''}.`);
+  const outDir = process.env.BM_DIST_DIR || path.join(root, 'dist', 'bm');
+  const version = generate(root, outDir);
+  // Only sync the shared root marketplace for a real build of the committed
+  // tree; an overridden (isolated) build must not mutate shared repo files.
+  const changed = process.env.BM_DIST_DIR ? false : syncMarketplaceVersions(root, version);
+  console.log(`built ${outDir} (version ${version})${changed ? '; synced marketplace versions' : ''}.`);
 }
 
 // Export pure helpers for tests; run main only when invoked directly.

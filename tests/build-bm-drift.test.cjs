@@ -15,12 +15,20 @@
 
 const assert = require('node:assert');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT = path.join(ROOT, 'dist', 'bm');
 const SCRIPT = path.join(ROOT, 'bin', 'build-bm.cjs');
+
+// This suite tests the build MECHANISM against an isolated tree, never the
+// committed dist/bm, so a concurrent reader of the committed tree
+// (tests/bm-parity.test.cjs) can never observe a half-written or rm'd tree.
+// Every runBuild() and every OUT inspection below is routed here via BM_DIST_DIR;
+// the committed-artifact drift gate lives in tests/bm-parity.test.cjs (its
+// --check case), which reads the committed tree this suite leaves untouched.
+const OUT = fs.mkdtempSync(path.join(os.tmpdir(), 'bm-drift-'));
 
 const {
   stampBmManifest, shouldExclude, rewriteCommandRefs, stampHookFallback, isTextFile,
@@ -45,7 +53,9 @@ function check(name, fn) {
 }
 
 function runBuild(args) {
-  return spawnSync('node', [SCRIPT, ...(args || [])], { cwd: ROOT, encoding: 'utf8' });
+  return spawnSync('node', [SCRIPT, ...(args || [])], {
+    cwd: ROOT, encoding: 'utf8', env: { ...process.env, BM_DIST_DIR: OUT },
+  });
 }
 
 function readJson(p) {
@@ -282,6 +292,8 @@ check('--check exits 0 immediately after a build', () => {
 });
 
 check('--check exits 1 and names the path after tampering, rebuild restores 0', () => {
+  // OUT is the isolated BM_DIST_DIR tree, so tampering and rebuilding here never
+  // touches the committed dist/bm and never races tests/bm-parity.test.cjs.
   runBuild();
   const victim = path.join(OUT, '.claude-plugin', 'plugin.json');
   fs.appendFileSync(victim, ' ');
@@ -295,6 +307,8 @@ check('--check exits 1 and names the path after tampering, rebuild restores 0', 
 });
 
 // ─── footer ──────────────────────────────────────────────────────────────────
+
+fs.rmSync(OUT, { recursive: true, force: true });
 
 if (failures > 0) {
   console.error(`\n${failures} test(s) failed`);
