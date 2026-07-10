@@ -110,11 +110,10 @@ jobs:
 
   bm-package-smoke:
     name: bm package resolves via its own CLAUDE_PLUGIN_ROOT (BUILD-03)
-    # Proves the committed dist/bm package (from plan 12-01) resolves its own
-    # SDK and hooks entirely via ${CLAUDE_PLUGIN_ROOT}=dist/bm, while the
-    # repo/cache identity stays gsd-plugin (D-10/D-11/D-12). Same fresh
-    # debian:trixie container and prereqs as the gsd job above, which is left
-    # byte-untouched.
+    # Proves the committed dist/bm package resolves its own SDK and hooks
+    # entirely via ${CLAUDE_PLUGIN_ROOT}=dist/bm, while the repo/cache identity
+    # stays gsd-plugin (D-10/D-11/D-12). Same fresh debian:trixie container and
+    # prereqs as the gsd job above, which is left byte-untouched.
     runs-on: ubuntu-latest
     container:
       image: debian:trixie
