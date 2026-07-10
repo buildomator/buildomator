@@ -26,7 +26,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { execFileSync } = require('node:child_process');
 
-const { shouldExclude } = require('../bin/build-bm.cjs');
+const { shouldExclude, COMMAND_REWRITE_EXCLUDE } = require('../bin/build-bm.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, 'dist', 'bm');
@@ -65,18 +65,25 @@ check('every tracked non-excluded source file exists at the same path in dist/bm
 
 // ─── zero-leak scan ────────────────────────────────────────────────────────
 
-check('no /gsd: command token leaks into dist/bm', () => {
+check('no /gsd: command token leaks into dist/bm outside COMMAND_REWRITE_EXCLUDE', () => {
   // A leaking /gsd: token would send a bm-only user into the sibling plugin.
   // grep exits 1 (and prints nothing) when there is no match, which is the pass
-  // case; a non-empty list is the failure. If a genuine cross-plugin reference
-  // is ever intentional, it would need an explicit allowlist carved out here.
-  let leaks = '';
+  // case; a non-empty list is the failure. The build's COMMAND_REWRITE_EXCLUDE
+  // files keep /gsd: on purpose (CHANGELOG.md preserves shipped history per IN-01,
+  // the parity positive-control fixtures below, and mcp/server.cjs URIs), so they
+  // are the explicit allowlist and are dropped from the leak set.
+  let raw = '';
   try {
-    leaks = execFileSync('grep', ['-rIl', '/gsd:', OUT], { encoding: 'utf8' }).trim();
+    raw = execFileSync('grep', ['-rIl', '/gsd:', OUT], { encoding: 'utf8' }).trim();
   } catch (e) {
-    if (e.status === 1) leaks = ''; // no match: clean
+    if (e.status === 1) raw = ''; // no match: clean
     else throw e;
   }
+  const leaks = raw
+    .split('\n')
+    .filter(Boolean)
+    .filter((abs) => !COMMAND_REWRITE_EXCLUDE.has(path.relative(OUT, abs)))
+    .join('\n');
   assert.strictEqual(leaks, '', `un-rewritten /gsd: refs leaked into dist/bm:\n${leaks}`);
 });
 
