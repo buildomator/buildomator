@@ -200,8 +200,8 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 14-01-PLAN.md - COMPAT-03: export the state.cjs lock helpers, route the HANDOFF.json write through them, interleaved-write coexistence test
-- [ ] 14-02-PLAN.md - COMPAT-01/02: bin/lib/coexist.cjs identity election + per-session bm-active marker (+ ensureGsdTempDir export), unit test
+- [x] 14-01-PLAN.md - COMPAT-03: export the state.cjs lock helpers, route the HANDOFF.json write through them, interleaved-write coexistence test
+- [x] 14-02-PLAN.md - COMPAT-01/02: bin/lib/coexist.cjs identity election + per-session bm-active marker (+ ensureGsdTempDir export), unit test
 
 **Wave 2** *(blocked on 14-02)*
 
@@ -252,5 +252,5 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 |-------|----------------|--------|-----------|
 | 12. Two-Plugin Build Foundation | 2/2 | Complete    | 2026-07-04 |
 | 13. Buildomator Plugin | 4/4 | Complete   | 2026-07-10 |
-| 14. Backward Compatibility and Coexistence | 0/? | Not started | - |
+| 14. Backward Compatibility and Coexistence | 2/5 | In Progress|  |
 | 15. Buildomator Identity and Communications | 0/? | Not started | - |
