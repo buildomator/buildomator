@@ -237,6 +237,8 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 - **BEHAVIOR-01** — integration tests detect semantic regressions in upstream skills that keep the same name but change behavior (needs integration-test infra)
 - **UPST-03** — upstream-PR packaging (blocked on reassessment: is upstream still the right destination given their 1.34→1.38.x trajectory?)
 - **UPST-04** — PR-ready diff preparation for upstream submission (blocked on UPST-03)
+- **COMPAT-05** — `pluginIdentity` in `bin/lib/coexist.cjs` only matches `/bm/bin/` in its fallback clause, so an off-cache bm deployment under `/bm/hooks/` misidentifies as `gsd` and its bash hooks wrongly yield. Shipped marketplace-cache install path resolves correctly (why CI passes); fix the heuristic to cover `/bm/hooks/` and add a smoke that exercises non-standard deployment paths. Parked from Phase 14 verification (minor, non-blocking).
+- **COMPAT-06** — SessionStart single-fire has a first-event TOCTOU window (accepted trade-off D-03): both plugin copies can each run SessionStart once before bm's marker lands, so non-idempotent session-start work (context injection, autoMigrate) may double-run on the very first event of a both-active session. Bounded and tested; close the residual window if a marker-free election becomes feasible. Parked from Phase 14 verification (minor, non-blocking).
 
 ## Progress
 
@@ -252,5 +254,5 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 |-------|----------------|--------|-----------|
 | 12. Two-Plugin Build Foundation | 2/2 | Complete    | 2026-07-04 |
 | 13. Buildomator Plugin | 4/4 | Complete   | 2026-07-10 |
-| 14. Backward Compatibility and Coexistence | 5/5 | Complete   | 2026-07-11 |
+| 14. Backward Compatibility and Coexistence | 5/5 | Complete    | 2026-07-11 |
 | 15. Buildomator Identity and Communications | 0/? | Not started | - |

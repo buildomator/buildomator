@@ -22,10 +22,10 @@ command surface additively, keeping `/gsd:*` fully working through the 4.x line.
 
 ### Backward Compatibility
 
-- [ ] **COMPAT-01**: `/gsd:*` continues to work with zero re-enable for existing users throughout the 4.x line
-- [ ] **COMPAT-02**: With both `gsd` and `bm` plugins enabled, hooks fire exactly once (no double PostToolUse checkpoint, validate-commit, or session-state)
-- [ ] **COMPAT-03**: With both plugins enabled, project state is consistent and not corrupted by a second MCP server / duplicate writers
-- [ ] **COMPAT-04**: `/gsd:*` surfaces a deprecation nudge pointing users to `/bm:`, without blocking the command
+- [x] **COMPAT-01**: `/gsd:*` continues to work with zero re-enable for existing users throughout the 4.x line
+- [x] **COMPAT-02**: With both `gsd` and `bm` plugins enabled, hooks fire exactly once (no double PostToolUse checkpoint, validate-commit, or session-state)
+- [x] **COMPAT-03**: With both plugins enabled, project state is consistent and not corrupted by a second MCP server / duplicate writers
+- [x] **COMPAT-04**: `/gsd:*` surfaces a deprecation nudge pointing users to `/bm:`, without blocking the command
 
 ### Build & Release
 
@@ -64,10 +64,10 @@ Which phases cover which requirements. Filled during roadmap creation.
 | BM-01 | Phase 13 | Pending |
 | BM-02 | Phase 13 | Pending |
 | BM-03 | Phase 13 | Pending |
-| COMPAT-01 | Phase 14 | Pending |
-| COMPAT-02 | Phase 14 | Pending |
-| COMPAT-03 | Phase 14 | Pending |
-| COMPAT-04 | Phase 14 | Pending |
+| COMPAT-01 | Phase 14 | Complete |
+| COMPAT-02 | Phase 14 | Complete |
+| COMPAT-03 | Phase 14 | Complete |
+| COMPAT-04 | Phase 14 | Complete |
 | BUILD-01 | Phase 12 | Complete |
 | BUILD-02 | Phase 12 | Complete |
 | BUILD-03 | Phase 12 | Complete |
