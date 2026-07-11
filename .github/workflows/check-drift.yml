@@ -145,3 +145,25 @@ jobs:
         run: node bin/validate-plugin.cjs dist/bm/.claude-plugin/plugin.json
       - name: Verify all version sites agree (BUILD-02)
         run: node bin/maintenance/check-version-alignment.cjs
+
+  bm-coexistence:
+    name: gsd + bm coexistence gates (COMPAT-01..04)
+    # Gates the four coexistence tests so a regression in single-fire election,
+    # HANDOFF write-locking, or nudge suppression blocks the release. Same
+    # zero-dep preamble as bm-build-drift: checkout@v4 gives git for the tests
+    # that spawn child processes against a temp checkout, and no npm ci is needed
+    # (every test is Node built-ins only).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Election + marker lifecycle spec (COMPAT-01/COMPAT-02)
+        run: node tests/coexist.test.cjs
+      - name: Both-active single fire across both dispatch points (COMPAT-01/COMPAT-02)
+        run: node tests/hook-single-fire.test.cjs
+      - name: Interleaved HANDOFF/STATE write-lock coverage (COMPAT-03)
+        run: node tests/handoff-write-lock.test.cjs
+      - name: gsd emits the nudge, bm suppresses it (COMPAT-04)
+        run: node tests/nudge-emission.test.cjs
