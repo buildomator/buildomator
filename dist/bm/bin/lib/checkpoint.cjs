@@ -20,14 +20,13 @@ const path = require('path');
 
 const {
   planningPaths,
-  safeReadFile,
   execGit,
   findPhaseInternal,
   output,
 } = require('./core.cjs');
 const { extractFrontmatter } = require('./frontmatter.cjs');
 const { acquireStateLock, releaseStateLock } = require('./state.cjs');
-const { platformWriteSync } = require('./shell-command-projection.cjs');
+const { platformReadSync: safeReadFile, platformWriteSync } = require('./shell-command-projection.cjs');
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

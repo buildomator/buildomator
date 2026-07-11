@@ -1258,12 +1258,36 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
 
     case 'hook': {
       const hookType = args[1];
+
+      // Coexistence election: when both the gsd and bm hook copies are enabled
+      // at once, a per-session bm marker makes the gsd copy yield so each merged
+      // hook fires exactly once. Read the hook stdin a single time (fd 0 drains
+      // only once) and share both it and the election decision with every branch.
+      // A single-plugin session has no marker, so shouldYield stays false and the
+      // behavior is byte-identical to today.
+      const { pluginIdentity, markBmActive, shouldYield } = require('./lib/coexist.cjs');
+      const hookIdentity = pluginIdentity(__filename);
+      let hookStdin = '';
+      try { hookStdin = fs.readFileSync(0, 'utf-8'); } catch { /* stdin may be unavailable */ }
+      let hookPayload = {};
+      try { if (hookStdin) hookPayload = JSON.parse(hookStdin); } catch { /* not JSON */ }
+      const hookSessionId = hookPayload && hookPayload.session_id;
+      // bm self-announces so the gsd copy can yield; the gsd copy never marks.
+      if (hookIdentity === 'bm') markBmActive(hookSessionId);
+
       if (hookType === 'session-start') {
-        let hookInput = {};
-        try {
-          const stdinData = fs.readFileSync(0, 'utf-8');
-          if (stdinData) hookInput = JSON.parse(stdinData);
-        } catch { /* stdin may not be available or parseable */ }
+        const hookInput = hookPayload;
+        // BM-NUDGE-START
+        if (hookIdentity === 'gsd') {
+          process.stdout.write(
+            '\nGSD: the /bm: command prefix is being renamed to /bm: (Buildomator). ' +
+            'Both prefixes work throughout the 4.x line; /bm: retires at v5.0.\n'
+          );
+        }
+        // BM-NUDGE-END
+        // The nudge above is emitted before the yield so a both-active gsd
+        // session still surfaces it even when it hands the stateful work to bm.
+        if (shouldYield(hookIdentity, hookSessionId)) break;
 
         try {
           const migrationPath = path.join(__dirname, '..', 'migrations', 'legacy-cleanup.cjs');
@@ -1332,15 +1356,20 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
           }
         }
       } else if (hookType === 'pre-compact') {
+        if (shouldYield(hookIdentity, hookSessionId)) break;
         try {
           const checkpoint = require('./lib/checkpoint.cjs');
-          try { fs.readFileSync(0, 'utf-8'); } catch { /* stdin may not be available */ }
           checkpoint.writeCheckpoint(cwd, { source: 'auto-compact', partial: false });
           process.stderr.write('GSD: checkpoint saved to .planning/HANDOFF.json\n');
         } catch (err) {
           process.stderr.write('GSD: checkpoint save failed: ' + (err && err.message ? err.message : 'unknown error') + '\n');
         }
       } else if (hookType === 'stop') {
+        // Elected for uniformity: this branch only reads the transcript for a
+        // rate-limit nudge and mutates no shared state, so yielding is benign,
+        // but running the election here keeps "every merged hook is elected"
+        // literally true at this single dispatch point.
+        if (shouldYield(hookIdentity, hookSessionId)) break;
         // Rate-limit fallback nudge.
         // Claude Code renders its "You've hit your limit" message before any plugin
         // code can run, so we can't inject into that line. Best-effort detection:
@@ -1348,12 +1377,7 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
         // `gsd-resume-at` shell wrapper) so the next invocation is one paste away.
         // Silent on no match. Never blocks Stop dispatch — exits 0 always.
         try {
-          let payload = {};
-          try {
-            const stdinData = fs.readFileSync(0, 'utf-8');
-            if (stdinData) payload = JSON.parse(stdinData);
-          } catch { /* stdin missing or unparseable — skip */ }
-
+          const payload = hookPayload;
           const transcriptPath = payload && payload.transcript_path;
           if (transcriptPath && fs.existsSync(transcriptPath)) {
             // Read last ~8KB. Transcripts are JSONL — tailing bytes is enough
@@ -1391,6 +1415,7 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
           // Best effort — never break Stop dispatch.
         }
       } else if (hookType === 'post-tool-use') {
+        if (shouldYield(hookIdentity, hookSessionId)) break;
         // Periodic checkpoint to bridge the microcompact gap.
         // CC's microcompact (services/compact/microCompact.ts) silently strips stale
         // tool outputs without firing PreCompact. This handler writes a fresh
@@ -1404,8 +1429,6 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
         try {
           const { planningPaths } = require('./lib/core.cjs');
           const checkpoint = require('./lib/checkpoint.cjs');
-          // Drain stdin to keep the hook pipeline unblocked; content is unused
-          try { fs.readFileSync(0, 'utf-8'); } catch { /* stdin may not be available */ }
           const handoffPath = path.join(planningPaths(cwd).planning, 'HANDOFF.json');
           const COOLDOWN_MS = 60_000;
           let shouldWrite = true;
