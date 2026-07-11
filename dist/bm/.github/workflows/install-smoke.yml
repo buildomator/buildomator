@@ -193,6 +193,42 @@ jobs:
           echo "$err" | grep -q "FALLBACK-FIRED" && { echo "FAIL: hook fell back to a cache tripwire (gsd or bm)"; exit 1; }
           echo "OK: bm hook resolved via the primary CLAUDE_PLUGIN_ROOT path; neither the gsd nor the bm fallback tripwire fired"
 
+      - name: bm Test - both-plugins single fire at the package level (gsd yields under a bm-active marker)
+        run: |
+          set -e
+          # Package-level proof of COMPAT-01/02: with both plugins enabled, the
+          # gsd copy must yield its PostToolUse HANDOFF.json write when bm has
+          # announced itself for the session. A no-marker control run proves the
+          # smoke is not a false pass (the gsd copy DOES write with no marker).
+          SID="PKGSMOKE1"
+          COEXIST="$GITHUB_WORKSPACE/bin/lib/coexist.cjs"
+
+          # Clear any stale marker from a prior job in the shared temp dir.
+          node -e "const c=require('$GITHUB_WORKSPACE/bin/lib/core.cjs');const fs=require('fs');try{fs.unlinkSync(c.GSD_TEMP_DIR+'/bm-active-$SID.marker')}catch{}"
+
+          # Synthetic project with a non-trivial STATE.md so the checkpoint is not
+          # skipped by the trivial-write guard (phase/task must be present).
+          mkdir -p /tmp/bm-coexist-project && cd /tmp/bm-coexist-project
+          git init -q
+          mkdir -p .planning
+          printf -- '- **Phase:** 14 - coexistence\n- **Task:** 1\n- **Status:** In progress\n' > .planning/STATE.md
+
+          # Control: no marker -> the gsd copy writes HANDOFF.json.
+          rm -f .planning/HANDOFF.json
+          echo '{"session_id":"'"$SID"'"}' | node "$GITHUB_WORKSPACE/bin/gsd-tools.cjs" hook post-tool-use
+          test -f .planning/HANDOFF.json || { echo "FAIL: control run wrote no HANDOFF.json (smoke would be a false pass)"; exit 1; }
+          echo "OK control: gsd copy wrote HANDOFF.json with no bm marker"
+
+          # Yield: plant a bm-active marker, then the gsd copy must NOT re-write.
+          rm -f .planning/HANDOFF.json
+          node -e "require('$COEXIST').markBmActive('$SID')"
+          echo '{"session_id":"'"$SID"'"}' | node "$GITHUB_WORKSPACE/bin/gsd-tools.cjs" hook post-tool-use
+          if [ -f .planning/HANDOFF.json ]; then echo "FAIL: gsd copy wrote HANDOFF.json despite the bm-active marker (did not yield)"; exit 1; fi
+          echo "OK yield: gsd copy yielded (no HANDOFF.json) with the bm-active marker present"
+
+          # Leave the shared temp dir clean.
+          node -e "const c=require('$GITHUB_WORKSPACE/bin/lib/core.cjs');const fs=require('fs');try{fs.unlinkSync(c.GSD_TEMP_DIR+'/bm-active-$SID.marker')}catch{}"
+
       - name: bm Test - cache-id invariant (marketplace name still gsd-plugin, bm source ./dist/bm)
         run: |
           set -e
