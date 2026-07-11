@@ -26,6 +26,7 @@ const {
   output,
 } = require('./core.cjs');
 const { extractFrontmatter } = require('./frontmatter.cjs');
+const { acquireStateLock, releaseStateLock } = require('./state.cjs');
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -395,7 +396,15 @@ function writeCheckpoint(cwd, options = {}) {
     }
 
     const outPath = path.join(planningDirPath, 'HANDOFF.json');
-    fs.writeFileSync(outPath, JSON.stringify(data, null, 2) + '\n', 'utf-8');
+    // Serialize concurrent writers (e.g. two enabled plugins racing on the same
+    // PostToolUse/PreCompact write) through the same O_EXCL lock STATE.md uses,
+    // so an interleaved write can never truncate the file to invalid JSON.
+    const lockPath = acquireStateLock(outPath);
+    try {
+      fs.writeFileSync(outPath, JSON.stringify(data, null, 2) + '\n', 'utf-8');
+    } finally {
+      releaseStateLock(lockPath);
+    }
   } catch {
     // Flag partial but don't throw -- PreCompact has a 5s budget and must not crash.
     data.partial = true;

@@ -1924,6 +1924,8 @@ function cmdStateCompletePhase(cwd, raw, overridePhase) {
 }
 
 module.exports = {
+  acquireStateLock,
+  releaseStateLock,
   stateExtractField,
   stateReplaceField,
   stateReplaceFieldWithFallback,
