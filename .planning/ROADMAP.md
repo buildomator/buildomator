@@ -209,7 +209,7 @@ Plans:
 
 **Wave 3** *(blocked on 14-03)*
 
-- [ ] 14-04-PLAN.md - COMPAT-04: suppressNudge build transform + regenerate dist/bm + nudge-emission test (gsd emits, bm suppresses)
+- [x] 14-04-PLAN.md - COMPAT-04: suppressNudge build transform + regenerate dist/bm + nudge-emission test (gsd emits, bm suppresses)
 
 **Wave 4** *(blocked on 14-01..14-04)*
 
@@ -252,5 +252,5 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 |-------|----------------|--------|-----------|
 | 12. Two-Plugin Build Foundation | 2/2 | Complete    | 2026-07-04 |
 | 13. Buildomator Plugin | 4/4 | Complete   | 2026-07-10 |
-| 14. Backward Compatibility and Coexistence | 3/5 | In Progress|  |
+| 14. Backward Compatibility and Coexistence | 4/5 | In Progress|  |
 | 15. Buildomator Identity and Communications | 0/? | Not started | - |
