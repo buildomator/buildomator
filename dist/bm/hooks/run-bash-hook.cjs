@@ -28,6 +28,8 @@ const path = require('path');
 const os = require('os');
 const cp = require('child_process');
 
+const { pluginIdentity, markBmActive, shouldYield } = require('../bin/lib/coexist.cjs');
+
 // Maximum number of retry attempts after a fork failure (not counting first run).
 const MAX_RETRIES = 1;
 
@@ -74,9 +76,13 @@ function resolveCandidates(hookName) {
  *
  * Returns { status: number, stderrText: string }.
  */
-function runHook(hookPath) {
+function runHook(hookPath, stdinInput) {
   const result = cp.spawnSync('bash', [hookPath], {
-    stdio: ['inherit', 'inherit', 'pipe'],
+    // stdin is a pipe fed the exact buffered bytes (the election drained fd 0
+    // once, so the bash child can no longer inherit it directly); stdout stays
+    // inherited and stderr is captured for the fork-failure signature.
+    stdio: ['pipe', 'inherit', 'pipe'],
+    input: stdinInput,
   });
 
   const stderrText = result.stderr ? result.stderr.toString() : '';
@@ -107,6 +113,25 @@ function main() {
     process.exit(1);
   }
 
+  // Coexistence election (single dispatch point for the three bash hooks:
+  // session-state, validate-commit, phase-boundary). Buffer stdin once, self-
+  // announce if this is the bm copy, then yield if the gsd copy sees the bm
+  // marker for this session. When not yielding, forward the exact buffered
+  // bytes to the bash child so a hook that reads stdin (validate-commit parses
+  // tool_input.command and returns exit 2 to block) still receives them. A
+  // single-plugin session has no marker, so shouldYield is false and behavior
+  // is unchanged.
+  let stdinBuf = Buffer.alloc(0);
+  try { stdinBuf = fs.readFileSync(0); } catch { /* stdin may be unavailable */ }
+  let sessionId;
+  try {
+    const parsed = JSON.parse(stdinBuf.toString('utf-8'));
+    sessionId = parsed && parsed.session_id;
+  } catch { /* stdin absent or not JSON — fail open, run normally */ }
+  const identity = pluginIdentity(__filename);
+  if (identity === 'bm') markBmActive(sessionId);
+  if (shouldYield(identity, sessionId)) process.exit(0);
+
   const candidates = resolveCandidates(hookName);
   const firstCandidate = process.env.CLAUDE_PLUGIN_ROOT
     ? path.join(process.env.CLAUDE_PLUGIN_ROOT, 'hooks', hookName)
@@ -121,7 +146,7 @@ function main() {
     }
 
     // First attempt.
-    let { status, stderrText } = runHook(hookPath);
+    let { status, stderrText } = runHook(hookPath, stdinBuf);
 
     // Retry loop (up to MAX_RETRIES times) on Cygwin fork-failure only.
     let retries = 0;
@@ -130,7 +155,7 @@ function main() {
         'GSD: bash fork() failed (Cygwin/BLODA); retrying ' +
         hookName + ' (attempt ' + (retries + 2) + ')...\n'
       );
-      const retry = runHook(hookPath);
+      const retry = runHook(hookPath, stdinBuf);
       status = retry.status;
       stderrText = retry.stderrText;
       retries++;
