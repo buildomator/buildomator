@@ -127,7 +127,7 @@ Plans:
 
 - [x] **Phase 12: Two-Plugin Build Foundation** - One source generates both `bm` and `gsd` packages; release publishes them in lockstep; `gsd-plugin` repo/cache identity verified unaffected (completed 2026-07-04)
 - [x] **Phase 13: Buildomator Plugin** - The `/bm:` plugin is live with full command parity and identical agents, hooks, and MCP behavior (completed 2026-07-06)
-- [ ] **Phase 14: Backward Compatibility and Coexistence** - `/gsd:*` keeps working with no re-enable; both plugins can run together without hook double-fire, duplicate MCP state, or data corruption; deprecation nudge surfaces in `/gsd:*`
+- [x] **Phase 14: Backward Compatibility and Coexistence** - `/gsd:*` keeps working with no re-enable; both plugins can run together without hook double-fire, duplicate MCP state, or data corruption; deprecation nudge surfaces in `/gsd:*` (completed 2026-07-11)
 - [ ] **Phase 15: Buildomator Identity and Communications** - Project presents as Buildomator everywhere; buildomator.com wired into metadata; CHANGELOG documents migration path and retirement timeline
 
 ## Phase Details
@@ -213,7 +213,7 @@ Plans:
 
 **Wave 4** *(blocked on 14-01..14-04)*
 
-- [ ] 14-05-PLAN.md - COMPAT-01..04: gate the four coexistence tests in check-drift.yml + both-plugins single-fire smoke in install-smoke.yml + finalize 14-VALIDATION.md
+- [x] 14-05-PLAN.md - COMPAT-01..04: gate the four coexistence tests in check-drift.yml + both-plugins single-fire smoke in install-smoke.yml + finalize 14-VALIDATION.md
 
 ### Phase 15: Buildomator Identity and Communications
 
@@ -252,5 +252,5 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 |-------|----------------|--------|-----------|
 | 12. Two-Plugin Build Foundation | 2/2 | Complete    | 2026-07-04 |
 | 13. Buildomator Plugin | 4/4 | Complete   | 2026-07-10 |
-| 14. Backward Compatibility and Coexistence | 4/5 | In Progress|  |
+| 14. Backward Compatibility and Coexistence | 5/5 | Complete   | 2026-07-11 |
 | 15. Buildomator Identity and Communications | 0/? | Not started | - |
