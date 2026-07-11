@@ -1277,6 +1277,16 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
 
       if (hookType === 'session-start') {
         const hookInput = hookPayload;
+        // BM-NUDGE-START
+        if (hookIdentity === 'gsd') {
+          process.stdout.write(
+            '\nGSD: the /gsd: command prefix is being renamed to /bm: (Buildomator). ' +
+            'Both prefixes work throughout the 4.x line; /gsd: retires at v5.0.\n'
+          );
+        }
+        // BM-NUDGE-END
+        // The nudge above is emitted before the yield so a both-active gsd
+        // session still surfaces it even when it hands the stateful work to bm.
         if (shouldYield(hookIdentity, hookSessionId)) break;
 
         try {
