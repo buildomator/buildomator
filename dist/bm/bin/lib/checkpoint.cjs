@@ -26,6 +26,8 @@ const {
   output,
 } = require('./core.cjs');
 const { extractFrontmatter } = require('./frontmatter.cjs');
+const { acquireStateLock, releaseStateLock } = require('./state.cjs');
+const { platformWriteSync } = require('./shell-command-projection.cjs');
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -395,7 +397,16 @@ function writeCheckpoint(cwd, options = {}) {
     }
 
     const outPath = path.join(planningDirPath, 'HANDOFF.json');
-    fs.writeFileSync(outPath, JSON.stringify(data, null, 2) + '\n', 'utf-8');
+    // Serialize concurrent writers (e.g. two enabled plugins racing on the same
+    // PostToolUse/PreCompact write) through the same O_EXCL lock STATE.md uses,
+    // and write via the temp-file + atomic-rename helper so a lock-less reader
+    // can never observe a truncated, mid-write file. Mirrors writeStateMd.
+    const lockPath = acquireStateLock(outPath);
+    try {
+      platformWriteSync(outPath, JSON.stringify(data, null, 2) + '\n');
+    } finally {
+      releaseStateLock(lockPath);
+    }
   } catch {
     // Flag partial but don't throw -- PreCompact has a 5s budget and must not crash.
     data.partial = true;
