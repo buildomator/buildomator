@@ -46,7 +46,7 @@ the bm nudge through the existing `bin/lib/bm-transform.cjs` build transform.
 | "is bm active this session" signal (D-03) | Session temp dir (`core.cjs` GSD_TEMP_DIR) | Hook dispatch | No native enabled-plugins signal exists; a per-session self-announced marker is the only mechanism |
 | Plugin identity self-detection (D-02) | Hook dispatch (resolved script path) | `bin/lib/coexist.cjs` | Identity is derivable from the resolved `bin/gsd-tools.cjs` path segment (`/gsd/` vs `/bm/`), robust when `CLAUDE_PLUGIN_ROOT` is absent |
 | Shared-state write serialization (COMPAT-03) | Shared-state lib (`bin/lib/state.cjs` lock) | `bin/lib/checkpoint.cjs` | The proven O_EXCL lock + atomic RMW must cover HANDOFF.json, not just STATE.md |
-| Deprecation nudge emission (COMPAT-04) | gsd SessionStart hook (`gsd-tools.cjs`) | — | Non-blocking context out of the SessionStart hook, exempt from the yield |
+| Deprecation nudge emission (COMPAT-04) | gsd SessionStart hook (`gsd-tools.cjs`) | - | Non-blocking context out of the SessionStart hook, exempt from the yield |
 | bm nudge suppression (D-06) | Build transform (`bin/lib/bm-transform.cjs`) | `bin/build-bm.cjs` | Single-sourced with the Phase 13 transform so the two packages cannot drift |
 | Coexistence proof (all four) | CI (`check-drift.yml`, `install-smoke.yml`) | `tests/*.test.cjs` | The Phase 12/13 CI-as-gate pattern extends to single-fire and interleaved-write tests |
 
@@ -433,7 +433,7 @@ process.stderr.write('GSD: session checkpoint detected, auto-resuming...\n'); //
 | A4 | Only `checkpoint.cjs` HANDOFF.json write is an unprotected shared-state writer; "phase-plan writes" are done by agents via the Write tool (CC-managed), not a cjs function needing the lock | COMPAT-03 mapping | If some cjs path writes phase-plan JSON with a bare write, it is an additional gap. Audit confirmed only checkpoint.cjs:398; the other two writeFileSync sites are lockfile writers |
 | A5 | The identity-election helper covers all state-mutating hooks; read-only advisory JS hooks are safe to double-run | Pitfall 4 | If a read-only hook actually mutates state, it double-fires. Requires the per-hook classification audit in planning |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Nudge channel: stdout/additionalContext vs systemMessage.**
    - What we know: stdout reaches Claude as SessionStart context (existing pattern);
@@ -443,6 +443,9 @@ process.stderr.write('GSD: session checkpoint detected, auto-resuming...\n'); //
    - Recommendation: default to stdout (matches existing code, guaranteed non-blocking,
      Claude surfaces it). Flag the systemMessage alternative to discuss-phase if a
      guaranteed user-visible banner is required.
+   - **Resolved:** D-05 + Plan 03 Task 3. The nudge is emitted on plain stdout (mirroring the
+     resume directive at `gsd-tools.cjs:1301`), never the `systemMessage` JSON field. It is
+     sentinel-wrapped and exempt from the yield.
 
 2. **Marker TTL for very long idle sessions.**
    - What we know: the reaper sweeps `gsd-`prefixed temp files after 5 minutes; refreshing
@@ -451,13 +454,24 @@ process.stderr.write('GSD: session checkpoint detected, auto-resuming...\n'); //
    - Recommendation: refresh per fire AND use a marker prefix outside the `gsd-` reaper
      match (e.g. `bm-active-`), so a quiet stretch cannot reap it; let end-of-session
      inactivity clean it up naturally.
+   - **Resolved:** Plan 02 Task 2. The marker uses the `bm-active-` prefix (outside the
+     reaper's default `gsd-` match) AND `markBmActive` refreshes its mtime on every bm hook
+     fire, so a long or idle session's marker is never reaped mid-session. Reaper-safety is
+     asserted in `tests/coexist.test.cjs`.
 
-3. **Which JS hook scripts mutate shared state.**
-   - What we know: hooks.json registers `gsd-tools.cjs hook` plus several `hooks/*.js`
-     scripts; only state-mutating ones need the election.
-   - What's unclear: the exact per-script classification.
+3. **Which hooks mutate shared state / which are elected.**
+   - What we know: hooks.json registers `gsd-tools.cjs hook` plus the `run-bash-hook.cjs`
+     bash dispatch and several standalone `hooks/*.js` detectors.
+   - What's unclear: the exact per-hook classification.
    - Recommendation: audit each hooks.json entry during planning; document a
      "needs-election / read-only" table so the single-fire guarantee is provably complete.
+   - **Resolved:** Plan 03 Task 2. Per the user's widened D-02 election scope, BOTH shared
+     dispatch points now enforce the election: the `gsd-tools.cjs hook` branches
+     (session-start, post-tool-use, pre-compact, stop) AND the `run-bash-hook.cjs` dispatch
+     (session-state, validate-commit, phase-boundary). The full classification table (every
+     hooks.json entry, elected vs read-only advisory, with one-line evidence) is embedded in
+     Plan 03, closing Pitfall 4.
+
 
 ## Validation Architecture
 

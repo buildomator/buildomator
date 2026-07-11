@@ -195,7 +195,25 @@ Plans:
   3. With both plugins enabled, project state files (HANDOFF.json, STATE.md, phase plans) remain consistent and uncorrupted after interleaved `/gsd:*` and `/bm:*` commands
   4. Running any `/gsd:` command displays a non-blocking deprecation nudge that mentions `/bm:` and the v5.0 retirement timeline
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 14-01-PLAN.md - COMPAT-03: export the state.cjs lock helpers, route the HANDOFF.json write through them, interleaved-write coexistence test
+- [ ] 14-02-PLAN.md - COMPAT-01/02: bin/lib/coexist.cjs identity election + per-session bm-active marker (+ ensureGsdTempDir export), unit test
+
+**Wave 2** *(blocked on 14-02)*
+
+- [ ] 14-03-PLAN.md - COMPAT-01/02/04: wire the election into the four state-mutating hook branches + emit the sentinel-wrapped SessionStart nudge, single-fire test
+
+**Wave 3** *(blocked on 14-03)*
+
+- [ ] 14-04-PLAN.md - COMPAT-04: suppressNudge build transform + regenerate dist/bm + nudge-emission test (gsd emits, bm suppresses)
+
+**Wave 4** *(blocked on 14-01..14-04)*
+
+- [ ] 14-05-PLAN.md - COMPAT-01..04: gate the four coexistence tests in check-drift.yml + both-plugins single-fire smoke in install-smoke.yml + finalize 14-VALIDATION.md
 
 ### Phase 15: Buildomator Identity and Communications
 
