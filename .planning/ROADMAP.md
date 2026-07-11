@@ -205,7 +205,7 @@ Plans:
 
 **Wave 2** *(blocked on 14-02)*
 
-- [ ] 14-03-PLAN.md - COMPAT-01/02/04: wire the election into the four state-mutating hook branches + emit the sentinel-wrapped SessionStart nudge, single-fire test
+- [x] 14-03-PLAN.md - COMPAT-01/02/04: wire the election into the four state-mutating hook branches + emit the sentinel-wrapped SessionStart nudge, single-fire test
 
 **Wave 3** *(blocked on 14-03)*
 
@@ -252,5 +252,5 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 |-------|----------------|--------|-----------|
 | 12. Two-Plugin Build Foundation | 2/2 | Complete    | 2026-07-04 |
 | 13. Buildomator Plugin | 4/4 | Complete   | 2026-07-10 |
-| 14. Backward Compatibility and Coexistence | 2/5 | In Progress|  |
+| 14. Backward Compatibility and Coexistence | 3/5 | In Progress|  |
 | 15. Buildomator Identity and Communications | 0/? | Not started | - |
