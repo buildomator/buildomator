@@ -107,6 +107,11 @@ completed: 2026-07-12
 - 14-VALIDATION.md is confirmed complete and nyquist-compliant; the phase's validation contract reflects executed results.
 - No blockers.
 
+## Self-Check: PASSED
+
+- Files verified present: 14-05-SUMMARY.md, check-drift.yml, install-smoke.yml
+- Commits verified in git: 68fa25b (Task 1), 9d69220 (Task 2)
+
 ---
 *Phase: 14-backward-compatibility-and-coexistence*
 *Completed: 2026-07-12*
