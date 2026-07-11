@@ -65,4 +65,35 @@ function stampHookFallback(text) {
     .split(FALLBACK_QUOTED_FROM).join(FALLBACK_QUOTED_TO);
 }
 
-module.exports = { rewriteCommandRefs, stampHookFallback };
+// The session-start hook wraps the gsd-only deprecation nudge (the notice that
+// the /bm: prefix is being renamed to /bm:) in a pair of exact-literal sentinel
+// comments so the generated bm package can strip the whole block: bm must never
+// tell users to switch to bm. The sentinels are defined here as plain string
+// constants (never as a line-opening comment) so this very file can name them
+// without matching its own strip. The match is LINE-ANCHORED (multiline `^`,
+// leading whitespace allowed) so only a sentinel that opens a line is stripped;
+// a sentinel that appears inside a quoted string -- as it does right here -- is
+// left intact, which is what lets suppressNudge coexist with its own source.
+const NUDGE_START_SENTINEL = '// BM-NUDGE-START';
+const NUDGE_END_SENTINEL = '// BM-NUDGE-END';
+const NUDGE_BLOCK_RE = new RegExp(
+  '^[ \\t]*' + NUDGE_START_SENTINEL.replace(/\//g, '\\/') +
+  '[\\s\\S]*?^[ \\t]*' + NUDGE_END_SENTINEL.replace(/\//g, '\\/') + '[^\\n]*\\n?',
+  'm',
+);
+
+/**
+ * Strip the sentinel-bracketed deprecation nudge block (BM-NUDGE-START through
+ * BM-NUDGE-END, inclusive) from the text, leaving surrounding code intact and
+ * syntactically valid. The match is line-anchored, so a sentinel embedded as a
+ * quoted string literal is never removed. Idempotent: text with no sentinel
+ * block is returned unchanged, and a second application equals the first (once
+ * the block is gone there is nothing left to match).
+ * @param {string} text
+ * @returns {string}
+ */
+function suppressNudge(text) {
+  return String(text).replace(NUDGE_BLOCK_RE, '');
+}
+
+module.exports = { rewriteCommandRefs, stampHookFallback, suppressNudge };

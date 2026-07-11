@@ -51,7 +51,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { rewriteCommandRefs, stampHookFallback } = require('./lib/bm-transform.cjs');
+const { rewriteCommandRefs, stampHookFallback, suppressNudge } = require('./lib/bm-transform.cjs');
 
 // First path segments that must NEVER enter the published package payload.
 const EXCLUDE_ROOTS = new Set(['.git', '.planning', '.claude', 'node_modules', 'dist', 'scratchpad']);
@@ -85,6 +85,18 @@ const STAMP_EXCLUDE = new Set([
   // Historical release entries mention cache/gsd-plugin/gsd; stamping would
   // revisionist-rewrite shipped history, so the changelog is preserved verbatim (IN-01).
   'CHANGELOG.md',
+]);
+
+// suppressNudge strips the sentinel-bracketed deprecation nudge from EVERY text
+// file except these. It is idempotent and a no-op on files without the sentinel
+// block, so broad application is safe; the exclusions are the files that embed
+// the sentinel literals on purpose and would be self-corrupted by the strip.
+const SUPPRESS_EXCLUDE = new Set([
+  // Defines the strip and embeds both sentinel literals as string constants; a
+  // strip of its own source would delete the transform between the literals.
+  'bin/lib/bm-transform.cjs',
+  // Asserts on the BM-NUDGE literal, so its dist/bm copy must keep it.
+  'tests/nudge-emission.test.cjs',
 ]);
 
 // Files whose gsd: tokens must survive the command-ref rewrite. Each is excluded
@@ -178,6 +190,7 @@ function generate(root, outDir) {
       let text = buf.toString('utf8');
       if (!COMMAND_REWRITE_EXCLUDE.has(rel)) text = rewriteCommandRefs(text);
       if (!STAMP_EXCLUDE.has(rel)) text = stampHookFallback(text);
+      if (!SUPPRESS_EXCLUDE.has(rel)) text = suppressNudge(text);
       fs.writeFileSync(dest, text);
       // Preserve the source file mode (writeFileSync creates 0644 by default,
       // which would strip the executable bit from scripts and hooks).
@@ -304,7 +317,7 @@ function main() {
 
 // Export pure helpers for tests; run main only when invoked directly.
 module.exports = {
-  stampBmManifest, shouldExclude, rewriteCommandRefs, stampHookFallback, isTextFile,
-  STAMP_EXCLUDE, COMMAND_REWRITE_EXCLUDE,
+  stampBmManifest, shouldExclude, rewriteCommandRefs, stampHookFallback, suppressNudge, isTextFile,
+  STAMP_EXCLUDE, SUPPRESS_EXCLUDE, COMMAND_REWRITE_EXCLUDE,
 };
 if (require.main === module) main();
