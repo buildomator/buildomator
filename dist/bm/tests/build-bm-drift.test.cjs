@@ -31,18 +31,20 @@ const SCRIPT = path.join(ROOT, 'bin', 'build-bm.cjs');
 const OUT = fs.mkdtempSync(path.join(os.tmpdir(), 'bm-drift-'));
 
 const {
-  stampBmManifest, shouldExclude, rewriteCommandRefs, stampHookFallback, isTextFile,
-  STAMP_EXCLUDE, COMMAND_REWRITE_EXCLUDE,
+  stampBmManifest, shouldExclude, rewriteCommandRefs, stampHookFallback, suppressNudge, isTextFile,
+  STAMP_EXCLUDE, SUPPRESS_EXCLUDE, COMMAND_REWRITE_EXCLUDE,
 } = require('../bin/build-bm.cjs');
 
 // The expected transformed bytes for a source text file, mirroring generate()
 // exactly: the command-ref rewrite runs UNLESS rel is in COMMAND_REWRITE_EXCLUDE,
-// then the hook stamp runs UNLESS rel is in STAMP_EXCLUDE. Both exclusion sets are
-// imported from the build so the drift walk and the build never diverge.
+// then the hook stamp runs UNLESS rel is in STAMP_EXCLUDE, then the nudge strip
+// runs UNLESS rel is in SUPPRESS_EXCLUDE. Every exclusion set is imported from the
+// build so the drift walk and the build never diverge.
 function expectedText(rel, srcText) {
   let text = srcText;
   if (!COMMAND_REWRITE_EXCLUDE.has(rel)) text = rewriteCommandRefs(text);
   if (!STAMP_EXCLUDE.has(rel)) text = stampHookFallback(text);
+  if (!SUPPRESS_EXCLUDE.has(rel)) text = suppressNudge(text);
   return text;
 }
 
