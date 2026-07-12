@@ -237,7 +237,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 15-04-PLAN.md - regenerate dist/bm + full automated gate suite (drift/parity/version-alignment/schema) + date and buildomator.com consistency assertions (BRAND-01, BRAND-02, BRAND-03)
+- [x] 15-04-PLAN.md - regenerate dist/bm + full automated gate suite (drift/parity/version-alignment/schema) + date and buildomator.com consistency assertions (BRAND-01, BRAND-02, BRAND-03)
 
 **Wave 3** *(blocked on 15-04)*
 
@@ -271,4 +271,4 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 | 12. Two-Plugin Build Foundation | 2/2 | Complete    | 2026-07-04 |
 | 13. Buildomator Plugin | 4/4 | Complete   | 2026-07-10 |
 | 14. Backward Compatibility and Coexistence | 5/5 | Complete    | 2026-07-11 |
-| 15. Buildomator Identity and Communications | 3/5 | In Progress|  |
+| 15. Buildomator Identity and Communications | 4/5 | In Progress|  |
