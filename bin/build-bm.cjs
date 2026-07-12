@@ -141,13 +141,13 @@ function shouldExclude(relPath) {
  * is preserved. Does not mutate its input.
  */
 function stampBmManifest(srcManifest) {
-  const brandedDescription =
-    'Buildomator -- ' + String(srcManifest.description || '').replace(/^Get Shit Done -- /, '');
   const stamped = {
     ...srcManifest,
     name: 'bm',
     displayName: 'Buildomator',
-    description: brandedDescription,
+    description:
+      'Buildomator -- structured workflow plugin for Claude Code with planning, ' +
+      'execution, verification, and MCP-backed project state',
     version: srcManifest.version,
   };
   const servers = stamped.mcpServers;
