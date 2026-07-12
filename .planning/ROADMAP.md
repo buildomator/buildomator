@@ -226,7 +226,23 @@ Plans:
   2. The homepage/docs links in `plugin.json`, `marketplace.json`, and README resolve to buildomator.com
   3. CHANGELOG contains an entry for v4.1.0 that explains the rebrand, describes the additive `/bm:` + retained `/gsd:` strategy, and states the v5.0 retirement date for `/gsd:`
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 15-01-PLAN.md - README rebrand: Buildomator logo, H1/intro, /bm: examples, Migrating from /gsd: section, buildomator.com links, version 4.1.0 (BRAND-01, BRAND-02)
+- [ ] 15-02-PLAN.md - plugin.json + both marketplace entries rebranded and linked to buildomator.com, CHANGELOG [4.1.0] migration entry, nudge date aligned to 2026-10-01, version 4.1.0 (BRAND-01, BRAND-02, BRAND-03)
+- [ ] 15-03-PLAN.md - BLOCKING: fix stampBmManifest to a fixed bm description + update build-bm-drift test (prevents doubled/leaked bm description under D-09) (BRAND-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 15-04-PLAN.md - regenerate dist/bm + full automated gate suite (drift/parity/version-alignment/schema) + date and buildomator.com consistency assertions (BRAND-01, BRAND-02, BRAND-03)
+
+**Wave 3** *(blocked on 15-04)*
+
+- [ ] 15-05-PLAN.md - human-verify checkpoint: read the generated bm migration prose + manifest description and the rebranded README render (BRAND-01, BRAND-03)
+
 
 ## Backlog
 
