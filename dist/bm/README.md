@@ -1,14 +1,16 @@
 <p align="center">
-  <img src="assets/gsd-plugin-logo.png" alt="GSD Plugin" width="320" />
+  <a href="https://buildomator.com"><img src="assets/buildomator-logo-big.png" alt="Buildomator" width="320" /></a>
 </p>
 
-# Get Shit Done for Claude Code
+# Buildomator for Claude Code
 
-**Plugin version:** `4.0.1`
+**Plugin version:** `4.1.0`
 
-**GSD Plugin for Claude Code** ensures your coding work gets done in a systematic, structured way. It prompts you only for the important design and architectural decisions that actually need your judgment, and it splits each step into its own focused subcontext so token use stays optimised across long projects.
+**Buildomator** is a Claude Code plugin that plans, executes, and verifies your work. It asks you only about the real design and architecture decisions that need your judgment, then carries out the rest on its own. Each step runs in its own focused subcontext, so token use stays low even on long projects.
 
-Under the hood, a performance-optimized plugin evolution of [GSD](https://github.com/open-gsd/get-shit-done-redux) for Claude Code: reduces per-turn token overhead by ~92%, adds MCP-backed project state, auto-resumes across `/compact`, and bundles everything into a single-install plugin.
+Buildomator is a performance-optimized evolution of [GSD](https://github.com/open-gsd/get-shit-done-redux) for Claude Code: it cuts per-turn token overhead by ~92%, keeps project state in an MCP-backed store, and auto-resumes across `/compact` so a compaction never loses your place.
+
+Project home and docs: [buildomator.com](https://buildomator.com).
 
 ## Installation
 
@@ -83,6 +85,16 @@ Assumes you have already completed the Installation section above (Claude Code i
 3. Execute: `/bm:execute-phase`
 4. Verify: `/bm:verify-work`
 
+## Migrating from /bm:
+
+This plugin used to answer to the gsd command prefix, and now it answers to `/bm:` (Buildomator). Nothing about the plugin itself changed with the rename, only the name it goes by.
+
+Every `/bm:` command runs the same code its gsd counterpart ran, with the same arguments and output. `/bm:new-project` is the old gsd new-project command, `/bm:plan-phase` is the old gsd plan-phase command, and so on for the whole command set. If you know the gsd commands, you already know the `/bm:` ones: swap the prefix and everything else stays put.
+
+The original gsd command prefix keeps working through all of the 4.x line. There is nothing to re-enable and no config to change; both prefixes are live side by side, so you can move to `/bm:` whenever it suits you or keep typing the old one for now.
+
+The original gsd command prefix retires at v5.0 on 2026-10-01. After that release only `/bm:` remains, so point your scripts and aliases at `/bm:` before then. Why the rename? "Buildomator" is a name we can put on a homepage and say out loud; the behavior underneath is the same plugin you already use.
+
 ## Updating
 
 Enable auto-update for the marketplace in Claude Code settings and updates will be applied automatically at startup. To update manually:
@@ -107,7 +119,7 @@ To check the active version in a session, run `/bm:version` (it also checks GitH
 **v3.7.0**: **Improved resilience when sessions are broken.** When a session drops and resumes, phases can be left partially delivered, and GSD used to either lose the thread or confront you with hard-to-read internals questions. Now it heals instead:
 - **Interrupted UATs are never lost.** If you detour mid-verification (a bug to `/bm:quick`, ideas to `/bm:add-phase` / `/bm:explore`), an unfinished UAT becomes a hard invariant in `/bm:next` (resumed before any forward routing) and the detour itself leaves a "↩ resume UAT" breadcrumb.
 - **Coverage gates auto-heal instead of interrogating.** When the decision/requirements-coverage gates find a plan that implements a decision but didn't literally tag it, GSD now backfills the `(D-NN)`/REQ-ID tags and proceeds silently (the plan-checker already confirmed the work is covered). Only decisions implemented in *no* plan surface, in plain language with the fix recommended.
-- **Leaner `/bm:version`** — inlined and node-free, so it works even when node is broken.
+- **Leaner `/bm:version`**, inlined and node-free, so it works even when node is broken.
 
 **v3.6.3**: the UI-SPEC gate now honors `auto_advance` (default on). A manual `plan-phase` on a frontend phase auto-generates the UI design contract and continues, instead of dead-ending with a "run `/bm:ui-phase` then re-run" gate. `--no-auto` / `--skip-ui` keep the manual paths, and `/bm:ui-phase` is still there for an interactive design session.
 
@@ -148,7 +160,7 @@ Recent: v4.0.0 added the convention conformance gate, native drift detection, an
 
 A PostToolUse hook also writes a fresh checkpoint after most tool calls (`Bash`, `Edit`, `Write`, `MultiEdit`, `NotebookEdit`, `Read`, `Grep`, `Glob`, `WebFetch`, `WebSearch`), throttled to at most once per 60 seconds via mtime. This bridges Claude Code's *microcompact* path, which silently strips stale tool outputs without firing PreCompact, AND covers read-heavy research phases that don't write files: the periodic checkpoint keeps `HANDOFF.json` at most ~60s stale at any point during an active session, so resume after an unexpected session end (usage cap, kill, network drop) reflects recent state.
 
-**Drift resilience.** The plugin sits downstream of [upstream GSD](https://github.com/open-gsd/get-shit-done-redux), which ships frequent feature releases. To catch structural drift before it reaches users, three detectors run in CI on every push: a **file-layout drift detector** flags dangling `@~/.claude/get-shit-done/*` references (e.g. skill files delegating to workflow bodies that don't exist in the plugin); a **HANDOFF schema validator** confirms `checkpoint.cjs` output matches the committed JSON Schema; and a **namespace drift check** fires if any `/gsd-<skill>` dash-style command refs have been reintroduced. Each detector has a committed ratchet baseline; regressions hard-fail. After each upstream sync, an additional **upstream schema drift detector** (`check-upstream-schema.cjs`) compares upstream's `/bm:pause-work` output against our schema to catch format divergence early.
+**Drift resilience.** The plugin sits downstream of [upstream GSD](https://github.com/open-gsd/get-shit-done-redux), which ships frequent feature releases. To catch structural drift before it reaches users, three detectors run in CI on every push: a **file-layout drift detector** flags dangling `@~/.claude/get-shit-done/*` references (e.g. skill files delegating to workflow bodies that don't exist in the plugin); a **HANDOFF schema validator** confirms `checkpoint.cjs` output matches the committed JSON Schema; and a **namespace drift check** fires if any `/gsd-<skill>` dash-style command refs have been reintroduced. Each detector has a committed ratchet baseline; regressions hard-fail. After each upstream sync, an additional **upstream schema drift detector** (`check-upstream-schema.cjs`) compares upstream's `pause-work` output against our schema to catch format divergence early.
 
 ## Added features beyond upstream
 
@@ -195,7 +207,7 @@ Lightweight Node scripts live in `bin/maintenance/` for plugin upkeep tasks that
 - `node bin/maintenance/check-file-layout.cjs`: **File-layout drift detector.** Scans plugin content for `@~/.claude/get-shit-done/*` references, classifies each as repairable (plugin has a local counterpart) or genuinely missing, and compares counts to `tests/drift-baseline.json`. Exits non-zero if drift regresses beyond baseline. Runs in CI on every push and pull request. Pass `--dry` to preview or `--write-baseline` to regenerate the baseline after an intentional reduction.
 - `node bin/maintenance/rewrite-command-namespace.cjs`: **Namespace normalization.** Rewrites `/gsd-<skill>` to `/bm:<skill>` across plugin content. Run after every upstream GSD sync since upstream uses the dash form.
 - `node bin/maintenance/check-handoff-schema.cjs`: **HANDOFF schema validator.** Generates a fresh `HANDOFF.json` in a tmp dir via `bin/lib/checkpoint.cjs` `writeCheckpoint()`, then validates it against `schema/handoff-v1.json` using ajv. Does not touch the real `.planning/HANDOFF.json`; validation is isolated to a tmp dir that's cleaned up in a `finally` block. Runs in CI on every push and pull request (second job in `.github/workflows/check-drift.yml`). Exits 0 on schema-valid, 1 on violation, 2 on environment error (ajv missing, not at repo root, etc.).
-- `node bin/maintenance/check-upstream-schema.cjs`: **Upstream drift detector.** Downloads the latest upstream GSD release tarball (or uses the cached `/tmp/gsd-sync-<version>/` directory from a prior sync), extracts the `/bm:pause-work` declared field list from `get-shit-done/workflows/pause-work.md`, and compares it to `schema/handoff-v1.json`. Does **not** run in CI; invoke after each upstream sync (manually, or via the sync quick-task template; see `.planning/PROJECT.md` "After each upstream GSD sync" checklist). Set `UPSTREAM_VERSION=v1.38.x` to target a specific version; otherwise falls back to `gh release view` for the latest tag.
+- `node bin/maintenance/check-upstream-schema.cjs`: **Upstream drift detector.** Downloads the latest upstream GSD release tarball (or uses the cached `/tmp/gsd-sync-<version>/` directory from a prior sync), extracts the `pause-work` declared field list from `get-shit-done/workflows/pause-work.md`, and compares it to `schema/handoff-v1.json`. Does **not** run in CI; invoke after each upstream sync (manually, or via the sync quick-task template; see `.planning/PROJECT.md` "After each upstream GSD sync" checklist). Set `UPSTREAM_VERSION=v1.38.x` to target a specific version; otherwise falls back to `gh release view` for the latest tag.
 - `node bin/maintenance/check-drift.cjs`: **Unified drift check (umbrella).** Runs the file-layout, HANDOFF schema, and namespace detectors in sequence and reports a consolidated PASS/FAIL. Intended for local dev loops and post-upstream-sync verification. Not added to CI; CI runs each per-category detector as its own job for fast-feedback granularity. The upstream schema detector is deliberately excluded (network-dependent + post-sync-only).
 - `bash bin/maintenance/install-git-hooks.sh`: **Install local pre-commit hook.** One-time setup per clone. Symlinks `.git/hooks/pre-commit` to `bin/maintenance/pre-commit-drift-baseline.sh`. The hook auto-regenerates `tests/drift-baseline.json` in-place when a feature commit adds a new tracked workflow/skill/agent file that legitimately bumps the unique-subpath count. Aborts the commit if `genuinely_missing` regresses (a real drift bug). Override per-commit: `git commit --no-verify`. Idempotent.
 
