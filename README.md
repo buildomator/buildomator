@@ -2,13 +2,13 @@
   <img src="assets/buildomator-logo-big.png" alt="Buildomator" width="320" />
 </p>
 
-# Get Shit Done for Claude Code
+# Buildomator for Claude Code
 
-**Plugin version:** `4.0.1`
+**Plugin version:** `4.1.0`
 
-**GSD Plugin for Claude Code** ensures your coding work gets done in a systematic, structured way. It prompts you only for the important design and architectural decisions that actually need your judgment, and it splits each step into its own focused subcontext so token use stays optimised across long projects.
+**Buildomator** is a Claude Code plugin that plans, executes, and verifies your work. It asks you only about the real design and architecture decisions that need your judgment, then carries out the rest on its own. Each step runs in its own focused subcontext, so token use stays low even on long projects.
 
-Under the hood, a performance-optimized plugin evolution of [GSD](https://github.com/open-gsd/get-shit-done-redux) for Claude Code: reduces per-turn token overhead by ~92%, adds MCP-backed project state, auto-resumes across `/compact`, and bundles everything into a single-install plugin.
+Buildomator is a performance-optimized evolution of [GSD](https://github.com/open-gsd/get-shit-done-redux) for Claude Code: it cuts per-turn token overhead by ~92%, keeps project state in an MCP-backed store, and auto-resumes across `/compact` so a compaction never loses your place.
 
 ## Installation
 
