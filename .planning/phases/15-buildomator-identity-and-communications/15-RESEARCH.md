@@ -302,16 +302,18 @@ No missing dependencies. `sips` (used only to measure logo dimensions during res
 | A3 | `https://buildomator.com` will resolve (site live) by ship time | Validation (c) | Medium: dead links in shipped README/metadata if the site is not deployed; wiring the string is still correct per D-02 |
 | A4 | Strategy A (prose engineering) can express the migration section cleanly in both packages | Risk 1 | Low-Medium: if a sentence cannot be made correct in both, fall back to Strategy B (sentinel suppression, a transform change) |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Final bm plugin.json description wording (D-09 + Risk 2).**
    - What we know: it must be Buildomator-worded and must not double-prefix in the generated bm manifest.
    - What's unclear: exact sentence, and whether the gsd source description should carry a "(legacy /gsd:)" clause (which must NOT leak into bm).
    - Recommendation: set a fixed bm description in `stampBmManifest`; let the gsd source description carry whatever legacy wording D-09 wants, since the bm side no longer derives from it.
+   - RESOLVED: Plan 15-03 implements this recommendation verbatim (fixed bm description in `stampBmManifest` + matching `tests/build-bm-drift.test.cjs` assertion). Exact wording is Claude's discretion within the "no double-prefix" constraint.
 
 2. **Keep or remove the old `assets/gsd-plugin-logo.png`.**
    - What we know: it is only referenced by the README header, which D-06 repoints.
    - Recommendation: removing it is cleaner, but keeping it is harmless (it still ships into dist/bm as an unused asset). Claude's discretion.
+   - RESOLVED: Plan 15-01 keeps the old asset (harmless) and repoints the README header to the new Buildomator logo.
 
 ## Sources
 

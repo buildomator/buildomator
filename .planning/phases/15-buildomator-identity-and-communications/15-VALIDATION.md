@@ -1,9 +1,9 @@
 ---
 phase: 15
 slug: buildomator-identity-and-communications
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-12
 ---
 
@@ -71,11 +71,11 @@ created: 2026-07-12
 
 ## Validation Sign-Off
 
-- [ ] All tasks map to an automated gate command or a listed manual verification
-- [ ] Sampling continuity: gate suite runs after every task/wave (fast, ~15s)
-- [ ] Wave 0 covers the one required test-assertion edit
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 20s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks map to an automated gate command or a listed manual verification
+- [x] Sampling continuity: gate suite runs after every task/wave (fast, ~15s)
+- [x] Wave 0 covers the one required test-assertion edit (no separate test-infra gap; gates already exist)
+- [x] No watch-mode flags
+- [x] Feedback latency < 20s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-07-12
