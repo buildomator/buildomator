@@ -57,3 +57,9 @@ Addresses T-15-07 (doubled/legacy-clause bm description reaching users) and T-15
 ## Notes for Wave 2
 
 This is the [BLOCKING] code-adjacent edit that must precede the dist/bm regen in plan 15-04. The committed dist/bm tree is NOT regenerated here (the drift test builds into a temp dir against a mock manifest), so plan 15-04 still owns the committed-tree regen and its gates.
+
+## Self-Check: PASSED
+
+- `bin/build-bm.cjs` modified, committed `ba2ab4a` — verified in git log
+- `tests/build-bm-drift.test.cjs` modified, committed `91530f9` — verified in git log
+- `15-03-SUMMARY.md` present on disk and committed
