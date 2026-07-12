@@ -115,6 +115,12 @@ Each task was committed atomically:
 - README half of BRAND-01 (Buildomator identity, /bm: documented) and BRAND-02 (buildomator.com in README links) delivered.
 - Ready for the metadata/manifest and CHANGELOG plans, plus the dist/bm regeneration and the bm-parity/semantic gates.
 
+## Self-Check: PASSED
+
+- FOUND: assets/buildomator-logo-big.png
+- FOUND: .planning/phases/15-buildomator-identity-and-communications/15-01-SUMMARY.md
+- FOUND commits: 0cc226a, e72258b, 91bebd8, 84df92a
+
 ---
 *Phase: 15-buildomator-identity-and-communications*
 *Completed: 2026-07-12*
