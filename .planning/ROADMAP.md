@@ -231,9 +231,9 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 15-01-PLAN.md - README rebrand: Buildomator logo, H1/intro, /bm: examples, Migrating from /gsd: section, buildomator.com links, version 4.1.0 (BRAND-01, BRAND-02)
-- [ ] 15-02-PLAN.md - plugin.json + both marketplace entries rebranded and linked to buildomator.com, CHANGELOG [4.1.0] migration entry, nudge date aligned to 2026-10-01, version 4.1.0 (BRAND-01, BRAND-02, BRAND-03)
-- [ ] 15-03-PLAN.md - BLOCKING: fix stampBmManifest to a fixed bm description + update build-bm-drift test (prevents doubled/leaked bm description under D-09) (BRAND-01)
+- [x] 15-01-PLAN.md - README rebrand: Buildomator logo, H1/intro, /bm: examples, Migrating from /gsd: section, buildomator.com links, version 4.1.0 (BRAND-01, BRAND-02)
+- [x] 15-02-PLAN.md - plugin.json + both marketplace entries rebranded and linked to buildomator.com, CHANGELOG [4.1.0] migration entry, nudge date aligned to 2026-10-01, version 4.1.0 (BRAND-01, BRAND-02, BRAND-03)
+- [x] 15-03-PLAN.md - BLOCKING: fix stampBmManifest to a fixed bm description + update build-bm-drift test (prevents doubled/leaked bm description under D-09) (BRAND-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -271,4 +271,4 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 | 12. Two-Plugin Build Foundation | 2/2 | Complete    | 2026-07-04 |
 | 13. Buildomator Plugin | 4/4 | Complete   | 2026-07-10 |
 | 14. Backward Compatibility and Coexistence | 5/5 | Complete    | 2026-07-11 |
-| 15. Buildomator Identity and Communications | 0/? | Not started | - |
+| 15. Buildomator Identity and Communications | 3/5 | In Progress|  |
