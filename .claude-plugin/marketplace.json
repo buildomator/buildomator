@@ -4,19 +4,20 @@
     "name": "Jasper Nuyens"
   },
   "metadata": {
-    "description": "Performance-optimized GSD plugin for Claude Code"
+    "description": "Buildomator -- a structured workflow plugin for Claude Code with planning, execution, verification, and MCP-backed project state"
   },
   "plugins": [
     {
       "name": "gsd",
       "source": "./",
-      "description": "Get Shit Done -- structured workflow plugin for Claude Code with planning, execution, verification, and MCP-backed project state",
-      "version": "4.0.4",
+      "displayName": "Buildomator (legacy /gsd:)",
+      "description": "The same Buildomator plugin under its original /gsd: command prefix. /gsd: keeps working through the whole 4.x line and retires at v5.0 on 2026-10-01. New users should install Buildomator (the /bm: entry) instead.",
+      "version": "4.1.0",
       "author": {
         "name": "Jasper Nuyens"
       },
-      "homepage": "https://github.com/jnuyens/gsd-plugin",
-      "repository": "https://github.com/jnuyens/gsd-plugin",
+      "homepage": "https://buildomator.com",
+      "repository": "https://buildomator.com",
       "license": "MIT",
       "keywords": ["workflow", "planning", "gsd", "mcp"],
       "category": "productivity"
@@ -25,13 +26,13 @@
       "name": "bm",
       "source": "./dist/bm",
       "displayName": "Buildomator",
-      "description": "Buildomator -- structured workflow plugin for Claude Code with planning, execution, verification, and MCP-backed project state",
-      "version": "4.0.4",
+      "description": "Buildomator -- a structured workflow plugin for Claude Code. Use /bm: for planning, execution, verification, and MCP-backed project state. This is the plugin to install.",
+      "version": "4.1.0",
       "author": {
         "name": "Jasper Nuyens"
       },
-      "homepage": "https://github.com/jnuyens/gsd-plugin",
-      "repository": "https://github.com/jnuyens/gsd-plugin",
+      "homepage": "https://buildomator.com",
+      "repository": "https://buildomator.com",
       "license": "MIT",
       "keywords": ["workflow", "planning", "buildomator", "mcp"],
       "category": "productivity"
