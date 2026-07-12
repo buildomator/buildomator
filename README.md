@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/gsd-plugin-logo.png" alt="GSD Plugin" width="320" />
+  <img src="assets/buildomator-logo-big.png" alt="Buildomator" width="320" />
 </p>
 
 # Get Shit Done for Claude Code
