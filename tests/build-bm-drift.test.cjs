@@ -92,8 +92,8 @@ check('stampBmManifest sets name bm, displayName Buildomator, Buildomator descri
   assert.strictEqual(out.displayName, 'Buildomator');
   assert.strictEqual(
     out.description,
-    'Buildomator -- a structured workflow plugin for Claude Code that adds ' +
-      'planning, execution, and verification commands with MCP-backed project state',
+    'Buildomator -- structured workflow plugin for Claude Code with planning, ' +
+      'execution, verification, and MCP-backed project state',
   );
 });
 
