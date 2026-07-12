@@ -8,6 +8,18 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-07-12  (Buildomator rebrand + additive /bm: command surface)
+
+Minor release completing the v4.1 milestone. The project is renamed to Buildomator, and a new `/bm:` command surface is added alongside the existing `/gsd:` one. Follows the gsd-core `1.x` line.
+
+### Added
+- **Buildomator identity.** The plugin now presents as Buildomator wherever a human reads it: `plugin.json` and both `marketplace.json` entries carry a Buildomator-worded description, and `homepage`/`repository` point at [buildomator.com](https://buildomator.com). The machine `name` stays `gsd` and the `gsd` keyword is kept, so existing installs and searches keep resolving.
+- **A `/bm:` command surface, added additively.** Buildomator ships as a second plugin (`name: bm`) generated from the same source, so every `/bm:X` command is identical to its `/gsd:X` counterpart. The marketplace lists both: Buildomator (`/bm:`) as the primary entry new users install, and Buildomator (legacy `/gsd:`) for everyone already on the old prefix.
+
+### Changed
+- **`/gsd:` is retained through the whole 4.x line with no disruption.** Nothing to re-enable, no reinstall, no behavior change for current users: `/gsd:*` keeps working exactly as before for the entire 4.x line while `/bm:` runs beside it. The on-use deprecation nudge now names the retirement date.
+- **`/gsd:` retires at v5.0 on 2026-10-01.** v5.0 is the breaking release that removes the `/gsd:` prefix and flips the authored identity fully to Buildomator. Until then both prefixes are supported.
+
 ## [4.0.4] - 2026-07-01  (re-enable Claude Fable 5 through its redeploy free-usage window)
 
 Patch release on the 4.0.x line. Claude Fable 5 was redeployed 2026-07-01 and is included in plan usage only through 2026-07-07, so the `fable` tier is switched back on for that window.
