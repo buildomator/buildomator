@@ -9,7 +9,7 @@ const path = require('node:path');
 //      <plugin_root>/{bin/lib/, sdk/shared/}. Upstream's bin/lib/ lives one
 //      level deeper than the plugin's (inside get-shit-done/), so the
 //      source-repo dev path (candidate 2) is one ".." too high for the
-//      plugin tree. Prepended so jnuyens/gsd-plugin users resolve correctly
+//      plugin tree. Prepended so jnuyens/buildomator users resolve correctly
 //      without needing GSD_MODEL_CATALOG.
 //
 //   1. Co-located install path — get-shit-done/bin/shared/model-catalog.json

@@ -78,7 +78,7 @@ export function resolveBundledAgentsDir(): string {
   return BUNDLED_GSD_AGENTS_DIR;
 }
 
-// [PLUGIN PATCH] When the SDK runs under jnuyens/gsd-plugin, gsd-tools.cjs and
+// [PLUGIN PATCH] When the SDK runs under jnuyens/buildomator, gsd-tools.cjs and
 // core.cjs live at the flattened layout `<plugin_root>/bin/{gsd-tools.cjs,
 // lib/core.cjs}`, not at upstream's `<root>/get-shit-done/bin/...`. Claude Code
 // sets `CLAUDE_PLUGIN_ROOT` for plugin installs; prepend a plugin-flat candidate

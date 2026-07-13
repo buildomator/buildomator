@@ -61,5 +61,5 @@ fi
 echo "ERROR: bundled SDK not found at \$CLAUDE_PLUGIN_ROOT/sdk/dist/cli.js" >&2
 echo "       and no external gsd-sdk on PATH." >&2
 echo "       This is a plugin install bug -- please report it at" >&2
-echo "       https://github.com/jnuyens/gsd-plugin/issues" >&2
+echo "       https://github.com/jnuyens/buildomator/issues" >&2
 exit 1

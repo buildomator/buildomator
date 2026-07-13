@@ -18,7 +18,7 @@ GSD Plugin installs *inside* a Claude Code session, not from your host shell. If
 
 ### No prerequisites
 
-As of **v2.42.0** the plugin bundles its own copy of the GSD SDK at `sdk/dist/cli.js` and ships a `bin/gsd-sdk` wrapper that Claude Code automatically puts on `PATH` for plugin Bash calls. You no longer need to `npm install -g get-shit-done-cc` (or its successor `get-shit-done-redux`). Closes [#4](https://github.com/jnuyens/gsd-plugin/issues/4).
+As of **v2.42.0** the plugin bundles its own copy of the GSD SDK at `sdk/dist/cli.js` and ships a `bin/gsd-sdk` wrapper that Claude Code automatically puts on `PATH` for plugin Bash calls. You no longer need to `npm install -g get-shit-done-cc` (or its successor `get-shit-done-redux`). Closes [#4](https://github.com/jnuyens/buildomator/issues/4).
 
 ### Pre-install: remove any pre-v2.42.0 global SDK install
 
@@ -69,7 +69,7 @@ The `--dangerously-skip-permissions` flag is recommended for the install flow: i
 You should now be inside a Claude Code session (you'll see the Claude Code prompt, not your shell prompt). Type these three commands at the Claude Code prompt:
 
 ```
-/plugin marketplace add jnuyens/gsd-plugin
+/plugin marketplace add jnuyens/buildomator
 /plugin install gsd@gsd-plugin
 /reload-plugins
 ```
@@ -226,7 +226,7 @@ This plugin starts from upstream GSD's source tree and adds Claude-Code-native f
 
 | Aspect | Upstream GSD | This plugin |
 |--------|-------------|-------------|
-| Install | `npx @opengsd/get-shit-done-redux` (or pre-rug `get-shit-done-cc`) | `/plugin marketplace add jnuyens/gsd-plugin && /plugin install gsd@gsd-plugin` (run inside Claude Code) |
+| Install | `npx @opengsd/get-shit-done-redux` (or pre-rug `get-shit-done-cc`) | `/plugin marketplace add jnuyens/buildomator && /plugin install gsd@gsd-plugin` (run inside Claude Code) |
 | Context overhead | ~3,000-5,000 tokens/turn via CLAUDE.md | ~200 tokens (92% reduction) |
 | Skill isolation | Inline execution; orchestration prompts pollute parent context | `context: fork` sub-agent isolation; orchestration runs in clean child contexts |
 | State access | BashTool roundtrips to `gsd-tools` CLI | MCP resources + tools; structured queries replace prompt injection |
@@ -283,7 +283,7 @@ A few things the auto-migration can't do for you:
 Type these at the Claude Code prompt:
 
 ```
-/plugin marketplace add jnuyens/gsd-plugin
+/plugin marketplace add jnuyens/buildomator
 /plugin install gsd@gsd-plugin
 /reload-plugins
 ```
@@ -295,7 +295,7 @@ npm uninstall -g get-shit-done-cc                  # pre-rug package, may still 
 npm uninstall -g @opengsd/get-shit-done-redux      # post-rug package, if you installed it
 ```
 
-> **History:** this step's wording has changed twice. Versions ≤ v2.41.0 told users to uninstall while the plugin still needed the package's `gsd-sdk` binary, which silently broke every `/bm:*` command ([#4](https://github.com/jnuyens/gsd-plugin/issues/4)). v2.41.1 corrected the README to "keep installed". v2.42.0 bundles the SDK inside the plugin, making the uninstall genuinely safe again. Thanks to @ThomasHezard for catching the original bug and @herman925 for confirming. The post-rug package name (`get-shit-done-redux`) was added in v2.43.6.
+> **History:** this step's wording has changed twice. Versions ≤ v2.41.0 told users to uninstall while the plugin still needed the package's `gsd-sdk` binary, which silently broke every `/bm:*` command ([#4](https://github.com/jnuyens/buildomator/issues/4)). v2.41.1 corrected the README to "keep installed". v2.42.0 bundles the SDK inside the plugin, making the uninstall genuinely safe again. Thanks to @ThomasHezard for catching the original bug and @herman925 for confirming. The post-rug package name (`get-shit-done-redux`) was added in v2.43.6.
 
 If you're on **v2.42.0 or newer** the plugin's `bin/gsd-sdk` wrapper takes over once the global one is gone; nothing breaks. If you're on an older plugin version, leave the global package alone until you've upgraded the plugin first.
 
@@ -315,7 +315,7 @@ If you want to try the plugin without touching your existing `~/.claude/get-shit
 
 ```bash
 # 1. Clone this repo somewhere
-git clone https://github.com/jnuyens/gsd-plugin.git ~/src/gsd-plugin
+git clone https://github.com/jnuyens/buildomator.git ~/src/gsd-plugin
 
 # 2. Move the legacy install out of the way (prevents duplicate commands)
 mv ~/.claude/get-shit-done ~/.claude/get-shit-done-legacy

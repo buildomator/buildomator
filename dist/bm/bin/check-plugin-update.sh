@@ -5,14 +5,14 @@ set -euo pipefail
 #
 # Claude Code's plugin auto-update is unreliable, so this notifier compares the
 # INSTALLED plugin version (highest version present in the Claude Code plugin
-# cache) against the latest jnuyens/gsd-plugin GitHub release, and emails only
+# cache) against the latest jnuyens/buildomator GitHub release, and emails only
 # when the install is actually BEHIND. Intended to run weekly from cron.
 #
 # Never fails cron: every external step is guarded with `|| exit 0`, and a
 # missing cache / offline state exits 0 silently. First run seeds without email.
 
 # --- Configuration ---
-REPO="jnuyens/gsd-plugin"
+REPO="jnuyens/buildomator"
 PLUGIN_CACHE="$HOME/.claude/plugins/cache/gsd-plugin/bm"
 # Tracks the latest release we have already notified about, so a given release
 # is announced once (not re-nagged weekly) while every NEW release still fires.
