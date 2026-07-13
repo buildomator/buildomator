@@ -80,6 +80,37 @@ A convention conformance gate (`conventions.cjs` + `verify conventions`, derived
 
 ---
 
+## Milestone: v4.1 — Buildomator Rebrand
+
+**Shipped:** 2026-07-14 (plugin v4.1.0)
+**Phases:** 4 (12-15) | **Plans:** 16 | **Tasks:** 26
+
+### What Was Built
+Renamed the project to Buildomator and added a `/bm:` command surface as a second plugin generated from the same source, while `/gsd:*` keeps working untouched through the 4.x line. `bin/build-bm.cjs` produces the committed `dist/bm` package under a byte-level `--check` drift gate; coexistence is guarded against hook double-fire (a shared election in `bin/lib/coexist.cjs`) and concurrent state writes (HANDOFF.json routed through the O_EXCL lock); buildomator.com and the v5.0 (2026-10-01) `/gsd:` retirement date are wired across manifests, README, CHANGELOG, and the on-use nudge.
+
+### What Worked
+- The generate-and-stamp build with a byte-exact drift gate made the two-plugin arrangement verifiable in CI rather than by inspection.
+- Deciding the additive strategy up front (second generated plugin, defer the breaking `/gsd:` retirement to v5.0) kept the whole milestone zero-disruption for existing users.
+- The Phase 15 human-verify checkpoint earned its place: it caught a gate-clean-but-nonsensical `## Migrating from /bm:` heading the transform produced, which no automated check flagged.
+
+### What Was Inefficient
+- The "byte-copy + string-substitute" rebrand has a shared blind spot (transform, drift gate, and parity test are all colon-scoped), so semantic breakage in generated prose only surfaces via a human read. Documented as transform fragility.
+- Release lag: intermediate plugin versions (4.0.2-4.0.4) were tagged but never got GitHub release entries, and origin sat ~125 commits behind local until this close.
+
+### Patterns Established
+- A generated sibling package (`dist/bm`) kept in lockstep with source by a build step plus a byte-level drift CI gate.
+- Milestone number tracks the plugin v4.x version (single version line), not a parallel internal v1.x line.
+
+### Key Lessons
+- When a transform can produce gate-clean but wrong output, keep one human-read checkpoint in the plan; don't rely solely on token-level gates.
+- Fix a generated artifact at its source and regenerate; never hand-edit `dist/bm`.
+
+### Cost Observations
+- Model mix: orchestrator on opus, executors/verifiers/auditors on sonnet.
+- Notable: milestone close folded in an external PR (#23 argument-hint fix) and a full public release (push + tag + GitHub release) at the user's request.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -87,6 +118,7 @@ A convention conformance gate (`conventions.cjs` + `verify conventions`, derived
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
 | v1.0 | ~8 | 3 | First milestone — research-first, coarse phases, plugin packaging |
+| v4.1 | ~several | 4 | Generated sibling package (dist/bm) in lockstep via byte-level drift gate; additive rebrand, breaking retirement deferred to v5.0 |
 
 ### Top Lessons (Verified Across Milestones)
 
