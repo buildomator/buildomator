@@ -102,7 +102,7 @@ Shipped v1.2 with 3 phases, 3 plans, 14 tasks, plus 3 structurally related quick
 Shipped v4.1 with 4 phases, 16 plans, 26 tasks (2026-07-04 → 2026-07-14); released as plugin v4.1.0. Added the generated `dist/bm` Buildomator package alongside the gsd source.
 Tech stack: Node.js CJS (bin/lib), MCP server (stdio JSON-RPC), Claude Code plugin system.
 ~14k LOC in bin/*.cjs, ~573 LOC MCP server, 81 self-contained skill files (~21k LOC).
-Published as [jnuyens/buildomator](https://github.com/jnuyens/buildomator) on GitHub.
+Published as [buildomator/buildomator](https://github.com/buildomator/buildomator) on GitHub.
 Based on the [GSD](https://github.com/open-gsd/gsd-core) base tree by TÂCHES (Lex Christopherson), now community-maintained at open-gsd; selectively cherry-picked from the gsd-core 1.x line. As of v4.0.0 the plugin tracks its own version line.
 
 ## Constraints

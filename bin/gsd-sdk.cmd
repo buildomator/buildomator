@@ -34,5 +34,5 @@ if exist "%PLUGIN_SDK%" (
 )
 
 echo ERROR: bundled SDK not found. This is a plugin install bug -- 1>&2
-echo        please report it at https://github.com/jnuyens/buildomator/issues 1>&2
+echo        please report it at https://github.com/buildomator/buildomator/issues 1>&2
 exit /b 1

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/jnuyens/buildomator/schema/handoff-v1.json",
+  "$id": "https://github.com/buildomator/buildomator/schema/handoff-v1.json",
   "title": "GSD HANDOFF.json (v1)",
   "$comment": "Describes the 19-field HANDOFF.json contract emitted by bin/lib/checkpoint.cjs. Split: 17 upstream-compat required fields + 2 optional plugin-only extensions (source, partial). The 17 required fields mirror upstream GSD's /gsd:pause-work output verbatim (field names + types) so plugin output is consumable upstream and vice versa. The 2 optional fields are plugin additions from v1.1 Phase 4 (auto-compact checkpointing). `additionalProperties: true` leaves room for future plugin extensions without schema churn — strictness is on required-fields + types, not on an allowlist. See .planning/phases/08-handoff-schema-detector/08-RESEARCH.md for the upstream-subset analysis.",
   "type": "object",

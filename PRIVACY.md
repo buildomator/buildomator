@@ -26,8 +26,8 @@ The plugin includes a local MCP server for project state management. This server
 
 ## Open Source
 
-This plugin is fully open source under the MIT license. You can inspect all code at: https://github.com/jnuyens/buildomator
+This plugin is fully open source under the MIT license. You can inspect all code at: https://github.com/buildomator/buildomator
 
 ## Contact
 
-For privacy questions or concerns, open an issue at: https://github.com/jnuyens/buildomator/issues
+For privacy questions or concerns, open an issue at: https://github.com/buildomator/buildomator/issues
