@@ -70,11 +70,13 @@ You should now be inside a Claude Code session (you'll see the Claude Code promp
 
 ```
 /plugin marketplace add buildomator/buildomator
-/plugin install gsd@gsd-plugin
+/plugin install bm@gsd-plugin
 /reload-plugins
 ```
 
 That's it. This installs everything: slash commands, agent definitions, hooks, and an MCP server for project state. The `/reload-plugins` step activates the freshly installed plugin in your current session; without it the slash commands and hooks aren't loaded until you restart Claude Code. Enable auto-update for the marketplace in Claude Code settings to receive updates automatically.
+
+`bm@gsd-plugin` is the Buildomator plugin, so its commands are `/bm:*`. If you also want the original gsd command prefix (kept working through the 4.x line), additionally run `/plugin install gsd@gsd-plugin`; the two run side by side with no conflict.
 
 ## Quick start
 
@@ -226,7 +228,7 @@ This plugin starts from upstream GSD's source tree and adds Claude-Code-native f
 
 | Aspect | Upstream GSD | This plugin |
 |--------|-------------|-------------|
-| Install | `npx @opengsd/get-shit-done-redux` (or pre-rug `get-shit-done-cc`) | `/plugin marketplace add buildomator/buildomator && /plugin install gsd@gsd-plugin` (run inside Claude Code) |
+| Install | `npx @opengsd/get-shit-done-redux` (or pre-rug `get-shit-done-cc`) | `/plugin marketplace add buildomator/buildomator && /plugin install bm@gsd-plugin` (run inside Claude Code) |
 | Context overhead | ~3,000-5,000 tokens/turn via CLAUDE.md | ~200 tokens (92% reduction) |
 | Skill isolation | Inline execution; orchestration prompts pollute parent context | `context: fork` sub-agent isolation; orchestration runs in clean child contexts |
 | State access | BashTool roundtrips to `gsd-tools` CLI | MCP resources + tools; structured queries replace prompt injection |
@@ -284,7 +286,7 @@ Type these at the Claude Code prompt:
 
 ```
 /plugin marketplace add buildomator/buildomator
-/plugin install gsd@gsd-plugin
+/plugin install bm@gsd-plugin
 /reload-plugins
 ```
 
