@@ -8,7 +8,7 @@
 
 **Buildomator** is a Claude Code plugin that plans, executes, and verifies your work. It asks you only about the real design and architecture decisions that need your judgment, then carries out the rest on its own. Each step runs in its own focused subcontext, so token use stays low even on long projects.
 
-Buildomator is a performance-optimized evolution of [GSD](https://github.com/open-gsd/get-shit-done-redux) for Claude Code: it cuts per-turn token overhead by ~92%, keeps project state in an MCP-backed store, and auto-resumes across `/compact` so a compaction never loses your place.
+Buildomator is a performance-optimized evolution of GSD for Claude Code: it cuts per-turn token overhead by ~92%, keeps project state in an MCP-backed store, and auto-resumes across `/compact` so a compaction never loses your place.
 
 Project home and docs: [buildomator.com](https://buildomator.com).
 
@@ -409,6 +409,7 @@ This project repackages the GSD workflow system as a native Claude Code plugin w
 
 - **GSD (Get Shit Done)** by TACHES (Lex Christopherson) -- the original workflow framework this plugin is based on. Original repo at [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done) (locked May 2026 after the founder rug-pulled the associated `$GSD` token and deleted his accounts).
 - **[open-gsd/get-shit-done-redux](https://github.com/open-gsd/get-shit-done-redux)** by [trek-e](https://github.com/trek-e) (Tom Boucher) and contributors -- bit-perfect community continuation hosting the codebase going forward.
+- **[VibeDrift](https://www.npmjs.com/package/@vibedrift/cli)**: a second, idea-only upstream. Buildomator never runs it; it ports VibeDrift's drift-detection heuristics natively (pinned to the v0.14.0 baseline) and watches its releases to cherry-pick future ones. See [Upstream projects](#upstream-projects).
 - **[workspace.json spec](https://github.com/workspace-json/spec)** -- the open codebase-intelligence format gsd-plugin reads at SessionStart; the consumer integration was contributed by [Qwynn Marcelle](https://github.com/qmarcelle).
 - Plugin packaging, MCP integration, token optimization, and memory system by Jasper Nuyens
 
