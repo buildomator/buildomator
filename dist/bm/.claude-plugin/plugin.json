@@ -1,7 +1,7 @@
 {
   "name": "bm",
   "version": "4.1.0",
-  "description": "Buildomator -- structured workflow plugin for Claude Code with planning, execution, verification, and MCP-backed project state",
+  "description": "Buildomator: structured workflow plugin for Claude Code with planning, execution, verification, and MCP-backed project state",
   "author": {
     "name": "Jasper Nuyens"
   },

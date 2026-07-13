@@ -85,7 +85,7 @@ Assumes you have already completed the Installation section above (Claude Code i
 3. Execute: `/bm:execute-phase`
 4. Verify: `/bm:verify-work`
 
-## Migrating from /gsd:
+## Migrating from gsd
 
 This plugin used to answer to the gsd command prefix, and now it answers to `/bm:` (Buildomator). Nothing about the plugin itself changed with the rename, only the name it goes by.
 

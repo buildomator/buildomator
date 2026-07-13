@@ -1,7 +1,7 @@
 {
   "name": "gsd",
   "version": "4.1.0",
-  "description": "Buildomator -- a structured workflow plugin for Claude Code that adds planning, execution, and verification commands with MCP-backed project state",
+  "description": "Buildomator: a structured workflow plugin for Claude Code that adds planning, execution, and verification commands with MCP-backed project state",
   "author": {
     "name": "Jasper Nuyens"
   },

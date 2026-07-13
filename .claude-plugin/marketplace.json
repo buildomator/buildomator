@@ -4,7 +4,7 @@
     "name": "Jasper Nuyens"
   },
   "metadata": {
-    "description": "Buildomator -- a structured workflow plugin for Claude Code with planning, execution, verification, and MCP-backed project state"
+    "description": "Buildomator: a structured workflow plugin for Claude Code with planning, execution, verification, and MCP-backed project state"
   },
   "plugins": [
     {
@@ -26,7 +26,7 @@
       "name": "bm",
       "source": "./dist/bm",
       "displayName": "Buildomator",
-      "description": "Buildomator -- a structured workflow plugin for Claude Code. Use /bm: for planning, execution, verification, and MCP-backed project state. This is the plugin to install.",
+      "description": "Buildomator: a structured workflow plugin for Claude Code. Use /bm: for planning, execution, verification, and MCP-backed project state. This is the plugin to install.",
       "version": "4.1.0",
       "author": {
         "name": "Jasper Nuyens"

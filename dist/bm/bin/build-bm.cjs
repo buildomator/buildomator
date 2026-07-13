@@ -146,7 +146,7 @@ function stampBmManifest(srcManifest) {
     name: 'bm',
     displayName: 'Buildomator',
     description:
-      'Buildomator -- structured workflow plugin for Claude Code with planning, ' +
+      'Buildomator: structured workflow plugin for Claude Code with planning, ' +
       'execution, verification, and MCP-backed project state',
     version: srcManifest.version,
   };
