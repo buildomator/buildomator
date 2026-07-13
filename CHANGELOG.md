@@ -8,7 +8,7 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
-## [4.1.0] - 2026-07-12  (Buildomator rebrand + additive /bm: command surface)
+## [4.1.0] - 2026-07-14  (Buildomator rebrand + additive /bm: command surface)
 
 Minor release completing the v4.1 milestone. The project is renamed to Buildomator, and a new `/bm:` command surface is added alongside the existing `/gsd:` one. Follows the gsd-core `1.x` line.
 
@@ -19,6 +19,9 @@ Minor release completing the v4.1 milestone. The project is renamed to Buildomat
 ### Changed
 - **`/gsd:` is retained through the whole 4.x line with no disruption.** Nothing to re-enable, no reinstall, no behavior change for current users: `/gsd:*` keeps working exactly as before for the entire 4.x line while `/bm:` runs beside it. The on-use deprecation nudge now names the retirement date.
 - **`/gsd:` retires at v5.0 on 2026-10-01.** v5.0 is the breaking release that removes the `/gsd:` prefix and flips the authored identity fully to Buildomator. Until then both prefixes are supported.
+
+### Fixed
+- **`argument-hint` frontmatter loads in stricter slash-command loaders.** Quoted the `argument-hint` values in the `health`, `add-todo`, `check-todos`, and `debug` skills so loaders that validate it as a string (GitHub Copilot CLI 1.0.65 and later) stop silently dropping those skills. No behavior change on Claude Code. Reported and fixed by @thejesh23 (#22, #23).
 
 ## [4.0.4] - 2026-07-01  (re-enable Claude Fable 5 through its redeploy free-usage window)
 

@@ -168,6 +168,7 @@ This plugin starts from upstream GSD's source tree but adds Claude-Code-native c
 
 | Feature | What it does | Command / hook |
 |---------|--------------|----------------|
+| **Buildomator identity + additive `/bm:` command surface** (v4.1.0) | The project is now Buildomator, and every command answers to `/bm:` as well as `/gsd:`. Both prefixes run the same code side by side through the whole 4.x line, and `/gsd:` retires at v5.0. Ships as a second generated plugin, so current installs keep working with nothing to re-enable. | `/bm:*` (all commands), `dist/bm/`, [buildomator.com](https://buildomator.com) |
 | **Native drift detection** (v4.0.0) | Repo-wide, zero-dep detection of duplicate logic, structural near-clones, and phantom/stub code, with an auditable allowlist. Ranked report plus an opt-in milestone gate. | `gsd-tools verify drift`, `/bm:scan --drift` |
 | **Convention and architectural conformance gate** (v4.0.0) | Derives your project's naming and architecture conventions by majority vote and flags changed files that deviate, in the existing review path. Never blocks. | `gsd-tools verify conventions`, wired into pattern-mapper + code-review |
 | **Weekly plugin self-update watch** (v4.0.0) | Weekly cron emails you when your install is behind the latest tag (Claude Code auto-update is unreliable). Never fails cron. | `bin/check-plugin-update.sh` (cron, not a GSD command) |
