@@ -6,7 +6,7 @@
 
 **Plugin version:** `4.1.0`
 
-**Buildomator** is a Claude Code plugin that plans, executes, and verifies your work. It asks you only about the real design and architecture decisions that need your judgment, then carries out the rest on its own. Each step runs in its own focused subcontext, so token use stays low even on long projects.
+**Buildomator** (formerly [gsd-plugin](https://github.com/jnuyens/gsd-plugin)) is a Claude Code plugin that plans, executes, and verifies your work. It asks you only about the real design and architecture decisions that need your judgment, then carries out the rest on its own. Each step runs in its own focused subcontext, so token use stays low even on long projects.
 
 Buildomator is a performance-optimized evolution of GSD for Claude Code: it cuts per-turn token overhead by ~92%, keeps project state in an MCP-backed store, and auto-resumes across `/compact` so a compaction never loses your place.
 
