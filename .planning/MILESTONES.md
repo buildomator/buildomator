@@ -1,5 +1,27 @@
 # Milestones
 
+## v4.1 Buildomator Rebrand (Shipped: 2026-07-13)
+
+**Phases completed:** 4 phases, 16 plans, 26 tasks
+
+**Key accomplishments:**
+
+- One `node bin/build-bm.cjs` command generates the committed dist/bm Buildomator package from the tracked gsd source, stamping only name/displayName/description, single-sourcing the version across all four manifest sites, with a byte-level --check drift gate.
+- CI now enforces the two-package arrangement: a bm-build-drift job fails on any dist/bm divergence, a bm-package-smoke job proves bm resolves via its own CLAUDE_PLUGIN_ROOT with a fallback tripwire, and RELEASING.md documents the dual-package release.
+- dist/bm is now a self-consistent Buildomator package: every /gsd: command and plugin-owned path reads /bm:, all three hook cache-fallback carriers target the bm cache dir, the MCP server registers under the bm key, and the drift gate compares against the deterministic transform of source.
+- CI is now the acceptance gate for the bm package: a new command-inventory parity test runs in bm-build-drift, bm-package-smoke proves the stamped hook fallbacks (both carriers) and an identical MCP tool/resource surface at runtime via dynamic comparison, and RELEASING.md describes the current transform instead of a fixed limitation.
+- HANDOFF.json writes now serialize through the same O_EXCL lock as STATE.md and land via atomic temp+rename, so two coexisting plugin writers can no longer truncate the file to invalid JSON.
+- Coexistence election wired into both shared hook dispatch points so a both-active session collapses to one effective fire across every merged hook, plus a sentinel-wrapped gsd SessionStart /bm: + v5.0 deprecation nudge.
+- A self-protected, line-anchored suppressNudge transform strips the sentinel-bracketed /bm: rename notice from the generated bm package, single-sourced in bm-transform.cjs and enforced by the --check drift gate, so bm never tells users to switch to bm while gsd keeps emitting it (including under yield).
+- The four coexistence tests now run as a bm-coexistence CI job on every push, and install-smoke proves package-level single-fire (the gsd copy yields its HANDOFF.json write when a bm-active marker is present, with a no-marker control).
+- README.md rebranded to Buildomator: new header logo, Buildomator H1/intro, /bm: command examples throughout, a "Migrating from gsd" section naming the 2026-10-01 v5.0 retirement, buildomator.com links, and the Plugin version line bumped to 4.1.0.
+
+**Released:** plugin v4.1.0 (tag `v4.1.0`, GitHub release marked latest, 2026-07-14). Includes the argument-hint YAML quoting fix from PR #23 (thejesh23, closes #22).
+
+**Known deferred items at close:** 43 (see STATE.md Deferred Items). Non-blocking: Phase 14 has 2 minor documented residuals (pluginIdentity edge case for non-cache bm installs; accepted SessionStart TOCTOU), Phase 13 has one live `/bm:*` install check that needs a real Claude Code host, plus 35 carry-over quick tasks, 5 todos, and 1 seed from earlier milestones.
+
+---
+
 ## v1.3 Consistency and Code-Integrity Safeguards (Shipped: 2026-06-27)
 
 **Phases completed:** 2 phases, 8 plans, 7 tasks

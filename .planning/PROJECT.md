@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A performance-optimized plugin packaging of GSD (Get Shit Done) for Claude Code. Reduces per-turn token overhead by ~92%, exposes project state via MCP tools, and bundles everything into a single-install plugin with cross-session memory.
+A performance-optimized plugin packaging of GSD (Get Shit Done) for Claude Code, now branded **Buildomator**. Reduces per-turn token overhead by ~92%, exposes project state via MCP tools, and bundles everything into a single-install plugin with cross-session memory. As of v4.1.0 it ships two command surfaces from one source: `/bm:` (Buildomator, the primary prefix) and `/gsd:` (retained through the 4.x line, retires at v5.0).
 
 ## Core Value
 
@@ -48,11 +48,16 @@ Reduce GSD's per-turn token overhead and agent spawn latency without breaking mu
 - ✓ VibeDrift adopted as a second upstream: heuristics ported natively (pinned v0.14.0 baseline), repo watched, never invoked at runtime (DRIFT-01) — v4.0.0 (Phase 11)
 - ✓ Weekly plugin self-update watch + CJS/SDK config-schema parity guard — v4.0.0
 
+- ✓ One build step generates both `bm` and `gsd` packages from one source, version single-sourced, byte-level drift gate (BUILD-01..03) — v4.1.0 (Phase 12)
+- ✓ `/bm:` plugin live with full command parity and identical agents, hooks, and MCP surface (BM-01..03) — v4.1.0 (Phase 13)
+- ✓ `/gsd:*` unaffected; both plugins coexist without hook double-fire or state corruption; on-use `/bm:`+v5.0 deprecation nudge (COMPAT-01..04) — v4.1.0 (Phase 14)
+- ✓ Buildomator identity across README/manifests/marketplace, buildomator.com wired, CHANGELOG migration + v5.0 (2026-10-01) retirement story (BRAND-01..03) — v4.1.0 (Phase 15)
+
 ### Active
 
-Building toward **v4.1 Buildomator Rebrand** (ships as plugin 4.1.0). Rebrand to Buildomator and add a `/bm:` command surface additively, keeping `/gsd:*` fully working through the 4.x line. Requirements defined in REQUIREMENTS.md.
+No active milestone. v4.1 shipped and archived; next milestone is defined via `/gsd:new-milestone`.
 
-Deferred (carried to ROADMAP `## Backlog`): LIFE-02, LIFE-03, BEHAVIOR-01, UPST-03/04. Also deferred: `allowed-tools` on verification skills, tool restriction profiles, empirical token measurement.
+Deferred (carried to ROADMAP `## Backlog`): LIFE-02, LIFE-03, BEHAVIOR-01, UPST-03/04, COMPAT-05 (pluginIdentity off-cache install), COMPAT-06 (SessionStart first-event TOCTOU). Also deferred: `allowed-tools` on verification skills, tool restriction profiles, empirical token measurement.
 
 ### Out of Scope
 
@@ -65,42 +70,36 @@ Deferred (carried to ROADMAP `## Backlog`): LIFE-02, LIFE-03, BEHAVIOR-01, UPST-
 
 ## Current State
 
+**Shipped:** v4.1 Buildomator Rebrand, released as plugin **v4.1.0** (2026-07-14, GitHub release marked latest). The project is now Buildomator with a `/bm:` command surface added additively: one `bin/build-bm.cjs` step generates the committed `dist/bm` package from the tracked gsd source under a byte-level drift gate (Phase 12), `/bm:` has full command/agent/hook/MCP parity (Phase 13), the two plugins coexist without hook double-fire or state corruption and `/gsd:*` is untouched with an on-use v5.0 nudge (Phase 14), and Buildomator identity plus buildomator.com and the 2026-10-01 `/gsd:` retirement story are wired across README, manifests, marketplace, and CHANGELOG (Phase 15). BUILD/BM/COMPAT/BRAND requirements validated; two minor non-blocking coexistence gaps parked (COMPAT-05, COMPAT-06). Also folded in the PR #23 argument-hint YAML quoting fix (thejesh23). Full v4.1 details: [milestones/v4.1-ROADMAP.md](milestones/v4.1-ROADMAP.md).
+
 **Shipped:** v1.3 Consistency & Code-Integrity Safeguards, released as plugin **v4.0.0** (2026-06-27). Phase 10 delivered the convention conformance gate (`bin/lib/conventions.cjs` + `verify conventions` + pattern-mapper/code-review wiring, CONV-01..04). Phase 11 delivered native drift detection (`semantic-dup` + `phantom-scaffolding` + `drift-allowlist` composed via `verify drift`), `/gsd:scan --drift`, the opt-in warn-first audit-milestone integrity gate, and VibeDrift adopted as a second upstream (heuristics ported natively, never invoked at runtime). DRIFT-01..05 validated; both phases nyquist-compliant. v4.0.0 also moved the plugin to its own version line (decoupled from the gsd-core `+2` scheme). Full v1.3 details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md).
 
 **Shipped:** v1.2 Upstream Resilience — 2026-04-24. Three detectors now run in CI on every push (file-layout, HANDOFF schema, namespace drift), each with a committed ratchet baseline that hard-fails on regression. Unified `check-drift.cjs` orchestrator + post-sync upstream-schema detector close the loop. Plus a skill-directory rename that fixed a duplicated-prefix UX bug in tab completion. Full v1.2 details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md).
 
 **Previously shipped:** v1.1 Session Continuity (2026-04-20) — checkpoint/resume across `/compact`; details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md). v1.0 MVP (2026-04-06) — plugin packaging + MCP + memory; details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md).
 
-## Current Milestone: v4.1 Buildomator Rebrand
+## Next Milestone
 
-**Goal:** Rebrand gsd-plugin to Buildomator and ship a `/bm:` command surface additively, without disrupting any current `/gsd:` user. Ships as plugin **4.1.0**.
+None defined yet. Start with `/gsd:new-milestone` (questioning → research → requirements → roadmap).
 
-**Target features:**
-- Buildomator identity (README, plugin/marketplace description, branding, buildomator.com wiring) — non-breaking.
-- A `/bm:` Buildomator plugin (`plugin.json`/`marketplace.json` name `bm`).
-- `/gsd:*` kept working via a second plugin, functional through the whole 4.x line (zero re-enable for existing users).
-- Build/release step that generates both plugins from one source (stamps `name: gsd` vs `name: bm`) so they never drift.
-- Resolve double-fire when both plugins are enabled (duplicate hooks: PostToolUse checkpoint / validate-commit / session-state; duplicate MCP server; shared project state).
-- Deprecation comms: on-use nudge in `/gsd:*`, CHANGELOG, README.
+**Standing context for whatever comes next:**
+- Repo + cache id stay `gsd-plugin` → no `CLAUDE_PLUGIN_ROOT`/hook-path breakage. Full repo/cache rename still deferred (high-risk lever).
+- Backward-compat guarantee: `/gsd:*` keeps working through the 4.x line; **v5.0** is the breaking release that retires `/gsd:` (target 2026-10-01) and flips the authored identity fully to Buildomator.
+- Single version line: the milestone number tracks the plugin v4.x version (see Key Decisions).
 
-**Progress:** Phase 12 (Two-Plugin Build Foundation) complete 2026-07-04. `bin/build-bm.cjs` generates and stamps `dist/bm/` from the gsd source with the version single-sourced across all four manifest sites; the single `marketplace.json` lists both `gsd` and `bm`; CI gates drift (`bm-build-drift`) and bm path-safety (`bm-package-smoke`), and RELEASING.md documents the lockstep dual-package release. BUILD-01/02/03 validated. Phase 13 (Buildomator Plugin) complete 2026-07-06: `/bm:` live with full command parity and identical agents/hooks/MCP. Phase 14 (Backward Compatibility and Coexistence) complete 2026-07-11: shared single-fire election (`bin/lib/coexist.cjs`) wired into both hook dispatch points, HANDOFF.json write routed through the O_EXCL lock (COMPAT-03), the `/bm:` deprecation nudge stripped from the generated bm package, and the four coexistence tests turned into CI release gates. COMPAT-01..04 validated; two minor non-blocking gaps parked (COMPAT-05, COMPAT-06). Next: Phase 15 (Buildomator Identity and Communications).
-
-**Key context:**
-- Repo + cache id stay `gsd-plugin` → no `CLAUDE_PLUGIN_ROOT`/hook-path breakage. Full repo/cache rename deferred (high-risk lever).
-- Backward-compat guarantee: `/gsd:*` must keep working for at least one major release; `/gsd:` retires at **v5.0** (out of scope here).
-- Single version line in effect — milestone number tracks the plugin v4.x version (see Key Decisions).
-
-Carried backlog (see ROADMAP `## Backlog`, not in v4.1):
+Carried backlog (see ROADMAP `## Backlog`):
 - **LIFE-02**: staleness threshold detection for HANDOFF.json
 - **LIFE-03**: dedicated `/gsd:checkpoint` skill (optional polish; manual path already works)
 - **BEHAVIOR-01**: integration tests for upstream skill behavior drift (needs integration-test infra)
 - **UPST-03/04**: upstream PR packaging (blocked on upstream-direction review)
+- **COMPAT-05 / COMPAT-06**: two minor non-blocking coexistence residuals parked from Phase 14
 
 ## Context
 
 Shipped v1.0 with 3 phases, 10 plans, 27 tasks over 7 days (2026-04-01 → 2026-04-06).
 Shipped v1.1 with 2 phases, 5 plans, plus 4 structurally related quick tasks over 9 days (2026-04-11 → 2026-04-20).
 Shipped v1.2 with 3 phases, 3 plans, 14 tasks, plus 3 structurally related quick tasks over 5 days (2026-04-20 → 2026-04-24).
+Shipped v4.1 with 4 phases, 16 plans, 26 tasks (2026-07-04 → 2026-07-14); released as plugin v4.1.0. Added the generated `dist/bm` Buildomator package alongside the gsd source.
 Tech stack: Node.js CJS (bin/lib), MCP server (stdio JSON-RPC), Claude Code plugin system.
 ~14k LOC in bin/*.cjs, ~573 LOC MCP server, 81 self-contained skill files (~21k LOC).
 Published as [jnuyens/gsd-plugin](https://github.com/jnuyens/gsd-plugin) on GitHub.
@@ -129,6 +128,7 @@ Based on the [GSD](https://github.com/open-gsd/gsd-core) base tree by TÂCHES (L
 | VibeDrift as a second upstream (native port, never run) | Keep drift detection 100% native/zero-dep while still learning from VibeDrift heuristics | ✓ Good — DRIFT-01; ops-only release watch, nothing on the runtime path (v4.0.0) |
 | Plugin on its own version line (v4.0.0) | A second upstream plus features with no upstream equivalent make a gsd-core-coupled major misleading | ✓ Good — major now signals plugin milestones; gsd-core line noted per release for provenance |
 | Single version line: milestones track the plugin v4.x version (2026-06-29) | The parallel "internal v1.x" milestone line vs the real 4.x plugin version forced tracking two numbers; nothing in GSD code required it (milestone version is free-form `vX.Y`) | ✓ Good — milestone number = plugin minor (this one = v4.1 → 4.1.0); v1.0–v1.3 archives unchanged |
+| Additive rebrand via a second generated plugin (v4.1) | Claude Code gives one plugin exactly one command prefix with no aliasing, so keeping `/gsd:*` alive while adding `/bm:` required shipping `bm` as a second plugin generated from the same source; retiring `/gsd:` is deferred to the v5.0 breaking major | ✓ Good — zero-disruption for existing users; `dist/bm` stays in lockstep via `bin/build-bm.cjs` + byte-level drift gate |
 
 ## Evolution
 
@@ -160,4 +160,4 @@ This document evolves at phase transitions and milestone boundaries.
 9. **Run `UPSTREAM_VERSION=v1.x.y node bin/maintenance/check-upstream-schema.cjs`** (use the just-synced version) — must exit 0 before declaring the sync complete. If upstream added fields, decide whether to absorb them into `schema/handoff-v1.json` as optional or bump to a `handoff-v2.json` alongside
 
 ---
-*Last updated: 2026-07-04 — Phase 12 (Two-Plugin Build Foundation) complete: one build step generates both bm and gsd packages in lockstep, CI-gated for drift and bm path-safety (BUILD-01/02/03). Prior: 2026-06-29 — started milestone v4.1 Buildomator Rebrand (ships as plugin 4.1.0); adopted a single version line so milestones track the plugin v4.x version. Prior: 2026-06-27 after the v1.3 milestone shipped as plugin v4.0.0. Phase 10 (convention conformance gate, CONV-01..04) + Phase 11 (native drift detection, VibeDrift second upstream, DRIFT-01..05); both nyquist-compliant. Plugin moved to its own version line (decoupled from the gsd-core +2 scheme). Added a weekly plugin self-update watch and a CJS/SDK config-schema parity guard. Prior: 2026-06-26 Phase 10 complete; 2026-05-11 synced upstream GSD 1.41.2 (plugin v2.42.4). Bundled SDK v1.50.0-canary.0.*
+*Last updated: 2026-07-14 after the v4.1 Buildomator Rebrand milestone shipped as plugin v4.1.0 (Phases 12-15: two-plugin build foundation, the `/bm:` plugin, backward-compat coexistence, and Buildomator identity; BUILD/BM/COMPAT/BRAND validated, COMPAT-05/06 parked). Prior: 2026-07-04 — Phase 12 complete. Prior: 2026-06-29 — started milestone v4.1; adopted a single version line so milestones track the plugin v4.x version. Prior: 2026-06-27 after the v1.3 milestone shipped as plugin v4.0.0 (Phase 10 convention conformance gate + Phase 11 native drift detection, VibeDrift second upstream; plugin moved to its own version line). Prior: 2026-05-11 synced upstream GSD 1.41.2 (plugin v2.42.4). Bundled SDK v1.50.0-canary.0.*

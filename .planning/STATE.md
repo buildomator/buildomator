@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Buildomator Rebrand
-status: milestone-complete
-stopped_at: Phase 15 complete (all plans + human sign-off)
-last_updated: "2026-07-13T00:00:00.000Z"
-last_activity: "2026-07-13: Phase 15 human-verify checkpoint (15-05) passed, milestone v4.1 complete"
+status: Awaiting next milestone
+stopped_at: Milestone v4.1 shipped and archived
+last_updated: "2026-07-13T22:17:12.801Z"
+last_activity: 2026-07-13 — Milestone v4.1 completed and archived
 progress:
   total_phases: 4
   completed_phases: 4
@@ -21,16 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** Reduce GSD's per-turn token overhead and agent spawn latency without breaking multi-CLI compatibility
-**Current focus:** Milestone v4.1 (Buildomator Rebrand) complete, awaiting archive
+**Current focus:** Planning next milestone (v4.1 Buildomator Rebrand shipped and archived 2026-07-14)
 
 ## Current Position
 
-Phase: 15 (buildomator-identity-and-communications) — COMPLETE
-Plan: 5 of 5 (human sign-off passed)
-Status: Milestone v4.1 complete
-Last activity: "2026-07-13: Phase 15 human-verify checkpoint (15-05) passed"
-
-Progress: [██████████] 100% (4/4 phases)
+Phase: Milestone v4.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-13 — Milestone v4.1 completed and archived
 
 ## Performance Metrics
 
@@ -76,6 +74,19 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 ### Blockers/Concerns
 
 None.
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
+
+| Category | Item | Status |
+|----------|------|--------|
+| verification | Phase 14 COMPAT-05: pluginIdentity fallback only matches `/bm/bin/`, misidentifies an off-cache `/bm/hooks/` install as gsd | parked to Backlog (minor, non-blocking; shipped cache-install path is correct) |
+| verification | Phase 14 COMPAT-06: SessionStart first-event TOCTOU can double-run session-start work once before bm's marker lands | parked to Backlog (accepted trade-off D-03; bounded and tested) |
+| verification | Phase 13: live `/bm:*` install confirmation in a real Claude Code host | deferred (needs a runtime; 13/13 verified at code level, CI green) |
+| quick_tasks | 35 historical quick tasks without SUMMARY (earlier milestones) | deferred (carry-over) |
+| todos | 5 pending todos | deferred to next milestone |
+| seeds | 001-evidence-based-verification | deferred (forward-looking seed) |
 
 ### Quick Tasks Completed
 
@@ -161,4 +172,4 @@ Next action: `/gsd:plan-phase 12` to plan the Two-Plugin Build Foundation phase.
 
 ## Operator Next Steps
 
-- Plan Phase 12 with `/gsd:plan-phase 12`
+- Start the next milestone with /gsd-new-milestone
