@@ -30,7 +30,7 @@ Check whether you have a shadowing install:
 which gsd-sdk
 ```
 
-If the output is anything OTHER than a path under `~/.claude/plugins/cache/gsd-plugin/` (typical bad outputs are `/opt/homebrew/bin/gsd-sdk` or `/usr/local/bin/gsd-sdk`), uninstall it from your host shell before going further:
+If the output is anything OTHER than a path under `~/.claude/plugins/cache/` (typical bad outputs are `/opt/homebrew/bin/gsd-sdk` or `/usr/local/bin/gsd-sdk`), uninstall it from your host shell before going further:
 
 ```bash
 npm uninstall -g @gsd-build/sdk
@@ -40,7 +40,7 @@ npm uninstall -g @opengsd/get-shit-done-redux
 npm uninstall -g get-shit-done-redux   # if you tried the unscoped name (404s on npm; v2.43.x docs incorrectly referenced this form, fixed in v2.44.6)
 ```
 
-Re-run `which gsd-sdk`. The expected post-uninstall output is either a path under `~/.claude/plugins/cache/gsd-plugin/` (after the plugin is installed in Step 3) or `gsd-sdk not found` (before installation). Both are correct.
+Re-run `which gsd-sdk`. The expected post-uninstall output is either a path under `~/.claude/plugins/cache/` (after the plugin is installed in Step 3) or `gsd-sdk not found` (before installation). Both are correct.
 
 If you skip this step and install the plugin anyway, v2.43.1+ ships a `gsd-shadowing-sdk-detector` SessionStart hook that will detect the conflict at the start of every Claude Code session and emit a one-time advisory pointing back to this section.
 
@@ -69,14 +69,14 @@ The `--dangerously-skip-permissions` flag is recommended for the install flow: i
 You should now be inside a Claude Code session (you'll see the Claude Code prompt, not your shell prompt). Type these three commands at the Claude Code prompt:
 
 ```
-/plugin marketplace add buildomator/buildomator
-/plugin install bm@gsd-plugin
+/plugin marketplace add buildomator/marketplace
+/plugin install bm@buildomator
 /reload-plugins
 ```
 
 That's it. This installs everything: slash commands, agent definitions, hooks, and an MCP server for project state. The `/reload-plugins` step activates the freshly installed plugin in your current session; without it the slash commands and hooks aren't loaded until you restart Claude Code. Enable auto-update for the marketplace in Claude Code settings to receive updates automatically.
 
-`bm@gsd-plugin` is the Buildomator plugin, so its commands are `/bm:*`. If you also want the original gsd command prefix (kept working through the 4.x line), additionally run `/plugin install gsd@gsd-plugin`; the two run side by side with no conflict.
+`bm@buildomator` is the Buildomator plugin, so its commands are `/bm:*`. If you also want the original gsd command prefix (kept working through the 4.x line), add the `buildomator/buildomator` marketplace and run `/plugin install gsd@gsd-plugin`; the two run side by side with no conflict. Existing installs of `bm@gsd-plugin` from the `buildomator/buildomator` marketplace keep working unchanged, both point at the same plugin.
 
 ## Quick start
 
@@ -101,7 +101,7 @@ The original gsd command prefix retires at v5.0 on 2026-10-01. After that releas
 
 Enable auto-update for the marketplace in Claude Code settings and updates will be applied automatically at startup. To update manually:
 
-1. **Refresh the plugin on disk.** Run `/plugins`, open **Marketplace**, and select **gsd-plugin** to refresh it. Then exit the marketplace by pressing **Esc twice**. This updates gsd-plugin on the filesystem.
+1. **Refresh the plugin on disk.** Run `/plugins`, open **Marketplace**, and select the marketplace you installed from (**buildomator** for `bm@buildomator`, or **gsd-plugin** for an existing `bm@gsd-plugin` or `gsd@gsd-plugin` install) to refresh it. Then exit the marketplace by pressing **Esc twice**. This updates the plugin on the filesystem.
 2. **Activate it in your open sessions.** Run `/reload-plugins` in **each** Claude Code session you already have open, so they pick up the new version without restarting.
 
 Note: the marketplace step (1) updates the plugin on disk; `/reload-plugins` (2) is what makes an already-running session use the new version. Sessions you start after the update load the new version automatically.
@@ -228,7 +228,7 @@ This plugin starts from upstream GSD's source tree and adds Claude-Code-native f
 
 | Aspect | Upstream GSD | This plugin |
 |--------|-------------|-------------|
-| Install | `npx @opengsd/get-shit-done-redux` (or pre-rug `get-shit-done-cc`) | `/plugin marketplace add buildomator/buildomator && /plugin install bm@gsd-plugin` (run inside Claude Code) |
+| Install | `npx @opengsd/get-shit-done-redux` (or pre-rug `get-shit-done-cc`) | `/plugin marketplace add buildomator/marketplace && /plugin install bm@buildomator` (run inside Claude Code) |
 | Context overhead | ~3,000-5,000 tokens/turn via CLAUDE.md | ~200 tokens (92% reduction) |
 | Skill isolation | Inline execution; orchestration prompts pollute parent context | `context: fork` sub-agent isolation; orchestration runs in clean child contexts |
 | State access | BashTool roundtrips to `gsd-tools` CLI | MCP resources + tools; structured queries replace prompt injection |
@@ -285,8 +285,8 @@ A few things the auto-migration can't do for you:
 Type these at the Claude Code prompt:
 
 ```
-/plugin marketplace add buildomator/buildomator
-/plugin install bm@gsd-plugin
+/plugin marketplace add buildomator/marketplace
+/plugin install bm@buildomator
 /reload-plugins
 ```
 
