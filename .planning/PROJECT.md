@@ -57,7 +57,7 @@ Reduce GSD's per-turn token overhead and agent spawn latency without breaking mu
 
 No active milestone. v4.1 shipped and archived; next milestone is defined via `/gsd:new-milestone`.
 
-Deferred (carried to ROADMAP `## Backlog`): LIFE-02, LIFE-03, BEHAVIOR-01, UPST-03/04, COMPAT-05 (pluginIdentity off-cache install), COMPAT-06 (SessionStart first-event TOCTOU). Also deferred: `allowed-tools` on verification skills, tool restriction profiles, empirical token measurement.
+Deferred (carried to ROADMAP `## Backlog`): LIFE-02, LIFE-03, BEHAVIOR-01, UPST-03/04, COMPAT-06 (SessionStart first-event TOCTOU). Also deferred: `allowed-tools` on verification skills, tool restriction profiles, empirical token measurement. (COMPAT-05 resolved 2026-07-14 via quick 260714-coq.)
 
 ### Out of Scope
 
@@ -92,7 +92,7 @@ Carried backlog (see ROADMAP `## Backlog`):
 - **LIFE-03**: dedicated `/gsd:checkpoint` skill (optional polish; manual path already works)
 - **BEHAVIOR-01**: integration tests for upstream skill behavior drift (needs integration-test infra)
 - **UPST-03/04**: upstream PR packaging (blocked on upstream-direction review)
-- **COMPAT-05 / COMPAT-06**: two minor non-blocking coexistence residuals parked from Phase 14
+- **COMPAT-06**: SessionStart first-event TOCTOU, the one remaining minor non-blocking coexistence residual parked from Phase 14 (COMPAT-05 resolved 2026-07-14 via quick 260714-coq)
 
 ## Context
 

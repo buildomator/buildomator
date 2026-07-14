@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 Phase: Milestone v4.1 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-07-13 — Milestone v4.1 completed and archived
+Last activity: 2026-07-14 - Completed quick task 260714-coq (marketplace-agnostic plugin-root fallback; COMPAT-05 closed)
 
 ## Performance Metrics
 
@@ -81,7 +81,7 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 
 | Category | Item | Status |
 |----------|------|--------|
-| verification | Phase 14 COMPAT-05: pluginIdentity fallback only matches `/bm/bin/`, misidentifies an off-cache `/bm/hooks/` install as gsd | parked to Backlog (minor, non-blocking; shipped cache-install path is correct) |
+| ~~verification~~ RESOLVED | Phase 14 COMPAT-05: pluginIdentity misidentified `/bm/hooks/` and off-cache installs | RESOLVED 2026-07-14 (quick 260714-coq): pluginIdentity is now segment-based, covers `/bm/hooks/` and any marketplace name, with permanent tests |
 | verification | Phase 14 COMPAT-06: SessionStart first-event TOCTOU can double-run session-start work once before bm's marker lands | parked to Backlog (accepted trade-off D-03; bounded and tested) |
 | verification | Phase 13: live `/bm:*` install confirmation in a real Claude Code host | deferred (needs a runtime; 13/13 verified at code level, CI green) |
 | quick_tasks | 35 historical quick tasks without SUMMARY (earlier milestones) | deferred (carry-over) |
@@ -163,6 +163,7 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 
 | 260703-2zr | Discoverability fix: /gsd:scan --drift was implemented in workflows/scan.md but invisible (scan had no argument-hint). Added argument-hint to scan (+ --drift in description), explore, workstreams, next; audited all 23 hint-less skills, rest take no user args. No workflow logic changed. | 2026-07-03 | f00ac99 | Done | [260703-2zr-add-argument-hint-to-scan-skill-advertis](./quick/260703-2zr-add-argument-hint-to-scan-skill-advertis/) |
 | 260706-2jy | Guardrail: GSD agents must not write phase/housekeeping metadata into generated product code or comments (user flagged `# Phase 1: skeleton only ...` in a generated project). Root cause: rule was never encoded. Added "No GSD metadata in product code" to agents/gsd-executor.md `<project_context>` + "## Generated Code Hygiene" in CLAUDE.md + memory. flashsystem project cleanup + planner-agent hardening left for user. | 2026-07-05 | 2548d54 | Done | [260706-2jy-executor-must-not-write-gsd-phase-housek](./quick/260706-2jy-executor-must-not-write-gsd-phase-housek/) |
+| 260714-coq | Centralize the plugin-root fallback to be marketplace-agnostic (runtime carriers): hooks.json + run-bash-hook.cjs union-scan every marketplace and pick the global newest semver, check-plugin-update.sh merge-max, segment-based pluginIdentity (closes COMPAT-05); bm-transform FALLBACK generalized to a pair-list + dist/bm regen (--check green); new tests/hook-fallback-resolution.test.cjs (4 isolated fixtures + version-wins) + coexist cases + CI. The 42 markdown ref-doc fallbacks are a documented deferred follow-up. | 2026-07-14 | 1396d91 | Verified | [260714-coq-centralize-marketplace-agnostic-plugin-r](./quick/260714-coq-centralize-marketplace-agnostic-plugin-r/) |
 
 ## Session Continuity
 

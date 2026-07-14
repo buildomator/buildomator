@@ -153,7 +153,7 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 - **BEHAVIOR-01** — integration tests detect semantic regressions in upstream skills that keep the same name but change behavior (needs integration-test infra)
 - **UPST-03** — upstream-PR packaging (blocked on reassessment: is upstream still the right destination given their 1.34→1.38.x trajectory?)
 - **UPST-04** — PR-ready diff preparation for upstream submission (blocked on UPST-03)
-- **COMPAT-05** — `pluginIdentity` in `bin/lib/coexist.cjs` only matches `/bm/bin/` in its fallback clause, so an off-cache bm deployment under `/bm/hooks/` misidentifies as `gsd` and its bash hooks wrongly yield. Shipped marketplace-cache install path resolves correctly (why CI passes); fix the heuristic to cover `/bm/hooks/` and add a smoke that exercises non-standard deployment paths. Parked from Phase 14 verification (minor, non-blocking).
+- **COMPAT-05** RESOLVED 2026-07-14 (quick 260714-coq): `pluginIdentity` in `bin/lib/coexist.cjs` is now segment-based, so `/bm/hooks/` and off-cache or any-marketplace bm installs identify as `bm` correctly. It previously matched only `/bm/bin/`. Permanent tests in `tests/coexist.test.cjs`.
 - **COMPAT-06** — SessionStart single-fire has a first-event TOCTOU window (accepted trade-off D-03): both plugin copies can each run SessionStart once before bm's marker lands, so non-idempotent session-start work (context injection, autoMigrate) may double-run on the very first event of a both-active session. Bounded and tested; close the residual window if a marker-free election becomes feasible. Parked from Phase 14 verification (minor, non-blocking).
 
 ## Progress
