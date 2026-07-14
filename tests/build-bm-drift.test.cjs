@@ -197,17 +197,21 @@ check('the three fallback carriers ship stamped (command-ref rewrite + hook fall
   }
 });
 
-check('the fallback carriers target the bm cache dir with zero gsd-form literals', () => {
+check('the fallback carriers flip the plugin segment to bm with zero gsd-form literals', () => {
+  // Marketplace-agnostic carriers no longer embed cache/gsd-plugin/<seg>; the
+  // marketplace directory is a runtime readdirSync wildcard and only the fixed
+  // plugin-name segment is stamped. Each carrier has one distinct literal shape.
   const hooks = fs.readFileSync(path.join(OUT, 'hooks/hooks.json'), 'utf8');
-  assert.strictEqual((hooks.match(/cache\/gsd-plugin\/bm/g) || []).length, 17);
-  assert.strictEqual((hooks.match(/cache\/gsd-plugin\/gsd/g) || []).length, 0);
+  assert.strictEqual((hooks.match(/g='bm'/g) || []).length, 17, "hooks.json must carry 17 g='bm'");
+  assert.strictEqual((hooks.match(/g='gsd'/g) || []).length, 0, "no g='gsd' may remain in hooks.json");
+  assert.strictEqual((hooks.match(/cache\/gsd-plugin\/gsd/g) || []).length, 0, 'no gsd-form slash literal in hooks.json');
   const launcher = fs.readFileSync(path.join(OUT, 'hooks/run-bash-hook.cjs'), 'utf8');
-  assert.strictEqual((launcher.match(/'gsd-plugin', 'bm'/g) || []).length, 1);
-  assert.strictEqual((launcher.match(/'gsd-plugin', 'gsd'/g) || []).length, 0);
-  assert.strictEqual((launcher.match(/cache\/gsd-plugin\/bm/g) || []).length, 1);
+  assert.strictEqual((launcher.match(/const pkgSegment = 'bm'/g) || []).length, 1);
+  assert.strictEqual((launcher.match(/const pkgSegment = 'gsd'/g) || []).length, 0);
   assert.strictEqual((launcher.match(/cache\/gsd-plugin\/gsd/g) || []).length, 0);
   const notifier = fs.readFileSync(path.join(OUT, 'bin/check-plugin-update.sh'), 'utf8');
-  assert.strictEqual((notifier.match(/cache\/gsd-plugin\/bm/g) || []).length, 1);
+  assert.strictEqual((notifier.match(/PKG_SEGMENT="bm"/g) || []).length, 1);
+  assert.strictEqual((notifier.match(/PKG_SEGMENT="gsd"/g) || []).length, 0);
   assert.strictEqual((notifier.match(/cache\/gsd-plugin\/gsd/g) || []).length, 0);
 });
 

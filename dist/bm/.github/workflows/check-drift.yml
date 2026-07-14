@@ -161,6 +161,8 @@ jobs:
           node-version: '22'
       - name: Election + marker lifecycle spec (COMPAT-01/COMPAT-02)
         run: node tests/coexist.test.cjs
+      - name: Marketplace-agnostic hook fallback resolution (MKT-AGNOSTIC-01)
+        run: node tests/hook-fallback-resolution.test.cjs
       - name: Both-active single fire across both dispatch points (COMPAT-01/COMPAT-02)
         run: node tests/hook-single-fire.test.cjs
       - name: Interleaved HANDOFF/STATE write-lock coverage (COMPAT-03)

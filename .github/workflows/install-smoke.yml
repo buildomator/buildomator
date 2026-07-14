@@ -240,7 +240,7 @@ jobs:
             console.log("OK: cache id gsd-plugin, bm source ./dist/bm (cache path ~/.claude/plugins/cache/gsd-plugin/bm/<version>/)");
           '
 
-      - name: bm hook fallbacks target the bm cache dir (both runtime carriers)
+      - name: bm hook fallbacks flip the plugin segment to bm (both runtime carriers)
         run: |
           set -e
           node -e '
@@ -248,19 +248,24 @@ jobs:
             const count=(s,needle)=>s.split(needle).length-1;
             const fail=(m)=>{console.error("FAIL: "+m);process.exit(1);};
 
+            // The carriers are marketplace-agnostic now: the marketplace directory
+            // is a runtime readdirSync wildcard, so only the fixed plugin-name
+            // segment is stamped. No cache/gsd-plugin/<seg> literal is embedded.
+
             // Carrier 1: the inline node resolvers in hooks.json.
             const hooks=fs.readFileSync("dist/bm/hooks/hooks.json","utf8");
-            if(count(hooks,"cache/gsd-plugin/bm")!==17) fail("hooks.json bm-path occurrences != 17 (got "+count(hooks,"cache/gsd-plugin/bm")+")");
-            if(count(hooks,"cache/gsd-plugin/gsd")!==0) fail("hooks.json still has gsd-path fallbacks (got "+count(hooks,"cache/gsd-plugin/gsd")+")");
+            if(count(hooks,"g=\x27bm\x27")!==17) fail("hooks.json bm plugin-segment occurrences != 17 (got "+count(hooks,"g=\x27bm\x27")+")");
+            if(count(hooks,"g=\x27gsd\x27")!==0) fail("hooks.json still has gsd plugin-segment assignments (got "+count(hooks,"g=\x27gsd\x27")+")");
+            if(count(hooks,"cache/gsd-plugin/gsd")!==0) fail("hooks.json still has a gsd-path literal");
             if(count(hooks,"gsd-tools.cjs")<1) fail("hooks.json lost the gsd-tools.cjs identity token");
 
             // Carrier 2: the run-bash-hook launcher resolves the cache dir itself.
             const launcher=fs.readFileSync("dist/bm/hooks/run-bash-hook.cjs","utf8");
-            if(count(launcher,"\x27gsd-plugin\x27, \x27bm\x27")!==1) fail("run-bash-hook quoted bm pair != 1 (got "+count(launcher,"\x27gsd-plugin\x27, \x27bm\x27")+")");
-            if(count(launcher,"\x27gsd-plugin\x27, \x27gsd\x27")!==0) fail("run-bash-hook still has the quoted gsd pair");
+            if(count(launcher,"const pkgSegment = \x27bm\x27")!==1) fail("run-bash-hook pkgSegment bm != 1 (got "+count(launcher,"const pkgSegment = \x27bm\x27")+")");
+            if(count(launcher,"const pkgSegment = \x27gsd\x27")!==0) fail("run-bash-hook still has the gsd pkgSegment");
             if(count(launcher,"cache/gsd-plugin/gsd")!==0) fail("run-bash-hook still has a gsd-path literal");
 
-            console.log("OK: both hook fallback carriers target the bm cache dir; identity tokens survive");
+            console.log("OK: both hook fallback carriers flip the plugin segment to bm; identity tokens survive");
           '
 
       - name: bm MCP server lists identical tools and resources (dynamic gsd-vs-bm)
