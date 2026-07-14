@@ -26,13 +26,28 @@ const COMMAND_REF_RE = /bm:(?!\/)/g;
 const SANITIZER_LITERAL_FROM = '/bm[:-]';
 const SANITIZER_LITERAL_TO = '/bm[:-]';
 
-// The hook cache-fallback carries the plugin-name segment in two literal shapes.
-// Only the trailing plugin segment is stamped; the marketplace segment
-// gsd-plugin stays because both packages release from the same repo cache dir.
-const FALLBACK_SLASH_FROM = 'cache/gsd-plugin/gsd';
-const FALLBACK_SLASH_TO = 'cache/gsd-plugin/bm';
-const FALLBACK_QUOTED_FROM = "'gsd-plugin', 'gsd'";
-const FALLBACK_QUOTED_TO = "'gsd-plugin', 'bm'";
+// The plugin-root fallback carries the plugin-name segment in several exact
+// literal shapes. Each pair flips ONLY the fixed plugin-name segment gsd -> bm;
+// the marketplace directory (a runtime wildcard scan) and every surrounding
+// identity token (gsd-tools.cjs, run-bash-hook.cjs, the gsd-plugin marketplace
+// name in the legacy literal) survive untouched. A LIST of exact-literal pairs so
+// the runtime carriers and the deferred reference-doc literal each flip in
+// lockstep, applied via split/join (never a regex over a bare gsd token).
+//
+//   1. Legacy slash form (cache/gsd-plugin/gsd): still embedded in reference docs,
+//      agents, skills, workflows, and the coexist test fixtures. Kept so those
+//      files continue to resolve the bm cache dir until the deferred markdown
+//      sweep replaces them with a plugin-agnostic glob.
+//   2. hooks.json inline resolvers: the plugin-name segment is the assignment
+//      g='gsd' (17 resolvers, marketplace segment is a readdirSync wildcard).
+//   3. run-bash-hook.cjs resolveCandidates: const pkgSegment = 'gsd'.
+//   4. check-plugin-update.sh: PKG_SEGMENT="gsd".
+const FALLBACK_PAIRS = [
+  ['cache/gsd-plugin/gsd', 'cache/gsd-plugin/bm'],
+  ["g='gsd'", "g='bm'"],
+  ["const pkgSegment = 'gsd'", "const pkgSegment = 'bm'"],
+  ['PKG_SEGMENT="gsd"', 'PKG_SEGMENT="bm"'],
+];
 
 /**
  * Rewrite the `bm:` namespace prefix to `bm:` wherever it appears (sparing
@@ -50,19 +65,22 @@ function rewriteCommandRefs(text) {
 }
 
 /**
- * Stamp the hook cache-fallback plugin segment from gsd to bm in both literal
- * shapes: the slash form (hooks.json inline resolvers, the run-bash-hook.cjs
- * header comment, and check-plugin-update.sh) and the quoted path.join argument
- * form (run-bash-hook.cjs resolveCandidates). Exact-literal split/join only,
- * never a regex over a bare gsd token, so surrounding identity tokens survive.
- * Idempotent for both shapes.
+ * Stamp the plugin-root fallback plugin-name segment from gsd to bm in every
+ * literal shape the runtime carriers and the deferred reference-doc literal use
+ * (see FALLBACK_PAIRS). Exact-literal split/join per pair, never a regex over a
+ * bare gsd token, so surrounding identity tokens (gsd-tools.cjs, the gsd-plugin
+ * marketplace name, run-bash-hook.cjs) survive. Idempotent for every shape: each
+ * FROM literal is absent once flipped, and no TO literal contains another pair's
+ * FROM, so order and repeat application are stable.
  * @param {string} text
  * @returns {string}
  */
 function stampHookFallback(text) {
-  return String(text)
-    .split(FALLBACK_SLASH_FROM).join(FALLBACK_SLASH_TO)
-    .split(FALLBACK_QUOTED_FROM).join(FALLBACK_QUOTED_TO);
+  let out = String(text);
+  for (const [from, to] of FALLBACK_PAIRS) {
+    out = out.split(from).join(to);
+  }
+  return out;
 }
 
 // The session-start hook wraps the gsd-only deprecation nudge (the notice that
