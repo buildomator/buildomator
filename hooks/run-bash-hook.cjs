@@ -5,9 +5,12 @@
  * Usage: node run-bash-hook.cjs <hook-filename>
  *   e.g. node run-bash-hook.cjs gsd-session-state.sh
  *
- * Path resolution: CLAUDE_PLUGIN_ROOT first, then newest semver dir under
- * ~/.claude/plugins/cache/gsd-plugin/gsd/ (same logic as the inline node -e
- * bootstraps in hooks.json).
+ * Path resolution: CLAUDE_PLUGIN_ROOT first, then the globally-newest semver
+ * dir found by scanning every marketplace under ~/.claude/plugins/cache/, i.e.
+ * ~/.claude/plugins/cache/<marketplace>/<pkg>/<version>/. Versions from all
+ * marketplaces are merged and sorted descending so the highest wins regardless
+ * of which marketplace holds it (same logic as the inline node -e bootstraps in
+ * hooks.json).
  *
  * On Windows with BLODA antivirus (e.g. Kaspersky), Cygwin/MSYS2 bash can
  * intermittently fail with a fork() EPERM: the AV-injected DLL collides with
@@ -50,21 +53,39 @@ function resolveCandidates(hookName) {
     candidates.push(path.join(process.env.CLAUDE_PLUGIN_ROOT, 'hooks', hookName));
   }
 
-  const cacheBase = path.join(os.homedir(), '.claude', 'plugins', 'cache', 'gsd-plugin', 'gsd');
+  // Marketplace-agnostic scan: the plugin can be cached under any marketplace
+  // directory (the historical `gsd-plugin`, a new `buildomator`, ...). Walk every
+  // marketplace, collect every semver version dir for this package, then sort the
+  // UNION descending so the globally-highest version wins no matter which
+  // marketplace holds it. The plugin-name segment is fixed per package.
+  const cacheRoot = path.join(os.homedir(), '.claude', 'plugins', 'cache');
+  const pkgSegment = 'gsd';
+  const found = [];
+  let marketplaces = [];
   try {
-    const versions = fs.readdirSync(cacheBase)
-      .filter((x) => /^\d+\.\d+\.\d+$/.test(x))
-      .sort((a, b) => {
-        const A = a.split('.').map(Number);
-        const B = b.split('.').map(Number);
-        return B[0] - A[0] || B[1] - A[1] || B[2] - A[2];
-      });
-    for (const v of versions) {
-      candidates.push(path.join(cacheBase, v, 'hooks', hookName));
-    }
+    marketplaces = fs.readdirSync(cacheRoot);
   } catch (_) {
     // Cache dir absent -- dev/test environment, ignore.
   }
+  for (const mp of marketplaces) {
+    let versions;
+    try {
+      versions = fs.readdirSync(path.join(cacheRoot, mp, pkgSegment));
+    } catch (_) {
+      continue; // This marketplace has no copy of the package.
+    }
+    for (const v of versions) {
+      if (/^\d+\.\d+\.\d+$/.test(v)) {
+        found.push({ version: v, path: path.join(cacheRoot, mp, pkgSegment, v, 'hooks', hookName) });
+      }
+    }
+  }
+  found.sort((a, b) => {
+    const A = a.version.split('.').map(Number);
+    const B = b.version.split('.').map(Number);
+    return B[0] - A[0] || B[1] - A[1] || B[2] - A[2];
+  });
+  for (const entry of found) candidates.push(entry.path);
 
   return candidates;
 }

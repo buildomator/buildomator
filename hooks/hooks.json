@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'bin/gsd-tools.cjs'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'bin/gsd-tools.cjs'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\" hook session-start",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'bin/gsd-tools.cjs'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'bin/gsd-tools.cjs')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\" hook session-start",
             "timeout": 5000
           }
         ]
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),cp=require('child_process'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/run-bash-hook.cjs'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/run-bash-hook.cjs'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');const r=cp.spawnSync(process.execPath,[x,'gsd-session-state.sh'],{stdio:'inherit'});process.exit(r.status||0);}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),cp=require('child_process'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/run-bash-hook.cjs'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/run-bash-hook.cjs')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');const r=cp.spawnSync(process.execPath,[x,'gsd-session-state.sh'],{stdio:'inherit'});process.exit(r.status||0);}\"",
             "timeout": 3000
           }
         ]
@@ -24,7 +24,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-shadowing-sdk-detector.js'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/gsd-shadowing-sdk-detector.js'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-shadowing-sdk-detector.js'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/gsd-shadowing-sdk-detector.js')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
             "timeout": 3000
           }
         ]
@@ -33,7 +33,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-staleness-reminder.js'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/gsd-staleness-reminder.js'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-staleness-reminder.js'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/gsd-staleness-reminder.js')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
             "timeout": 3000
           }
         ]
@@ -45,7 +45,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'bin/gsd-tools.cjs'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'bin/gsd-tools.cjs'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\" hook pre-tool-use",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'bin/gsd-tools.cjs'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'bin/gsd-tools.cjs')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\" hook pre-tool-use",
             "timeout": 3000
           }
         ]
@@ -55,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-prompt-guard.js'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/gsd-prompt-guard.js'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-prompt-guard.js'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/gsd-prompt-guard.js')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
             "timeout": 3000
           }
         ]
@@ -65,7 +65,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-workflow-guard.js'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/gsd-workflow-guard.js'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-workflow-guard.js'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/gsd-workflow-guard.js')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
             "timeout": 3000
           }
         ]
@@ -75,7 +75,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-read-guard.js'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/gsd-read-guard.js'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-read-guard.js'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/gsd-read-guard.js')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
             "timeout": 3000
           }
         ]
@@ -85,7 +85,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),cp=require('child_process'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/run-bash-hook.cjs'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/run-bash-hook.cjs'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');const r=cp.spawnSync(process.execPath,[x,'gsd-validate-commit.sh'],{stdio:'inherit'});process.exit(r.status||0);}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),cp=require('child_process'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/run-bash-hook.cjs'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/run-bash-hook.cjs')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');const r=cp.spawnSync(process.execPath,[x,'gsd-validate-commit.sh'],{stdio:'inherit'});process.exit(r.status||0);}\"",
             "timeout": 3000
           }
         ]
@@ -97,7 +97,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'bin/gsd-tools.cjs'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'bin/gsd-tools.cjs'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\" hook post-tool-use",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'bin/gsd-tools.cjs'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'bin/gsd-tools.cjs')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\" hook post-tool-use",
             "timeout": 3000
           }
         ]
@@ -107,7 +107,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-auth-detector.js'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/gsd-auth-detector.js'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-auth-detector.js'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/gsd-auth-detector.js')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
             "timeout": 3000
           }
         ]
@@ -117,7 +117,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-read-injection-scanner.js'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/gsd-read-injection-scanner.js'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-read-injection-scanner.js'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/gsd-read-injection-scanner.js')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
             "timeout": 5000
           }
         ]
@@ -127,7 +127,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),cp=require('child_process'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/run-bash-hook.cjs'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/run-bash-hook.cjs'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');const r=cp.spawnSync(process.execPath,[x,'gsd-phase-boundary.sh'],{stdio:'inherit'});process.exit(r.status||0);}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),cp=require('child_process'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/run-bash-hook.cjs'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/run-bash-hook.cjs')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');const r=cp.spawnSync(process.execPath,[x,'gsd-phase-boundary.sh'],{stdio:'inherit'});process.exit(r.status||0);}\"",
             "timeout": 3000
           }
         ]
@@ -137,7 +137,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-context-monitor.js'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/gsd-context-monitor.js'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-context-monitor.js'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/gsd-context-monitor.js')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
             "timeout": 10000
           }
         ]
@@ -148,7 +148,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'bin/gsd-tools.cjs'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'bin/gsd-tools.cjs'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\" hook pre-compact",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'bin/gsd-tools.cjs'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'bin/gsd-tools.cjs')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\" hook pre-compact",
             "timeout": 5000
           }
         ]
@@ -159,7 +159,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'bin/gsd-tools.cjs'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'bin/gsd-tools.cjs'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\" hook stop",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'bin/gsd-tools.cjs'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'bin/gsd-tools.cjs')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\" hook stop",
             "timeout": 3000
           }
         ]
@@ -170,7 +170,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-context-monitor.js'));const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');try{for(const v of f.readdirSync(d).filter(x=>/^\\d+\\.\\d+\\.\\d+$/.test(x)).sort((a,b)=>{const A=a.split('.').map(Number),B=b.split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];}))c.push(p.join(d,v,'hooks/gsd-context-monitor.js'));}catch(e){}for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
+            "command": "node -e \"const f=require('fs'),p=require('path'),o=require('os'),c=[];if(process.env.CLAUDE_PLUGIN_ROOT)c.push(p.join(process.env.CLAUDE_PLUGIN_ROOT,'hooks/gsd-context-monitor.js'));const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];try{for(const m of f.readdirSync(b)){try{for(const v of f.readdirSync(p.join(b,m,g)))if(/^\\d+\\.\\d+\\.\\d+$/.test(v))t.push([v,p.join(b,m,g,v,'hooks/gsd-context-monitor.js')]);}catch(e){}}}catch(e){}t.sort((a,z)=>{const A=a[0].split('.').map(Number),B=z[0].split('.').map(Number);return B[0]-A[0]||B[1]-A[1]||B[2]-A[2];});for(const e of t)c.push(e[1]);for(const x of c){if(!f.existsSync(x))continue;if(process.env.CLAUDE_PLUGIN_ROOT&&x!==c[0])process.stderr.write('GSD: plugin path stale, using '+x+'\\n');process.argv.splice(1,0,x);require(x);break;}\"",
             "timeout": 10000
           }
         ]
