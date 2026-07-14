@@ -1281,7 +1281,8 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
         if (hookIdentity === 'gsd') {
           process.stdout.write(
             '\nGSD: the /gsd: command prefix is being renamed to /bm: (Buildomator). ' +
-            'Both prefixes work throughout the 4.x line; /gsd: retires at v5.0 on 2026-10-01.\n'
+            'Both prefixes work throughout the 4.x line; /gsd: retires at v5.0 on 2026-10-01.\n' +
+            'To switch: run /plugin install bm@gsd-plugin then /reload-plugins, then use /bm: (for example /bm:progress).\n'
           );
         }
         // BM-NUDGE-END
