@@ -90,6 +90,47 @@ check('pluginIdentity with no argument returns a valid identity (uses __filename
   assert(id === 'gsd' || id === 'bm', `no-arg identity must be gsd or bm, got: ${id}`);
 });
 
+// ── COMPAT-05: identity is keyed on the plugin segment, not the marketplace ───
+// Permanent cases so a bm install under any marketplace (existing gsd-plugin or
+// new buildomator) and via any runtime entry point (bin/ or hooks/) is never
+// misidentified as gsd. These close the deferred COMPAT-05 gap (a bm hooks/
+// install under a non-gsd-plugin marketplace was read as gsd).
+
+check('pluginIdentity: buildomator marketplace + bm + /hooks/ resolves to bm', () => {
+  assert(
+    pluginIdentity('/x/.claude/plugins/cache/buildomator/bm/1.2.3/hooks/run-bash-hook.cjs') === 'bm',
+    'a bm install under the buildomator marketplace, entered via hooks/, must be bm'
+  );
+});
+
+check('pluginIdentity: gsd-plugin marketplace + bm + /bin/ resolves to bm', () => {
+  assert(
+    pluginIdentity('/x/.claude/plugins/cache/gsd-plugin/bm/1.2.3/bin/gsd-tools.cjs') === 'bm',
+    'a bm install under the gsd-plugin marketplace, entered via bin/, must be bm'
+  );
+});
+
+check('pluginIdentity: buildomator marketplace + gsd resolves to gsd', () => {
+  assert(
+    pluginIdentity('/x/.claude/plugins/cache/buildomator/gsd/1.2.3/bin/gsd-tools.cjs') === 'gsd',
+    'a gsd install under the buildomator marketplace must still be gsd'
+  );
+});
+
+check('pluginIdentity: gsd-plugin marketplace + gsd + /hooks/ resolves to gsd', () => {
+  assert(
+    pluginIdentity('/x/.claude/plugins/cache/gsd-plugin/gsd/1.2.3/hooks/run-bash-hook.cjs') === 'gsd',
+    'a gsd install entered via hooks/ must be gsd'
+  );
+});
+
+check('pluginIdentity: an off-cache repo checkout resolves to gsd', () => {
+  assert(
+    pluginIdentity('/Users/dev/projects/gsd-plugin/hooks/run-bash-hook.cjs') === 'gsd',
+    'an off-cache gsd repo checkout must default to gsd'
+  );
+});
+
 // ── marker lifecycle: markBmActive / isBmActive ──────────────────────────────
 
 check('isBmActive is false for an unmarked session', () => {

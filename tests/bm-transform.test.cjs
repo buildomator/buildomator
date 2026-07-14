@@ -147,72 +147,83 @@ check('rewriteCommandRefs is idempotent across the broadened scope', () => {
   assert.strictEqual(rewriteCommandRefs(once), once);
 });
 
-// ─── stampHookFallback: hooks.json resolver line (slash form) ────────────────
+// ─── stampHookFallback: hooks.json inline resolver (g='gsd' assignment) ──────
 
+// The marketplace segment is a runtime readdirSync wildcard now; the ONLY
+// plugin-name literal in each inline resolver is the assignment g='gsd'.
 const HOOKS_RESOLVER_LINE =
-  "\"command\": \"node -e \\\"const o=require('os'),p=require('path');" +
-  "const d=p.join(o.homedir(),'.claude/plugins/cache/gsd-plugin/gsd');" +
-  "if(process.env.CLAUDE_PLUGIN_ROOT)require('fs');" +
+  "\"command\": \"node -e \\\"const f=require('fs'),p=require('path'),o=require('os');" +
+  "const b=p.join(o.homedir(),'.claude/plugins/cache'),g='gsd',t=[];" +
+  "for(const m of f.readdirSync(b))t.push(p.join(b,m,g,'bin/gsd-tools.cjs'));" +
   "process.stderr.write('GSD: plugin path stale');" +
-  "require('bin/gsd-tools.cjs');require('run-bash-hook.cjs');" +
-  "\\\" gsd-session-state.sh gsd-validate-commit.sh\"";
+  "\\\" hook session-start\"";
 
-check('stampHookFallback stamps the hooks.json slash-form literal, sparing identity tokens', () => {
+check('stampHookFallback flips the hooks.json g=gsd assignment, sparing identity tokens', () => {
   const out = stampHookFallback(HOOKS_RESOLVER_LINE);
-  assert.ok(out.includes('cache/gsd-plugin/bm'), 'plugin segment must become bm');
-  assert.ok(!out.includes('cache/gsd-plugin/gsd'), 'no gsd-form cache literal may remain');
+  assert.ok(out.includes("g='bm'"), "the plugin-name assignment must become g='bm'");
+  assert.ok(!out.includes("g='gsd'"), "no g='gsd' assignment may remain");
   assert.ok(out.includes('gsd-tools.cjs'), 'gsd-tools.cjs must survive');
-  assert.ok(out.includes('run-bash-hook.cjs'), 'run-bash-hook.cjs must survive');
   assert.ok(out.includes('GSD: plugin path stale'), 'GSD: stderr prefix must survive');
-  assert.ok(out.includes('gsd-session-state.sh'), '.sh filename args must survive');
-  assert.ok(out.includes('gsd-validate-commit.sh'), '.sh filename args must survive');
+  assert.ok(out.includes("'.claude/plugins/cache'"), 'the marketplace-root path must survive');
 });
 
-check('stampHookFallback replaces all N slash-form occurrences', () => {
+check('stampHookFallback replaces every g=gsd occurrence (17-resolver shape)', () => {
+  const text = "x g='gsd' y g='gsd' z";
+  const out = stampHookFallback(text);
+  assert.strictEqual((out.match(/g='bm'/g) || []).length, 2);
+  assert.strictEqual((out.match(/g='gsd'/g) || []).length, 0);
+});
+
+// ─── stampHookFallback: run-bash-hook.cjs resolveCandidates (pkgSegment) ─────
+
+const RUN_BASH_HOOK_LINE = "  const pkgSegment = 'gsd';";
+
+check('stampHookFallback flips the run-bash-hook pkgSegment assignment', () => {
+  const out = stampHookFallback(RUN_BASH_HOOK_LINE);
+  assert.ok(out.includes("const pkgSegment = 'bm'"), "pkgSegment must become 'bm'");
+  assert.ok(!out.includes("const pkgSegment = 'gsd'"), "no gsd-form pkgSegment may remain");
+});
+
+// ─── stampHookFallback: check-plugin-update.sh PKG_SEGMENT line ──────────────
+
+const CHECK_UPDATE_SNIPPET =
+  'REPO="buildomator/buildomator"\n' +
+  'CACHE_ROOT="$HOME/.claude/plugins/cache"\n' +
+  'PKG_SEGMENT="gsd"\n' +
+  'NOTIFIED_FILE="$HOME/.gsd-plugin-last-notified"';
+
+check('stampHookFallback flips PKG_SEGMENT, sparing repo, cache-root, and notified-file identifiers', () => {
+  const out = stampHookFallback(CHECK_UPDATE_SNIPPET);
+  assert.ok(out.includes('PKG_SEGMENT="bm"'), 'PKG_SEGMENT must point at the bm package dir');
+  assert.ok(!out.includes('PKG_SEGMENT="gsd"'), 'no gsd-form PKG_SEGMENT may remain');
+  assert.ok(out.includes('buildomator/buildomator'), 'REPO identifier must survive');
+  assert.ok(out.includes('.claude/plugins/cache"'), 'CACHE_ROOT path must survive');
+  assert.ok(out.includes('.gsd-plugin-last-notified'), 'NOTIFIED_FILE name must survive');
+});
+
+// ─── stampHookFallback: legacy slash form (kept for deferred reference docs) ──
+
+check('stampHookFallback still flips the legacy cache/gsd-plugin/gsd slash form', () => {
   const text = 'a cache/gsd-plugin/gsd b cache/gsd-plugin/gsd c';
   const out = stampHookFallback(text);
   assert.strictEqual((out.match(/cache\/gsd-plugin\/bm/g) || []).length, 2);
   assert.strictEqual((out.match(/cache\/gsd-plugin\/gsd/g) || []).length, 0);
 });
 
-// ─── stampHookFallback: run-bash-hook.cjs resolveCandidates (quoted form) ────
+// ─── stampHookFallback: idempotence for every shape ──────────────────────────
 
-const RUN_BASH_HOOK_LINE =
-  "  const cacheBase = path.join(os.homedir(), '.claude', 'plugins', 'cache', 'gsd-plugin', 'gsd');";
-
-check('stampHookFallback stamps the resolveCandidates quoted argument pair', () => {
-  const out = stampHookFallback(RUN_BASH_HOOK_LINE);
-  assert.ok(out.includes("'gsd-plugin', 'bm'"), 'quoted plugin segment must become bm');
-  assert.ok(!out.includes("'gsd-plugin', 'gsd'"), 'no gsd-form quoted pair may remain');
-  // The marketplace segment 'gsd-plugin' must still be present.
-  assert.ok(out.includes("'gsd-plugin'"), "marketplace segment 'gsd-plugin' must survive");
-  assert.ok(out.includes('os.homedir()'), 'os.homedir() call must survive');
-});
-
-// ─── stampHookFallback: check-plugin-update.sh PLUGIN_CACHE line ─────────────
-
-const CHECK_UPDATE_SNIPPET =
-  'REPO="jnuyens/gsd-plugin"\n' +
-  'PLUGIN_CACHE="$HOME/.claude/plugins/cache/gsd-plugin/gsd"\n' +
-  'NOTIFIED_FILE="$HOME/.gsd-plugin-last-notified"';
-
-check('stampHookFallback stamps PLUGIN_CACHE, sparing repo and notified-file identifiers', () => {
-  const out = stampHookFallback(CHECK_UPDATE_SNIPPET);
-  assert.ok(out.includes('cache/gsd-plugin/bm'), 'PLUGIN_CACHE must point at the bm cache dir');
-  assert.ok(!out.includes('cache/gsd-plugin/gsd'), 'no gsd-form cache literal may remain');
-  assert.ok(out.includes('jnuyens/gsd-plugin'), 'REPO identifier must survive');
-  assert.ok(out.includes('.gsd-plugin-last-notified'), 'NOTIFIED_FILE name must survive');
-});
-
-// ─── stampHookFallback: idempotence for both shapes ──────────────────────────
-
-check('stampHookFallback is idempotent for the slash form', () => {
+check('stampHookFallback is idempotent for the g=gsd shape', () => {
   const once = stampHookFallback(HOOKS_RESOLVER_LINE);
   assert.strictEqual(stampHookFallback(once), once);
 });
 
-check('stampHookFallback is idempotent for the quoted form', () => {
+check('stampHookFallback is idempotent for the pkgSegment shape', () => {
   const once = stampHookFallback(RUN_BASH_HOOK_LINE);
+  assert.strictEqual(stampHookFallback(once), once);
+});
+
+check('stampHookFallback is idempotent for the PKG_SEGMENT shape', () => {
+  const once = stampHookFallback(CHECK_UPDATE_SNIPPET);
   assert.strictEqual(stampHookFallback(once), once);
 });
 

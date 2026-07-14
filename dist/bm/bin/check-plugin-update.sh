@@ -13,7 +13,12 @@ set -euo pipefail
 
 # --- Configuration ---
 REPO="buildomator/buildomator"
-PLUGIN_CACHE="$HOME/.claude/plugins/cache/gsd-plugin/bm"
+# Marketplace-agnostic cache root: the plugin can be installed under any
+# marketplace directory (historical gsd-plugin, new buildomator, ...). The
+# installed version is the highest semver merged across every marketplace, so a
+# fixed first-segment path is wrong. Plugin-name segment is fixed per package.
+CACHE_ROOT="$HOME/.claude/plugins/cache"
+PKG_SEGMENT="bm"
 # Tracks the latest release we have already notified about, so a given release
 # is announced once (not re-nagged weekly) while every NEW release still fires.
 NOTIFIED_FILE="$HOME/.gsd-plugin-last-notified"
@@ -23,10 +28,13 @@ SSH="/usr/bin/ssh"
 RECIPIENT="jnuyens"
 MAIL_HOST="m1.linuxbe.com"
 
-# --- Determine the installed version (highest semver dir in the plugin cache) ---
+# --- Determine the installed version (highest semver dir merged across every
+#     marketplace's copy of the package) ---
 INSTALLED=""
-if [ -d "$PLUGIN_CACHE" ]; then
-  INSTALLED=$(ls -1 "$PLUGIN_CACHE" 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -1 || true)
+if [ -d "$CACHE_ROOT" ]; then
+  INSTALLED=$(ls -1d "$CACHE_ROOT"/*/"$PKG_SEGMENT"/*/ 2>/dev/null \
+    | awk -F/ '{print $(NF-1)}' \
+    | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -1 || true)
 fi
 # Can't determine what's installed -> nothing to compare, exit quietly.
 [ -n "$INSTALLED" ] || exit 0

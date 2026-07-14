@@ -28,15 +28,19 @@ const SESSION_ID_RE = /^[A-Za-z0-9_-]+$/;
 
 /**
  * Derive plugin identity ('gsd' or 'bm') from a resolved script path. Robust
- * when CLAUDE_PLUGIN_ROOT is unset: keys on the on-disk path segment that the
- * bm build stamps (`cache/gsd-plugin/bm` and `/bm/bin/`). Any other path,
- * including a bare repo checkout, is the authored default 'gsd'.
+ * when CLAUDE_PLUGIN_ROOT is unset: keys on the plugin-name path segment that the
+ * bm build stamps, regardless of which marketplace directory holds the install.
+ * A `/bm/` segment immediately followed by a version dir, `bin/`, or `hooks/`
+ * marks the bm package. This covers `/cache/buildomator/bm/1.2.3/hooks/...`,
+ * `/cache/gsd-plugin/bm/1.2.3/bin/...`, and an off-cache `dist/bm/...` checkout,
+ * and never depends on the marketplace segment. Any other path, including a bare
+ * gsd repo checkout, is the authored default 'gsd'.
  * @param {string} [resolvedPath] - defaults to this module's own __filename
  * @returns {'gsd'|'bm'}
  */
 function pluginIdentity(resolvedPath) {
   const p = String(resolvedPath || __filename).replace(/\\/g, '/');
-  if (p.includes('/cache/gsd-plugin/bm/') || p.includes('/bm/bin/')) return 'bm';
+  if (/\/bm\/(?:\d+\.\d+\.\d+\/|bin\/|hooks\/)/.test(p)) return 'bm';
   return 'gsd';
 }
 

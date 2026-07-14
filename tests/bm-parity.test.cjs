@@ -80,10 +80,17 @@ check('every tracked non-excluded source file exists at the same path in dist/bm
 // to pass. The detector staying fail-closed is the whole point of the census.
 function detectViolations(text) {
   const hits = [];
-  // Un-stamped hook cache-fallback. A direct literal, so the allow-listed
-  // 'gsd-plugin' substring it contains cannot hide it (pre-stripping 'gsd-plugin'
-  // would leave 'cache//gsd' and destroy the violation).
-  if (text.includes('cache/gsd-plugin/gsd')) hits.push('cache-fallback');
+  // Un-stamped plugin-root fallback, in any of the gsd-form shapes the runtime
+  // carriers or the legacy reference-doc literal use. Each is a direct literal so
+  // the allow-listed 'gsd-plugin' / gsd-tools tokens around it cannot hide it. If
+  // any survives un-stamped in dist/bm, the census fails here instead of shipping.
+  const GSD_FALLBACK_LITERALS = [
+    'cache/gsd-plugin/gsd',       // legacy slash form (deferred reference docs)
+    "g='gsd'",                    // hooks.json inline resolver assignment
+    "const pkgSegment = 'gsd'",   // run-bash-hook.cjs resolveCandidates
+    'PKG_SEGMENT="gsd"',          // check-plugin-update.sh
+  ];
+  if (GSD_FALLBACK_LITERALS.some((lit) => text.includes(lit))) hits.push('cache-fallback');
   // Un-rewritten agent reference. The colon-then-'g' shape never collides with
   // gsd:// (colon-slash) or a gsd-<file> filename (no colon before the dash).
   if (/gsd:gsd-[a-z0-9-]+/.test(text)) hits.push('agent-ref');
@@ -117,7 +124,13 @@ check('census positive control: each violation class is flagged against raw text
   // Durable RED proof: if the detector is ever broken or pre-strips a class, one
   // of these assertions fails. Each input names the class it must be flagged as.
   assert.ok(detectViolations('const d = "cache/gsd-plugin/gsd"').includes('cache-fallback'),
-    'cache-fallback class not flagged');
+    'cache-fallback (legacy slash form) class not flagged');
+  assert.ok(detectViolations("const b=x,g='gsd',t=[];").includes('cache-fallback'),
+    "cache-fallback (hooks.json g='gsd' assignment) class not flagged");
+  assert.ok(detectViolations("  const pkgSegment = 'gsd';").includes('cache-fallback'),
+    'cache-fallback (run-bash-hook pkgSegment) class not flagged');
+  assert.ok(detectViolations('PKG_SEGMENT="gsd"').includes('cache-fallback'),
+    'cache-fallback (check-plugin-update PKG_SEGMENT) class not flagged');
   assert.ok(detectViolations('subagent_type=gsd:gsd-executor').includes('agent-ref'),
     'agent-ref class not flagged');
   assert.ok(detectViolations('/gsd:plan-phase').includes('namespace-prefix'),
