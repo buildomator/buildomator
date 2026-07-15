@@ -76,7 +76,7 @@ You should now be inside a Claude Code session (you'll see the Claude Code promp
 
 That's it. This installs everything: slash commands, agent definitions, hooks, and an MCP server for project state. The `/reload-plugins` step activates the freshly installed plugin in your current session; without it the slash commands and hooks aren't loaded until you restart Claude Code. Enable auto-update for the marketplace in Claude Code settings to receive updates automatically.
 
-`bm@buildomator` is the Buildomator plugin, so its commands are `/bm:*`. If you also want the original gsd command prefix (kept working through the 4.x line), add the `buildomator/buildomator` marketplace and run `/plugin install gsd@gsd-plugin`; the two run side by side with no conflict. Existing installs of `bm@gsd-plugin` from the `buildomator/buildomator` marketplace keep working unchanged, both point at the same plugin.
+`bm@buildomator` is the Buildomator plugin; its commands are all `/bm:*`. That is the only install you need. Coming from an older version that used a different command prefix? See [Migrating](#migrating-from-gsd) below.
 
 ## Quick start
 
@@ -89,19 +89,19 @@ Assumes you have already completed the Installation section above (Claude Code i
 
 ## Migrating from gsd
 
-This plugin used to answer to the gsd command prefix, and now it answers to `/bm:` (Buildomator). Nothing about the plugin itself changed with the rename, only the name it goes by.
+Buildomator used to answer to the `gsd` command prefix, and now it answers to `/bm:`. Nothing about the plugin itself changed with the rename, only the name it goes by.
 
-Every `/bm:` command runs the same code its gsd counterpart ran, with the same arguments and output. `/bm:new-project` is the old gsd new-project command, `/bm:plan-phase` is the old gsd plan-phase command, and so on for the whole command set. If you know the gsd commands, you already know the `/bm:` ones: swap the prefix and everything else stays put.
+Every `/bm:` command runs the same code its gsd counterpart ran, with the same arguments and output. `/bm:new-project` is the old new-project command, `/bm:plan-phase` is the old plan-phase command, and so on for the whole set. If you knew the old commands you already know the `/bm:` ones: swap the prefix and everything else stays put.
 
-The original gsd command prefix keeps working through all of the 4.x line. There is nothing to re-enable and no config to change; both prefixes are live side by side, so you can move to `/bm:` whenever it suits you or keep typing the old one for now.
+If you installed a previous version under the old prefix, install `bm@buildomator` (see [Installation](#installation)) and point your scripts and aliases at `/bm:`. The old prefix still resolves for now so nothing breaks mid-migration, but `/bm:` is the name going forward.
 
-The original gsd command prefix retires at v5.0 on 2026-10-01. After that release only `/bm:` remains, so point your scripts and aliases at `/bm:` before then. Why the rename? "Buildomator" is a name we can put on a homepage and say out loud; the behavior underneath is the same plugin you already use.
+Why the rename? "Buildomator" is a name we can put on a homepage and say out loud; the behavior underneath is the same plugin you already use.
 
 ## Updating
 
 Enable auto-update for the marketplace in Claude Code settings and updates will be applied automatically at startup. To update manually:
 
-1. **Refresh the plugin on disk.** Run `/plugins`, open **Marketplace**, and select the marketplace you installed from (**buildomator** for `bm@buildomator`, or **gsd-plugin** for an existing `bm@gsd-plugin` or `gsd@gsd-plugin` install) to refresh it. Then exit the marketplace by pressing **Esc twice**. This updates the plugin on the filesystem.
+1. **Refresh the plugin on disk.** Run `/plugins`, open **Marketplace**, and select **buildomator** to refresh it. Then exit the marketplace by pressing **Esc twice**. This updates the plugin on the filesystem.
 2. **Activate it in your open sessions.** Run `/reload-plugins` in **each** Claude Code session you already have open, so they pick up the new version without restarting.
 
 Note: the marketplace step (1) updates the plugin on disk; `/reload-plugins` (2) is what makes an already-running session use the new version. Sessions you start after the update load the new version automatically.
@@ -146,7 +146,7 @@ Recent: v4.0.0 added the convention conformance gate, native drift detection, an
 
 ## What GSD Plugin provides
 
-- **82 slash commands** (`/gsd:*`) for project planning, execution, debugging, and verification
+- **82 slash commands** (`/bm:*`) for project planning, execution, debugging, and verification
 - **33 agent definitions** for specialized workflow roles (planner, executor, researcher, verifier, etc.)
 - **85 workflow bodies** in `workflows/`: operational logic that skills delegate to via `@${CLAUDE_PLUGIN_ROOT}/workflows/<name>.md`
 - **MCP server** exposing project state as queryable resources and mutation tools
@@ -170,7 +170,7 @@ This plugin starts from upstream GSD's source tree but adds Claude-Code-native c
 
 | Feature | What it does | Command / hook |
 |---------|--------------|----------------|
-| **Buildomator identity + additive `/bm:` command surface** (v4.1.0) | The project is now Buildomator, and every command answers to `/bm:` as well as `/gsd:`. Both prefixes run the same code side by side through the whole 4.x line, and `/gsd:` retires at v5.0. Ships as a second generated plugin, so current installs keep working with nothing to re-enable. | `/bm:*` (all commands), `dist/bm/`, [buildomator.com](https://buildomator.com) |
+| **Buildomator identity, `/bm:` command surface** (v4.1.0) | The project is Buildomator and every command is `/bm:`. Installs as the `bm` plugin from the `buildomator` marketplace, running the same code an existing install already ran, so migrating is just a prefix swap (the old prefix still resolves during the transition). | `/bm:*` (all commands), `dist/bm/`, [buildomator.com](https://buildomator.com) |
 | **Native drift detection** (v4.0.0) | Repo-wide, zero-dep detection of duplicate logic, structural near-clones, and phantom/stub code, with an auditable allowlist. Ranked report plus an opt-in milestone gate. | `gsd-tools verify drift`, `/bm:scan --drift` |
 | **Convention and architectural conformance gate** (v4.0.0) | Derives your project's naming and architecture conventions by majority vote and flags changed files that deviate, in the existing review path. Never blocks. | `gsd-tools verify conventions`, wired into pattern-mapper + code-review |
 | **Weekly plugin self-update watch** (v4.0.0) | Weekly cron emails you when your install is behind the latest tag (Claude Code auto-update is unreliable). Never fails cron. | `bin/check-plugin-update.sh` (cron, not a GSD command) |
@@ -303,7 +303,7 @@ If you're on **v2.42.0 or newer** the plugin's `bin/gsd-sdk` wrapper takes over 
 
 #### 3. Stop using `/bm:update`
 
-The `/bm:update` command is deprecated. Update via `/plugins` -> Marketplace -> select gsd-plugin to refresh, then `/reload-plugins` (see the Updating section above).
+The `/bm:update` command is deprecated. Update via `/plugins` -> Marketplace -> select buildomator to refresh, then `/reload-plugins` (see the Updating section above).
 
 #### 4. Clean up the backup (optional, after verifying the plugin works)
 
