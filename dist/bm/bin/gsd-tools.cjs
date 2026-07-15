@@ -1281,6 +1281,33 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
         // session still surfaces it even when it hands the stateful work to bm.
         if (shouldYield(hookIdentity, hookSessionId)) break;
 
+        // One-time auto-enable of the Buildomator (bm) plugin. Its own explicit
+        // gsd guard is what makes the block never run under bm identity and truly
+        // inert in the generated bm package; the surrounding session-start code
+        // runs for both identities, so being "in the session-start block" is not
+        // enough. The helper is fail-soft and the call is wrapped in try/catch, so
+        // this can never break session start. The one notice goes to stderr only,
+        // never stdout (stdout is injected into the model context).
+        if (hookIdentity === 'gsd') {
+          try {
+            const os = require('os');
+            const { autoEnableBm } = require('./lib/bm-autoenable.cjs');
+            const cacheRoot = path.join(os.homedir(), '.claude', 'plugins', 'cache');
+            const settingsPath = path.join(os.homedir(), '.claude', 'settings.json');
+            // The marker must survive plugin updates, so it lives outside the
+            // versioned cache: CLAUDE_PLUGIN_DATA when set, else the homedir path.
+            const markerPath = process.env.CLAUDE_PLUGIN_DATA
+              ? path.join(process.env.CLAUDE_PLUGIN_DATA, '.gsd-bm-auto-enabled')
+              : path.join(os.homedir(), '.claude', '.gsd-bm-auto-enabled');
+            const result = autoEnableBm({ cacheRoot, settingsPath, markerPath });
+            if (result && result.acted) {
+              process.stderr.write(
+                'GSD: enabled the Buildomator (bm) plugin. Run /reload-plugins to load /bm: commands.\n'
+              );
+            }
+          } catch { /* never break session start */ }
+        }
+
         try {
           const migrationPath = path.join(__dirname, '..', 'migrations', 'legacy-cleanup.cjs');
           if (fs.existsSync(migrationPath)) {
