@@ -1,4 +1,4 @@
-# Releasing gsd-plugin
+# Releasing Buildomator
 
 The pre-release gate is **CI**: `.github/workflows/check-drift.yml` and `install-smoke.yml` run on every push and pull request, so the full regression suite must be green before any release tag is cut. Treat a red CI run as a hard block on releasing.
 

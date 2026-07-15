@@ -108,11 +108,11 @@ Note: the marketplace step (1) updates the plugin on disk; `/reload-plugins` (2)
 
 To check the active version in a session, run `/bm:version` (it also checks GitHub for the latest release and prints the update steps when you are behind).
 
-**Do I run `/reload-plugins` in all open sessions or just one?** In all of them. `/reload-plugins` is per-session: each Claude Code session loads its own copy of the plugin, so reloading in one session does not refresh the others. Run it once per session you have open. Sessions you start **after** the update load the new version automatically, with no reload needed (so only your already-open sessions need the command). No `/exit` or restart is required. gsd-plugin ships an MCP server, but its tools load on demand via tool search, so the reload applies cleanly; on Claude Code v2.1.163+ in the rare case a reload would force a full context re-read, `/reload-plugins` prints a warning and you re-run it as `/reload-plugins --force`.
+**Do I run `/reload-plugins` in all open sessions or just one?** In all of them. `/reload-plugins` is per-session: each Claude Code session loads its own copy of the plugin, so reloading in one session does not refresh the others. Run it once per session you have open. Sessions you start **after** the update load the new version automatically, with no reload needed (so only your already-open sessions need the command). No `/exit` or restart is required. Buildomator ships an MCP server, but its tools load on demand via tool search, so the reload applies cleanly; on Claude Code v2.1.163+ in the rare case a reload would force a full context re-read, `/reload-plugins` prints a warning and you re-run it as `/reload-plugins --force`.
 
 ## What's New
 
-**v4.0.0**: **Consistency and code-integrity safeguards, and a second upstream.** GSD now derives a project's naming and architectural conventions and gates changes against them (`verify conventions`, wired into pattern-mapper and code-review), and ships native drift detection that finds duplicated logic, phantom/placeholder scaffolding, and structural near-clones across the repo (`verify drift`, `/bm:scan --drift`, plus an opt-in `audit-milestone` integrity gate). All detection is 100% native with zero runtime dependency. This release also formalizes **[VibeDrift](https://www.npmjs.com/package/@vibedrift/cli) as a second upstream**: GSD never runs it, but ports its drift-detection heuristics natively and watches its releases to cherry-pick future ones. The major bump to 4.0 marks gsd-plugin as its own version line, signaling how far it has diverged from upstream GSD (see [Upstream projects](#upstream-projects) and [Versioning](#versioning)).
+**v4.0.0**: **Consistency and code-integrity safeguards, and a second upstream.** GSD now derives a project's naming and architectural conventions and gates changes against them (`verify conventions`, wired into pattern-mapper and code-review), and ships native drift detection that finds duplicated logic, phantom/placeholder scaffolding, and structural near-clones across the repo (`verify drift`, `/bm:scan --drift`, plus an opt-in `audit-milestone` integrity gate). All detection is 100% native with zero runtime dependency. This release also formalizes **[VibeDrift](https://www.npmjs.com/package/@vibedrift/cli) as a second upstream**: GSD never runs it, but ports its drift-detection heuristics natively and watches its releases to cherry-pick future ones. The major bump to 4.0 marks Buildomator as its own version line, signaling how far it has diverged from upstream GSD (see [Upstream projects](#upstream-projects) and [Versioning](#versioning)).
 
 **v3.7.2**: `/bm:autonomous` no longer stops to ask you to re-confirm before kicking off. The workflow had no confirm-scope step, so the orchestrator improvised one out of caution: it printed the phase plan, then waited for you to say "go" again, which defeats an autonomous command. A new explicit contract makes the rule plain (show the plan, then continue into execution in the same turn; surface a discovered constraint, like a migration-chain collision, as a one-line notice it acts on, not a gate that waits). The only pauses left are the real decision points: human verification, gaps after one auto-retry, audit gaps/tech-debt, and blockers.
 
@@ -317,17 +317,17 @@ If you want to try the plugin without touching your existing `~/.claude/get-shit
 
 ```bash
 # 1. Clone this repo somewhere
-git clone https://github.com/buildomator/buildomator.git ~/src/gsd-plugin
+git clone https://github.com/buildomator/buildomator.git ~/src/buildomator
 
 # 2. Move the legacy install out of the way (prevents duplicate commands)
 mv ~/.claude/get-shit-done ~/.claude/get-shit-done-legacy
 
 # 3. Create a throwaway test project
-mkdir ~/test-gsd-plugin && cd ~/test-gsd-plugin
+mkdir ~/test-buildomator && cd ~/test-buildomator
 git init
 
 # 4. Launch Claude Code with the plugin root override
-CLAUDE_PLUGIN_ROOT=~/src/gsd-plugin claude --dangerously-skip-permissions
+CLAUDE_PLUGIN_ROOT=~/src/buildomator claude --dangerously-skip-permissions
 
 # 5. Inside the session, only plugin GSD commands are active
 ```
@@ -379,13 +379,13 @@ After migration, verify the plugin is active:
 
 ## Upstream projects
 
-gsd-plugin draws on three upstream projects, in three different ways: it **packages** one, **ports ideas from** another, and **implements the format spec** of a third. None is a runtime dependency: the plugin bundles everything it needs.
+Buildomator draws on three upstream projects, in three different ways: it **packages** one, **ports ideas from** another, and **implements the format spec** of a third. None is a runtime dependency: the plugin bundles everything it needs.
 
 **1. GSD (`@opengsd/gsd-core`): the primary upstream.** This is the workflow engine the plugin packages and optimizes. The plugin starts from gsd-core's source tree (the phase/plan/execute/verify lifecycle, the agents, the SDK) and adds Claude-Code-native capabilities on top: skill isolation via `context: fork`, MCP-backed project state, cross-session memory, auto-resume across `/compact`, and the token-overhead reductions. Content is selectively cherry-picked from gsd-core, not a full vendor sync, and `bin/check-gsd-release.sh` watches gsd-core for new releases to fold in. Provenance: gsd-core is the community continuation at [open-gsd/get-shit-done-redux](https://github.com/open-gsd/get-shit-done-redux) of the original GSD by TÂCHES (see the [Upstream change](#whats-new) note above and [Credits](#credits)).
 
 **2. VibeDrift (`@vibedrift/cli`): a second, idea-only upstream.** As of v4.0.0, GSD treats VibeDrift the way it treats gsd-core: as an upstream to learn from. But the relationship is deliberately narrower. GSD **never installs or runs VibeDrift** at any point. Instead it ports VibeDrift's drift-detection heuristics natively (the MinHash+LCS structural-dup detector in this release is one such port, with its constants pinned to the v0.14.0 idea baseline) and watches the package for new releases (`bin/check-vibedrift-release.sh`) so future heuristics can be cherry-picked over time. This keeps drift detection 100% native and zero-dependency while still benefiting from VibeDrift's research. VibeDrift is an idea source, never a runtime component.
 
-**3. workspace.json (`workspace-json/spec`): a consumed format spec.** gsd-plugin is a consumer implementation of the [workspace.json spec](https://github.com/workspace-json/spec): when a `.agents/workspace.json` file conforming to the spec is present, the plugin reads it at SessionStart and injects structured codebase intelligence (fragile files, frameworks, co-change notes) into the model's context, with strict major-version gating and prompt-injection sanitization. The plugin neither generates nor bundles the file; it implements the reader side of an open spec, so any tool that emits spec-conformant `workspace.json` interoperates. The integration was contributed by [Qwynn Marcelle](https://github.com/qmarcelle) (see [Credits](#credits)).
+**3. workspace.json (`workspace-json/spec`): a consumed format spec.** Buildomator is a consumer implementation of the [workspace.json spec](https://github.com/workspace-json/spec): when a `.agents/workspace.json` file conforming to the spec is present, the plugin reads it at SessionStart and injects structured codebase intelligence (fragile files, frameworks, co-change notes) into the model's context, with strict major-version gating and prompt-injection sanitization. The plugin neither generates nor bundles the file; it implements the reader side of an open spec, so any tool that emits spec-conformant `workspace.json` interoperates. The integration was contributed by [Qwynn Marcelle](https://github.com/qmarcelle) (see [Credits](#credits)).
 
 This multi-upstream posture is part of why v4.0.0 is a major bump: the plugin now accumulates a substantial body of capability (a convention conformance gate, native drift detection, an integrity gate) that does not exist in upstream GSD at all, pulls ideas from a second project entirely, and implements a third project's open format. See [Versioning](#versioning).
 
@@ -412,7 +412,7 @@ This project repackages the GSD workflow system as a native Claude Code plugin w
 - **GSD (Get Shit Done)** by TACHES (Lex Christopherson) -- the original workflow framework this plugin is based on. Original repo at [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done) (locked May 2026 after the founder rug-pulled the associated `$GSD` token and deleted his accounts).
 - **[open-gsd/get-shit-done-redux](https://github.com/open-gsd/get-shit-done-redux)** by [trek-e](https://github.com/trek-e) (Tom Boucher) and contributors -- bit-perfect community continuation hosting the codebase going forward.
 - **[VibeDrift](https://www.npmjs.com/package/@vibedrift/cli)**: a second, idea-only upstream. Buildomator never runs it; it ports VibeDrift's drift-detection heuristics natively (pinned to the v0.14.0 baseline) and watches its releases to cherry-pick future ones. See [Upstream projects](#upstream-projects).
-- **[workspace.json spec](https://github.com/workspace-json/spec)** -- the open codebase-intelligence format gsd-plugin reads at SessionStart; the consumer integration was contributed by [Qwynn Marcelle](https://github.com/qmarcelle).
+- **[workspace.json spec](https://github.com/workspace-json/spec)** -- the open codebase-intelligence format Buildomator reads at SessionStart; the consumer integration was contributed by [Qwynn Marcelle](https://github.com/qmarcelle).
 - Plugin packaging, MCP integration, token optimization, and memory system by Jasper Nuyens
 
 ## License
