@@ -169,3 +169,5 @@ jobs:
         run: node tests/handoff-write-lock.test.cjs
       - name: gsd emits the nudge, bm suppresses it (COMPAT-04)
         run: node tests/nudge-emission.test.cjs
+      - name: One-time bm auto-enable is fail-soft and respects a deliberate disable
+        run: node tests/bm-autoenable.test.cjs
