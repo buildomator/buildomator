@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 Phase: Milestone v4.1 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-07-16 - Completed quick task 260716-0ao (one-time bm auto-enable from the gsd SessionStart hook)
+Last activity: 2026-07-16 - Released v4.1.1 (extended Claude Fable 5 cutoff to 2026-07-19)
 
 ## Performance Metrics
 
