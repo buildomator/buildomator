@@ -28,15 +28,15 @@ function check(name, fn) {
 }
 
 // Fable 5 was withdrawn ~2026-06-12, then redeployed 2026-07-01 and included in
-// plan usage only through 2026-07-07. The `fable` tier is available again through
-// 2026-07-07 and falls back to `opus` from 2026-07-08.
-const beforeSunset = new Date('2026-07-06T12:00:00Z');
-const lastDay = new Date('2026-07-07T23:59:59Z');     // inclusive — still counted available
-const afterSunset = new Date('2026-07-08T00:00:01Z'); // first day of fallback
+// plan usage only through 2026-07-19. The `fable` tier is available again through
+// 2026-07-19 and falls back to `opus` from 2026-07-20.
+const beforeSunset = new Date('2026-07-18T12:00:00Z');
+const lastDay = new Date('2026-07-19T23:59:59Z');     // inclusive — still counted available
+const afterSunset = new Date('2026-07-20T00:00:01Z'); // first day of fallback
 const wayAfter = new Date('2027-01-01T00:00:00Z');
 
-check('fable cutoff constant is 2026-07-07 (redeploy free-usage window)', () => {
-  assert.strictEqual(FABLE_SUNSET_DATE, '2026-07-07');
+check('fable cutoff constant is 2026-07-19 (redeploy free-usage window)', () => {
+  assert.strictEqual(FABLE_SUNSET_DATE, '2026-07-19');
 });
 
 // Parity guard: the live spawn path for `gsd-sdk query init.*` is the SDK
@@ -49,7 +49,7 @@ check('SDK resolver (sdk/src) applies the fable sunset (CJS/SDK parity)', () => 
     'utf8',
   );
   assert.ok(sdkResolver.includes('applyFableSunset'), 'SDK resolver missing applyFableSunset');
-  assert.ok(sdkResolver.includes("'2026-07-07'"), 'SDK resolver cutoff out of sync with CJS');
+  assert.ok(sdkResolver.includes("'2026-07-19'"), 'SDK resolver cutoff out of sync with CJS');
 });
 
 check('fable is available before the sunset', () => {

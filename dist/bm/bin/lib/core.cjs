@@ -1401,9 +1401,9 @@ function _resolveRuntimeTier(config, tier) {
  * Claude Fable 5 sunset (gsd-plugin).
  *
  * Claude Fable 5 was withdrawn ~2026-06-12, then REDEPLOYED 2026-07-01 and
- * included in plan usage only through 2026-07-07 (usage-credit-gated after). So
+ * included in plan usage only through 2026-07-19 (usage-credit-gated after). So
  * the `fable` tier (the quality profile's pick for the heaviest routingTier:
- * heavy agents) is available again through 2026-07-07 and auto-downgrades to
+ * heavy agents) is available again through 2026-07-19 and auto-downgrades to
  * `opus` from 2026-07-08 onward, keeping heavy agents on Fable during the free
  * window and off usage credits after it. One-constant, reversible: move the date.
  *
@@ -1412,7 +1412,7 @@ function _resolveRuntimeTier(config, tier) {
  * deterministically. The cutoff day itself is inclusive (Fable counted available
  * through <date>T23:59:59.999Z, falls back from the next day onward).
  */
-const FABLE_SUNSET_DATE = '2026-07-07';
+const FABLE_SUNSET_DATE = '2026-07-19';
 
 // Tunable Fable knob, read straight from config.json (loadConfig builds a fixed
 // key set and would drop `fable`, so read the file directly — same approach as

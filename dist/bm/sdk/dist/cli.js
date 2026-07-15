@@ -6339,7 +6339,7 @@ function resolveRuntimeTier(config, tier) {
   }
   return merged;
 }
-var FABLE_SUNSET_DATE = "2026-07-07";
+var FABLE_SUNSET_DATE = "2026-07-19";
 function readFableKnob(projectDir, workstream) {
   try {
     const p = planningPaths(projectDir, workstream).config;

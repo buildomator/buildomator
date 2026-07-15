@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.1.1] - 2026-07-16  (extend the Claude Fable 5 free-usage window to 2026-07-19)
+
+Patch release on the 4.1.x line. Anthropic extended Claude Fable 5's inclusion on paid plans, so the `fable` tier stays enabled longer before it auto-downgrades to Opus.
+
+### Changed
+- **Extended the Claude Fable 5 cutoff from 2026-07-07 to 2026-07-19.** Anthropic extended Fable 5's plan-included window through 2026-07-19 (11:59:59 PM PT; usage-credit-billed after). Bumped `FABLE_SUNSET_DATE` from `2026-07-07` to `2026-07-19` in both resolvers (`bin/lib/core.cjs` and `sdk/src/query/config-query.ts`, rebuilt `sdk/dist`), so the quality profile's heaviest agents resolve to `claude-fable-5` again through 2026-07-19 and auto-downgrade to `opus` from 2026-07-20. No manual revert; the per-project `fable.mode` / `fable.until` knob still overrides. Updated `tests/fable-sunset.test.cjs`.
+
 ## [4.1.0] - 2026-07-14  (Buildomator rebrand + additive /bm: command surface)
 
 Minor release completing the v4.1 milestone. The project is renamed to Buildomator, and a new `/bm:` command surface is added alongside the existing `/gsd:` one. Follows the gsd-core `1.x` line.
