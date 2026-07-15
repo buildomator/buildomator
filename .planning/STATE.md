@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 Phase: Milestone v4.1 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-07-14 - Completed quick task 260714-coq (marketplace-agnostic plugin-root fallback; COMPAT-05 closed)
+Last activity: 2026-07-16 - Completed quick task 260716-0ao (one-time bm auto-enable from the gsd SessionStart hook)
 
 ## Performance Metrics
 
@@ -164,6 +164,7 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 | 260703-2zr | Discoverability fix: /gsd:scan --drift was implemented in workflows/scan.md but invisible (scan had no argument-hint). Added argument-hint to scan (+ --drift in description), explore, workstreams, next; audited all 23 hint-less skills, rest take no user args. No workflow logic changed. | 2026-07-03 | f00ac99 | Done | [260703-2zr-add-argument-hint-to-scan-skill-advertis](./quick/260703-2zr-add-argument-hint-to-scan-skill-advertis/) |
 | 260706-2jy | Guardrail: GSD agents must not write phase/housekeeping metadata into generated product code or comments (user flagged `# Phase 1: skeleton only ...` in a generated project). Root cause: rule was never encoded. Added "No GSD metadata in product code" to agents/gsd-executor.md `<project_context>` + "## Generated Code Hygiene" in CLAUDE.md + memory. flashsystem project cleanup + planner-agent hardening left for user. | 2026-07-05 | 2548d54 | Done | [260706-2jy-executor-must-not-write-gsd-phase-housek](./quick/260706-2jy-executor-must-not-write-gsd-phase-housek/) |
 | 260714-coq | Centralize the plugin-root fallback to be marketplace-agnostic (runtime carriers): hooks.json + run-bash-hook.cjs union-scan every marketplace and pick the global newest semver, check-plugin-update.sh merge-max, segment-based pluginIdentity (closes COMPAT-05); bm-transform FALLBACK generalized to a pair-list + dist/bm regen (--check green); new tests/hook-fallback-resolution.test.cjs (4 isolated fixtures + version-wins) + coexist cases + CI. The 42 markdown ref-doc fallbacks are a documented deferred follow-up. | 2026-07-14 | 1396d91 | Verified | [260714-coq-centralize-marketplace-agnostic-plugin-r](./quick/260714-coq-centralize-marketplace-agnostic-plugin-r/) |
+| 260716-0ao | One-time auto-enable of the bm plugin from the gsd SessionStart hook, to facilitate migration. New fail-soft bin/lib/bm-autoenable.cjs (injectable, atomic settings write, durable one-time marker at ~/.claude) enables bm@<marketplace> once when it is installed-but-not-enabled, then never auto-manages enabledPlugins again so a later deliberate disable stands. Wired into a dedicated `if (hookIdentity === 'gsd')` session-start block (stderr notice). 7 unit tests incl. the manual-enable-then-disable proof; build-bm --check green. | 2026-07-16 | 37b842a | Verified | [260716-0ao-auto-enable-bm-from-gsd-sessionstart-to-](./quick/260716-0ao-auto-enable-bm-from-gsd-sessionstart-to-/) |
 
 ## Session Continuity
 
