@@ -5,9 +5,11 @@
 import { describe, it, expect } from 'vitest';
 import { captureGsdToolsOutput, captureGsdToolsStdout } from './capture.js';
 import { createRegistry } from '../query/index.js';
-import { resolve, dirname, normalize } from 'node:path';
+import { resolve, dirname, normalize, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { READ_ONLY_JSON_PARITY_ROWS } from './read-only-golden-rows.js';
 
 const STABLE_JSON_PARITY_ROWS = READ_ONLY_JSON_PARITY_ROWS.filter(
@@ -39,17 +41,45 @@ describe('config-path (plain stdout vs SDK { path })', () => {
 });
 
 describe('audit-open golden parity (excluding scanned_at)', () => {
+  const strip = (d: unknown): Record<string, unknown> => {
+    const o = { ...(d as Record<string, unknown>) };
+    delete o.scanned_at;
+    delete o.has_scan_errors;
+    return o;
+  };
+
   it('SDK JSON matches gsd-tools.cjs except volatile scanned_at', async () => {
     const gsdOutput = await captureGsdToolsOutput('audit-open', ['--json'], REPO_ROOT);
     const registry = createRegistry();
     const sdkResult = await registry.dispatch('audit-open', ['--json'], REPO_ROOT);
-    const strip = (d: unknown): Record<string, unknown> => {
-      const o = { ...(d as Record<string, unknown>) };
-      delete o.scanned_at;
-      delete o.has_scan_errors;
-      return o;
-    };
     expect(strip(sdkResult.data)).toEqual(strip(gsdOutput));
+  });
+
+  it('SDK and CJS classify quick tasks identically on an A-D fixture project', async () => {
+    // Fixture covers the original bug shape: a prefixed <dir>-SUMMARY.md with no
+    // status field (case A), plus a no-SUMMARY dir (B), incomplete/BLOCKED
+    // SUMMARYs (C), and a bare SUMMARY.md with no status (D).
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'gsd-audit-open-parity-'));
+    const writeQuickDir = (dirName: string, summaryName: string | null, body: string): void => {
+      const dir = join(fixtureDir, '.planning', 'quick', dirName);
+      mkdirSync(dir, { recursive: true });
+      if (summaryName) writeFileSync(join(dir, summaryName), body);
+    };
+    try {
+      mkdirSync(join(fixtureDir, '.planning', 'quick'), { recursive: true });
+      writeQuickDir('case-a-clean', 'case-a-clean-SUMMARY.md', '---\nphase: quick-x\n---\n\nDone.\n');
+      writeQuickDir('case-b-no-summary', null, '');
+      writeQuickDir('case-c-incomplete', 'case-c-incomplete-SUMMARY.md', '---\nstatus: incomplete\n---\n\nWIP.\n');
+      writeQuickDir('case-c-blocked', 'case-c-blocked-SUMMARY.md', '---\nstatus: BLOCKED\n---\n\nStuck.\n');
+      writeQuickDir('case-d-bare', 'SUMMARY.md', '---\nphase: quick-y\n---\n\nDone.\n');
+
+      const gsdOutput = await captureGsdToolsOutput('audit-open', ['--json'], fixtureDir);
+      const registry = createRegistry();
+      const sdkResult = await registry.dispatch('audit-open', ['--json'], fixtureDir);
+      expect(strip(sdkResult.data)).toEqual(strip(gsdOutput));
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+    }
   });
 });
 

@@ -76,7 +76,9 @@ function scanDebugSessions(planDir) {
 
 /**
  * Scan .planning/quick/ for incomplete tasks.
- * Incomplete if SUMMARY.md missing or status !== 'complete'.
+ * A task is flagged only when its SUMMARY is missing, unreadable, or carries a
+ * status in INCOMPLETE_QUICK_STATUSES. A readable SUMMARY with no status field,
+ * status 'complete', or any other value counts as complete and is not flagged.
  */
 function scanQuickTasks(planDir) {
   const quickDir = path.join(planDir, 'quick');
@@ -139,7 +141,7 @@ function scanQuickTasks(planDir) {
       }
     }
 
-    if (status === 'complete') continue;
+    if (status !== 'missing' && status !== 'unreadable' && !INCOMPLETE_QUICK_STATUSES.has(status)) continue;
 
     // Parse date and slug from directory name: YYYYMMDD-slug or YYYY-MM-DD-slug
     let date = '';
@@ -344,6 +346,12 @@ function scanSeeds(planDir) {
 
   return results;
 }
+
+// Quick-task statuses that mean the task is not yet finished. A SUMMARY status
+// in this set flags the task; anything else (including an absent status field)
+// counts as complete. Hoisted so the Set is not rebuilt per loop iteration and
+// so the CJS and SDK scanners share one identical definition.
+const INCOMPLETE_QUICK_STATUSES = new Set(['incomplete', 'gaps', 'gaps_found', 'partial', 'blocked']);
 
 // Terminal UAT states: `complete` (legacy) and `resolved` (post-gap-closure
 // per workflows/execute-phase.md). Hoisted outside scanUatGaps so the Set is
