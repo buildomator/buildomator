@@ -6,6 +6,7 @@ Reusable prompt patterns for structured gate checks in workflows and agents.
 
 ## Rules
 
+- **Only gate on decisions that are genuinely the user's:** product, strategy, a scope-vs-effort tradeoff they must weigh, taste, or a fact you cannot derive or verify. Do NOT gate on GSD-internal mechanics you can resolve from the workflow's purpose or sound engineering judgment: how to split or sequence the work, isolate-vs-work-on-main, which mechanical fix to apply, safe or obvious gap handling. For those, make the call, do it, and report it in one line with the rationale and an easy "say the word to change it." A gate that offers back the recommended option you already chose is a rubber-stamp; skip it.
 - `header` must be max 12 characters
 - `multiSelect` is always `false` for gate checks
 - Always handle the "Other" case (user typed a freeform response instead of selecting)
@@ -76,6 +77,7 @@ Up to 4 suggested next actions with selection (status, resume workflows).
 
 ## Pattern: scope-confirm
 3-option confirmation for quick task scope validation.
+- Use ONLY when the quick-vs-full tradeoff is genuinely the user's to weigh. If you can make the scoping call yourself (for example, split runtime-critical work now and defer a mechanical sweep, with a documented scope decision), do that and report it instead of prompting.
 - question: "This task looks complex. Proceed as quick task or use full planning?"
 - header: "Scope"
 - options: Quick task | Full plan (via /bm:plan-phase) | Revise
