@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 Phase: Milestone v4.1 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-07-16 - Released v4.1.1 (extended Claude Fable 5 cutoff to 2026-07-19)
+Last activity: 2026-07-16 - Completed quick task 260716-r1c (audit-open no longer flags completed quick tasks; CJS/SDK parity)
 
 ## Performance Metrics
 
@@ -165,6 +165,7 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 | 260706-2jy | Guardrail: GSD agents must not write phase/housekeeping metadata into generated product code or comments (user flagged `# Phase 1: skeleton only ...` in a generated project). Root cause: rule was never encoded. Added "No GSD metadata in product code" to agents/gsd-executor.md `<project_context>` + "## Generated Code Hygiene" in CLAUDE.md + memory. flashsystem project cleanup + planner-agent hardening left for user. | 2026-07-05 | 2548d54 | Done | [260706-2jy-executor-must-not-write-gsd-phase-housek](./quick/260706-2jy-executor-must-not-write-gsd-phase-housek/) |
 | 260714-coq | Centralize the plugin-root fallback to be marketplace-agnostic (runtime carriers): hooks.json + run-bash-hook.cjs union-scan every marketplace and pick the global newest semver, check-plugin-update.sh merge-max, segment-based pluginIdentity (closes COMPAT-05); bm-transform FALLBACK generalized to a pair-list + dist/bm regen (--check green); new tests/hook-fallback-resolution.test.cjs (4 isolated fixtures + version-wins) + coexist cases + CI. The 42 markdown ref-doc fallbacks are a documented deferred follow-up. | 2026-07-14 | 1396d91 | Verified | [260714-coq-centralize-marketplace-agnostic-plugin-r](./quick/260714-coq-centralize-marketplace-agnostic-plugin-r/) |
 | 260716-0ao | One-time auto-enable of the bm plugin from the gsd SessionStart hook, to facilitate migration. New fail-soft bin/lib/bm-autoenable.cjs (injectable, atomic settings write, durable one-time marker at ~/.claude) enables bm@<marketplace> once when it is installed-but-not-enabled, then never auto-manages enabledPlugins again so a later deliberate disable stands. Wired into a dedicated `if (hookIdentity === 'gsd')` session-start block (stderr notice). 7 unit tests incl. the manual-enable-then-disable proof; build-bm --check green. | 2026-07-16 | 37b842a | Verified | [260716-0ao-auto-enable-bm-from-gsd-sessionstart-to-](./quick/260716-0ao-auto-enable-bm-from-gsd-sessionstart-to-/) |
+| 260716-r1c | Fix the audit-open false-positive that flagged completed quick tasks as "missing" at milestone close. Ported the prefixed `<id>-SUMMARY.md` discovery into the SDK scanner (sdk/src/query/audit-open.ts) to match the CJS twin (bin/lib/audit.cjs), and changed BOTH to a shared rule: a readable SUMMARY is complete unless it explicitly declares an incomplete status {incomplete, gaps, gaps_found, partial, blocked}; a status-less SUMMARY = done. CJS/SDK now byte-identical (audit-open golden parity). Effect in this repo: quick_tasks flagged 37 -> 3 (only genuinely SUMMARY-less dirs remain). CJS + SDK vitest + cross-boundary parity tests; sdk/dist + dist/bm rebuilt, --check green. | 2026-07-16 | c37c5c1 | Verified | [260716-r1c-fix-audit-open-quick-task-false-positive](./quick/260716-r1c-fix-audit-open-quick-task-false-positive/) |
 
 ## Session Continuity
 
