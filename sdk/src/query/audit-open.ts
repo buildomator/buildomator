@@ -11,6 +11,12 @@ import { extractFrontmatter } from './frontmatter.js';
 import { planningPaths, sanitizeForDisplay } from './helpers.js';
 import type { QueryHandler } from './utils.js';
 
+// Quick-task statuses that mean the task is not yet finished. A SUMMARY status
+// in this set flags the task; anything else (including an absent status field)
+// counts as complete. Kept identical to the CJS scanner in bin/lib/audit.cjs so
+// both implementations classify quick tasks the same way.
+const INCOMPLETE_QUICK_STATUSES = new Set(['incomplete', 'gaps', 'gaps_found', 'partial', 'blocked']);
+
 function scanDebugSessions(planDir: string): Array<Record<string, unknown>> {
   const debugDir = join(planDir, 'debug');
   if (!existsSync(debugDir)) return [];
@@ -81,12 +87,28 @@ function scanQuickTasks(planDir: string): Array<Record<string, unknown>> {
 
     const dirName = entry.name;
     const taskDir = join(quickDir, dirName);
-    const summaryPath = join(taskDir, 'SUMMARY.md');
+
+    // workflows/quick.md mandates `${quick_id}-SUMMARY.md`; older flows used
+    // bare `SUMMARY.md`. Accept either to avoid a false-positive "missing".
+    let summaryPath: string | null = null;
+    try {
+      const summaryFiles = readdirSync(taskDir, { withFileTypes: true })
+        .filter(e => e.isFile() && (e.name === 'SUMMARY.md' || e.name.endsWith('-SUMMARY.md')));
+      if (summaryFiles.length > 0) {
+        // Prefer the per-task `${quick_id}-SUMMARY.md` form when present.
+        const preferred = summaryFiles.find(e => e.name === `${dirName}-SUMMARY.md`)
+          || summaryFiles.find(e => e.name.endsWith('-SUMMARY.md'))
+          || summaryFiles[0];
+        summaryPath = join(taskDir, preferred.name);
+      }
+    } catch {
+      // fall through with summaryPath = null so status stays 'missing'
+    }
 
     let status = 'missing';
     const description = '';
 
-    if (existsSync(summaryPath)) {
+    if (summaryPath && existsSync(summaryPath)) {
       try {
         const content = readFileSync(summaryPath, 'utf-8');
         const fm = extractFrontmatter(content);
@@ -96,7 +118,7 @@ function scanQuickTasks(planDir: string): Array<Record<string, unknown>> {
       }
     }
 
-    if (status === 'complete') continue;
+    if (status !== 'missing' && status !== 'unreadable' && !INCOMPLETE_QUICK_STATUSES.has(status)) continue;
 
     let date = '';
     let slug = sanitizeForDisplay(dirName);

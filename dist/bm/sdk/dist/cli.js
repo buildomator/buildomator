@@ -1133,9 +1133,9 @@ var init_schema_detect = __esm({
   }
 });
 
-// node_modules/ws/lib/constants.js
+// ../../../../sdk/node_modules/ws/lib/constants.js
 var require_constants = __commonJS({
-  "node_modules/ws/lib/constants.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/constants.js"(exports, module) {
     "use strict";
     var BINARY_TYPES = ["nodebuffer", "arraybuffer", "fragments"];
     var hasBlob = typeof Blob !== "undefined";
@@ -1156,9 +1156,9 @@ var require_constants = __commonJS({
   }
 });
 
-// node_modules/ws/lib/buffer-util.js
+// ../../../../sdk/node_modules/ws/lib/buffer-util.js
 var require_buffer_util = __commonJS({
-  "node_modules/ws/lib/buffer-util.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/buffer-util.js"(exports, module) {
     "use strict";
     var { EMPTY_BUFFER } = require_constants();
     var FastBuffer = Buffer[Symbol.species];
@@ -1231,9 +1231,9 @@ var require_buffer_util = __commonJS({
   }
 });
 
-// node_modules/ws/lib/limiter.js
+// ../../../../sdk/node_modules/ws/lib/limiter.js
 var require_limiter = __commonJS({
-  "node_modules/ws/lib/limiter.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/limiter.js"(exports, module) {
     "use strict";
     var kDone = /* @__PURE__ */ Symbol("kDone");
     var kRun = /* @__PURE__ */ Symbol("kRun");
@@ -1281,9 +1281,9 @@ var require_limiter = __commonJS({
   }
 });
 
-// node_modules/ws/lib/permessage-deflate.js
+// ../../../../sdk/node_modules/ws/lib/permessage-deflate.js
 var require_permessage_deflate = __commonJS({
-  "node_modules/ws/lib/permessage-deflate.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/permessage-deflate.js"(exports, module) {
     "use strict";
     var zlib = __require("zlib");
     var bufferUtil = require_buffer_util();
@@ -1664,9 +1664,9 @@ var require_permessage_deflate = __commonJS({
   }
 });
 
-// node_modules/ws/lib/validation.js
+// ../../../../sdk/node_modules/ws/lib/validation.js
 var require_validation = __commonJS({
-  "node_modules/ws/lib/validation.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/validation.js"(exports, module) {
     "use strict";
     var { isUtf8 } = __require("buffer");
     var { hasBlob } = require_constants();
@@ -1865,9 +1865,9 @@ var require_validation = __commonJS({
   }
 });
 
-// node_modules/ws/lib/receiver.js
+// ../../../../sdk/node_modules/ws/lib/receiver.js
 var require_receiver = __commonJS({
-  "node_modules/ws/lib/receiver.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/receiver.js"(exports, module) {
     "use strict";
     var { Writable } = __require("stream");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -2457,9 +2457,9 @@ var require_receiver = __commonJS({
   }
 });
 
-// node_modules/ws/lib/sender.js
+// ../../../../sdk/node_modules/ws/lib/sender.js
 var require_sender = __commonJS({
-  "node_modules/ws/lib/sender.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/sender.js"(exports, module) {
     "use strict";
     var { Duplex } = __require("stream");
     var { randomFillSync } = __require("crypto");
@@ -2945,9 +2945,9 @@ var require_sender = __commonJS({
   }
 });
 
-// node_modules/ws/lib/event-target.js
+// ../../../../sdk/node_modules/ws/lib/event-target.js
 var require_event_target = __commonJS({
-  "node_modules/ws/lib/event-target.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/event-target.js"(exports, module) {
     "use strict";
     var { kForOnEventAttribute, kListener } = require_constants();
     var kCode = /* @__PURE__ */ Symbol("kCode");
@@ -3174,9 +3174,9 @@ var require_event_target = __commonJS({
   }
 });
 
-// node_modules/ws/lib/extension.js
+// ../../../../sdk/node_modules/ws/lib/extension.js
 var require_extension = __commonJS({
-  "node_modules/ws/lib/extension.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/extension.js"(exports, module) {
     "use strict";
     var { tokenChars } = require_validation();
     function push(dest, name, elem) {
@@ -3327,9 +3327,9 @@ var require_extension = __commonJS({
   }
 });
 
-// node_modules/ws/lib/websocket.js
+// ../../../../sdk/node_modules/ws/lib/websocket.js
 var require_websocket = __commonJS({
-  "node_modules/ws/lib/websocket.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/websocket.js"(exports, module) {
     "use strict";
     var EventEmitter2 = __require("events");
     var https = __require("https");
@@ -4213,9 +4213,9 @@ var require_websocket = __commonJS({
   }
 });
 
-// node_modules/ws/lib/stream.js
+// ../../../../sdk/node_modules/ws/lib/stream.js
 var require_stream = __commonJS({
-  "node_modules/ws/lib/stream.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/stream.js"(exports, module) {
     "use strict";
     var WebSocket3 = require_websocket();
     var { Duplex } = __require("stream");
@@ -4311,9 +4311,9 @@ var require_stream = __commonJS({
   }
 });
 
-// node_modules/ws/lib/subprotocol.js
+// ../../../../sdk/node_modules/ws/lib/subprotocol.js
 var require_subprotocol = __commonJS({
-  "node_modules/ws/lib/subprotocol.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/subprotocol.js"(exports, module) {
     "use strict";
     var { tokenChars } = require_validation();
     function parse(header) {
@@ -4356,9 +4356,9 @@ var require_subprotocol = __commonJS({
   }
 });
 
-// node_modules/ws/lib/websocket-server.js
+// ../../../../sdk/node_modules/ws/lib/websocket-server.js
 var require_websocket_server = __commonJS({
-  "node_modules/ws/lib/websocket-server.js"(exports, module) {
+  "../../../../sdk/node_modules/ws/lib/websocket-server.js"(exports, module) {
     "use strict";
     var EventEmitter2 = __require("events");
     var http = __require("http");
@@ -15939,6 +15939,7 @@ var skillManifest = async (args, projectDir) => {
 import { existsSync as existsSync28, readdirSync as readdirSync18, readFileSync as readFileSync16 } from "node:fs";
 import { basename as basename4, join as join36 } from "node:path";
 init_helpers();
+var INCOMPLETE_QUICK_STATUSES = /* @__PURE__ */ new Set(["incomplete", "gaps", "gaps_found", "partial", "blocked"]);
 function scanDebugSessions(planDir) {
   const debugDir = join36(planDir, "debug");
   if (!existsSync28(debugDir))
@@ -16004,10 +16005,18 @@ function scanQuickTasks(planDir) {
       continue;
     const dirName = entry.name;
     const taskDir = join36(quickDir, dirName);
-    const summaryPath = join36(taskDir, "SUMMARY.md");
+    let summaryPath = null;
+    try {
+      const summaryFiles = readdirSync18(taskDir, { withFileTypes: true }).filter((e3) => e3.isFile() && (e3.name === "SUMMARY.md" || e3.name.endsWith("-SUMMARY.md")));
+      if (summaryFiles.length > 0) {
+        const preferred = summaryFiles.find((e3) => e3.name === `${dirName}-SUMMARY.md`) || summaryFiles.find((e3) => e3.name.endsWith("-SUMMARY.md")) || summaryFiles[0];
+        summaryPath = join36(taskDir, preferred.name);
+      }
+    } catch {
+    }
     let status = "missing";
     const description = "";
-    if (existsSync28(summaryPath)) {
+    if (summaryPath && existsSync28(summaryPath)) {
       try {
         const content = readFileSync16(summaryPath, "utf-8");
         const fm = extractFrontmatter2(content);
@@ -16016,7 +16025,7 @@ function scanQuickTasks(planDir) {
         status = "unreadable";
       }
     }
-    if (status === "complete")
+    if (status !== "missing" && status !== "unreadable" && !INCOMPLETE_QUICK_STATUSES.has(status))
       continue;
     let date = "";
     let slug = sanitizeForDisplay(dirName);
@@ -21935,7 +21944,7 @@ var GSDTools = class {
   }
 };
 
-// node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs
+// ../../../../sdk/node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs
 import { join as sD } from "path";
 import { fileURLToPath as Mx } from "url";
 import { setMaxListeners as ML } from "events";
@@ -39406,7 +39415,7 @@ ${BOLD}\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\
   }
 };
 
-// node_modules/ws/wrapper.mjs
+// ../../../../sdk/node_modules/ws/wrapper.mjs
 var import_stream = __toESM(require_stream(), 1);
 var import_extension = __toESM(require_extension(), 1);
 var import_permessage_deflate = __toESM(require_permessage_deflate(), 1);
