@@ -15,12 +15,21 @@ Patch release on the 4.1.x line. Fixes a milestone-close audit false-positive.
 ### Fixed
 - **`audit-open` (the `complete-milestone` pre-close audit) no longer flags completed quick tasks as "missing."** Two causes: the SDK scanner (`sdk/src/query/audit-open.ts`), which `complete-milestone` runs via `gsd-sdk query audit-open`, only looked for a bare `SUMMARY.md` while the quick workflow writes `<quick_id>-SUMMARY.md`; and both scanners treated a SUMMARY without an explicit `status: complete` field as incomplete. The SDK now discovers the prefixed SUMMARY (matching the CJS `bin/lib/audit.cjs` twin), and both scanners treat a readable SUMMARY as complete unless it explicitly declares an incomplete status (`incomplete`, `gaps`, `gaps_found`, `partial`, `blocked`). The CJS and SDK scanners are now byte-identical, covered by the golden CJS/SDK parity test. Adds `tests/audit-open-quick-tasks.test.cjs`, an SDK vitest unit test, and a cross-boundary parity fixture, wired into CI. In this repo the pre-close audit's quick-task flags dropped from 37 false positives to 3 genuinely incomplete dirs.
 
-## [4.1.1] - 2026-07-16  (extend the Claude Fable 5 free-usage window to 2026-07-19)
+## [4.1.1] - 2026-07-16  (Buildomator org move, bm the primary install, marketplace-agnostic fallback, one-time bm auto-enable, Fable window extended)
 
-Patch release on the 4.1.x line. Anthropic extended Claude Fable 5's inclusion on paid plans, so the `fable` tier stays enabled longer before it auto-downgrades to Opus.
+Consolidates the v4.1 Buildomator rebrand and extends the Claude Fable 5 window. Existing installs are unaffected: the marketplace name (`gsd-plugin`), the plugin cache paths, and the `gsd@gsd-plugin` install identifier are all unchanged, so `/gsd:*` keeps working with nothing to re-enable.
+
+### Added
+- **`bm@buildomator` is now the primary install.** A separate `buildomator` marketplace ([github.com/buildomator/marketplace](https://github.com/buildomator/marketplace)) serves the `bm` plugin via a cross-repo source, so the README leads with `/plugin marketplace add buildomator/marketplace` then `/plugin install bm@buildomator`. `bm@gsd-plugin` keeps working, and `gsd@gsd-plugin` is documented as the legacy `/gsd:` prefix.
+- **One-time bm auto-enable on the gsd SessionStart hook.** When the `bm` plugin is installed but not enabled, the gsd plugin enables it once (fail-soft atomic settings write, a durable one-time marker, and a stderr notice to run `/reload-plugins`), so migrating users get `/bm:` without hunting through `/plugins`. It never re-enables a plugin the user later deliberately disables. New `bin/lib/bm-autoenable.cjs` with unit tests.
+- **The on-use deprecation nudge now names the install steps** (`/plugin install bm@gsd-plugin`, `/reload-plugins`, then `/bm:`), so `/gsd:` users can discover how to move to `/bm:`.
 
 ### Changed
+- **Buildomator moved to its own GitHub org.** The repo was renamed and transferred to [github.com/buildomator/buildomator](https://github.com/buildomator/buildomator); the old `jnuyens/gsd-plugin` and `jnuyens/buildomator` paths 301-redirect. README and RELEASING now present Buildomator throughout, project-name prose reads "Buildomator", the intro links the former `gsd-plugin` location, a VibeDrift credit was added, and the inline upstream link was dropped from the intro.
 - **Extended the Claude Fable 5 cutoff from 2026-07-07 to 2026-07-19.** Anthropic extended Fable 5's plan-included window through 2026-07-19 (11:59:59 PM PT; usage-credit-billed after). Bumped `FABLE_SUNSET_DATE` from `2026-07-07` to `2026-07-19` in both resolvers (`bin/lib/core.cjs` and `sdk/src/query/config-query.ts`, rebuilt `sdk/dist`), so the quality profile's heaviest agents resolve to `claude-fable-5` again through 2026-07-19 and auto-downgrade to `opus` from 2026-07-20. No manual revert; the per-project `fable.mode` / `fable.until` knob still overrides. Updated `tests/fable-sunset.test.cjs`.
+
+### Fixed
+- **The plugin-root fallback is now marketplace-agnostic (closes COMPAT-05).** The hook loaders (`hooks/hooks.json`, `hooks/run-bash-hook.cjs`), `bin/check-plugin-update.sh`, and `bin/lib/coexist.cjs` `pluginIdentity` now resolve the plugin under any marketplace cache dir (picking the globally newest version), so a `bm@buildomator` install cached under `~/.claude/plugins/cache/buildomator/bm/` still resolves when `CLAUDE_PLUGIN_ROOT` is pruned. `pluginIdentity` is segment-based, closing the Phase 14 COMPAT-05 gap. `CLAUDE_PLUGIN_ROOT` stays the primary path. New `tests/hook-fallback-resolution.test.cjs`, wired into CI.
 
 ## [4.1.0] - 2026-07-14  (Buildomator rebrand + additive /bm: command surface)
 
