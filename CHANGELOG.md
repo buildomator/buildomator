@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.1.2] - 2026-07-17  (audit-open no longer flags completed quick tasks)
+
+Patch release on the 4.1.x line. Fixes a milestone-close audit false-positive.
+
+### Fixed
+- **`audit-open` (the `complete-milestone` pre-close audit) no longer flags completed quick tasks as "missing."** Two causes: the SDK scanner (`sdk/src/query/audit-open.ts`), which `complete-milestone` runs via `gsd-sdk query audit-open`, only looked for a bare `SUMMARY.md` while the quick workflow writes `<quick_id>-SUMMARY.md`; and both scanners treated a SUMMARY without an explicit `status: complete` field as incomplete. The SDK now discovers the prefixed SUMMARY (matching the CJS `bin/lib/audit.cjs` twin), and both scanners treat a readable SUMMARY as complete unless it explicitly declares an incomplete status (`incomplete`, `gaps`, `gaps_found`, `partial`, `blocked`). The CJS and SDK scanners are now byte-identical, covered by the golden CJS/SDK parity test. Adds `tests/audit-open-quick-tasks.test.cjs`, an SDK vitest unit test, and a cross-boundary parity fixture, wired into CI. In this repo the pre-close audit's quick-task flags dropped from 37 false positives to 3 genuinely incomplete dirs.
+
 ## [4.1.1] - 2026-07-16  (extend the Claude Fable 5 free-usage window to 2026-07-19)
 
 Patch release on the 4.1.x line. Anthropic extended Claude Fable 5's inclusion on paid plans, so the `fable` tier stays enabled longer before it auto-downgrades to Opus.
