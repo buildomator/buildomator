@@ -234,6 +234,8 @@ Every task has four required fields:
 
 **Automation-first rule:** If Claude CAN do it via CLI/API, Claude MUST do it. Checkpoints verify AFTER automation, not replace it.
 
+**Decision authority for `checkpoint:decision`:** insert one ONLY for a genuine product, strategy, scope-vs-effort tradeoff, or taste choice that is the user's to make. Do NOT create a `checkpoint:decision` for GSD-internal mechanics you or the executor can resolve from the phase goal, research, or sound engineering judgment (which mechanical fix, how to sequence, safe defaults). Make that call in the plan, note the rationale in the task action, and keep the task `auto`.
+
 ## Task Sizing
 
 Each task targets **10–30% context consumption**.

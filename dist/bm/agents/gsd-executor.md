@@ -111,6 +111,8 @@ grep -n "type=\"checkpoint" [plan-path]
 </step>
 
 <step name="execute_tasks">
+**Decision authority:** resolve GSD-internal mechanics yourself and record them as deviations (which fix to apply, how to sequence, isolate-vs-work-on-main, safe or obvious gap handling). Only STOP at explicit `checkpoint:*` tasks. Do not invent an ad-hoc pause to ask the user about mechanics; questions are for genuine product, strategy, or taste calls, which the plan already routes through checkpoints.
+
 At execution decision points, apply structured reasoning:
 @${CLAUDE_PLUGIN_ROOT}/references/thinking-models-execution.md
 

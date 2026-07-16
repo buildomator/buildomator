@@ -31,33 +31,34 @@ Reference: `references/questioning.md` for the full anti-pattern list.
 12. **Do not** walk through checklists -- checklist walking (asking items one by one from a list) is the #1 anti-pattern. Instead, use progressive depth: start broad, dig where interesting.
 13. **Do not** use corporate speak -- avoid jargon like "stakeholder alignment", "synergize", "deliverables". Use plain language.
 14. **Do not** apply premature constraints -- don't narrow the solution space before understanding the problem. Ask about the problem first, then constrain.
+15. **Do not** gate the user on GSD-internal mechanics you can resolve yourself. Scope-splitting, isolate-vs-work-on-main, how-to-sequence, which mechanical fix to apply, and safe or obvious gap handling are yours to decide: make the call, do it, and report it in one line with the rationale and an easy "say the word to change it." Reserve questions (AskUserQuestion, gate prompts) for genuine product, strategy, scope-vs-effort tradeoff, or taste decisions only the user can make. A prompt that offers back the option you already recommended is a rubber-stamp; skip it. See `references/gate-prompts.md` Rules.
 
 ## State Management Anti-Patterns
 
-15. **No direct Write/Edit to STATE.md or ROADMAP.md for mutations.** Always use `gsd-sdk query` for registered state/roadmap handlers (e.g. `state.update`, `state.advance-plan`, `roadmap.update-plan-progress`), or legacy `node …/gsd-tools.cjs` for CLI-only commands. Direct Write tool usage bypasses safe update logic and is unsafe in multi-session environments. Exception: first-time creation of STATE.md from template is allowed.
+16. **No direct Write/Edit to STATE.md or ROADMAP.md for mutations.** Always use `gsd-sdk query` for registered state/roadmap handlers (e.g. `state.update`, `state.advance-plan`, `roadmap.update-plan-progress`), or legacy `node …/gsd-tools.cjs` for CLI-only commands. Direct Write tool usage bypasses safe update logic and is unsafe in multi-session environments. Exception: first-time creation of STATE.md from template is allowed.
 
 ## Behavioral Rules
 
-16. **Do not** create artifacts the user did not approve -- always confirm before writing new planning documents.
-17. **Do not** modify files outside the workflow's stated scope -- check the plan's files_modified list.
-18. **Do not** suggest multiple next actions without clear priority -- one primary suggestion, alternatives listed secondary.
-19. **Do not** use `git add .` or `git add -A` -- stage specific files only.
-20. **Do not** include sensitive information (API keys, passwords, tokens) in planning documents or commits.
+17. **Do not** create artifacts the user did not approve -- always confirm before writing new planning documents.
+18. **Do not** modify files outside the workflow's stated scope -- check the plan's files_modified list.
+19. **Do not** suggest multiple next actions without clear priority -- one primary suggestion, alternatives listed secondary.
+20. **Do not** use `git add .` or `git add -A` -- stage specific files only.
+21. **Do not** include sensitive information (API keys, passwords, tokens) in planning documents or commits.
 
 ## Error Recovery Rules
 
-21. **Git lock detection**: Before any git operation, if it fails with "Unable to create lock file", check for stale `.git/index.lock` and advise the user to remove it (do not remove automatically).
-22. **Config fallback awareness**: Config loading returns `null` silently on invalid JSON. If your workflow depends on config values, check for null and warn the user: "config.json is invalid or missing -- running with defaults."
-23. **Partial state recovery**: If STATE.md references a phase directory that doesn't exist, do not proceed silently. Warn the user and suggest diagnosing the mismatch.
+22. **Git lock detection**: Before any git operation, if it fails with "Unable to create lock file", check for stale `.git/index.lock` and advise the user to remove it (do not remove automatically).
+23. **Config fallback awareness**: Config loading returns `null` silently on invalid JSON. If your workflow depends on config values, check for null and warn the user: "config.json is invalid or missing -- running with defaults."
+24. **Partial state recovery**: If STATE.md references a phase directory that doesn't exist, do not proceed silently. Warn the user and suggest diagnosing the mismatch.
 
 ## GSD-Specific Rules
 
-24. **Do not** check for `mode === 'auto'` or `mode === 'autonomous'` -- GSD uses `yolo` config flag. Check `yolo: true` for autonomous mode, absence or `false` for interactive mode.
-25. **Prefer `gsd-sdk query`** for orchestration when a handler exists; when shelling out to the legacy CLI, use **`gsd-tools.cjs`** (not `gsd-tools.js` or any other filename) — GSD ships the programmatic API as CommonJS for Node.js CLI compatibility.
-26. **Plan files MUST follow `{padded_phase}-{NN}-PLAN.md` pattern** (e.g., `01-01-PLAN.md`). Never use `PLAN-01.md`, `plan-01.md`, or any other variation -- gsd-tools detection depends on this exact pattern.
-27. **Do not start executing the next plan before writing the SUMMARY.md for the current plan** -- downstream plans may reference it via `@` includes.
+25. **Do not** check for `mode === 'auto'` or `mode === 'autonomous'` -- GSD uses `yolo` config flag. Check `yolo: true` for autonomous mode, absence or `false` for interactive mode.
+26. **Prefer `gsd-sdk query`** for orchestration when a handler exists; when shelling out to the legacy CLI, use **`gsd-tools.cjs`** (not `gsd-tools.js` or any other filename) — GSD ships the programmatic API as CommonJS for Node.js CLI compatibility.
+27. **Plan files MUST follow `{padded_phase}-{NN}-PLAN.md` pattern** (e.g., `01-01-PLAN.md`). Never use `PLAN-01.md`, `plan-01.md`, or any other variation -- gsd-tools detection depends on this exact pattern.
+28. **Do not start executing the next plan before writing the SUMMARY.md for the current plan** -- downstream plans may reference it via `@` includes.
 
 ## iOS / Apple Platform Rules
 
-28. **NEVER use `Package.swift` + `.executableTarget` (or `.target`) as the primary build system for iOS apps.** SPM executable targets produce macOS CLI binaries, not iOS `.app` bundles. They cannot be installed on iOS devices or submitted to the App Store. Use XcodeGen (`project.yml` + `xcodegen generate`) to create a proper `.xcodeproj`. See `references/ios-scaffold.md` for the full pattern.
-29. **Verify SwiftUI API availability before use.** Many SwiftUI APIs require a specific minimum iOS version (e.g., `NavigationSplitView` is iOS 16+, `List(selection:)` with multi-select and `@Observable` require iOS 17). If a plan uses an API that exceeds the declared `IPHONEOS_DEPLOYMENT_TARGET`, raise the deployment target or add `#available` guards.
+29. **NEVER use `Package.swift` + `.executableTarget` (or `.target`) as the primary build system for iOS apps.** SPM executable targets produce macOS CLI binaries, not iOS `.app` bundles. They cannot be installed on iOS devices or submitted to the App Store. Use XcodeGen (`project.yml` + `xcodegen generate`) to create a proper `.xcodeproj`. See `references/ios-scaffold.md` for the full pattern.
+30. **Verify SwiftUI API availability before use.** Many SwiftUI APIs require a specific minimum iOS version (e.g., `NavigationSplitView` is iOS 16+, `List(selection:)` with multi-select and `@Observable` require iOS 17). If a plan uses an API that exceeds the declared `IPHONEOS_DEPLOYMENT_TARGET`, raise the deployment target or add `#available` guards.
