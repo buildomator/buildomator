@@ -71,6 +71,46 @@ function isNestedSummaryFile(f) {
 }
 
 /**
+ * Reduce a plan or summary filename to a layout-agnostic pairing id.
+ *
+ * Strips the PLAN/SUMMARY marker in every position it can appear:
+ *   flat suffix   01-01-PLAN.md / 01-01-SUMMARY.md   -> 01-01
+ *   bare          PLAN.md / SUMMARY.md               -> (empty)
+ *   nested prefix PLAN-01-setup.md / SUMMARY-01-...  -> 01-setup
+ *   extended infix 5-PLAN-01-setup.md / 5-SUMMARY-.. -> 5-01-setup
+ *
+ * A plan and its summary reduce to the same id; an unrelated remediation
+ * summary (e.g. 30-FIX-CR02-SUMMARY.md) reduces to an id no plan shares.
+ */
+function planSummaryBaseId(filename) {
+  let base = filename.replace(/\.md$/i, '');
+  base = base.replace(/-?(PLAN|SUMMARY)$/i, '');
+  base = base.replace(/^(PLAN|SUMMARY)-/i, '');
+  base = base.replace(/-(PLAN|SUMMARY)-/i, '-');
+  return base;
+}
+
+/**
+ * Count only the summaries that pair with a real plan file.
+ *
+ * A summary counts toward completion when its pairing id matches some plan's
+ * pairing id. Stray summaries that match no plan are excluded, so they can
+ * never inflate a phase to complete.
+ *
+ * @param {string[]} planFiles
+ * @param {string[]} summaryFiles
+ * @returns {number} number of summaries paired to a plan
+ */
+function countMatchedSummaries(planFiles, summaryFiles) {
+  const planIds = new Set(planFiles.map(planSummaryBaseId));
+  let matched = 0;
+  for (const summary of summaryFiles) {
+    if (planIds.has(planSummaryBaseId(summary))) matched++;
+  }
+  return matched;
+}
+
+/**
  * Scan a single phase directory for plan and summary files.
  *
  * @param {string} phaseDir — absolute path to the phase directory
@@ -118,7 +158,7 @@ function scanPhasePlans(phaseDir) {
   const planFiles = rootPlanFiles.concat(nestedPlanFiles);
   const summaryFiles = rootSummaryFiles.concat(nestedSummaryFiles);
   const planCount = planFiles.length;
-  const summaryCount = summaryFiles.length;
+  const summaryCount = countMatchedSummaries(planFiles, summaryFiles);
 
   return {
     planCount,
@@ -132,6 +172,7 @@ function scanPhasePlans(phaseDir) {
 
 module.exports = scanPhasePlans;
 module.exports.scanPhasePlans = scanPhasePlans;
+module.exports.countMatchedSummaries = countMatchedSummaries;
 module.exports.isRootPlanFile = isRootPlanFile;
 module.exports.isNestedPlanFile = isNestedPlanFile;
 module.exports.isRootSummaryFile = isRootSummaryFile;

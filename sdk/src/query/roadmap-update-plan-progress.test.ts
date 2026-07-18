@@ -191,6 +191,47 @@ describe('roadmapUpdatePlanProgress', () => {
     expect(updated).not.toContain('**Plans:** 0 plans');
   });
 
+  it('excludes a stray non-plan summary from the count and does not tick the phase checkbox', async () => {
+    const { roadmapUpdatePlanProgress } = await import('./roadmap-update-plan-progress.js');
+
+    const roadmap = [
+      '# Roadmap',
+      '',
+      '## Current Milestone: v3.0',
+      '',
+      '- [ ] **Phase 12: hardening** - harden it',
+      '',
+      '### Phase 12: hardening',
+      '',
+      '**Goal:** Harden it',
+      '**Plans:** 0 plans',
+      '',
+      '## Progress',
+      '',
+      '| Phase | Plans Complete | Status | Completed |',
+      '|-------|----------------|--------|-----------|',
+      '| 12. hardening | 0/2 | Planned |  |',
+      '',
+    ].join('\n');
+
+    const { roadmapPath } = await setupProject({
+      roadmap,
+      phaseDir: '12-hardening',
+      plans: ['12-01-PLAN.md', '12-02-PLAN.md'],
+      // One real plan summary plus a stray remediation summary that pairs with no plan.
+      summaries: ['12-01-SUMMARY.md', '12-GAPCLOSURE-SUMMARY.md'],
+    });
+
+    const result = await roadmapUpdatePlanProgress(['12'], tmpDir, undefined);
+
+    expect((result.data as { summary_count: number }).summary_count).toBe(1);
+
+    const updated = await readFile(roadmapPath, 'utf-8');
+    // Stray summary must not push the phase to Complete.
+    expect(updated).not.toMatch(/- \[x\] \*\*Phase 12: hardening\*\*/);
+    expect(updated).toMatch(/\| 12\. hardening \| 1\/2 \| In Progress/);
+  });
+
   it('does not cross section boundaries when searching for **Plans:**', async () => {
     const { roadmapUpdatePlanProgress } = await import('./roadmap-update-plan-progress.js');
 
