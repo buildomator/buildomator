@@ -21,6 +21,7 @@ import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { GSDError, ErrorClassification } from '../errors.js';
 import { resolveGsdToolsPath } from '../sdk-package-compatibility.js';
+import { scanPhasePlans } from './plan-scan.js';
 import { escapeRegex, normalizePhaseName, phaseTokenMatches, planningPaths, } from './helpers.js';
 // ─── Exported helpers ─────────────────────────────────────────────────────
 /**
@@ -463,19 +464,13 @@ function searchPhaseInContent(content, escapedPhase, phaseNum) {
 }
 async function countPhasePlansAndSummaries(phaseDir) {
     const phaseFiles = await readdir(phaseDir);
-    const rootPlans = phaseFiles.filter(f => f.endsWith('-PLAN.md') || f === 'PLAN.md');
-    const rootSummaries = phaseFiles.filter(f => f.endsWith('-SUMMARY.md') || f === 'SUMMARY.md');
-    let nestedPlans = [];
-    let nestedSummaries = [];
-    const plansDir = join(phaseDir, 'plans');
-    if (existsSync(plansDir)) {
-        const files = await readdir(plansDir);
-        nestedPlans = files.filter(f => /^PLAN-\d+.*\.md$/i.test(f));
-        nestedSummaries = files.filter(f => /^SUMMARY-\d+.*\.md$/i.test(f));
-    }
+    // Plan and summary counts come from the shared scanner, which pairs summaries
+    // to real plans so a stray summary cannot inflate the count. The context and
+    // research checks keep reading the phase dir directly.
+    const scan = scanPhasePlans(phaseDir);
     return {
-        planCount: rootPlans.length + nestedPlans.length,
-        summaryCount: rootSummaries.length + nestedSummaries.length,
+        planCount: scan.planCount,
+        summaryCount: scan.summaryCount,
         hasContext: phaseFiles.some(f => f.endsWith('-CONTEXT.md') || f === 'CONTEXT.md'),
         hasResearch: phaseFiles.some(f => f.endsWith('-RESEARCH.md') || f === 'RESEARCH.md'),
     };

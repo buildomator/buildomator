@@ -1139,8 +1139,11 @@ function cmdInitManager(cwd, raw) {
       if (dirMatch) {
         const fullDir = path.join(phasesDir, dirMatch);
         const phaseFiles = fs.readdirSync(fullDir);
-        planCount = listPhasePlanFiles(fullDir).length;
-        summaryCount = listPhaseSummaryFiles(fullDir).length;
+        const scan = scanPhasePlans(fullDir);
+        planCount = scan.planCount;
+        // Paired summary count: stray summaries that match no plan are excluded
+        // so they cannot flip the phase to complete.
+        summaryCount = scan.summaryCount;
         hasContext = phaseFiles.some(f => f.endsWith('-CONTEXT.md') || f === 'CONTEXT.md');
         hasResearch = phaseFiles.some(f => f.endsWith('-RESEARCH.md') || f === 'RESEARCH.md');
 
@@ -1421,12 +1424,15 @@ function cmdInitProgress(cwd, raw) {
       const phasePath = path.join(phasesDir, dir);
       const phaseFiles = fs.readdirSync(phasePath);
 
-      const plans = listPhasePlanFiles(phasePath);
-      const summaries = listPhaseSummaryFiles(phasePath);
+      const scan = scanPhasePlans(phasePath);
+      const planCount = scan.planCount;
+      // Paired summary count excludes stray summaries so they cannot flip the
+      // phase to complete.
+      const summaryCount = scan.summaryCount;
       const hasResearch = phaseFiles.some(f => f.endsWith('-RESEARCH.md') || f === 'RESEARCH.md');
 
-      const status = summaries.length >= plans.length && plans.length > 0 ? 'complete' :
-                     plans.length > 0 ? 'in_progress' :
+      const status = scan.completed ? 'complete' :
+                     planCount > 0 ? 'in_progress' :
                      hasResearch ? 'researched' : 'pending';
 
       const phaseInfo = {
@@ -1434,8 +1440,8 @@ function cmdInitProgress(cwd, raw) {
         name: phaseName,
         directory: toPosixPath(path.relative(cwd, path.join(planningDir(cwd), 'phases', dir))),
         status,
-        plan_count: plans.length,
-        summary_count: summaries.length,
+        plan_count: planCount,
+        summary_count: summaryCount,
         has_research: hasResearch,
       };
 

@@ -32,6 +32,16 @@ const CONFIG_KEY_SUGGESTIONS = {
   'plan_checker': 'workflow.plan_check',
 };
 
+// Free-string config keys whose values must never be coerced to a number.
+// A numeric-looking value such as project_code "007" would otherwise become the
+// number 7 and lose the leading zero. Keep this set identical in the SDK twin.
+const STRING_CONFIG_KEYS = new Set([
+  'project_code',
+  'phase_naming',
+  'response_language',
+  'claude_md_path',
+]);
+
 const SHIP_PR_BODY_SECTION_KEYS = new Set(['heading', 'enabled', 'source', 'fallback', 'template']);
 const SHIP_PR_BODY_TEMPLATE_TOKENS = new Set([
   'phase_number',
@@ -413,9 +423,13 @@ function cmdConfigSet(cwd, keyPath, value, raw) {
 
   // Parse value (handle booleans, numbers, and JSON arrays/objects)
   let parsedValue = value;
-  if (value === 'true') parsedValue = true;
+  if (STRING_CONFIG_KEYS.has(keyPath)) {
+    // Free-string keys keep the raw value verbatim. Coercion would turn a
+    // numeric-looking string like project_code "007" into the number 7.
+    parsedValue = value;
+  } else if (value === 'true') parsedValue = true;
   else if (value === 'false') parsedValue = false;
-  else if (!isNaN(value) && value !== '') parsedValue = Number(value);
+  else if (value !== '' && Number.isFinite(Number(value))) parsedValue = Number(value);
   else if (typeof value === 'string' && (value.startsWith('[') || value.startsWith('{'))) {
     try { parsedValue = JSON.parse(value); } catch { /* keep as string */ }
   }

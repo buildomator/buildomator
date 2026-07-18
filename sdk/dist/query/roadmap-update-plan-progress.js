@@ -7,6 +7,7 @@
  * for atomic writes (same pattern as `phase.complete`).
  */
 import { findPhase } from './phase.js';
+import { countMatchedSummaries } from './plan-scan.js';
 import { readModifyWriteRoadmapMd, replaceInCurrentMilestone } from './phase-roadmap-mutation.js';
 import { existsSync } from 'node:fs';
 import { escapeRegex, planningPaths } from './helpers.js';
@@ -47,7 +48,9 @@ export const roadmapUpdatePlanProgress = async (args, projectDir, workstream) =>
         throw new GSDError(`Phase ${phaseNum} not found`, ErrorClassification.Validation);
     }
     const planCount = info.plans.length;
-    const summaryCount = info.summaries.length;
+    // Only summaries that pair with a real plan count toward completion, so a
+    // stray remediation summary can never tick the phase checkbox.
+    const summaryCount = countMatchedSummaries(info.plans, info.summaries);
     if (planCount === 0) {
         return {
             data: {

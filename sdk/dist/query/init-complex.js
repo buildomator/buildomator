@@ -28,6 +28,7 @@ import { detectRuntime, planningPaths, normalizePhaseName, phaseTokenMatches, re
 import { getMilestoneInfo, extractCurrentMilestone, extractNextMilestoneSection, extractPhasesFromSection, } from './roadmap.js';
 import { agentSkills } from './skills.js';
 import { withProjectRoot } from './init.js';
+import { scanPhasePlans } from './plan-scan.js';
 // ─── Internal helpers ──────────────────────────────────────────────────────
 /**
  * Get model alias string from resolveModel result.
@@ -145,23 +146,6 @@ function deriveStatusFromCheckbox(phaseNum, checkboxStates) {
     if (checkboxStates.get(stripped) === true)
         return 'complete';
     return 'not_started';
-}
-function listPhasePlanAndSummaryCounts(phasePath) {
-    const phaseFiles = readdirSync(phasePath);
-    const rootPlans = phaseFiles.filter(f => f.endsWith('-PLAN.md') || f === 'PLAN.md');
-    const rootSummaries = phaseFiles.filter(f => f.endsWith('-SUMMARY.md') || f === 'SUMMARY.md');
-    const plansDir = join(phasePath, 'plans');
-    let nestedPlans = [];
-    let nestedSummaries = [];
-    if (existsSync(plansDir)) {
-        const files = readdirSync(plansDir);
-        nestedPlans = files.filter(f => /^PLAN-\d+.*\.md$/i.test(f));
-        nestedSummaries = files.filter(f => /^SUMMARY-\d+.*\.md$/i.test(f));
-    }
-    return {
-        plans: rootPlans.concat(nestedPlans),
-        summaries: rootSummaries.concat(nestedSummaries),
-    };
 }
 // ─── initNewProject ───────────────────────────────────────────────────────
 /**
@@ -333,10 +317,14 @@ export const initProgress = async (_args, projectDir, workstream) => {
             seenPhaseNums.add(phaseNumber.replace(/^0+/, '') || '0');
             const phasePath = join(paths.phases, dir);
             const phaseFiles = readdirSync(phasePath);
-            const { plans, summaries } = listPhasePlanAndSummaryCounts(phasePath);
+            const scan = scanPhasePlans(phasePath);
+            const planCount = scan.planCount;
+            // Paired summary count excludes stray summaries so they cannot flip the
+            // phase to complete.
+            const summaryCount = scan.summaryCount;
             const hasResearch = phaseFiles.some(f => f.endsWith('-RESEARCH.md') || f === 'RESEARCH.md');
-            let status = summaries.length >= plans.length && plans.length > 0 ? 'complete' :
-                plans.length > 0 ? 'in_progress' :
+            let status = scan.completed ? 'complete' :
+                planCount > 0 ? 'in_progress' :
                     hasResearch ? 'researched' : 'pending';
             // #2674: align with initManager — a ROADMAP `- [x] Phase N` checkbox
             // wins over disk state. A stub phase dir with no SUMMARY is leftover
@@ -355,8 +343,8 @@ export const initProgress = async (_args, projectDir, workstream) => {
                 name: phaseName,
                 directory: toPosixPath(relative(projectDir, join(paths.phases, dir))),
                 status,
-                plan_count: plans.length,
-                summary_count: summaries.length,
+                plan_count: planCount,
+                summary_count: summaryCount,
                 has_research: hasResearch,
             };
             phases.push(phaseInfo);
@@ -484,9 +472,11 @@ export const initManager = async (_args, projectDir, workstream) => {
             if (dirMatch) {
                 const fullDir = join(paths.phases, dirMatch);
                 const phaseFiles = readdirSync(fullDir);
-                const counts = listPhasePlanAndSummaryCounts(fullDir);
-                planCount = counts.plans.length;
-                summaryCount = counts.summaries.length;
+                const scan = scanPhasePlans(fullDir);
+                planCount = scan.planCount;
+                // Paired summary count excludes stray summaries so they cannot flip the
+                // phase to complete.
+                summaryCount = scan.summaryCount;
                 hasContext = phaseFiles.some(f => f.endsWith('-CONTEXT.md') || f === 'CONTEXT.md');
                 hasResearch = phaseFiles.some(f => f.endsWith('-RESEARCH.md') || f === 'RESEARCH.md');
                 if (summaryCount >= planCount && planCount > 0)

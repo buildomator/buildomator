@@ -1016,6 +1016,29 @@ describe('roadmapAnalyze', () => {
     expect(p9!.roadmap_complete).toBe(true);
   });
 
+  it('excludes a stray non-plan summary from disk_status and summary_count', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), ROADMAP_CONTENT);
+    await writeFile(join(tmpDir, '.planning', 'STATE.md'), STATE_WITH_MILESTONE);
+
+    // Phase 10 is unchecked in the roadmap. Two plans, one real plan summary,
+    // and one stray remediation summary. Without pairing, the stray would push
+    // the raw count to 2 and flip the phase to complete.
+    const p10dir = join(tmpDir, '.planning', 'phases', '10-read-only-queries');
+    await writeFile(join(p10dir, '10-01-PLAN.md'), '---\n---\n');
+    await writeFile(join(p10dir, '10-02-PLAN.md'), '---\n---\n');
+    await writeFile(join(p10dir, '10-01-SUMMARY.md'), '---\n---\n');
+    await writeFile(join(p10dir, '10-GAPCLOSURE-SUMMARY.md'), '---\n---\n');
+
+    const result = await roadmapAnalyze([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    const phases = data.phases as Array<Record<string, unknown>>;
+    const p10 = phases.find(p => p.number === '10');
+
+    expect(p10!.plan_count).toBe(2);
+    expect(p10!.summary_count).toBe(1);
+    expect(p10!.disk_status).toBe('partial');
+  });
+
   it('detects missing phase details from checklist', async () => {
     const roadmapWithExtra = ROADMAP_CONTENT + '\n- [ ] **Phase 99: Future Phase**\n';
     await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), roadmapWithExtra);

@@ -8,6 +8,7 @@ const { escapeRegex, normalizePhaseName, phaseMarkdownRegexSource, phaseMarkdown
 const { platformWriteSync } = require('./shell-command-projection.cjs');
 const { planningPaths, withPlanningLock } = require('./planning-workspace.cjs');
 const scanPhasePlans = require('./plan-scan.cjs');
+const { countMatchedSummaries } = require('./plan-scan.cjs');
 
 /**
  * Coerce an arbitrary YAML scalar/object into a string for cross-cutting
@@ -359,7 +360,9 @@ function cmdRoadmapUpdatePlanProgress(cwd, phaseNum, raw) {
   }
 
   const planCount = phaseInfo.plans.length;
-  const summaryCount = phaseInfo.summaries.length;
+  // Only summaries that pair with a real plan count toward completion, so a
+  // stray remediation summary can never tick the phase checkbox.
+  const summaryCount = countMatchedSummaries(phaseInfo.plans, phaseInfo.summaries);
 
   if (planCount === 0) {
     output({ updated: false, reason: 'No plans found', plan_count: 0, summary_count: 0 }, raw, 'no plans');

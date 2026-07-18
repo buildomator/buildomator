@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-import { scanPhasePlans } from './plan-scan.js';
+import { scanPhasePlans, countMatchedSummaries } from './plan-scan.js';
 
 describe('scanPhasePlans', () => {
   it('counts flat and nested plan files while excluding derivative files', async () => {
@@ -31,5 +31,93 @@ describe('scanPhasePlans', () => {
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }
+  });
+
+  it('excludes a stray non-plan summary from summaryCount and completion', async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), 'gsd-plan-scan-'));
+    try {
+      const phaseDir = join(tmpDir, 'phases', '30');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(phaseDir, '30-01-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '30-02-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '30-03-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '30-01-SUMMARY.md'), '# Summary');
+      await writeFile(join(phaseDir, '30-02-SUMMARY.md'), '# Summary');
+      await writeFile(join(phaseDir, '30-03-SUMMARY.md'), '# Summary');
+      await writeFile(join(phaseDir, '30-FIX-CR02-SUMMARY.md'), '# Stray');
+      await writeFile(join(phaseDir, '30-GAPCLOSURE-SUMMARY.md'), '# Stray');
+
+      const scan = scanPhasePlans(phaseDir);
+      expect(scan.planCount).toBe(3);
+      expect(scan.summaryCount).toBe(3);
+      expect(scan.completed).toBe(true);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not complete a phase when only a stray summary is present', async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), 'gsd-plan-scan-'));
+    try {
+      const phaseDir = join(tmpDir, 'phases', '31');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(phaseDir, '31-01-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '31-GAPCLOSURE-SUMMARY.md'), '# Stray');
+
+      const scan = scanPhasePlans(phaseDir);
+      expect(scan.planCount).toBe(1);
+      expect(scan.summaryCount).toBe(0);
+      expect(scan.completed).toBe(false);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('pairs bare PLAN.md with bare SUMMARY.md', async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), 'gsd-plan-scan-'));
+    try {
+      const phaseDir = join(tmpDir, 'phases', '5');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(phaseDir, 'PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, 'SUMMARY.md'), '# Summary');
+
+      const scan = scanPhasePlans(phaseDir);
+      expect(scan.summaryCount).toBe(1);
+      expect(scan.completed).toBe(true);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('excludes a nested stray SUMMARY that matches no nested plan', async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), 'gsd-plan-scan-'));
+    try {
+      const phaseDir = join(tmpDir, 'phases', '6');
+      const nestedDir = join(phaseDir, 'plans');
+      await mkdir(nestedDir, { recursive: true });
+      await writeFile(join(nestedDir, 'PLAN-01-setup.md'), '# Plan');
+      await writeFile(join(nestedDir, 'SUMMARY-01-setup.md'), '# Summary');
+      await writeFile(join(nestedDir, 'SUMMARY-99-orphan.md'), '# Stray');
+
+      const scan = scanPhasePlans(phaseDir);
+      expect(scan.planCount).toBe(1);
+      expect(scan.summaryCount).toBe(1);
+      expect(scan.completed).toBe(true);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('countMatchedSummaries', () => {
+  it('counts only summaries that pair with a plan id', () => {
+    expect(countMatchedSummaries(
+      ['30-01-PLAN.md', '30-02-PLAN.md'],
+      ['30-01-SUMMARY.md', '30-02-SUMMARY.md', '30-FIX-CR02-SUMMARY.md'],
+    )).toBe(2);
+  });
+
+  it('returns 0 when no summary pairs with a plan', () => {
+    expect(countMatchedSummaries(['30-01-PLAN.md'], ['30-GAPCLOSURE-SUMMARY.md'])).toBe(0);
   });
 });

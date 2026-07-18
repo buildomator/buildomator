@@ -30,6 +30,18 @@ import { maskIfSecret } from './secrets.js';
 import type { QueryHandler } from './utils.js';
 
 /**
+ * Free-string config keys whose values must never be coerced to a number.
+ * A numeric-looking value such as project_code "007" would otherwise become the
+ * number 7 and lose the leading zero. Keep this set identical in the CJS twin.
+ */
+const STRING_CONFIG_KEYS = new Set<string>([
+  'project_code',
+  'phase_naming',
+  'response_language',
+  'claude_md_path',
+]);
+
+/**
  * Write config JSON atomically via temp file + rename to prevent
  * partial writes on process interruption.
  */
@@ -207,7 +219,7 @@ export function isValidConfigKey(keyPath: string): { valid: boolean; suggestion?
 export function parseConfigValue(value: string): unknown {
   if (value === 'true') return true;
   if (value === 'false') return false;
-  if (value !== '' && !isNaN(Number(value))) return Number(value);
+  if (value !== '' && Number.isFinite(Number(value))) return Number(value);
   if (typeof value === 'string' && (value.startsWith('[') || value.startsWith('{'))) {
     try { return JSON.parse(value); } catch { /* keep as string */ }
   }
@@ -286,7 +298,9 @@ export const configSet: QueryHandler = async (args, projectDir, workstream) => {
     );
   }
 
-  const parsedValue = rawValue !== undefined ? parseConfigValue(rawValue) : rawValue;
+  const parsedValue = STRING_CONFIG_KEYS.has(keyPath)
+    ? rawValue
+    : (rawValue !== undefined ? parseConfigValue(rawValue) : rawValue);
 
   // D8: Context value validation (match CJS config.cjs:357-359)
   const VALID_CONTEXT_VALUES = ['dev', 'research', 'review'];

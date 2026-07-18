@@ -34,6 +34,42 @@ export function isNestedSummaryFile(fileName: string): boolean {
   return /^SUMMARY-\d+.*\.md$/i.test(fileName) || /-SUMMARY-\d+.*\.md$/i.test(fileName);
 }
 
+/**
+ * Reduce a plan or summary filename to a layout-agnostic pairing id.
+ *
+ * Strips the PLAN/SUMMARY marker in every position it can appear:
+ *   flat suffix   01-01-PLAN.md / 01-01-SUMMARY.md   -> 01-01
+ *   bare          PLAN.md / SUMMARY.md               -> (empty)
+ *   nested prefix PLAN-01-setup.md / SUMMARY-01-...  -> 01-setup
+ *   extended infix 5-PLAN-01-setup.md / 5-SUMMARY-.. -> 5-01-setup
+ *
+ * A plan and its summary reduce to the same id; an unrelated remediation
+ * summary (e.g. 30-FIX-CR02-SUMMARY.md) reduces to an id no plan shares.
+ */
+function planSummaryBaseId(filename: string): string {
+  let base = filename.replace(/\.md$/i, '');
+  base = base.replace(/-?(PLAN|SUMMARY)$/i, '');
+  base = base.replace(/^(PLAN|SUMMARY)-/i, '');
+  base = base.replace(/-(PLAN|SUMMARY)-/i, '-');
+  return base;
+}
+
+/**
+ * Count only the summaries that pair with a real plan file.
+ *
+ * A summary counts toward completion when its pairing id matches some plan's
+ * pairing id. Stray summaries that match no plan are excluded, so they can
+ * never inflate a phase to complete.
+ */
+export function countMatchedSummaries(planFiles: string[], summaryFiles: string[]): number {
+  const planIds = new Set(planFiles.map(planSummaryBaseId));
+  let matched = 0;
+  for (const summary of summaryFiles) {
+    if (planIds.has(planSummaryBaseId(summary))) matched++;
+  }
+  return matched;
+}
+
 export function scanPhasePlans(phaseDir: string): PhasePlanScan {
   let rootFiles: string[];
   try {
@@ -69,7 +105,7 @@ export function scanPhasePlans(phaseDir: string): PhasePlanScan {
   const planFiles = rootPlanFiles.concat(nestedPlanFiles);
   const summaryFiles = rootSummaryFiles.concat(nestedSummaryFiles);
   const planCount = planFiles.length;
-  const summaryCount = summaryFiles.length;
+  const summaryCount = countMatchedSummaries(planFiles, summaryFiles);
 
   return {
     planCount,

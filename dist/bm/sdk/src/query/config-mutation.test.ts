@@ -162,6 +162,35 @@ describe('parseConfigValue', () => {
     const { parseConfigValue } = await import('./config-mutation.js');
     expect(parseConfigValue('')).toBe('');
   });
+
+  it('keeps "Infinity" and "-Infinity" as strings, not the non-finite number', async () => {
+    const { parseConfigValue } = await import('./config-mutation.js');
+    // Number('Infinity') is a valid number but JSON.stringify turns it into null,
+    // silently losing the value. Keep it a string instead.
+    expect(parseConfigValue('Infinity')).toBe('Infinity');
+    expect(parseConfigValue('-Infinity')).toBe('-Infinity');
+  });
+
+  it('still coerces finite numeric strings', async () => {
+    const { parseConfigValue } = await import('./config-mutation.js');
+    expect(parseConfigValue('42')).toBe(42);
+    expect(parseConfigValue('4.5')).toBe(4.5);
+  });
+});
+
+// ─── configSet string-typed keys ──────────────────────────────────────────
+
+describe('configSet string-typed keys', () => {
+  it('persists project_code "007" as the string "007", not the number 7', async () => {
+    const { configSet } = await import('./config-mutation.js');
+    await writeFile(join(tmpDir, '.planning', 'config.json'), '{}');
+
+    const result = await configSet(['project_code', '007'], tmpDir);
+    expect((result.data as { value: unknown }).value).toBe('007');
+
+    const raw = JSON.parse(await readFile(join(tmpDir, '.planning', 'config.json'), 'utf-8'));
+    expect(raw.project_code).toBe('007');
+  });
 });
 
 // ─── atomicWriteConfig behavior ───────────────────────────────────────────

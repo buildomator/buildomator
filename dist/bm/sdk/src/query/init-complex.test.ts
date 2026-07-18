@@ -296,6 +296,42 @@ describe('initProgress', () => {
     }
   });
 
+  it('excludes a stray non-plan summary from summary_count and completion', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'gsd-init-complex-stray-'));
+    try {
+      const phaseDir = join(tmp, '.planning', 'phases', '30-hardening');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(tmp, '.planning', 'config.json'), JSON.stringify({ model_profile: 'balanced' }));
+      await writeFile(join(tmp, '.planning', 'STATE.md'), ['---', 'milestone: v1.0', '---'].join('\n'));
+      await writeFile(join(tmp, '.planning', 'ROADMAP.md'), [
+        '# Roadmap',
+        '',
+        '## v1.0: Hardening',
+        '',
+        '- [ ] Phase 30: hardening',
+        '',
+        '### Phase 30: hardening',
+        '',
+        '**Goal:** Harden it',
+        '',
+      ].join('\n'));
+      await writeFile(join(phaseDir, '30-01-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '30-02-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '30-01-SUMMARY.md'), '# Summary');
+      await writeFile(join(phaseDir, '30-GAPCLOSURE-SUMMARY.md'), '# Stray');
+
+      const result = await initProgress([], tmp);
+      const data = result.data as Record<string, unknown>;
+      const phases = data.phases as Record<string, unknown>[];
+      const phase30 = phases.find(p => p.number === '30');
+
+      expect(phase30?.summary_count).toBe(1);
+      expect(phase30?.status).toBe('in_progress');
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
+
   it('treats terminal heading labels as complete when selecting next_phase (#3472)', async () => {
     const tmp = await mkdtemp(join(tmpdir(), 'gsd-init-complex-3472-'));
     try {
