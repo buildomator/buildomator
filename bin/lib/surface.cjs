@@ -211,6 +211,12 @@ function resolveSurface(runtimeConfigDir, manifest, clusterMap) {
  * @param {Object} [clusterMap]
  */
 function applySurface(runtimeConfigDir, commandsDir, agentsDir, manifest, clusterMap) {
+  // An empty or unresolvable manifest yields empty skill/agent sets, which would
+  // make the sync below treat every installed file as superseded and delete it.
+  // Refuse to sync at all in that case so a failed source resolution cannot wipe
+  // the installed surface.
+  if (!manifest || typeof manifest.size !== 'number' || manifest.size === 0) return;
+
   const resolved = resolveSurface(runtimeConfigDir, manifest, clusterMap);
 
   // Find install source
@@ -249,6 +255,11 @@ function _syncGsdDir(stagedDir, destDir, context) {
   const stagedFiles = new Set(
     fs.readdirSync(stagedDir).filter(f => f.endsWith('.md'))
   );
+
+  // An empty staged set means the surface could not be resolved to any files.
+  // Copying is a no-op in that case; skip the prune loop below so an empty
+  // staged set cannot delete every installed file.
+  if (stagedFiles.size === 0) return;
 
   // Copy missing files from staged to dest
   for (const file of stagedFiles) {
