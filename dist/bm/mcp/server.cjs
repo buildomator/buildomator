@@ -420,9 +420,18 @@ function handleToolCall(name, args) {
 
 // ─── MCP Protocol Handler ───────────────────────────────────────────────────
 
+function resolveServerVersion() {
+  try {
+    const manifestPath = path.join(pluginRoot, '.claude-plugin', 'plugin.json');
+    const version = JSON.parse(fs.readFileSync(manifestPath, 'utf8')).version;
+    if (typeof version === 'string' && version) return version;
+  } catch (_) { /* fall through to unknown */ }
+  return 'unknown';
+}
+
 const SERVER_INFO = {
   name: 'gsd',
-  version: '1.32.0'
+  version: resolveServerVersion()
 };
 
 const CAPABILITIES = {
