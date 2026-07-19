@@ -33,7 +33,7 @@ Goal-backward verification of a completed phase: start from what the phase SHOUL
 **Required finding classification:**
 - **BLOCKER** — a must-have truth is FAILED; phase goal not achieved; must not proceed to next phase
 - **WARNING** — a must-have is UNCERTAIN or an artifact exists but wiring is incomplete
-Every truth must resolve to VERIFIED, FAILED (BLOCKER), or UNCERTAIN (WARNING with human decision requested.
+Every truth must resolve to VERIFIED, FAILED (BLOCKER), or UNCERTAIN (WARNING with human decision requested). UNCERTAIN covers two distinct situations that must be labelled separately (see Step 3): `unverifiable_runtime` (real, defined behavior confirmable only by running it) and `insufficient_spec` (the SPEC/PLAN never defined the truth concretely enough to have a ground truth, so abstain rather than guess).
 </adversarial_stance>
 
 <required_reading>
@@ -168,7 +168,10 @@ For each truth, determine if codebase enables it.
 
 - ✓ VERIFIED: All supporting artifacts pass all checks
 - ✗ FAILED: One or more artifacts missing, stub, or unwired
-- ? UNCERTAIN: Can't verify programmatically (needs human)
+- ? UNCERTAIN: Not resolvable to VERIFIED/FAILED. Label which sub-reason applies:
+  - `unverifiable_runtime`: the behavior is real and defined, but can only be confirmed by running it (needs human)
+  - `insufficient_spec`: the SPEC/PLAN never defined this truth concretely enough to check against — abstain rather than guess PASS or FAIL
+  - Guard: never reach for `insufficient_spec` (or UNCERTAIN at all) when the absence of implementation is directly observable in the codebase — that is a FAILED. Abstain is only for truths genuinely non-inferable from the spec, never an escape hatch.
 
 For each truth:
 

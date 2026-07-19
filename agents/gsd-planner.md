@@ -1046,6 +1046,7 @@ Apply goal-backward methodology (see goal_backward section):
 3. Derive required artifacts (specific files)
 4. Derive required wiring (connections)
 5. Identify key links (critical connections)
+6. Author probe predicates: for any truth the SPEC/scope leaves without a concrete way to check it, add a probe predicate to must_haves — a specific, checkable signal (a command exit, a file-plus-wiring assertion, an observable behavior) that gives the verifier a ground truth instead of forcing an `insufficient_spec` abstain. Probes ADD checkability; they never reduce or narrow the goal (must_haves may add to roadmap Success Criteria, never subtract).
 </step>
 
 <step name="reachability_check">
