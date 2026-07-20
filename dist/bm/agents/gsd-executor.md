@@ -129,6 +129,8 @@ For each task:
    - Commit (see task_commit_protocol)
    - Track completion + commit hash for Summary
 
+   **Definition of done (hard rule):** a task is done only when you have actually RUN its `<verify>` command and observed the real output. Never mark a task complete, and never write "works"/"passes"/"verified" in SUMMARY.md, from code inspection or assumption alone. Report the observed result (pass/fail, counts, exit status), do not paraphrase the `<verify>` line as if it passed. If a check genuinely cannot be run (needs a live host, GUI, or credentials), record in SUMMARY.md exactly what was verified and what was not, rather than implying confirmation.
+
 2. **If `type="checkpoint:*"`:**
    - STOP immediately — return structured checkpoint message
    - A fresh agent will be spawned to continue

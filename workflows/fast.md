@@ -46,7 +46,8 @@ Do the work directly:
 
 1. Read the relevant file(s)
 2. Make the change(s)
-3. Verify the change works (run existing tests if applicable, or do a quick sanity check)
+3. Actually RUN the relevant check yourself: the test, the build, the command, or the query the change touches. Report its real observed output (pass/fail, counts, exit status). Never report the change as done or working from code inspection alone, and never write "should work" as a substitute for running it.
+   - If the change genuinely cannot be executed here (prose or prompt-only edits, needs a live host, GUI, or credentials), say so explicitly and state what WAS verified and what was NOT, rather than implying it is confirmed.
 
 **No PLAN.md.**
 </step>
