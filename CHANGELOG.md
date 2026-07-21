@@ -8,6 +8,26 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.2.0] - 2026-07-21  (Fable 5 permanent, gsd-core 1.7.0 Tier-1 correctness ports, verifier honesty, self-test enforcement)
+
+Follows gsd-core 1.7.0 (Tier-1 correctness slice). Batches the first cherry-picks from upstream v1.7.0 with two quality refinements and the removal of the now-obsolete Fable 5 gate. No breaking changes; existing installs and config are unaffected.
+
+### Added
+- **The verifier abstains honestly instead of guessing (gsd-core 1.7.0 #1154 + #1820).** `gsd-verifier`'s `UNCERTAIN` verdict now carries an explicit sub-reason: `unverifiable_runtime` (real, defined behavior that only a run can confirm) versus `insufficient_spec` (the spec never defined the truth concretely enough to check, so the verifier abstains rather than guessing a PASS or FAIL). `gsd-planner` now authors probe predicates into `must_haves` for truths the spec leaves uncheckable, giving the verifier a ground truth instead of an abstain. The adversarial guard is intact: an observable absence is still a FAILED, never an abstain. Agent-instruction change, carried into `dist/bm`.
+- **`/gsd:fast` and the executor now require running the check before calling work done.** The fast workflow's verify step no longer accepts "or do a quick sanity check", and the executor gained a definition-of-done rule: a task is done only once its `<verify>` command has actually been run and its real output observed and reported, never from code inspection or a "should work". If a change genuinely cannot be run (prose-only, or it needs a live host, GUI, or credentials), the report must state what was and was not verified.
+
+### Changed
+- **Gates only fire on genuine user decisions, not GSD-internal mechanics.** `references/gate-prompts.md`, `references/universal-anti-patterns.md`, `agents/gsd-executor.md`, and `agents/gsd-planner.md` now direct agents to resolve mechanics themselves (scope-splitting, isolate-vs-main, sequencing, which mechanical fix, safe or obvious gap handling) and report the call in one line, reserving `AskUserQuestion` and `checkpoint:decision` for real product, strategy, scope-vs-effort, or taste decisions. A prompt that offers back the option you already recommended is a rubber-stamp.
+
+### Fixed
+- **An empty or unresolvable install manifest no longer deletes every `gsd-*` agent (gsd-core 1.7.0 #2018).** `bin/lib/surface.cjs` `_syncGsdDir` now skips the prune loop when the manifest is empty or unresolvable, so copying genuinely-new agents still runs but a null manifest cannot wipe the agent set. New regression test.
+- **`config-set` keeps non-finite and string-typed values verbatim (gsd-core 1.7.0 #1581).** `Number('Infinity')`/`'-Infinity'` no longer coerce to `Infinity` (which JSON-persisted as `null`, silent data loss), and string-typed schema keys like `project_code` no longer coerce a numeric-looking value (`007`) to a number. Uses `Number.isFinite` plus a string carve-out keyed off the config path in `configSet`; both CJS and SDK twins, golden parity kept.
+- **A stray non-plan `*-SUMMARY.md` can no longer flip a phase to complete (gsd-core 1.7.0 #1988).** Phase-completion counting now pairs each summary to a real PLAN before counting, wired through every consumer in both resolvers, including the independent duplicate scanners behind `init-manager`/`init-progress` and `roadmap.analyze`. Both twins, golden parity, new fixtures.
+- **The MCP server advertises its real version (#24).** `mcp/server.cjs` derives `SERVER_INFO.version` from `.claude-plugin/plugin.json` at startup instead of a hardcoded `1.32.0`, so it tracks each release and cannot drift.
+
+### Removed
+- **The Claude Fable 5 sunset/time-gate is gone.** Fable 5 is now a permanent part of the Max plan, so the date-gate, which past its `2026-07-19` cutoff was silently downgrading every `fable` request to `opus`, has been removed from both resolvers (`bin/lib/core.cjs`, `sdk/src/query/config-query.ts`) along with the `fable.mode`/`fable.until` config keys and `tests/fable-sunset.test.cjs`. `fable` is now an ordinary always-available tier resolving to `claude-fable-5` with no date dependency (verified live). The `fable` model tier itself is unchanged.
+
 ## [4.1.2] - 2026-07-17  (audit-open no longer flags completed quick tasks)
 
 Patch release on the 4.1.x line. Fixes a milestone-close audit false-positive.

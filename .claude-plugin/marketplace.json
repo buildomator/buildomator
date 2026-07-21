@@ -12,14 +12,19 @@
       "source": "./",
       "displayName": "Buildomator (legacy /gsd:)",
       "description": "The same Buildomator plugin under its original /gsd: command prefix. /gsd: keeps working through the whole 4.x line and retires at v5.0 on 2026-10-01. New users should install Buildomator (the /bm: entry) instead.",
-      "version": "4.1.2",
+      "version": "4.2.0",
       "author": {
         "name": "Jasper Nuyens"
       },
       "homepage": "https://buildomator.com",
       "repository": "https://buildomator.com",
       "license": "MIT",
-      "keywords": ["workflow", "planning", "gsd", "mcp"],
+      "keywords": [
+        "workflow",
+        "planning",
+        "gsd",
+        "mcp"
+      ],
       "category": "productivity"
     },
     {
@@ -27,14 +32,19 @@
       "source": "./dist/bm",
       "displayName": "Buildomator",
       "description": "Buildomator: a structured workflow plugin for Claude Code. Use /bm: for planning, execution, verification, and MCP-backed project state. This is the plugin to install.",
-      "version": "4.1.2",
+      "version": "4.2.0",
       "author": {
         "name": "Jasper Nuyens"
       },
       "homepage": "https://buildomator.com",
       "repository": "https://buildomator.com",
       "license": "MIT",
-      "keywords": ["workflow", "planning", "buildomator", "mcp"],
+      "keywords": [
+        "workflow",
+        "planning",
+        "buildomator",
+        "mcp"
+      ],
       "category": "productivity"
     }
   ]
