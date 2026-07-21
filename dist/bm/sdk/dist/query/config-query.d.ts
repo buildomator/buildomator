@@ -40,5 +40,18 @@ export declare const configGet: QueryHandler;
  * @returns QueryResult with `{ path: string }` absolute or project-relative resolution via planningPaths
  */
 export declare const configPath: QueryHandler;
+/**
+ * Query handler for resolve-model command.
+ *
+ * Resolves the model alias for a given agent type based on the current profile.
+ * Uses loadConfig (with defaults) and MODEL_PROFILES for lookup.
+ *
+ * @param args - args[0] is the agent type (e.g., 'gsd-planner')
+ * @param projectDir - Project root directory
+ * @param workstream - Optional workstream name; forwarded to loadConfig so per-workstream
+ *   model_profile settings are respected (mirrors configGet/configPath behavior)
+ * @returns QueryResult with { model, profile } or { model, profile, unknown_agent: true }
+ * @throws GSDError with Validation classification if agent type not provided
+ */
 export declare const resolveModel: QueryHandler;
 //# sourceMappingURL=config-query.d.ts.map

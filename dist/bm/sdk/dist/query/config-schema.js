@@ -68,8 +68,6 @@ export const VALID_CONFIG_KEYS = new Set([
     'workflow.ui_review',
     'workflow.max_discuss_passes',
     'workflow.ultracode',
-    'fable.mode',
-    'fable.until',
     'features.thinking_partner',
     'context',
     'features.global_learnings',

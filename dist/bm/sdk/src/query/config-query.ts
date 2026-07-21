@@ -16,7 +16,7 @@
  * ```
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { GSDError, ErrorClassification } from '../errors.js';
 import { loadConfig } from '../config.js';
@@ -174,56 +174,6 @@ function resolveRuntimeTier(config: Record<string, unknown>, tier: string): Runt
  * @returns QueryResult with { model, profile } or { model, profile, unknown_agent: true }
  * @throws GSDError with Validation classification if agent type not provided
  */
-/**
- * Claude Fable 5 sunset — SDK mirror of bin/lib/core.cjs applyFableSunset.
- *
- * Claude Fable 5 was withdrawn ~2026-06-12, then REDEPLOYED 2026-07-01 and
- * included in plan usage only through 2026-07-19 (usage-credit-gated after); the
- * `fable` tier is available again through 2026-07-19 and downgrades to `opus`
- * from 2026-07-20. This is the live resolution path for `gsd-sdk query init.*`
- * (the workflow spawn path), so the cutoff MUST match the CJS resolver.
- * `GSD_FABLE_SUNSET_NOW` (ISO date) pins "now" for tests; an unparseable value
- * stays available so a bad env var never forces the fallback early. The cutoff
- * day is inclusive. Reversible: move the date if it changes again.
- */
-const FABLE_SUNSET_DATE = '2026-07-19';
-
-// Tunable Fable knob, read straight from config.json (loadConfig builds a fixed
-// key set and drops `fable`). { mode, until }: mode 'auto'(default)|'on'|'off';
-// until = ISO date overriding the default cutoff in 'auto'. Lets Fable be flipped
-// back with one config-set when it returns, no code change. Mirrors core.cjs.
-function readFableKnob(projectDir: string, workstream?: string): { mode?: string; until?: string } {
-  try {
-    const p = planningPaths(projectDir, workstream).config;
-    const cfg = JSON.parse(readFileSync(p, 'utf8')) as Record<string, unknown>;
-    const f = (cfg.fable || {}) as Record<string, unknown>;
-    return {
-      mode: (f.mode ?? cfg['fable.mode']) as string | undefined,
-      until: (f.until ?? cfg['fable.until']) as string | undefined,
-    };
-  } catch { return {}; }
-}
-
-function fableAvailable(now?: Date, knob: { mode?: string; until?: string } = {}): boolean {
-  const mode = String(knob.mode ?? 'auto').toLowerCase();
-  if (mode === 'on' || mode === 'true' || mode === 'available') return true;
-  if (mode === 'off' || mode === 'false' || mode === 'unavailable') return false;
-  let ref = now instanceof Date ? now : null;
-  if (!ref) {
-    const envNow = process.env.GSD_FABLE_SUNSET_NOW;
-    ref = envNow ? new Date(envNow) : new Date();
-  }
-  if (Number.isNaN(ref.getTime())) return true;
-  const until = (typeof knob.until === 'string' && /^\d{4}-\d{2}-\d{2}/.test(knob.until))
-    ? knob.until.slice(0, 10)
-    : FABLE_SUNSET_DATE;
-  return ref.getTime() <= new Date(`${until}T23:59:59.999Z`).getTime();
-}
-
-function applyFableSunset(tier: string, knob: { mode?: string; until?: string } = {}): string {
-  return tier === 'fable' && !fableAvailable(undefined, knob) ? 'opus' : tier;
-}
-
 export const resolveModel: QueryHandler = async (args, projectDir, workstream) => {
   const agentType = args[0];
   if (!agentType) {
@@ -271,16 +221,12 @@ export const resolveModel: QueryHandler = async (args, projectDir, workstream) =
     return { data: { model: 'inherit', profile } };
   }
 
-  // Fable availability: downgrade the `fable` tier to `opus` here (before the
-  // runtime / resolve_model_ids / alias exit points below) unless the tunable
-  // knob keeps it on. Mirrors CJS.
-  const fableKnob = readFableKnob(projectDir, workstream);
-  const alias = applyFableSunset(agentModels[profile] || agentModels['balanced'] || 'sonnet', fableKnob);
+  const alias = agentModels[profile] || agentModels['balanced'] || 'sonnet';
   const phaseType = AGENT_TO_PHASE_TYPE[agentType];
   const phaseTier = phaseType && typeof (config as Record<string, unknown>).models === 'object'
     ? ((config as Record<string, unknown>).models as Record<string, unknown>)[phaseType]
     : undefined;
-  const tier = applyFableSunset(typeof phaseTier === 'string' ? phaseTier : alias, fableKnob);
+  const tier = typeof phaseTier === 'string' ? phaseTier : alias;
   const runtimeTier = resolveRuntimeTier(config as Record<string, unknown>, tier);
   if (runtimeTier?.model) {
     const result: Record<string, unknown> = { model: runtimeTier.model, profile };

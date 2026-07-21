@@ -1397,66 +1397,6 @@ function _resolveRuntimeTier(config, tier) {
   });
 }
 
-/**
- * Claude Fable 5 sunset (gsd-plugin).
- *
- * Claude Fable 5 was withdrawn ~2026-06-12, then REDEPLOYED 2026-07-01 and
- * included in plan usage only through 2026-07-19 (usage-credit-gated after). So
- * the `fable` tier (the quality profile's pick for the heaviest routingTier:
- * heavy agents) is available again through 2026-07-19 and auto-downgrades to
- * `opus` from 2026-07-08 onward, keeping heavy agents on Fable during the free
- * window and off usage credits after it. One-constant, reversible: move the date.
- *
- * "now" resolves from the GSD_FABLE_SUNSET_NOW env var (ISO string) when set,
- * otherwise the system clock; the override exists so tests can pin a date
- * deterministically. The cutoff day itself is inclusive (Fable counted available
- * through <date>T23:59:59.999Z, falls back from the next day onward).
- */
-const FABLE_SUNSET_DATE = '2026-07-19';
-
-// Tunable Fable knob, read straight from config.json (loadConfig builds a fixed
-// key set and would drop `fable`, so read the file directly — same approach as
-// resolveBaseBranch). Returns { mode, until }:
-//   fable.mode  = 'auto' (default) | 'on' | 'off'  — force availability or date-gate
-//   fable.until = ISO date overriding the default cutoff when mode is 'auto'
-// So when Fable returns you flip it back with one config-set, no code change:
-//   gsd-tools config-set fable.mode on            # force on now
-//   gsd-tools config-set fable.until 2026-09-30    # auto, available through that date
-function readFableKnob(cwd) {
-  try {
-    const p = path.join(planningDir(cwd || process.cwd(), process.env.GSD_WORKSTREAM || null), 'config.json');
-    const cfg = JSON.parse(fs.readFileSync(p, 'utf8'));
-    const f = (cfg && cfg.fable) || {};
-    return { mode: f.mode ?? cfg['fable.mode'], until: f.until ?? cfg['fable.until'] };
-  } catch { return {}; }
-}
-
-function fableAvailable(now, knob = {}) {
-  // Manual override wins: force on/off regardless of date.
-  const mode = String(knob.mode ?? 'auto').toLowerCase();
-  if (mode === 'on' || mode === 'true' || mode === 'available') return true;
-  if (mode === 'off' || mode === 'false' || mode === 'unavailable') return false;
-  // 'auto': date-gated, with an optional config cutoff override (fable.until).
-  let ref = now instanceof Date ? now : null;
-  if (!ref) {
-    const envNow = process.env.GSD_FABLE_SUNSET_NOW;
-    ref = envNow ? new Date(envNow) : new Date();
-  }
-  // A bad env value or unparseable date must not strand callers on an
-  // unavailable tier — treat an invalid "now" as still-available (the
-  // pre-cutoff default) rather than silently forcing the opus fallback.
-  if (Number.isNaN(ref.getTime())) return true;
-  const until = (typeof knob.until === 'string' && /^\d{4}-\d{2}-\d{2}/.test(knob.until))
-    ? knob.until.slice(0, 10)
-    : FABLE_SUNSET_DATE;
-  const cutoff = new Date(`${until}T23:59:59.999Z`);
-  return ref.getTime() <= cutoff.getTime();
-}
-
-function applyFableSunset(tier, now, knob) {
-  return (tier === 'fable' && !fableAvailable(now, knob)) ? 'opus' : tier;
-}
-
 function resolveModelInternal(cwd, agentType) {
   const config = loadConfig(cwd);
 
@@ -1493,16 +1433,11 @@ function resolveModelInternal(cwd, agentType) {
   // tier='inherit' only when there's no phase-type override keeps the
   // original inherit semantics intact while letting a valid phase-type
   // tier win.
-  const requestedTier = (phaseTypeTier && VALID_TIERS.has(phaseTypeTier))
+  const tier = (phaseTypeTier && VALID_TIERS.has(phaseTypeTier))
     ? phaseTypeTier
     : (profile === 'inherit'
       ? 'inherit'
       : (agentModels ? (agentModels[profile] || agentModels['balanced']) : null));
-
-  // Fable availability: the `fable` tier downgrades to `opus` here (before any
-  // runtime / resolve_model_ids / alias path below, so every exit point sees one
-  // effective tier) unless the tunable knob (fable.mode / fable.until) keeps it on.
-  const tier = applyFableSunset(requestedTier, undefined, readFableKnob(cwd));
 
   // 3. Runtime-aware resolution (#2517) — only when `runtime` is explicitly set
   // to a non-Claude runtime. `runtime: "claude"` is the implicit default and is
@@ -2129,10 +2064,6 @@ module.exports = {
   getRoadmapPhaseInternal,
   resolveModelInternal,
   resolveModelForTier,
-  applyFableSunset,
-  fableAvailable,
-  readFableKnob,
-  FABLE_SUNSET_DATE,
   resolveReasoningEffortInternal,
   RUNTIME_PROFILE_MAP,
   RUNTIMES_WITH_REASONING_EFFORT,

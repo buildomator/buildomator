@@ -6232,7 +6232,7 @@ var frontmatterGet = async (args, projectDir) => {
 
 // dist/query/config-query.js
 init_errors();
-import { existsSync as existsSync3, readFileSync as readFileSync3 } from "node:fs";
+import { existsSync as existsSync3 } from "node:fs";
 import { readFile as readFile4 } from "node:fs/promises";
 init_helpers();
 
@@ -6339,39 +6339,6 @@ function resolveRuntimeTier(config, tier) {
   }
   return merged;
 }
-var FABLE_SUNSET_DATE = "2026-07-19";
-function readFableKnob(projectDir, workstream) {
-  try {
-    const p = planningPaths(projectDir, workstream).config;
-    const cfg = JSON.parse(readFileSync3(p, "utf8"));
-    const f = cfg.fable || {};
-    return {
-      mode: f.mode ?? cfg["fable.mode"],
-      until: f.until ?? cfg["fable.until"]
-    };
-  } catch {
-    return {};
-  }
-}
-function fableAvailable(now, knob = {}) {
-  const mode = String(knob.mode ?? "auto").toLowerCase();
-  if (mode === "on" || mode === "true" || mode === "available")
-    return true;
-  if (mode === "off" || mode === "false" || mode === "unavailable")
-    return false;
-  let ref = now instanceof Date ? now : null;
-  if (!ref) {
-    const envNow = process.env.GSD_FABLE_SUNSET_NOW;
-    ref = envNow ? new Date(envNow) : /* @__PURE__ */ new Date();
-  }
-  if (Number.isNaN(ref.getTime()))
-    return true;
-  const until = typeof knob.until === "string" && /^\d{4}-\d{2}-\d{2}/.test(knob.until) ? knob.until.slice(0, 10) : FABLE_SUNSET_DATE;
-  return ref.getTime() <= (/* @__PURE__ */ new Date(`${until}T23:59:59.999Z`)).getTime();
-}
-function applyFableSunset(tier, knob = {}) {
-  return tier === "fable" && !fableAvailable(void 0, knob) ? "opus" : tier;
-}
 var resolveModel = async (args, projectDir, workstream) => {
   const agentType = args[0];
   if (!agentType) {
@@ -6401,11 +6368,10 @@ var resolveModel = async (args, projectDir, workstream) => {
   if (profile === "inherit") {
     return { data: { model: "inherit", profile } };
   }
-  const fableKnob = readFableKnob(projectDir, workstream);
-  const alias = applyFableSunset(agentModels[profile] || agentModels["balanced"] || "sonnet", fableKnob);
+  const alias = agentModels[profile] || agentModels["balanced"] || "sonnet";
   const phaseType = AGENT_TO_PHASE_TYPE[agentType];
   const phaseTier = phaseType && typeof config.models === "object" ? config.models[phaseType] : void 0;
-  const tier = applyFableSunset(typeof phaseTier === "string" ? phaseTier : alias, fableKnob);
+  const tier = typeof phaseTier === "string" ? phaseTier : alias;
   const runtimeTier = resolveRuntimeTier(config, tier);
   if (runtimeTier?.model) {
     const result = { model: runtimeTier.model, profile };
@@ -7740,7 +7706,7 @@ var requirementsExtractFromPlans = async (args, projectDir, workstream) => {
 init_errors();
 init_helpers();
 import { readFile as readFile11, readdir as readdir5 } from "node:fs/promises";
-import { existsSync as existsSync6, readdirSync as readdirSync2, readFileSync as readFileSync4, mkdirSync, writeFileSync, unlinkSync } from "node:fs";
+import { existsSync as existsSync6, readdirSync as readdirSync2, readFileSync as readFileSync3, mkdirSync, writeFileSync, unlinkSync } from "node:fs";
 import { join as join10, relative as relative2 } from "node:path";
 async function determinePhaseStatus(plans, summaries, phaseDir, defaultWhenNoPlans = "Pending") {
   if (plans === 0)
@@ -7894,7 +7860,7 @@ var statsJson = async (args, projectDir, workstream) => {
   let requirementsComplete = 0;
   try {
     if (existsSync6(reqPath)) {
-      const reqContent = readFileSync4(reqPath, "utf-8");
+      const reqContent = readFileSync3(reqPath, "utf-8");
       const checked = reqContent.match(/^- \[x\] \*\*/gm);
       const unchecked = reqContent.match(/^- \[ \] \*\*/gm);
       requirementsComplete = checked ? checked.length : 0;
@@ -7905,7 +7871,7 @@ var statsJson = async (args, projectDir, workstream) => {
   let lastActivity = null;
   try {
     if (existsSync6(statePath)) {
-      const stateContent = readFileSync4(statePath, "utf-8");
+      const stateContent = readFileSync3(statePath, "utf-8");
       const activityMatch = stateContent.match(/^last_activity:\s*(.+)$/im) || stateContent.match(/\*\*Last Activity:\*\*\s*(.+)/i) || stateContent.match(/^Last Activity:\s*(.+)$/im) || stateContent.match(/^Last activity:\s*(.+)$/im);
       if (activityMatch)
         lastActivity = activityMatch[1].trim();
@@ -7997,7 +7963,7 @@ var todoMatchPhase = async (args, projectDir) => {
     const files = readdirSync2(pendingDir).filter((f) => f.endsWith(".md"));
     for (const file of files) {
       try {
-        const content = readFileSync4(join10(pendingDir, file), "utf-8");
+        const content = readFileSync3(join10(pendingDir, file), "utf-8");
         const titleMatch = content.match(/^title:\s*(.+)$/m);
         const areaMatch = content.match(/^area:\s*(.+)$/m);
         const filesMatch = content.match(/^files:\s*(.+)$/m);
@@ -8063,7 +8029,7 @@ var todoMatchPhase = async (args, projectDir) => {
       const planFiles = readdirSync2(phaseDir).filter((f) => f.endsWith("-PLAN.md"));
       for (const pf of planFiles) {
         try {
-          const planContent = readFileSync4(join10(phaseDir, pf), "utf-8");
+          const planContent = readFileSync3(join10(phaseDir, pf), "utf-8");
           const fmFiles = planContent.match(/files_modified:\s*\[([^\]]*)\]/);
           if (fmFiles) {
             phasePlans.push(...fmFiles[1].split(",").map((s3) => s3.trim().replace(/['"]/g, "")).filter(Boolean));
@@ -8116,7 +8082,7 @@ var listTodos = async (args, projectDir) => {
     const files = readdirSync2(pendingDir).filter((f) => f.endsWith(".md"));
     for (const file of files) {
       try {
-        const content = readFileSync4(join10(pendingDir, file), "utf-8");
+        const content = readFileSync3(join10(pendingDir, file), "utf-8");
         const createdMatch = content.match(/^created:\s*(.+)$/m);
         const titleMatch = content.match(/^title:\s*(.+)$/m);
         const areaMatch = content.match(/^area:\s*(.+)$/m);
@@ -8149,7 +8115,7 @@ var todoComplete = async (args, projectDir) => {
     throw new GSDError(`Todo not found: ${filename}`, ErrorClassification.Validation);
   }
   mkdirSync(completedDir, { recursive: true });
-  let content = readFileSync4(sourcePath, "utf-8");
+  let content = readFileSync3(sourcePath, "utf-8");
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   content = `completed: ${today}
 ` + content;
@@ -8463,8 +8429,6 @@ var VALID_CONFIG_KEYS = /* @__PURE__ */ new Set([
   "workflow.ui_review",
   "workflow.max_discuss_passes",
   "workflow.ultracode",
-  "fable.mode",
-  "fable.until",
   "features.thinking_partner",
   "context",
   "features.global_learnings",
@@ -8542,7 +8506,7 @@ init_helpers();
 // dist/query/state-mutation.js
 init_errors();
 import { open, unlink, stat, readFile as readFile13, writeFile as writeFile3, readdir as readdir6 } from "node:fs/promises";
-import { constants, unlinkSync as unlinkSync2, existsSync as existsSync7, mkdirSync as mkdirSync2, writeFileSync as writeFileSync2, readdirSync as readdirSync3, readFileSync as readFileSync5 } from "node:fs";
+import { constants, unlinkSync as unlinkSync2, existsSync as existsSync7, mkdirSync as mkdirSync2, writeFileSync as writeFileSync2, readdirSync as readdirSync3, readFileSync as readFileSync4 } from "node:fs";
 import { isAbsolute as isAbsolute2, join as join11, relative as relative3, resolve as resolve2 } from "node:path";
 init_helpers();
 init_state_document();
@@ -8594,7 +8558,7 @@ function readTextArgOrFile(projectDir, value, filePath, label) {
     throw new Error(`${label} path rejected: outside project directory`);
   }
   try {
-    return readFileSync5(resolved, "utf-8").trimEnd();
+    return readFileSync4(resolved, "utf-8").trimEnd();
   } catch {
     throw new Error(`${label} file not found: ${filePath}`);
   }
@@ -9495,7 +9459,7 @@ var stateValidate = async (_args, projectDir, workstream) => {
         const verificationFiles = files.filter((f) => f.includes("VERIFICATION") && f.endsWith(".md"));
         for (const vf of verificationFiles) {
           try {
-            const vContent = readFileSync5(join11(phaseDirPath, vf), "utf-8");
+            const vContent = readFileSync4(join11(phaseDirPath, vf), "utf-8");
             if (/status:\s*passed/i.test(vContent) && /executing/i.test(status)) {
               warnings.push(`Status drift: STATE.md says "${status}" but ${vf} shows verification passed \u2014 phase may be complete`);
               drift.verification_status = { state_status: status, verification: "passed" };
@@ -9769,7 +9733,7 @@ var statePrune = async (args, projectDir, workstream) => {
     const timestamp = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
     let archiveContent = "";
     if (existsSync7(archivePath)) {
-      archiveContent = readFileSync5(archivePath, "utf-8");
+      archiveContent = readFileSync4(archivePath, "utf-8");
     } else {
       archiveContent = "# STATE Archive\n\nPruned entries from STATE.md. Recoverable but no longer loaded into agent context.\n\n";
     }
@@ -10351,7 +10315,7 @@ var templateFill = async (args, projectDir) => {
 // dist/query/verify.js
 init_errors();
 import { readFile as readFile15, readdir as readdir8 } from "node:fs/promises";
-import { existsSync as existsSync9, readdirSync as readdirSync4, readFileSync as readFileSync6, statSync as statSync2 } from "node:fs";
+import { existsSync as existsSync9, readdirSync as readdirSync4, readFileSync as readFileSync5, statSync as statSync2 } from "node:fs";
 import { join as join14, isAbsolute as isAbsolute3 } from "node:path";
 init_helpers();
 var verifyPlanStructure = async (args, projectDir) => {
@@ -10643,7 +10607,7 @@ var verifySummary = async (args, projectDir) => {
       }
     };
   }
-  const content = readFileSync6(fullPath, "utf-8");
+  const content = readFileSync5(fullPath, "utf-8");
   const errors = [];
   const mentionedFiles = /* @__PURE__ */ new Set();
   const patterns = [
@@ -10775,14 +10739,14 @@ var verifySchemaDrift = async (args, projectDir, workstream) => {
   const allFiles = [];
   const planFiles = readdirSync4(phaseDir).filter((f) => f.endsWith("-PLAN.md") || f === "PLAN.md");
   for (const pf of planFiles) {
-    const content = readFileSync6(join14(phaseDir, pf), "utf-8");
+    const content = readFileSync5(join14(phaseDir, pf), "utf-8");
     const fm = extractFrontmatter2(content);
     allFiles.push(...filesModifiedFromFrontmatter(fm));
   }
   let executionLog = "";
   const summaryFiles = readdirSync4(phaseDir).filter((f) => f.endsWith("-SUMMARY.md"));
   for (const sf of summaryFiles) {
-    executionLog += readFileSync6(join14(phaseDir, sf), "utf-8") + "\n";
+    executionLog += readFileSync5(join14(phaseDir, sf), "utf-8") + "\n";
   }
   const gitLog = execGit2(projectDir, ["log", "--oneline", "--all", "-50"]);
   if (gitLog.exitCode === 0) {
@@ -11543,11 +11507,11 @@ var checkPhaseReady = async (args, projectDir, workstream) => {
 // dist/query/route-next-action.js
 init_helpers();
 import { readFile as readFile19, readdir as readdir10 } from "node:fs/promises";
-import { readFileSync as readFileSync7, existsSync as existsSync12, readdirSync as readdirSync6 } from "node:fs";
+import { readFileSync as readFileSync6, existsSync as existsSync12, readdirSync as readdirSync6 } from "node:fs";
 import { join as join18 } from "node:path";
 function readConsecutiveCallCount(planningDir) {
   try {
-    const raw = readFileSync7(join18(planningDir, ".next-call-count"), "utf-8");
+    const raw = readFileSync6(join18(planningDir, ".next-call-count"), "utf-8");
     return parseInt(raw.trim(), 10) || 0;
   } catch {
     return 0;
@@ -14035,7 +13999,7 @@ ${closedPositionBody}`;
 };
 
 // dist/query/summary.js
-import { existsSync as existsSync20, readdirSync as readdirSync9, readFileSync as readFileSync8 } from "node:fs";
+import { existsSync as existsSync20, readdirSync as readdirSync9, readFileSync as readFileSync7 } from "node:fs";
 import { readFile as readFile26 } from "node:fs/promises";
 import { join as join26 } from "node:path";
 init_helpers();
@@ -14176,7 +14140,7 @@ var historyDigest = async (_args, projectDir, workstream) => {
       const summaries = readdirSync9(dirPath).filter((f) => f.endsWith("-SUMMARY.md") || f === "SUMMARY.md").sort((a3, b) => a3.localeCompare(b, void 0, { numeric: true }));
       for (const summary of summaries) {
         try {
-          const content = readFileSync8(join26(dirPath, summary), "utf-8");
+          const content = readFileSync7(join26(dirPath, summary), "utf-8");
           const fm = extractFrontmatterLeading(content);
           const phaseRaw = fm.phase;
           const phaseNum = typeof phaseRaw === "string" || typeof phaseRaw === "number" ? String(phaseRaw) : dir.split("-")[0];
@@ -14246,12 +14210,12 @@ init_commit();
 init_helpers();
 init_errors();
 init_workstream_name_policy();
-import { existsSync as existsSync23, readdirSync as readdirSync11, readFileSync as readFileSync11, writeFileSync as writeFileSync4, mkdirSync as mkdirSync3, renameSync, rmdirSync } from "node:fs";
+import { existsSync as existsSync23, readdirSync as readdirSync11, readFileSync as readFileSync10, writeFileSync as writeFileSync4, mkdirSync as mkdirSync3, renameSync, rmdirSync } from "node:fs";
 import { join as join29, relative as relative7 } from "node:path";
 
 // dist/query/active-workstream-store.js
 init_workstream_utils();
-import { readFileSync as readFileSync9, writeFileSync as writeFileSync3, unlinkSync as unlinkSync3, existsSync as existsSync21 } from "node:fs";
+import { readFileSync as readFileSync8, writeFileSync as writeFileSync3, unlinkSync as unlinkSync3, existsSync as existsSync21 } from "node:fs";
 import { join as join27 } from "node:path";
 function pointerPath(projectDir) {
   return join27(projectDir, ".planning", "active-workstream");
@@ -14262,7 +14226,7 @@ function workstreamDir(projectDir, name) {
 function readActiveWorkstream(projectDir) {
   const filePath = pointerPath(projectDir);
   try {
-    const name = readFileSync9(filePath, "utf-8").trim();
+    const name = readFileSync8(filePath, "utf-8").trim();
     if (!name || !validateWorkstreamName(name)) {
       try {
         unlinkSync3(filePath);
@@ -14303,7 +14267,7 @@ function writeActiveWorkstream(projectDir, name) {
 
 // dist/query/workstream-inventory.js
 init_helpers();
-import { existsSync as existsSync22, readdirSync as readdirSync10, readFileSync as readFileSync10 } from "node:fs";
+import { existsSync as existsSync22, readdirSync as readdirSync10, readFileSync as readFileSync9 } from "node:fs";
 import { join as join28, relative as relative6 } from "node:path";
 init_state_document();
 var planningRoot = (projectDir) => join28(projectDir, ".planning");
@@ -14324,7 +14288,7 @@ function readSubdirectories2(dir) {
 }
 function countRoadmapPhases(roadmapPath, fallbackCount) {
   try {
-    const roadmapContent = readFileSync10(roadmapPath, "utf-8");
+    const roadmapContent = readFileSync9(roadmapPath, "utf-8");
     const matches = roadmapContent.match(/^#{2,4}\s+Phase\s+[\w][\w.-]*/gm);
     return matches ? matches.length : fallbackCount;
   } catch {
@@ -14337,7 +14301,7 @@ function countPhaseFiles(phaseDir) {
 }
 function readStateProjection(statePath) {
   try {
-    const stateContent = readFileSync10(statePath, "utf-8");
+    const stateContent = readFileSync9(statePath, "utf-8");
     return {
       status: stateExtractField(stateContent, "Status") || "unknown",
       current_phase: stateExtractField(stateContent, "Current Phase"),
@@ -14529,7 +14493,7 @@ function syncRootStateMirror(projectDir, name) {
   if (!existsSync23(wsStatePath))
     return;
   try {
-    const content = readFileSync11(wsStatePath, "utf-8");
+    const content = readFileSync10(wsStatePath, "utf-8");
     writeFileSync4(rootStatePath, content, "utf-8");
   } catch {
   }
@@ -14682,7 +14646,7 @@ var workstreamProgress = async (_args, projectDir) => {
 };
 
 // dist/query/docs-init.js
-import { closeSync, existsSync as existsSync24, openSync, readFileSync as readFileSync12, readSync, readdirSync as readdirSync12, statSync as statSync3 } from "node:fs";
+import { closeSync, existsSync as existsSync24, openSync, readFileSync as readFileSync11, readSync, readdirSync as readdirSync12, statSync as statSync3 } from "node:fs";
 import { join as join30, relative as relative8 } from "node:path";
 init_helpers();
 var GSD_MARKER = "<!-- generated-by: gsd-doc-writer -->";
@@ -14777,7 +14741,7 @@ function detectProjectType(cwd) {
   const exists = (rel) => pathExistsInternal(cwd, rel);
   let has_cli_bin = false;
   try {
-    const pkg = JSON.parse(readFileSync12(join30(cwd, "package.json"), "utf-8"));
+    const pkg = JSON.parse(readFileSync11(join30(cwd, "package.json"), "utf-8"));
     const bin = pkg.bin;
     has_cli_bin = !!(bin && (typeof bin === "string" || Object.keys(bin).length > 0));
   } catch {
@@ -14785,7 +14749,7 @@ function detectProjectType(cwd) {
   let is_monorepo = exists("pnpm-workspace.yaml") || exists("lerna.json");
   if (!is_monorepo) {
     try {
-      const pkg = JSON.parse(readFileSync12(join30(cwd, "package.json"), "utf-8"));
+      const pkg = JSON.parse(readFileSync11(join30(cwd, "package.json"), "utf-8"));
       is_monorepo = Array.isArray(pkg.workspaces) && pkg.workspaces.length > 0;
     } catch {
     }
@@ -14793,7 +14757,7 @@ function detectProjectType(cwd) {
   let has_tests = exists("test") || exists("tests") || exists("__tests__") || exists("spec");
   if (!has_tests) {
     try {
-      const pkg = JSON.parse(readFileSync12(join30(cwd, "package.json"), "utf-8"));
+      const pkg = JSON.parse(readFileSync11(join30(cwd, "package.json"), "utf-8"));
       const devDeps = Object.keys(pkg.devDependencies || {});
       has_tests = devDeps.some((d) => ["vitest", "jest", "mocha", "jasmine", "ava"].includes(d));
     } catch {
@@ -14833,7 +14797,7 @@ function detectDocTooling(cwd) {
 }
 function detectMonorepoWorkspaces(cwd) {
   try {
-    const content = readFileSync12(join30(cwd, "pnpm-workspace.yaml"), "utf-8");
+    const content = readFileSync11(join30(cwd, "pnpm-workspace.yaml"), "utf-8");
     const workspaces = [];
     for (const line of content.split("\n")) {
       const m3 = line.match(/^\s*-\s+['"]?(.+?)['"]?\s*$/);
@@ -14845,14 +14809,14 @@ function detectMonorepoWorkspaces(cwd) {
   } catch {
   }
   try {
-    const pkg = JSON.parse(readFileSync12(join30(cwd, "package.json"), "utf-8"));
+    const pkg = JSON.parse(readFileSync11(join30(cwd, "package.json"), "utf-8"));
     if (Array.isArray(pkg.workspaces) && pkg.workspaces.length > 0) {
       return pkg.workspaces;
     }
   } catch {
   }
   try {
-    const lerna = JSON.parse(readFileSync12(join30(cwd, "lerna.json"), "utf-8"));
+    const lerna = JSON.parse(readFileSync11(join30(cwd, "lerna.json"), "utf-8"));
     if (Array.isArray(lerna.packages) && lerna.packages.length > 0) {
       return lerna.packages;
     }
@@ -14952,13 +14916,13 @@ var websearch = async (args) => {
 // dist/query/profile.js
 init_helpers();
 init_errors();
-import { existsSync as existsSync26, readdirSync as readdirSync16, readFileSync as readFileSync14, writeFileSync as writeFileSync5, mkdirSync as mkdirSync4, unlinkSync as unlinkSync4 } from "node:fs";
+import { existsSync as existsSync26, readdirSync as readdirSync16, readFileSync as readFileSync13, writeFileSync as writeFileSync5, mkdirSync as mkdirSync4, unlinkSync as unlinkSync4 } from "node:fs";
 import { join as join34, basename as basename3, resolve as resolve5 } from "node:path";
 import { homedir as homedir5 } from "node:os";
 import { createHash, randomBytes } from "node:crypto";
 
 // dist/query/profile-scan-sessions.js
-import { existsSync as existsSync25, readdirSync as readdirSync13, readFileSync as readFileSync13, statSync as statSync4 } from "node:fs";
+import { existsSync as existsSync25, readdirSync as readdirSync13, readFileSync as readFileSync12, statSync as statSync4 } from "node:fs";
 import { basename, join as join31 } from "node:path";
 import { homedir as homedir4 } from "node:os";
 function formatBytes(bytes) {
@@ -14992,7 +14956,7 @@ function scanProjectDir(projectDirPath) {
 function readSessionIndex(projectDirPath) {
   try {
     const indexPath = join31(projectDirPath, "sessions-index.json");
-    const raw = readFileSync13(indexPath, "utf-8");
+    const raw = readFileSync12(indexPath, "utf-8");
     const parsed = JSON.parse(raw);
     const entries = /* @__PURE__ */ new Map();
     for (const entry of parsed.entries || []) {
@@ -15569,7 +15533,7 @@ function learningsWrite(entry) {
   const hash = createHash("sha256").update(entry.learning + "\n" + entry.source_project).digest("hex");
   for (const file of readdirSync16(STORE_DIR).filter((f) => f.endsWith(".json"))) {
     try {
-      const r3 = JSON.parse(readFileSync14(join34(STORE_DIR, file), "utf-8"));
+      const r3 = JSON.parse(readFileSync13(join34(STORE_DIR, file), "utf-8"));
       if (r3.content_hash === hash)
         return { created: false, id: r3.id };
     } catch {
@@ -15586,7 +15550,7 @@ function learningsList() {
   const results = [];
   for (const file of readdirSync16(STORE_DIR).filter((f) => f.endsWith(".json"))) {
     try {
-      const record = JSON.parse(readFileSync14(join34(STORE_DIR, file), "utf-8"));
+      const record = JSON.parse(readFileSync13(join34(STORE_DIR, file), "utf-8"));
       results.push(record);
     } catch {
     }
@@ -15618,7 +15582,7 @@ var learningsCopy = async (_args, projectDir, workstream) => {
   if (!existsSync26(learningsPath)) {
     return { data: { copied: false, total: 0, created: 0, skipped: 0, reason: "No LEARNINGS.md found" } };
   }
-  const content = readFileSync14(learningsPath, "utf-8");
+  const content = readFileSync13(learningsPath, "utf-8");
   const sourceProject = basename3(resolve5(projectDir));
   const sections = content.split(/^## /m).slice(1);
   let created = 0;
@@ -15654,7 +15618,7 @@ function learningsPruneStore(olderThan) {
     const filePath = join34(STORE_DIR, file);
     let record = null;
     try {
-      record = JSON.parse(readFileSync14(filePath, "utf-8"));
+      record = JSON.parse(readFileSync13(filePath, "utf-8"));
     } catch {
       continue;
     }
@@ -15798,7 +15762,7 @@ var profileQuestionnaire = async (args, _projectDir) => {
 };
 
 // dist/query/skill-manifest.js
-import { existsSync as existsSync27, readdirSync as readdirSync17, readFileSync as readFileSync15, writeFileSync as writeFileSync6 } from "node:fs";
+import { existsSync as existsSync27, readdirSync as readdirSync17, readFileSync as readFileSync14, writeFileSync as writeFileSync6 } from "node:fs";
 import { join as join35, resolve as resolve6 } from "node:path";
 import { homedir as homedir6 } from "node:os";
 init_helpers();
@@ -15880,7 +15844,7 @@ function buildSkillManifest(cwd, skillsDir = null) {
         continue;
       let content;
       try {
-        content = readFileSync15(skillMdPath, "utf-8");
+        content = readFileSync14(skillMdPath, "utf-8");
       } catch {
         continue;
       }
@@ -15949,7 +15913,7 @@ var skillManifest = async (args, projectDir) => {
 };
 
 // dist/query/audit-open.js
-import { existsSync as existsSync28, readdirSync as readdirSync18, readFileSync as readFileSync16 } from "node:fs";
+import { existsSync as existsSync28, readdirSync as readdirSync18, readFileSync as readFileSync15 } from "node:fs";
 import { basename as basename4, join as join36 } from "node:path";
 init_helpers();
 var INCOMPLETE_QUICK_STATUSES = /* @__PURE__ */ new Set(["incomplete", "gaps", "gaps_found", "partial", "blocked"]);
@@ -15972,7 +15936,7 @@ function scanDebugSessions(planDir) {
     const filePath = join36(debugDir, entry.name);
     let content;
     try {
-      content = readFileSync16(filePath, "utf-8");
+      content = readFileSync15(filePath, "utf-8");
     } catch {
       results.push({
         slug: sanitizeForDisplay(basename4(entry.name, ".md")),
@@ -16031,7 +15995,7 @@ function scanQuickTasks(planDir) {
     const description = "";
     if (summaryPath && existsSync28(summaryPath)) {
       try {
-        const content = readFileSync16(summaryPath, "utf-8");
+        const content = readFileSync15(summaryPath, "utf-8");
         const fm = extractFrontmatter2(content);
         status = (fm.status || "unknown").toString().toLowerCase();
       } catch {
@@ -16076,7 +16040,7 @@ function scanThreads(planDir) {
     const filePath = join36(threadsDir, entry.name);
     let content;
     try {
-      content = readFileSync16(filePath, "utf-8");
+      content = readFileSync15(filePath, "utf-8");
     } catch {
       results.push({
         slug: sanitizeForDisplay(basename4(entry.name, ".md")),
@@ -16130,7 +16094,7 @@ function scanTodos(planDir) {
     const filePath = join36(pendingDir, entry.name);
     let content;
     try {
-      content = readFileSync16(filePath, "utf-8");
+      content = readFileSync15(filePath, "utf-8");
     } catch {
       continue;
     }
@@ -16170,7 +16134,7 @@ function scanSeeds(planDir) {
     const filePath = join36(seedsDir, entry.name);
     let content;
     try {
-      content = readFileSync16(filePath, "utf-8");
+      content = readFileSync15(filePath, "utf-8");
     } catch {
       continue;
     }
@@ -16221,7 +16185,7 @@ function scanUatGaps(planDir) {
       const filePath = join36(phaseDir, file);
       let content;
       try {
-        content = readFileSync16(filePath, "utf-8");
+        content = readFileSync15(filePath, "utf-8");
       } catch {
         continue;
       }
@@ -16265,7 +16229,7 @@ function scanVerificationGaps(planDir) {
       const filePath = join36(phaseDir, file);
       let content;
       try {
-        content = readFileSync16(filePath, "utf-8");
+        content = readFileSync15(filePath, "utf-8");
       } catch {
         continue;
       }
@@ -16307,7 +16271,7 @@ function scanContextQuestions(planDir) {
       const filePath = join36(phaseDir, file);
       let content;
       try {
-        content = readFileSync16(filePath, "utf-8");
+        content = readFileSync15(filePath, "utf-8");
       } catch {
         continue;
       }
@@ -16559,7 +16523,7 @@ var auditOpen = async (args, projectDir, workstream) => {
 };
 
 // dist/query/detect-custom-files.js
-import { existsSync as existsSync29, readdirSync as readdirSync19, readFileSync as readFileSync17 } from "node:fs";
+import { existsSync as existsSync29, readdirSync as readdirSync19, readFileSync as readFileSync16 } from "node:fs";
 import { join as join37, relative as relative9, resolve as resolve7 } from "node:path";
 var GSD_MANAGED_DIRS = [
   "get-shit-done",
@@ -16605,7 +16569,7 @@ var detectCustomFiles = async (args) => {
   }
   let manifest;
   try {
-    manifest = JSON.parse(readFileSync17(manifestPath, "utf8"));
+    manifest = JSON.parse(readFileSync16(manifestPath, "utf8"));
   } catch {
     return {
       data: {
@@ -16640,7 +16604,7 @@ var detectCustomFiles = async (args) => {
 
 // dist/query/uat.js
 init_errors();
-import { existsSync as existsSync30, readdirSync as readdirSync20, readFileSync as readFileSync18 } from "node:fs";
+import { existsSync as existsSync30, readdirSync as readdirSync20, readFileSync as readFileSync17 } from "node:fs";
 import { join as join38, relative as relative10 } from "node:path";
 init_helpers();
 function buildUatCheckpoint(currentTest) {
@@ -16673,7 +16637,7 @@ var uatRenderCheckpoint = async (args, projectDir) => {
   if (!existsSync30(resolvedPath)) {
     return { data: { error: `UAT file not found: ${filePath}` } };
   }
-  const content = readFileSync18(resolvedPath, "utf-8");
+  const content = readFileSync17(resolvedPath, "utf-8");
   const currentTestMatch = content.match(/##\s*Current Test\s*(?:\n<!--[\s\S]*?-->)?\n([\s\S]*?)(?=\n##\s|$)/i);
   if (!currentTestMatch) {
     return { data: { error: "UAT file is missing a Current Test section" } };
@@ -16861,7 +16825,7 @@ var auditUat = async (_args, projectDir, workstream) => {
     const phaseDir = join38(paths.phases, dir);
     const files = readdirSync20(phaseDir);
     for (const file of files.filter((f) => f.includes("-UAT") && f.endsWith(".md"))) {
-      const content = readFileSync18(join38(phaseDir, file), "utf-8");
+      const content = readFileSync17(join38(phaseDir, file), "utf-8");
       const items = parseUatItems(content);
       if (items.length > 0) {
         const fm = extractFrontmatter2(content);
@@ -16877,7 +16841,7 @@ var auditUat = async (_args, projectDir, workstream) => {
       }
     }
     for (const file of files.filter((f) => f.includes("-VERIFICATION") && f.endsWith(".md"))) {
-      const content = readFileSync18(join38(phaseDir, file), "utf-8");
+      const content = readFileSync17(join38(phaseDir, file), "utf-8");
       const fm = extractFrontmatter2(content);
       const status = fm.status || "unknown";
       if (status === "human_needed" || status === "gaps_found") {
@@ -16916,7 +16880,7 @@ var auditUat = async (_args, projectDir, workstream) => {
 
 // dist/query/intel.js
 init_helpers();
-import { existsSync as existsSync31, readFileSync as readFileSync19, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, statSync as statSync7 } from "node:fs";
+import { existsSync as existsSync31, readFileSync as readFileSync18, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, statSync as statSync7 } from "node:fs";
 import { join as join39 } from "node:path";
 import { createHash as createHash2 } from "node:crypto";
 var INTEL_FILES = {
@@ -16932,7 +16896,7 @@ function intelDir(projectDir) {
 }
 function isIntelEnabled(projectDir) {
   try {
-    const cfg = JSON.parse(readFileSync19(planningPaths(projectDir).config, "utf-8"));
+    const cfg = JSON.parse(readFileSync18(planningPaths(projectDir).config, "utf-8"));
     return cfg?.intel?.enabled === true;
   } catch {
     return false;
@@ -16945,7 +16909,7 @@ function safeReadJson(filePath) {
   try {
     if (!existsSync31(filePath))
       return null;
-    return JSON.parse(readFileSync19(filePath, "utf-8"));
+    return JSON.parse(readFileSync18(filePath, "utf-8"));
   } catch {
     return null;
   }
@@ -16954,7 +16918,7 @@ function hashFile(filePath) {
   try {
     if (!existsSync31(filePath))
       return null;
-    const content = readFileSync19(filePath);
+    const content = readFileSync18(filePath);
     return createHash2("sha256").update(content).digest("hex");
   } catch {
     return null;
@@ -17000,7 +16964,7 @@ function searchArchMd(filePath, term) {
   if (!existsSync31(filePath))
     return [];
   const lowerTerm = term.toLowerCase();
-  const content = readFileSync19(filePath, "utf-8");
+  const content = readFileSync18(filePath, "utf-8");
   return content.split("\n").filter((line) => line.toLowerCase().includes(lowerTerm));
 }
 var INTEL_DISABLED_MSG = "Intel system disabled. Set intel.enabled=true in config.json to activate.";
@@ -17155,7 +17119,7 @@ var intelExtractExports = async (args, projectDir, _workstream) => {
   if (!existsSync31(filePath)) {
     return { data: { file: filePath, exports: [], method: "none" } };
   }
-  const content = readFileSync19(filePath, "utf-8");
+  const content = readFileSync18(filePath, "utf-8");
   const exports = [];
   let method = "none";
   const allMatches = [...content.matchAll(/module\.exports\s*=\s*\{/g)];
@@ -17260,7 +17224,7 @@ var intelPatchMeta = async (args, projectDir, _workstream) => {
     return { data: { patched: false, error: `File not found: ${filePath}` } };
   }
   try {
-    const raw2 = readFileSync19(filePath, "utf-8");
+    const raw2 = readFileSync18(filePath, "utf-8");
     const data = JSON.parse(raw2);
     if (!data._meta)
       data._meta = {};
@@ -17287,7 +17251,7 @@ var intelUpdate = async (_args, projectDir, _workstream) => {
 };
 
 // dist/query/profile-output.js
-import { existsSync as existsSync32, mkdirSync as mkdirSync6, readFileSync as readFileSync20, readdirSync as readdirSync21, writeFileSync as writeFileSync8 } from "node:fs";
+import { existsSync as existsSync32, mkdirSync as mkdirSync6, readFileSync as readFileSync19, readdirSync as readdirSync21, writeFileSync as writeFileSync8 } from "node:fs";
 import { homedir as homedir7 } from "node:os";
 import { dirname as dirname2, isAbsolute as isAbsolute6, join as join40 } from "node:path";
 init_errors();
@@ -17331,7 +17295,7 @@ var CLAUDE_MD_PROFILE_PLACEHOLDER = [
 ].join("\n");
 function safeReadFile(filePath) {
   try {
-    return existsSync32(filePath) ? readFileSync20(filePath, "utf-8") : null;
+    return existsSync32(filePath) ? readFileSync19(filePath, "utf-8") : null;
   } catch {
     return null;
   }
@@ -17594,7 +17558,7 @@ function cmdWriteProfileLogic(cwd, options) {
   }
   let analysis;
   try {
-    analysis = JSON.parse(readFileSync20(analysisPath, "utf-8"));
+    analysis = JSON.parse(readFileSync19(analysisPath, "utf-8"));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     throw new GSDError(`Failed to parse analysis JSON: ${msg}`, ErrorClassification.Validation);
@@ -17644,7 +17608,7 @@ function cmdWriteProfileLogic(cwd, options) {
   if (!existsSync32(templatePath)) {
     throw new GSDError(`Template not found: ${templatePath}`, ErrorClassification.Validation);
   }
-  let template = readFileSync20(templatePath, "utf-8");
+  let template = readFileSync19(templatePath, "utf-8");
   const dimensionLabels = {
     communication_style: "Communication",
     decision_speed: "Decisions",
@@ -17768,7 +17732,7 @@ var generateDevPreferences = async (args, projectDir) => {
   }
   let analysis;
   try {
-    analysis = JSON.parse(readFileSync20(ap, "utf-8"));
+    analysis = JSON.parse(readFileSync19(ap, "utf-8"));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     throw new GSDError(`Failed to parse analysis JSON: ${msg}`, ErrorClassification.Validation);
@@ -17790,7 +17754,7 @@ var generateDevPreferences = async (args, projectDir) => {
   if (!existsSync32(templatePath)) {
     throw new GSDError(`Template not found: ${templatePath}`, ErrorClassification.Validation);
   }
-  let template = readFileSync20(templatePath, "utf-8");
+  let template = readFileSync19(templatePath, "utf-8");
   const directiveLines = [];
   const dimensionsIncluded = [];
   const dimensions = analysis.dimensions;
@@ -17872,7 +17836,7 @@ var generateClaudeProfile = async (args, projectDir) => {
   }
   let analysis;
   try {
-    analysis = JSON.parse(readFileSync20(ap, "utf-8"));
+    analysis = JSON.parse(readFileSync19(ap, "utf-8"));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     throw new GSDError(`Failed to parse analysis JSON: ${msg}`, ErrorClassification.Validation);
@@ -17949,7 +17913,7 @@ var generateClaudeProfile = async (args, projectDir) => {
   }
   let action;
   if (existsSync32(targetPath)) {
-    let existingContent = readFileSync20(targetPath, "utf-8");
+    let existingContent = readFileSync19(targetPath, "utf-8");
     const startMarker = "<!-- GSD:profile-start -->";
     const endMarker = "<!-- GSD:profile-end -->";
     const startIdx = existingContent.indexOf(startMarker);
@@ -19403,7 +19367,7 @@ var phaseListPlans = async (args, projectDir, workstream) => {
 };
 
 // dist/query/init.js
-import { existsSync as existsSync37, readdirSync as readdirSync22, readFileSync as readFileSync21 } from "node:fs";
+import { existsSync as existsSync37, readdirSync as readdirSync22, readFileSync as readFileSync20 } from "node:fs";
 import { join as join44, relative as relative13, basename as basename5 } from "node:path";
 import { execSync as execSync2 } from "node:child_process";
 import { homedir as homedir9 } from "node:os";
@@ -19484,7 +19448,7 @@ function getLatestCompletedMilestone(projectDir) {
   if (!existsSync37(milestonesPath))
     return null;
   try {
-    const content = readFileSync21(milestonesPath, "utf-8");
+    const content = readFileSync20(milestonesPath, "utf-8");
     const match = content.match(/^##\s+(v[\d.]+)\s+(.+?)\s+\(Shipped:/m);
     if (!match)
       return null;
@@ -19594,7 +19558,7 @@ function withProjectRoot(projectDir, result, config) {
   const projectMdPath = join44(projectDir, ".planning", "PROJECT.md");
   try {
     if (existsSync37(projectMdPath)) {
-      const content = readFileSync21(projectMdPath, "utf-8");
+      const content = readFileSync20(projectMdPath, "utf-8");
       const h1Match = content.match(/^#\s+(.+)$/m);
       if (h1Match) {
         result.project_title = h1Match[1].trim();
@@ -19836,7 +19800,7 @@ var initResume = async (_args, projectDir) => {
   const planningDir = join44(projectDir, ".planning");
   let interruptedAgentId = null;
   try {
-    interruptedAgentId = readFileSync21(join44(projectDir, ".planning", "current-agent-id.txt"), "utf-8").trim();
+    interruptedAgentId = readFileSync20(join44(projectDir, ".planning", "current-agent-id.txt"), "utf-8").trim();
   } catch {
   }
   const result = {
@@ -19997,7 +19961,7 @@ var initTodos = async (args, projectDir) => {
     const files = readdirSync22(pendingDir).filter((f) => f.endsWith(".md"));
     for (const file of files) {
       try {
-        const content = readFileSync21(join44(pendingDir, file), "utf-8");
+        const content = readFileSync20(join44(pendingDir, file), "utf-8");
         const createdMatch = content.match(/^created:\s*(.+)$/m);
         const titleMatch = content.match(/^title:\s*(.+)$/m);
         const areaMatch = content.match(/^area:\s*(.+)$/m);
@@ -20205,7 +20169,7 @@ var initListWorkspaces = async (_args, _projectDir) => {
       let repoCount = 0;
       let strategy = "unknown";
       try {
-        const manifest = readFileSync21(manifestPath, "utf8");
+        const manifest = readFileSync20(manifestPath, "utf8");
         const strategyMatch = manifest.match(/^Strategy:\s*(.+)$/m);
         if (strategyMatch)
           strategy = strategyMatch[1].trim();
@@ -20249,7 +20213,7 @@ var initRemoveWorkspace = async (args, _projectDir) => {
   let strategy = "unknown";
   if (existsSync37(manifestPath)) {
     try {
-      const manifest = readFileSync21(manifestPath, "utf8");
+      const manifest = readFileSync20(manifestPath, "utf8");
       const strategyMatch = manifest.match(/^Strategy:\s*(.+)$/m);
       if (strategyMatch)
         strategy = strategyMatch[1].trim();
@@ -20766,8 +20730,8 @@ var initManager = async (_args, projectDir, workstream) => {
   try {
     const waitingPath = join45(projectDir, ".planning", "WAITING.json");
     if (existsSync38(waitingPath)) {
-      const { readFileSync: readFileSync24 } = await import("node:fs");
-      waitingSignal = JSON.parse(readFileSync24(waitingPath, "utf-8"));
+      const { readFileSync: readFileSync23 } = await import("node:fs");
+      waitingSignal = JSON.parse(readFileSync23(waitingPath, "utf-8"));
     }
   } catch {
   }
@@ -39113,7 +39077,7 @@ import { join as join48 } from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
 
 // dist/prompt-sanitizer.js
-import { readFileSync as readFileSync23 } from "node:fs";
+import { readFileSync as readFileSync22 } from "node:fs";
 import { homedir as homedir11 } from "node:os";
 var AT_REFERENCE_PATTERN = /^(\s*)@(~\/[^\s]+|\.planning\/[^\s]+)/gm;
 function resolveAtReferences(input, projectDir) {
@@ -39122,7 +39086,7 @@ function resolveAtReferences(input, projectDir) {
   return input.replace(AT_REFERENCE_PATTERN, (_match, indent, refPath) => {
     const resolvedPath = refPath.startsWith("~/") ? refPath.replace("~/", `${homedir11()}/`) : projectDir ? `${projectDir}/${refPath}` : refPath;
     try {
-      const content = readFileSync23(resolvedPath, "utf-8").trim();
+      const content = readFileSync22(resolvedPath, "utf-8").trim();
       return `${indent}${content}`;
     } catch {
       return "";
