@@ -61,6 +61,8 @@ Evaluate `$ARGUMENTS` against these routing rules. Apply the **first matching** 
 | Completing a milestone, shipping, releasing | `/gsd:complete-milestone` | Milestone lifecycle |
 | A specific, actionable, small task (add feature, fix typo, update config) | `/gsd:quick` | Self-contained, single executor |
 
+**Milestone-lifecycle mechanics are not routing ambiguities.** When a route leads into milestone close or start (for example a code-complete milestone that was never formally closed), resolve the sequencing yourself and proceed. Do not ask the user how to sequence GSD-internal bookkeeping. See `references/gate-prompts.md` Rules.
+
 **Requires `.planning/` directory:** All routes except `/gsd:new-project`, `/gsd:new-ddd`, `/gsd:map-codebase`, `/gsd:spike`, `/gsd:sketch`, and `/gsd:help`. If the project doesn't exist and the route requires it, suggest `/gsd:new-project` first (or `/gsd:new-ddd` if the user's text indicates a DDD-shape project).
 
 **Ambiguity handling:** If the text could reasonably match multiple routes, ask the user via AskUserQuestion with the top 2-3 options. For example:

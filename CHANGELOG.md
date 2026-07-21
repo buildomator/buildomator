@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.2.1] - 2026-07-21  (milestone-lifecycle workflows stop gating on close/sequence mechanics)
+
+Patch release extending the v4.2.0 decision-authority rule into the milestone-lifecycle workflows, which it had not reached.
+
+### Fixed
+- **`/bm:new-milestone`, `/bm:complete-milestone`, `/bm:next`, and `/bm:do` no longer ask the user how to sequence a milestone close.** The v4.2.0 "gate only on genuine user decisions" rule reached `gate-prompts.md`, the anti-patterns reference, and the executor/planner agents, but not these workflows, so a prior milestone that was code-complete but never formally closed still produced a "how should I sequence this" menu. `new-milestone` now resolves that itself (close the prior milestone first via `complete-milestone`, then start the next at the following phase number, reported in one line with an easy opt-out), treats cosmetic leftovers (a stale in-progress marker, an empty parked `999.x` dir) as silent tidy-ups, and reserves confirmation for the single irreversible step: the `phases.clear` that permanently deletes phase directories (`.planning/` is gitignored), which now gets a one-line heads-up instead of being bundled into a sequencing menu.
+
 ## [4.2.0] - 2026-07-21  (Fable 5 permanent, gsd-core 1.7.0 Tier-1 correctness ports, verifier honesty, self-test enforcement)
 
 Follows gsd-core 1.7.0 (Tier-1 correctness slice). Batches the first cherry-picks from upstream v1.7.0 with two quality refinements and the removal of the now-obsolete Fable 5 gate. No breaking changes; existing installs and config are unaffected.

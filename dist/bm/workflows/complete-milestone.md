@@ -14,6 +14,10 @@ Mark a shipped version (v1.0, v1.1, v2.0) as complete. Creates historical record
 
 </required_reading>
 
+<decision_authority>
+Milestone close is GSD-internal mechanics, not a series of user decisions. Resolve sequencing and bookkeeping yourself and proceed: which version label, whether to close now before starting the next milestone, how to reconcile a stale in-progress marker or an empty parked `999.x` dir. Do NOT offer these as an AskUserQuestion menu. Reserve prompts for genuine product/strategy/taste calls and for irreversible actions (a destructive `phases.clear`, a `git rm`), which get a one-line heads-up with an easy opt-out, not a menu. See `references/gate-prompts.md` Rules.
+</decision_authority>
+
 <archival_behavior>
 
 When a milestone completes:

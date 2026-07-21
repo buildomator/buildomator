@@ -32,6 +32,10 @@ If the flag is absent, keep the current behavior of continuing phase numbering f
 - Read STATE.md (pending todos, blockers)
 - Check for MILESTONE-CONTEXT.md (from /gsd:discuss-milestone)
 
+## 1b. Resolve prior-milestone state (do not gate on this)
+
+Check whether the previous milestone was formally closed (MILESTONES.md tops out at it, REQUIREMENTS.md is fresh, STATE.md is not mid-lifecycle). If a prior milestone is code-complete and has archive copies under `.planning/milestones/` but was never formally closed, that is GSD-internal mechanics, NOT the user's call: do NOT present a "how should I sequence this" menu. Make the call and proceed. Close the prior milestone first via `/gsd:complete-milestone <version>` (writes MILESTONES.md, tags the release), then continue here starting the new milestone at the next phase number. Report it in one line with an easy "say the word to change it." Cosmetic leftovers (a stale in-progress marker on an earlier milestone, an empty parked `999.x` dir) you tidy or leave silently, never via a prompt. The ONLY confirm-worthy step in this workflow is the irreversible `phases.clear` in step 6. See `references/gate-prompts.md` Rules.
+
 ## 2. Gather Milestone Goals
 
 **If MILESTONE-CONTEXT.md exists:**
@@ -194,7 +198,7 @@ Bug #2630: manually rewriting the body but leaving frontmatter on the previous m
 
 Delete MILESTONE-CONTEXT.md if exists (consumed).
 
-Clear leftover phase directories from the previous milestone:
+Clear leftover phase directories from the previous milestone. This is the one irreversible action in this workflow: `.planning/` is gitignored, so cleared phase directories cannot be recovered. Give the user a one-line heads-up before running it, with an easy opt-out to keep the directories. Do NOT re-open the milestone-close sequencing here (that was already resolved in step 1b); this heads-up is only about the destructive delete.
 
 ```bash
 gsd-sdk query phases.clear --confirm

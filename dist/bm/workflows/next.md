@@ -251,6 +251,7 @@ If the current phase is complete and the next phase exists in ROADMAP:
 **Route 7: All phases complete → complete milestone**
 If all phases are complete:
 → Next action: `/bm:complete-milestone`
+(If the milestone is code-complete but a prior milestone was never formally closed, do not ask the user how to sequence it. Close the prior one first, then proceed, and report the call. That is GSD-internal mechanics; see `references/gate-prompts.md` Rules.)
 
 **Route 8: Paused → resume**
 If STATE.md shows paused_at:
