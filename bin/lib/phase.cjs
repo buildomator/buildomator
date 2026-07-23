@@ -8,6 +8,7 @@ const { escapeRegex, loadConfig, normalizePhaseName, phaseMarkdownRegexSource, c
 const { platformWriteSync, platformReadSync, platformEnsureDir } = require('./shell-command-projection.cjs');
 const { planningDir, withPlanningLock } = require('./planning-workspace.cjs');
 const { extractFrontmatter } = require('./frontmatter.cjs');
+const { summaryFileIsComplete, resolveSummaryPath } = require('./plan-scan.cjs');
 const { writeStateMd, readModifyWriteStateMd, stateExtractField, stateReplaceField, stateReplaceFieldWithFallback, updatePerformanceMetricsSection } = require('./state.cjs');
 
 // #2893 — strict canonical filter: `{padded_phase}-{NN}-PLAN.md` or `PLAN.md`.
@@ -375,9 +376,21 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
   // misnamed plan never silently produces plan_count: 0 at executor init.
   const planNamingWarning = describeNonCanonicalPlans(phaseFiles, planFiles);
 
-  // Build set of plan IDs with summaries
+  // Build set of plan IDs with summaries (existence-only, for has_summary).
   const completedPlanIds = new Set(
     summaryFiles.flatMap(s => {
+      const exact = s.replace('-SUMMARY.md', '').replace('SUMMARY.md', '');
+      const canonical = extractCanonicalPlanId(s);
+      return canonical === exact ? [exact] : [exact, canonical];
+    })
+  );
+
+  // Build set of plan IDs whose summary reads as complete. A summary that is
+  // paused/partial/blocked (or unreadable) is excluded, so a plan paused at a
+  // checkpoint stays incomplete and is not skipped on resume.
+  const completeSummaryPlanIds = new Set(
+    summaryFiles.flatMap(s => {
+      if (!summaryFileIsComplete(resolveSummaryPath(phaseDir, s))) return [];
       const exact = s.replace('-SUMMARY.md', '').replace('SUMMARY.md', '');
       const canonical = extractCanonicalPlanId(s);
       return canonical === exact ? [exact] : [exact, canonical];
@@ -428,6 +441,7 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
     }
 
     const hasSummary = completedPlanIds.has(planId) || completedPlanIds.has(extractCanonicalPlanId(planFile));
+    const complete = completeSummaryPlanIds.has(planId) || completeSummaryPlanIds.has(extractCanonicalPlanId(planFile));
 
     rawPlans.push({
       id: planId,
@@ -438,6 +452,7 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
       filesModified,
       taskCount,
       hasSummary,
+      complete,
     });
   }
 
@@ -527,7 +542,7 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
     if (!raw.autonomous) {
       hasCheckpoints = true;
     }
-    if (!raw.hasSummary) {
+    if (!raw.complete) {
       incomplete.push(raw.id);
     }
 
@@ -552,6 +567,7 @@ function cmdPhasePlanIndex(cwd, phase, raw) {
       files_modified: raw.filesModified,
       task_count: raw.taskCount,
       has_summary: raw.hasSummary,
+      complete: raw.complete,
     };
 
     plans.push(plan);

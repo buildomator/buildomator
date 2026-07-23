@@ -270,6 +270,50 @@ describe('phasePlanIndex', () => {
     expect(incomplete).not.toContain('09-01');
   });
 
+  it('exposes status-aware per-plan complete (true for a status-less summary)', async () => {
+    const result = await phasePlanIndex(['9'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    const plans = data.plans as Array<Record<string, unknown>>;
+
+    const plan1 = plans.find(p => p.id === '09-01');
+    expect(plan1!.has_summary).toBe(true);
+    expect(plan1!.complete).toBe(true);
+
+    const plan3 = plans.find(p => p.id === '09-03');
+    expect(plan3!.has_summary).toBe(false);
+    expect(plan3!.complete).toBe(false);
+  });
+
+  it('treats a paused-summary plan as incomplete (has_summary true, complete false)', async () => {
+    const phasePaused = join(tmpDir, '.planning', 'phases', '40-paused');
+    await mkdir(phasePaused, { recursive: true });
+    await writeFile(join(phasePaused, '40-01-PLAN.md'), '---\nphase: 40\nplan: 01\n---\n<objective>\nA\n</objective>\n<tasks>\n<task type="auto"><name>T</name></task>\n</tasks>');
+    await writeFile(join(phasePaused, '40-02-PLAN.md'), '---\nphase: 40\nplan: 02\n---\n<objective>\nB\n</objective>\n<tasks>\n<task type="auto"><name>T</name></task>\n</tasks>');
+    // Plan A paused at a checkpoint; plan B not started.
+    await writeFile(join(phasePaused, '40-01-SUMMARY.md'), '---\nphase: 40\nplan: 01\nstatus: paused\n---\n# Summary\n');
+
+    let result = await phasePlanIndex(['40'], tmpDir);
+    let data = result.data as Record<string, unknown>;
+    let plans = data.plans as Array<Record<string, unknown>>;
+    let incomplete = data.incomplete as string[];
+
+    const a = plans.find(p => p.id === '40-01');
+    expect(a!.has_summary).toBe(true);
+    expect(a!.complete).toBe(false);
+    expect(incomplete).toContain('40-01');
+    expect(incomplete).toContain('40-02');
+
+    // Completing A (status-less summary) flips it complete and drops it from incomplete.
+    await writeFile(join(phasePaused, '40-01-SUMMARY.md'), '---\nphase: 40\nplan: 01\n---\n# Summary\n');
+    result = await phasePlanIndex(['40'], tmpDir);
+    data = result.data as Record<string, unknown>;
+    plans = data.plans as Array<Record<string, unknown>>;
+    incomplete = data.incomplete as string[];
+    expect(plans.find(p => p.id === '40-01')!.complete).toBe(true);
+    expect(incomplete).not.toContain('40-01');
+    expect(incomplete).toContain('40-02');
+  });
+
   it('detects has_checkpoints from non-autonomous plans', async () => {
     const result = await phasePlanIndex(['9'], tmpDir);
     const data = result.data as Record<string, unknown>;

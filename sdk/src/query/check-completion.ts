@@ -13,6 +13,7 @@ import { GSDError, ErrorClassification } from '../errors.js';
 import { normalizePhaseName, planningPaths } from './helpers.js';
 import { findPhase } from './phase.js';
 import { roadmapAnalyze } from './roadmap.js';
+import { summaryFileIsComplete, resolveSummaryPath } from './plan-scan.js';
 import type { QueryHandler } from './utils.js';
 
 const VALID_SCOPES = new Set(['phase', 'milestone']);
@@ -61,9 +62,18 @@ async function checkPhaseCompletion(phaseArg: string, projectDir: string): Promi
   const summaries = (pdata.summaries as string[] | undefined) ?? [];
   const plans_total = plans.length;
 
-  // Derive which plans are missing a summary
+  // Derive which plans are missing a summary. A summary credits its plan only
+  // when it reads as complete: a plan paused at a checkpoint (paused/partial
+  // summary) or an unreadable summary lands in missing_summaries and keeps the
+  // phase incomplete.
+  const phaseDirForStatus = pdata.directory
+    ? join(projectDir, pdata.directory as string)
+    : null;
   const summaryIds = new Set(
     summaries
+      .filter(s => phaseDirForStatus
+        ? summaryFileIsComplete(resolveSummaryPath(phaseDirForStatus, s))
+        : false)
       .map(s => s.replace('-SUMMARY.md', '').replace('SUMMARY.md', ''))
       .filter(Boolean),
   );

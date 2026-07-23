@@ -502,6 +502,12 @@ export interface PlanInfo {
   files_modified: string[];
   task_count: number;
   has_summary: boolean;
+  /**
+   * Status-aware completion: true only when a paired summary exists AND does
+   * not self-declare a paused/partial/blocked status. A plan paused at a
+   * checkpoint has has_summary: true but complete: false, so it is not skipped.
+   */
+  complete: boolean;
 }
 
 /**

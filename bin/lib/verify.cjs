@@ -10,6 +10,7 @@ const { execGit, platformReadSync: safeReadFile, platformWriteSync } = require('
 const { planningDir } = require('./planning-workspace.cjs');
 const { extractFrontmatter, parseMustHavesBlock } = require('./frontmatter.cjs');
 const { writeStateMd } = require('./state.cjs');
+const { summaryFileIsComplete, resolveSummaryPath } = require('./plan-scan.cjs');
 
 function cmdVerifySummary(cwd, summaryPath, checkFileCount, raw) {
   if (!summaryPath) {
@@ -187,9 +188,15 @@ function cmdVerifyPhaseCompleteness(cwd, phase, raw) {
   const plans = files.filter(f => f.match(/-PLAN\.md$/i));
   const summaries = files.filter(f => f.match(/-SUMMARY\.md$/i));
 
-  // Extract plan IDs (everything before -PLAN.md)
+  // Extract plan IDs (everything before -PLAN.md). A summary credits its plan
+  // only when it reads as complete: a paused/partial (or unreadable) summary is
+  // excluded, so its plan surfaces as incomplete rather than silently complete.
   const planIds = new Set(plans.map(p => p.replace(/-PLAN\.md$/i, '')));
-  const summaryIds = new Set(summaries.map(s => s.replace(/-SUMMARY\.md$/i, '')));
+  const summaryIds = new Set(
+    summaries
+      .filter(s => summaryFileIsComplete(resolveSummaryPath(phaseDir, s)))
+      .map(s => s.replace(/-SUMMARY\.md$/i, ''))
+  );
 
   // Plans without summaries
   const incompletePlans = [...planIds].filter(id => !summaryIds.has(id));

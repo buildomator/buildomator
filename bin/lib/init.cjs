@@ -1170,9 +1170,12 @@ function cmdInitManager(cwd, raw) {
       }
     } catch { /* intentionally empty */ }
 
-    // Check ROADMAP checkbox status (pre-extracted above the loop)
+    // Check ROADMAP checkbox status (pre-extracted above the loop). Trust the
+    // checkbox over disk ONLY for legacy phases with no plans on disk; when
+    // plans exist, keep the stricter status-aware disk_status so a wrongly-
+    // ticked checkbox cannot re-promote a phase whose only summary is paused.
     const roadmapComplete = _checkboxStates.get(phaseNum) || false;
-    if (roadmapComplete && diskStatus !== 'complete') {
+    if (roadmapComplete && diskStatus !== 'complete' && planCount === 0) {
       diskStatus = 'complete';
     }
 

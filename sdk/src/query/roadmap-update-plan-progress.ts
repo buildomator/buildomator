@@ -8,9 +8,10 @@
  */
 
 import { findPhase } from './phase.js';
-import { countMatchedSummaries } from './plan-scan.js';
+import { countMatchedCompleteSummaries, summaryFileIsComplete, resolveSummaryPath } from './plan-scan.js';
 import { readModifyWriteRoadmapMd, replaceInCurrentMilestone } from './phase-roadmap-mutation.js';
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { escapeRegex, planningPaths } from './helpers.js';
 import { GSDError, ErrorClassification } from '../errors.js';
 import type { QueryHandler } from './utils.js';
@@ -51,6 +52,7 @@ export const roadmapUpdatePlanProgress: QueryHandler = async (args, projectDir, 
   const phaseResult = await findPhase([phaseNum], projectDir, workstream);
   const info = phaseResult.data as {
     found: boolean;
+    directory: string;
     plans: string[];
     summaries: string[];
   };
@@ -60,9 +62,11 @@ export const roadmapUpdatePlanProgress: QueryHandler = async (args, projectDir, 
   }
 
   const planCount = info.plans.length;
-  // Only summaries that pair with a real plan count toward completion, so a
-  // stray remediation summary can never tick the phase checkbox.
-  const summaryCount = countMatchedSummaries(info.plans, info.summaries);
+  const phaseAbsDir = join(projectDir, info.directory);
+  // Only summaries that pair with a real plan AND read as complete count toward
+  // completion, so neither a stray remediation summary nor a plan paused at a
+  // checkpoint can tick the phase checkbox.
+  const summaryCount = countMatchedCompleteSummaries(info.plans, info.summaries, phaseAbsDir);
 
   if (planCount === 0) {
     return {
@@ -136,6 +140,8 @@ export const roadmapUpdatePlanProgress: QueryHandler = async (args, projectDir, 
 
     const summaries = info.summaries;
     for (const summaryFile of summaries) {
+      // A paused/partial summary must not tick its plan's checkbox.
+      if (!summaryFileIsComplete(resolveSummaryPath(phaseAbsDir, summaryFile))) continue;
       const planId = summaryFile.replace('-SUMMARY.md', '').replace('SUMMARY.md', '');
       if (!planId) continue;
       const planEscaped = escapeRegex(planId);

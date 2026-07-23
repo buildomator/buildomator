@@ -93,7 +93,7 @@ function makePlanResult(overrides: Partial<PlanResult> = {}): PlanResult {
 }
 
 function makePlanInfo(overrides: Partial<PlanInfo> = {}): PlanInfo {
-  return {
+  const base = {
     id: 'plan-1',
     wave: 1,
     autonomous: true,
@@ -102,7 +102,10 @@ function makePlanInfo(overrides: Partial<PlanInfo> = {}): PlanInfo {
     task_count: 1,
     has_summary: false,
     ...overrides,
-  };
+  } as PlanInfo;
+  // Default status-aware `complete` to mirror has_summary unless a test sets it
+  // explicitly (a paused plan has has_summary: true but complete: false).
+  return { complete: base.has_summary, ...base };
 }
 
 function makeParsedPlan(filesModified: string[] = []) {
@@ -2037,6 +2040,36 @@ Use TypeScript.`, 'utf-8');
       );
       expect(execCalls).toHaveLength(1);
       expect((execCalls[0][5] as any)?.planName).toBe('p2');
+    });
+
+    it('keeps a paused plan (has_summary true, complete false) in the run set', async () => {
+      const planIndex = makePlanIndex(0, {
+        plans: [
+          // p1 paused at a checkpoint: summary exists but it is not complete.
+          makePlanInfo({ id: 'p1', wave: 1, has_summary: true, complete: false }),
+          makePlanInfo({ id: 'p2', wave: 2, has_summary: true, complete: true }),
+        ],
+        waves: { '1': ['p1'], '2': ['p2'] },
+        incomplete: ['p1'],
+      });
+
+      const phaseOp = makePhaseOp({ has_context: true, has_plans: true, plan_count: 2 });
+      const config = makeConfig({ workflow: { research: false, verifier: false, skip_discuss: true, plan_check: false } as any });
+      const deps = makeDeps({ config });
+      (deps.tools.initPhaseOp as ReturnType<typeof vi.fn>).mockResolvedValue(phaseOp);
+      (deps.tools.phasePlanIndex as ReturnType<typeof vi.fn>).mockResolvedValue(planIndex);
+
+      const runner = new PhaseRunner(deps);
+      const result = await runner.run('1');
+
+      const executeStep = result.steps.find(s => s.step === PhaseStepType.Execute);
+      // Only the paused p1 should be dispatched; the complete p2 is filtered out.
+      expect(executeStep!.planResults).toHaveLength(1);
+      const execCalls = mockRunPhaseStepSession.mock.calls.filter(
+        call => call[1] === PhaseStepType.Execute,
+      );
+      expect(execCalls).toHaveLength(1);
+      expect((execCalls[0][5] as any)?.planName).toBe('p1');
     });
 
     it('returns success with empty planResults when all plans have summaries', async () => {
