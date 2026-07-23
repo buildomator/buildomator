@@ -26,12 +26,16 @@ portability AST, SLURM, Gemini sunset) = out of scope for a Claude-only fork.
 - #1561 assumption-delta advisory checkpoint — STRICTLY advisory / auto-continue, no
   blocking pause, no new HANDOFF path. M/low-med.
 
-**DEFERRED — design decision:**
-- #2022 gate update-plan-progress checkbox on verification passed. Upstream premise doesn't
-  hold: our `cmdPhaseComplete` also warns-not-blocks and we have no `readVerificationStatus`.
-  Action when revived: decide (a) adopt verification-first completion in BOTH
-  `roadmap.update-plan-progress` AND `phase.complete`, or (b) skip until we move off "warn,
-  don't block." Companion #2030/#2025/#1921.
+**DECLINED (decided 2026-07-23, keep Option B):**
+- #2022 gate update-plan-progress checkbox on verification passed. NOT adopting. The fork
+  keeps its deliberate "warn, don't block" completion model: a phase can be marked complete
+  with a verification warning, the maintainer stays in control. The genuinely-broken case
+  this touched (a PAUSED plan wrongly ticking a phase complete) was already fixed by the #25
+  status-aware-completion work (v4.2.2), so what remained in #2022 was a stricter policy, not
+  a correctness gap. Do NOT re-raise unless the fork deliberately moves to verification-first
+  completion as a milestone theme (which would require adding `readVerificationStatus` in both
+  resolvers and gating BOTH `roadmap.update-plan-progress` AND `phase.complete`). Companion
+  #2030/#2025/#1921 also decline with it.
 
 **DEFERRED — do opportunistically:**
 - #1729 phase-header pre-colon parenthetical. Distributed across ~4 CJS + 10+ SDK regexes;
