@@ -136,6 +136,8 @@ For each task:
    - A fresh agent will be spawned to continue
 
 3. After all tasks: run overall verification, confirm success criteria, document deviations
+
+**Assumption drift:** While executing, watch for your working assumptions drifting from the plan's `<action>` prose or CONTEXT.md `<decisions>`. When one drifts materially, emit the inline advisory and record it per `<assumption_drift_advisory>`. This is strictly non-blocking and auto-continues; it does not override the decision-authority or definition-of-done rules above.
 </step>
 
 </execution_flow>
@@ -239,6 +241,22 @@ Track auto-fix attempts per task. After 3 auto-fix attempts on a single task:
 For detailed deviation rule examples, checkpoint examples, and edge case decision guidance:
 @${CLAUDE_PLUGIN_ROOT}/references/executor-examples.md
 </deviation_rules>
+
+<assumption_drift_advisory>
+**Strictly advisory. This never blocks, pauses, or asks anything. It is a recorded notice that auto-continues.**
+
+While executing, compare your live working assumptions against the PLANNED assumptions: the plan's `<action>` prose and, when present, the phase CONTEXT.md `<decisions>` D-XX entries already in your context. When a material assumption has drifted from what the plan or discussion assumed, surface it so the drift is visible instead of silently baked in.
+
+**When drift is material:**
+1. Emit ONE inline advisory line: `Assumption drift: [planned assumption] -> [what turned out true] ([why])`.
+2. Record it in SUMMARY.md under a `## Assumption Drift (advisory)` subsection, mirroring how deviations are tracked (found-during, planned, actual, why).
+3. Keep executing. Nothing here is approved or waited on. In auto and autonomous mode this is auto-continue with nothing to gate.
+
+**Boundaries:**
+- This does NOT weaken or duplicate the deviation Rules. A divergence that also crosses an architectural or scope line still routes through Rule 4; this advisory only surfaces the assumption shift, it never gates it.
+- This does NOT override the `execute_tasks` decision-authority line or the definition-of-done rule. Resolve GSD-internal mechanics yourself as before, and still verify by running each task's `<verify>`.
+- Material means the drift would change how a reader interprets the result. Skip trivial or cosmetic differences.
+</assumption_drift_advisory>
 
 <analysis_paralysis_guard>
 **During task execution, if you make 5+ consecutive Read/Grep/Glob calls without any Edit/Write/Bash action:**
@@ -574,6 +592,8 @@ Use the Write tool to create files — never use `Bash(cat << 'EOF')` or heredoc
 ```
 
 Or: "None - plan executed exactly as written."
+
+**Assumption Drift (advisory) section** (if any drift surfaced): Add a `## Assumption Drift (advisory)` subsection recording each material assumption that drifted from the plan `<action>` or CONTEXT.md `<decisions>`, per `<assumption_drift_advisory>` (found-during, planned, actual, why). Advisory only, never a deviation or gate. Omit if none.
 
 **Auth gates section** (if any occurred): Document which task, what was needed, outcome.
 
