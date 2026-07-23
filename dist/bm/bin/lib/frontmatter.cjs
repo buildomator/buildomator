@@ -41,6 +41,56 @@ function splitInlineArray(body) {
   return items;
 }
 
+// ─── Scalar quoting / unquoting (round-trip safety) ────────────────────────────
+
+// Leading characters that YAML treats as structural indicators. A bare scalar
+// beginning with any of these can be misparsed (or is outright invalid), so it
+// must be double-quoted.
+const YAML_LEADING_INDICATORS = '-?:@`!&*%|>[{,';
+
+// Decide whether a scalar must be double-quoted to serialize as valid YAML.
+// Numeric-looking strings ("10", "1.5") and reserved words ("yes", "true", "~")
+// round-trip fine bare because the parser never type-coerces, so they stay bare.
+function needsQuoting(s) {
+  if (s === '') return true;
+  if (s.includes(':') || s.includes('#')) return true;
+  if (/^\s/.test(s) || /\s$/.test(s)) return true;
+  if (YAML_LEADING_INDICATORS.includes(s[0])) return true;
+  return false;
+}
+
+// Double-quote a scalar, escaping backslashes first, then quotes.
+function quoteScalar(s) {
+  return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+// Reverse of quoteScalar's escaping for a double-quoted body (outer quotes
+// already stripped). Single left-to-right pass so \\ and \" never collide.
+function unescapeDoubleQuoted(s) {
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '\\' && i + 1 < s.length && (s[i + 1] === '\\' || s[i + 1] === '"')) {
+      out += s[i + 1];
+      i++;
+    } else {
+      out += s[i];
+    }
+  }
+  return out;
+}
+
+// Strip surrounding quotes and, for double-quoted values, unescape the body.
+// Falls back to legacy stray-quote stripping for unbalanced input.
+function unquoteScalar(v) {
+  if (v.length >= 2 && v[0] === '"' && v[v.length - 1] === '"') {
+    return unescapeDoubleQuoted(v.slice(1, -1));
+  }
+  if (v.length >= 2 && v[0] === "'" && v[v.length - 1] === "'") {
+    return v.slice(1, -1);
+  }
+  return v.replace(/^["']|["']$/g, '');
+}
+
 function extractFrontmatter(content) {
   const frontmatter = {};
   // Match frontmatter only at byte 0 — a `---` block later in the document
@@ -89,12 +139,12 @@ function extractFrontmatter(content) {
         current.key = null;
       } else {
         // Simple key: value
-        current.obj[key] = value.replace(/^["']|["']$/g, '');
+        current.obj[key] = unquoteScalar(value);
         current.key = null;
       }
     } else if (line.trim().startsWith('- ')) {
       // Array item
-      const itemValue = line.trim().slice(2).replace(/^["']|["']$/g, '');
+      const itemValue = unquoteScalar(line.trim().slice(2));
 
       // If current context is an empty object, convert to array
       if (typeof current.obj === 'object' && !Array.isArray(current.obj) && Object.keys(current.obj).length === 0) {
@@ -130,7 +180,8 @@ function reconstructFrontmatter(obj) {
       } else {
         lines.push(`${key}:`);
         for (const item of value) {
-          lines.push(`  - ${typeof item === 'string' && (item.includes(':') || item.includes('#')) ? `"${item}"` : item}`);
+          const s = String(item);
+          lines.push(`  - ${typeof item === 'string' && needsQuoting(s) ? quoteScalar(s) : s}`);
         }
       }
     } else if (typeof value === 'object') {
@@ -145,7 +196,8 @@ function reconstructFrontmatter(obj) {
           } else {
             lines.push(`  ${subkey}:`);
             for (const item of subval) {
-              lines.push(`    - ${typeof item === 'string' && (item.includes(':') || item.includes('#')) ? `"${item}"` : item}`);
+              const s = String(item);
+              lines.push(`    - ${typeof item === 'string' && needsQuoting(s) ? quoteScalar(s) : s}`);
             }
           }
         } else if (typeof subval === 'object') {
@@ -167,16 +219,12 @@ function reconstructFrontmatter(obj) {
           }
         } else {
           const sv = String(subval);
-          lines.push(`  ${subkey}: ${sv.includes(':') || sv.includes('#') ? `"${sv}"` : sv}`);
+          lines.push(`  ${subkey}: ${needsQuoting(sv) ? quoteScalar(sv) : sv}`);
         }
       }
     } else {
       const sv = String(value);
-      if (sv.includes(':') || sv.includes('#') || sv.startsWith('[') || sv.startsWith('{')) {
-        lines.push(`${key}: "${sv}"`);
-      } else {
-        lines.push(`${key}: ${sv}`);
-      }
+      lines.push(`${key}: ${needsQuoting(sv) ? quoteScalar(sv) : sv}`);
     }
   }
   return lines.join('\n');

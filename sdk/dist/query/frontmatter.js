@@ -59,6 +59,37 @@ export function splitInlineArray(body) {
         items.push(trimmed);
     return items;
 }
+// ─── Scalar unquoting (round-trip safety) ─────────────────────────────────────
+/**
+ * Reverse of the writer's escaping for a double-quoted body (outer quotes
+ * already stripped). Single left-to-right pass so `\\` and `\"` never collide.
+ */
+function unescapeDoubleQuoted(s) {
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+        if (s[i] === '\\' && i + 1 < s.length && (s[i + 1] === '\\' || s[i + 1] === '"')) {
+            out += s[i + 1];
+            i++;
+        }
+        else {
+            out += s[i];
+        }
+    }
+    return out;
+}
+/**
+ * Strip surrounding quotes and, for double-quoted values, unescape the body.
+ * Falls back to legacy stray-quote stripping for unbalanced input.
+ */
+function unquoteScalar(v) {
+    if (v.length >= 2 && v[0] === '"' && v[v.length - 1] === '"') {
+        return unescapeDoubleQuoted(v.slice(1, -1));
+    }
+    if (v.length >= 2 && v[0] === "'" && v[v.length - 1] === "'") {
+        return v.slice(1, -1);
+    }
+    return v.replace(/^["']|["']$/g, '');
+}
 // ─── parseFrontmatterYamlLines ───────────────────────────────────────────────
 /**
  * Parse YAML frontmatter body (between `---` fences) using the GSD stack parser.
@@ -101,15 +132,15 @@ function parseFrontmatterYamlLines(yaml) {
                 current.key = null;
             }
             else {
-                // Simple key: value -- strip surrounding quotes
-                current.obj[key] = value.replace(/^["']|["']$/g, '');
+                // Simple key: value -- strip surrounding quotes and unescape
+                current.obj[key] = unquoteScalar(value);
                 current.key = null;
             }
         }
         else if (line.trim().startsWith('- ')) {
             // Array item
             const afterDash = line.trim().slice(2).trim();
-            let itemValue = afterDash.replace(/^["']|["']$/g, '');
+            let itemValue = unquoteScalar(afterDash);
             let isObjItem = false;
             // Extract key: value within the array item if present
             const kvMatch = afterDash.match(/^([a-zA-Z0-9_-]+):\s*(.*)/);

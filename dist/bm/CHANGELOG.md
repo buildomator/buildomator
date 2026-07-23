@@ -8,6 +8,17 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.3.0] - 2026-07-23  (community-health advisory, assumption-drift advisory, valid-YAML frontmatter)
+
+Follows gsd-core 1.7.0 for the two ports. Three independent improvements built in parallel.
+
+### Added
+- **`/bm:health` now advises on missing community-health files for public GitHub repos.** When the project has a public GitHub remote and is missing a `LICENSE` and/or `SECURITY.md`, the health check proposes adding them (it proposes, it never auto-writes). The LICENSE advice reconciles declared-versus-file: if a license is already declared in a manifest but there is no `LICENSE` file, it proposes the matching file; if nothing is declared anywhere, it presents the copyleft (GPLv3) versus permissive (MIT/BSD) tradeoff and lets you choose, never picking for you. The `SECURITY.md` advice proposes a disclosure policy routed through GitHub private vulnerability reporting. Detection is fail-soft: no `gh`, a private repo, or a non-GitHub remote simply means the advisory does not fire. New `references/community-health-advisory.md`; wired into `workflows/health.md`.
+- **The executor surfaces assumption drift as a non-blocking advisory (gsd-core 1.7.0 #1561).** While executing, `gsd-executor` now watches for its working assumptions drifting from the plan's `<action>` prose or the phase `CONTEXT.md` decisions, and when one drifts materially it emits a one-line advisory and records it under an `## Assumption Drift (advisory)` SUMMARY subsection. It is strictly advisory: no stop, no checkpoint, no prompt, no new resume state; auto-mode continues. It does not weaken the existing deviation rules, the decision-authority rule, or the definition-of-done rule.
+
+### Fixed
+- **Frontmatter serialization now emits valid YAML for unsafe scalar values (gsd-core 1.7.0 #1779).** `reconstructFrontmatter` (both resolver twins) previously wrapped a value in quotes without escaping embedded quotes or backslashes (so a value like `a "b": c` produced invalid YAML), and emitted values with leading YAML indicators, leading/trailing whitespace, or an empty string bare (breaking the parse or silently losing data). It now escapes `\` and `"` inside quoted values and quotes any value with a leading indicator, edge whitespace, or an empty string, and the parser (`extractFrontmatter`, both twins) unescapes on read so the round-trip is exact. Deliberately scoped: numeric-looking strings (`phase: 10`) and reserved words (`yes`, `no`, `null`) are left bare, because the GSD parser does not type-coerce and they already round-trip as strings, so nothing in the planning tree churns. CJS and SDK twins stay byte-identical; new round-trip regression tests on both sides, plus guard assertions that keep the bare cases bare.
+
 ## [4.2.2] - 2026-07-23  (status-aware plan/phase completion: a paused plan is no longer skipped on resume)
 
 Safety-critical fix. Thanks to Amy Chapman for the forensics-grade report.

@@ -76,18 +76,13 @@ export function reconstructFrontmatter(obj) {
                 }
                 else {
                     const sv = String(subval);
-                    lines.push(`  ${subkey}: ${needsQuoting(sv) ? `"${sv}"` : sv}`);
+                    lines.push(`  ${subkey}: ${needsQuoting(sv) ? quoteScalar(sv) : sv}`);
                 }
             }
         }
         else {
             const sv = String(value);
-            if (sv.includes(':') || sv.includes('#') || sv.startsWith('[') || sv.startsWith('{')) {
-                lines.push(`${key}: "${sv}"`);
-            }
-            else {
-                lines.push(`${key}: ${sv}`);
-            }
+            lines.push(`${key}: ${needsQuoting(sv) ? quoteScalar(sv) : sv}`);
         }
     }
     return lines.join('\n');
@@ -106,13 +101,34 @@ function serializeArray(lines, key, arr, indent) {
         lines.push(`${indent}${key}:`);
         for (const item of arr) {
             const s = String(item);
-            lines.push(`${indent}  - ${typeof item === 'string' && needsQuoting(s) ? `"${s}"` : s}`);
+            lines.push(`${indent}  - ${typeof item === 'string' && needsQuoting(s) ? quoteScalar(s) : s}`);
         }
     }
 }
-/** Check if a string value needs quoting in YAML. */
+// Leading characters that YAML treats as structural indicators. A bare scalar
+// beginning with any of these can be misparsed (or is outright invalid), so it
+// must be double-quoted.
+const YAML_LEADING_INDICATORS = '-?:@`!&*%|>[{,';
+/**
+ * Check if a string value needs quoting to serialize as valid YAML.
+ *
+ * Numeric-looking strings ('10', '1.5') and reserved words ('yes', 'true', '~')
+ * round-trip fine bare because the parser never type-coerces, so they stay bare.
+ */
 function needsQuoting(s) {
-    return s.includes(':') || s.includes('#');
+    if (s === '')
+        return true;
+    if (s.includes(':') || s.includes('#'))
+        return true;
+    if (/^\s/.test(s) || /\s$/.test(s))
+        return true;
+    if (YAML_LEADING_INDICATORS.includes(s[0]))
+        return true;
+    return false;
+}
+/** Double-quote a scalar, escaping backslashes first, then quotes. */
+function quoteScalar(s) {
+    return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 // ─── spliceFrontmatter ─────────────────────────────────────────────────────
 /**

@@ -6031,6 +6031,27 @@ function splitInlineArray(body) {
     items.push(trimmed);
   return items;
 }
+function unescapeDoubleQuoted(s3) {
+  let out = "";
+  for (let i3 = 0; i3 < s3.length; i3++) {
+    if (s3[i3] === "\\" && i3 + 1 < s3.length && (s3[i3 + 1] === "\\" || s3[i3 + 1] === '"')) {
+      out += s3[i3 + 1];
+      i3++;
+    } else {
+      out += s3[i3];
+    }
+  }
+  return out;
+}
+function unquoteScalar(v3) {
+  if (v3.length >= 2 && v3[0] === '"' && v3[v3.length - 1] === '"') {
+    return unescapeDoubleQuoted(v3.slice(1, -1));
+  }
+  if (v3.length >= 2 && v3[0] === "'" && v3[v3.length - 1] === "'") {
+    return v3.slice(1, -1);
+  }
+  return v3.replace(/^["']|["']$/g, "");
+}
 function parseFrontmatterYamlLines(yaml) {
   const frontmatter = {};
   const lines = yaml.split(/\r?\n/);
@@ -6058,12 +6079,12 @@ function parseFrontmatterYamlLines(yaml) {
         current.obj[key] = splitInlineArray(value.slice(1, -1));
         current.key = null;
       } else {
-        current.obj[key] = value.replace(/^["']|["']$/g, "");
+        current.obj[key] = unquoteScalar(value);
         current.key = null;
       }
     } else if (line.trim().startsWith("- ")) {
       const afterDash = line.trim().slice(2).trim();
-      let itemValue = afterDash.replace(/^["']|["']$/g, "");
+      let itemValue = unquoteScalar(afterDash);
       let isObjItem = false;
       const kvMatch = afterDash.match(/^([a-zA-Z0-9_-]+):\s*(.*)/);
       if (kvMatch) {
@@ -8208,16 +8229,12 @@ function reconstructFrontmatter(obj) {
           }
         } else {
           const sv = String(subval);
-          lines.push(`  ${subkey}: ${needsQuoting(sv) ? `"${sv}"` : sv}`);
+          lines.push(`  ${subkey}: ${needsQuoting(sv) ? quoteScalar(sv) : sv}`);
         }
       }
     } else {
       const sv = String(value);
-      if (sv.includes(":") || sv.includes("#") || sv.startsWith("[") || sv.startsWith("{")) {
-        lines.push(`${key}: "${sv}"`);
-      } else {
-        lines.push(`${key}: ${sv}`);
-      }
+      lines.push(`${key}: ${needsQuoting(sv) ? quoteScalar(sv) : sv}`);
     }
   }
   return lines.join("\n");
@@ -8231,12 +8248,24 @@ function serializeArray(lines, key, arr, indent) {
     lines.push(`${indent}${key}:`);
     for (const item of arr) {
       const s3 = String(item);
-      lines.push(`${indent}  - ${typeof item === "string" && needsQuoting(s3) ? `"${s3}"` : s3}`);
+      lines.push(`${indent}  - ${typeof item === "string" && needsQuoting(s3) ? quoteScalar(s3) : s3}`);
     }
   }
 }
+var YAML_LEADING_INDICATORS = "-?:@`!&*%|>[{,";
 function needsQuoting(s3) {
-  return s3.includes(":") || s3.includes("#");
+  if (s3 === "")
+    return true;
+  if (s3.includes(":") || s3.includes("#"))
+    return true;
+  if (/^\s/.test(s3) || /\s$/.test(s3))
+    return true;
+  if (YAML_LEADING_INDICATORS.includes(s3[0]))
+    return true;
+  return false;
+}
+function quoteScalar(s3) {
+  return `"${s3.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 function spliceFrontmatter(content, newObj) {
   const yamlStr = reconstructFrontmatter(newObj);
