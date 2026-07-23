@@ -622,7 +622,8 @@ export class PhaseRunner {
    * Plans in the same wave run concurrently via Promise.allSettled().
    * Waves execute sequentially (wave 1 completes before wave 2 starts).
    * Respects config.parallelization: false to fall back to sequential execution.
-   * Filters out plans with has_summary: true (already completed).
+   * Filters out plans with complete: true (summary present AND not paused/partial),
+   * so a plan paused at a checkpoint stays in the run set.
    */
   private async runExecuteStep(
     phaseNumber: string,
@@ -663,8 +664,9 @@ export class PhaseRunner {
       };
     }
 
-    // Filter to incomplete plans only (has_summary === false)
-    const incompletePlans = planIndex.plans.filter(p => !p.has_summary);
+    // Filter to incomplete plans only (complete === false): a paused/partial
+    // plan has a summary but is not complete, so it stays in the run set.
+    const incompletePlans = planIndex.plans.filter(p => !p.complete);
 
     if (incompletePlans.length === 0) {
       const durationMs = Date.now() - stepStart;

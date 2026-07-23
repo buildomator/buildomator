@@ -43,19 +43,27 @@ cat .planning/PROJECT.md 2>/dev/null || true
 
 <step name="verify_completion">
 
-Check current phase has all plan summaries:
+Check current phase has all plan summaries. Decide completeness with the
+status-aware count, NOT a raw `ls`/count of PLAN vs SUMMARY files. A plan
+paused at a blocking checkpoint writes a partial SUMMARY, so the file counts
+would match while the plan is not actually complete:
 
 ```bash
-(ls .planning/phases/XX-current/*-PLAN.md 2>/dev/null || true) | sort
-(ls .planning/phases/XX-current/*-SUMMARY.md 2>/dev/null || true) | sort
+# gsd-sdk is OFF PATH in some sessions (node version switch); prefer the bundled tool.
+node bin/gsd-tools.cjs phase-plan-index XX-current
+# SDK equivalent: node sdk/dist/cli.js query phase-plan-index XX-current
+# Alternative: node bin/gsd-tools.cjs verify phase-completeness XX-current
 ```
 
 **Verification logic:**
 
-- Count PLAN files
-- Count SUMMARY files
-- If counts match: all plans complete
-- If counts don't match: incomplete
+- Read the status-aware result: `phase-plan-index` `incomplete[]` (or
+  `verify.phase-completeness` `complete` / `incomplete_plans[]`).
+- All plans complete ONLY when the result reports complete with an empty
+  `incomplete` set.
+- If any plan is paused/incomplete (present in `incomplete`), the phase is NOT
+  complete: follow the "plans incomplete" branch below (which prompts). A
+  paused plan's partial SUMMARY must not make the phase auto-advance.
 
 <config-check>
 

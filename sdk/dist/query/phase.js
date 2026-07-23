@@ -20,6 +20,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { GSDError, ErrorClassification } from '../errors.js';
 import { extractFrontmatter } from './frontmatter.js';
+import { summaryFileIsComplete, resolveSummaryPath } from './plan-scan.js';
 import { normalizePhaseName, comparePhaseNum, phaseTokenMatches, toPosixPath, planningPaths, } from './helpers.js';
 import { relPlanningPath } from '../workstream-utils.js';
 // ─── Internal helpers ──────────────────────────────────────────────────────
@@ -75,7 +76,12 @@ async function searchPhaseInDir(baseDir, relBase, normalized) {
         const { plans: unsortedPlans, summaries: unsortedSummaries, hasResearch, hasContext, hasVerification, hasReviews } = await getPhaseFileStats(phaseDir);
         const plans = unsortedPlans.sort();
         const summaries = unsortedSummaries.sort();
+        // A summary credits its plan only when it reads as complete. A paused/
+        // partial (or unreadable) summary is excluded, so incomplete_plans includes
+        // a plan that paused at a checkpoint rather than skipping past it.
         const completedPlanIds = new Set(summaries.flatMap((s) => {
+            if (!summaryFileIsComplete(resolveSummaryPath(phaseDir, s)))
+                return [];
             const exact = s.replace('-SUMMARY.md', '').replace('SUMMARY.md', '');
             const canonical = extractCanonicalPlanId(s);
             return canonical === exact ? [exact] : [exact, canonical];
@@ -236,8 +242,18 @@ export const phasePlanIndex = async (args, projectDir, workstream) => {
     const nonCanonicalPlanFiles = phaseFiles.filter((f) => (f.toLowerCase().endsWith('.md')
         && /(^|-)plan(-|\.)/i.test(f)
         && !(f.endsWith('-PLAN.md') || f === 'PLAN.md'))).sort();
-    // Build set of plan IDs with summaries — match the planId derivation logic
+    // Build set of plan IDs with summaries (existence-only, for has_summary).
     const completedPlanIds = new Set(summaryFiles.flatMap((s) => {
+        const exact = s === 'SUMMARY.md' ? 'PLAN' : s.replace('-SUMMARY.md', '');
+        const canonical = extractCanonicalPlanId(s);
+        return canonical === exact ? [exact] : [exact, canonical];
+    }));
+    // Build set of plan IDs whose summary reads as complete. A summary that is
+    // paused/partial/blocked (or unreadable) is excluded, so a plan paused at a
+    // checkpoint stays incomplete and is not skipped on resume.
+    const completeSummaryPlanIds = new Set(summaryFiles.flatMap((s) => {
+        if (!summaryFileIsComplete(resolveSummaryPath(phaseDir, s)))
+            return [];
         const exact = s === 'SUMMARY.md' ? 'PLAN' : s.replace('-SUMMARY.md', '');
         const canonical = extractCanonicalPlanId(s);
         return canonical === exact ? [exact] : [exact, canonical];
@@ -280,6 +296,7 @@ export const phasePlanIndex = async (args, projectDir, workstream) => {
             filesModified = Array.isArray(fmFiles) ? fmFiles : [fmFiles];
         }
         const hasSummary = completedPlanIds.has(planId) || completedPlanIds.has(extractCanonicalPlanId(planFile));
+        const complete = completeSummaryPlanIds.has(planId) || completeSummaryPlanIds.has(extractCanonicalPlanId(planFile));
         rawPlans.push({
             id: planId,
             declaredWave,
@@ -289,6 +306,7 @@ export const phasePlanIndex = async (args, projectDir, workstream) => {
             filesModified,
             taskCount,
             hasSummary,
+            complete,
         });
     }
     // ── Pass 2: topological level assignment via depends_on DAG ──────────────
@@ -417,7 +435,7 @@ export const phasePlanIndex = async (args, projectDir, workstream) => {
         if (!raw.autonomous) {
             hasCheckpoints = true;
         }
-        if (!raw.hasSummary) {
+        if (!raw.complete) {
             incomplete.push(raw.id);
         }
         // Computed wave = topological level + offset (so lowest level → 0 or 1).
@@ -437,6 +455,7 @@ export const phasePlanIndex = async (args, projectDir, workstream) => {
             files_modified: raw.filesModified,
             task_count: raw.taskCount,
             has_summary: raw.hasSummary,
+            complete: raw.complete,
         };
         plans.push(plan);
         const waveKey = String(effectiveWave);

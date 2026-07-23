@@ -8,7 +8,7 @@ const { escapeRegex, normalizePhaseName, phaseMarkdownRegexSource, phaseMarkdown
 const { platformWriteSync } = require('./shell-command-projection.cjs');
 const { planningPaths, withPlanningLock } = require('./planning-workspace.cjs');
 const scanPhasePlans = require('./plan-scan.cjs');
-const { countMatchedSummaries } = require('./plan-scan.cjs');
+const { countMatchedCompleteSummaries, summaryFileIsComplete, resolveSummaryPath } = require('./plan-scan.cjs');
 
 /**
  * Coerce an arbitrary YAML scalar/object into a string for cross-cutting
@@ -275,10 +275,13 @@ function cmdRoadmapAnalyze(cwd, raw) {
     const checkboxMatch = content.match(checkboxPattern);
     const roadmapComplete = checkboxMatch ? checkboxMatch[1] === 'x' : false;
 
-    // If roadmap marks phase complete, trust that over disk file structure.
-    // Phases completed before GSD tracking (or via external tools) may lack
-    // the standard PLAN/SUMMARY pairs but are still done.
-    if (roadmapComplete && diskStatus !== 'complete') {
+    // If roadmap marks phase complete, trust that over disk file structure ONLY
+    // for legacy phases with no PLAN/SUMMARY pairs on disk (completed before GSD
+    // tracking or via external tools). When plans exist on disk, keep the
+    // stricter status-aware disk_status: a single-plan phase whose only summary
+    // is paused scans as 'planned', and a wrongly-ticked checkbox must not
+    // re-promote it to complete.
+    if (roadmapComplete && diskStatus !== 'complete' && planCount === 0) {
       diskStatus = 'complete';
     }
 
@@ -360,9 +363,11 @@ function cmdRoadmapUpdatePlanProgress(cwd, phaseNum, raw) {
   }
 
   const planCount = phaseInfo.plans.length;
-  // Only summaries that pair with a real plan count toward completion, so a
-  // stray remediation summary can never tick the phase checkbox.
-  const summaryCount = countMatchedSummaries(phaseInfo.plans, phaseInfo.summaries);
+  const phaseAbsDir = path.resolve(cwd, phaseInfo.directory);
+  // Only summaries that pair with a real plan AND read as complete count toward
+  // completion, so neither a stray remediation summary nor a plan paused at a
+  // checkpoint can tick the phase checkbox.
+  const summaryCount = countMatchedCompleteSummaries(phaseInfo.plans, phaseInfo.summaries, phaseAbsDir);
 
   if (planCount === 0) {
     output({ updated: false, reason: 'No plans found', plan_count: 0, summary_count: 0 }, raw, 'no plans');
@@ -424,8 +429,10 @@ function cmdRoadmapUpdatePlanProgress(cwd, phaseNum, raw) {
       roadmapContent = replaceInCurrentMilestone(roadmapContent, checkboxPattern, `$1x$2 (completed ${today})`);
     }
 
-    // Mark completed plan checkboxes (e.g. "- [ ] 50-01-PLAN.md", "- [ ] 50-01:", or "- [ ] **50-01**")
+    // Mark completed plan checkboxes (e.g. "- [ ] 50-01-PLAN.md", "- [ ] 50-01:", or "- [ ] **50-01**").
+    // A paused/partial summary must not tick its plan's checkbox.
     for (const summaryFile of phaseInfo.summaries) {
+      if (!summaryFileIsComplete(resolveSummaryPath(phaseAbsDir, summaryFile))) continue;
       const planId = summaryFile.replace('-SUMMARY.md', '').replace('SUMMARY.md', '');
       if (!planId) continue;
       const planEscaped = escapeRegex(planId);

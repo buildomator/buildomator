@@ -142,12 +142,34 @@ CURRENT_PLAN_ID="{phase_number}-{plan_padded}"
 SUMMARY_PATH="{phase_dir}/{plan_padded}-SUMMARY.md"
 PLAN_COMMITS=$(git log --oneline --grep="${CURRENT_PLAN_ID}" -30)
 ```
-If production commits exist and `SUMMARY.md is missing`, stop before spawning a
-new executor; continuing risks duplicate work and stale `STATE.md`/ROADMAP progress.
-Offer these recovery options:
-- `close out manually` — inspect commits, write SUMMARY.md, then update STATE/ROADMAP.
-- `re-execute from scratch` — revert or supersede partial commits before dispatch.
-- `mark-and-skip` — record the anomaly and move on only with explicit confirmation.
+
+**Case A (production commits exist and `SUMMARY.md is missing`):** stop before
+spawning a new executor; continuing risks duplicate work and stale
+`STATE.md`/ROADMAP progress. Offer these recovery options:
+- `close out manually`: inspect commits, write SUMMARY.md, then update STATE/ROADMAP.
+- `re-execute from scratch`: revert or supersede partial commits before dispatch.
+- `mark-and-skip`: record the anomaly and move on only with explicit confirmation.
+
+**Case B (inverse), `SUMMARY.md` exists but self-declares partial/paused:** a
+plan can pause at a blocking checkpoint and write a partial SUMMARY. Read its
+`status:` front-matter and treat it as incomplete when the status is in the
+incomplete set (`paused`, `partial`, `incomplete`, `blocked`, `gaps`,
+`gaps_found`, `not-complete`, `not_complete`):
+```bash
+# gsd-sdk is OFF PATH in some sessions (node version switch); prefer the bundled tool.
+SUMMARY_STATUS=$(node bin/gsd-tools.cjs frontmatter get "$SUMMARY_PATH" status 2>/dev/null | tr -d '"' | tr '[:upper:]' '[:lower:]')
+# SDK equivalent: node sdk/dist/cli.js query frontmatter.get "$SUMMARY_PATH" status
+```
+When `SUMMARY_STATUS` is in that set, STOP before dispatching the successor and
+route resume to THIS plan (its checkpoint); do NOT present the missing-summary
+options above. Present it as a resume-this-plan recovery path: re-run the paused
+plan so its checkpoint is reached again, then continue.
+
+**STATE.md stopped_at veto (defense in depth):** when `STATE.md` `stopped_at`
+names a plan that the file-count marks complete but whose SUMMARY self-declares
+paused at a checkpoint, do NOT silently trust the file count. Surface the
+disagreement to the user (file-count says complete, `stopped_at` says paused)
+and route to resume-that-plan.
 </step>
 
 **MVP+TDD gate.** Task-scoped enforcement runs inside plan execution (immediately before each implementation step), where `TASK_FILE`, `PLAN_ID`, and `TASK_ID` are defined. Keep the same predicate and RED-commit contract:
@@ -288,9 +310,9 @@ Load plan inventory with wave grouping in one call:
 PLAN_INDEX=$(gsd-sdk query phase-plan-index "${PHASE_NUMBER}")
 ```
 
-Parse JSON for: `phase`, `plans[]` (each with `id`, `wave`, `autonomous`, `objective`, `files_modified`, `task_count`, `has_summary`), `waves` (map of wave number → plan IDs), `incomplete`, `has_checkpoints`.
+Parse JSON for: `phase`, `plans[]` (each with `id`, `wave`, `autonomous`, `objective`, `files_modified`, `task_count`, `has_summary`, `complete`), `waves` (map of wave number → plan IDs), `incomplete`, `has_checkpoints`.
 
-**Filtering:** Skip plans where `has_summary: true`. If `--gaps-only`: also skip non-gap_closure plans. If `WAVE_FILTER` is set: also skip plans whose `wave` does not equal `WAVE_FILTER`.
+**Filtering:** Skip plans where `complete: true` (status-aware: a plan paused at a checkpoint has `has_summary: true` but `complete: false`, so it stays in the run set). If `--gaps-only`: also skip non-gap_closure plans. If `WAVE_FILTER` is set: also skip plans whose `wave` does not equal `WAVE_FILTER`.
 
 **Wave safety check:** If `WAVE_FILTER` is set and there are still incomplete plans in any lower wave that match the current execution mode, STOP and tell the user to finish earlier waves first. Do not let Wave 2+ execute while prerequisite earlier-wave plans remain incomplete.
 
@@ -1141,7 +1163,7 @@ POST_PLAN_INDEX=$(gsd-sdk query phase-plan-index "${PHASE_NUMBER}")
 ```
 
 Apply the same "incomplete" filtering rules as earlier:
-- ignore plans with `has_summary: true`
+- ignore plans with `complete: true` (a paused plan has `has_summary: true` but `complete: false`, so it is NOT ignored)
 - if `--gaps-only`, only consider `gap_closure: true` plans
 
 **If incomplete plans still remain anywhere in the phase:**

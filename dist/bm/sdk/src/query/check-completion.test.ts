@@ -49,6 +49,31 @@ describe('checkCompletion', () => {
       expect((d.missing_summaries as string[]).length).toBe(0);
     });
 
+    it('treats a paused matched summary as missing (complete false), then complete once resolved', async () => {
+      const phaseDir = join(projectDir, '.planning', 'phases', '40-paused');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(phaseDir, '40-01-PLAN.md'), '---\nphase: 40\n---\n', 'utf-8');
+      await writeFile(join(phaseDir, '40-02-PLAN.md'), '---\nphase: 40\n---\n', 'utf-8');
+      // Plan 01 paused at a checkpoint; plan 02 complete.
+      await writeFile(join(phaseDir, '40-01-SUMMARY.md'), '---\nphase: 40\nplan: 01\nstatus: paused\n---\n# Summary\n', 'utf-8');
+      await writeFile(join(phaseDir, '40-02-SUMMARY.md'), '# Summary', 'utf-8');
+
+      let { data } = await checkCompletion(['phase', '40'], projectDir);
+      let d = data as Record<string, unknown>;
+      expect(d.complete).toBe(false);
+      expect(d.plans_with_summaries).toBe(1);
+      const missing = d.missing_summaries as string[];
+      expect(missing.some(m => m.includes('40-01'))).toBe(true);
+
+      // Resolving the paused summary flips the phase complete.
+      await writeFile(join(phaseDir, '40-01-SUMMARY.md'), '---\nphase: 40\nplan: 01\n---\n# Summary\n', 'utf-8');
+      ({ data } = await checkCompletion(['phase', '40'], projectDir));
+      d = data as Record<string, unknown>;
+      expect(d.complete).toBe(true);
+      expect(d.plans_with_summaries).toBe(2);
+      expect((d.missing_summaries as string[]).length).toBe(0);
+    });
+
     it('returns complete false when not all plans have summaries', async () => {
       const phaseDir = join(projectDir, '.planning', 'phases', '02-core');
       await mkdir(phaseDir, { recursive: true });

@@ -899,8 +899,13 @@ function searchPhaseInDir(baseDir, relBase, normalized) {
     const plans = unsortedPlans.sort();
     const summaries = unsortedSummaries.sort();
 
+    // A summary credits its plan only when it reads as complete. A paused/
+    // partial (or unreadable) summary is excluded, so incomplete_plans includes
+    // a plan that paused at a checkpoint rather than skipping past it.
+    const { summaryFileIsComplete, resolveSummaryPath } = require('./plan-scan.cjs');
     const completedPlanIds = new Set(
       summaries.flatMap(s => {
+        if (!summaryFileIsComplete(resolveSummaryPath(phaseDir, s))) return [];
         const exact = s.replace('-SUMMARY.md', '').replace('SUMMARY.md', '');
         const canonical = extractCanonicalPlanId(s);
         return canonical === exact ? [exact] : [exact, canonical];

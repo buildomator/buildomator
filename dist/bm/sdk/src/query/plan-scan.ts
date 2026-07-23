@@ -1,8 +1,43 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { extractFrontmatter } from './frontmatter.js';
 
 const PLAN_OUTLINE_RE = /-OUTLINE\.md$/i;
 const PLAN_PRE_BOUNCE_RE = /\.pre-bounce\.md$/i;
+
+// Summary statuses that mean a plan stopped short of completion (paused at a
+// blocking checkpoint, left partial, blocked, or gaps-flagged). A summary
+// carrying one of these does NOT credit its plan toward completion. Matched
+// case-insensitively against the summary's frontmatter `status`.
+export const INCOMPLETE_SUMMARY_STATUSES = new Set<string>([
+  'paused', 'partial', 'incomplete', 'blocked',
+  'gaps', 'gaps_found', 'not-complete', 'not_complete',
+]);
+
+// Whether a summary file at an absolute path counts its plan as complete. An
+// unreadable/corrupt summary is treated as NOT complete (safety bias: never
+// skip unbuilt work). A readable summary with no status field, status
+// `complete`, or any other value counts as complete.
+export function summaryFileIsComplete(summaryPath: string): boolean {
+  let content: string;
+  try {
+    content = readFileSync(summaryPath, 'utf-8');
+  } catch {
+    return false;
+  }
+  const fm = extractFrontmatter(content);
+  const status = String(fm.status ?? '').toLowerCase();
+  return !INCOMPLETE_SUMMARY_STATUSES.has(status);
+}
+
+// Resolve a summary filename to its absolute path within a phase directory.
+// Root-layout summaries live directly in the phase dir; nested-layout summaries
+// live in the plans/ subdir.
+export function resolveSummaryPath(phaseDir: string, summaryFile: string): string {
+  const rootPath = join(phaseDir, summaryFile);
+  if (existsSync(rootPath)) return rootPath;
+  return join(phaseDir, 'plans', summaryFile);
+}
 
 export interface PhasePlanScan {
   planCount: number;
@@ -70,6 +105,27 @@ export function countMatchedSummaries(planFiles: string[], summaryFiles: string[
   return matched;
 }
 
+/**
+ * Count summaries that pair with a real plan AND count as complete.
+ *
+ * Extends countMatchedSummaries with a status read: a matched summary whose
+ * frontmatter status is in INCOMPLETE_SUMMARY_STATUSES (or that is unreadable)
+ * is excluded, so a plan paused at a checkpoint is never counted done.
+ */
+export function countMatchedCompleteSummaries(
+  planFiles: string[],
+  summaryFiles: string[],
+  phaseDir: string,
+): number {
+  const planIds = new Set(planFiles.map(planSummaryBaseId));
+  let matched = 0;
+  for (const summary of summaryFiles) {
+    if (!planIds.has(planSummaryBaseId(summary))) continue;
+    if (summaryFileIsComplete(resolveSummaryPath(phaseDir, summary))) matched++;
+  }
+  return matched;
+}
+
 export function scanPhasePlans(phaseDir: string): PhasePlanScan {
   let rootFiles: string[];
   try {
@@ -105,7 +161,7 @@ export function scanPhasePlans(phaseDir: string): PhasePlanScan {
   const planFiles = rootPlanFiles.concat(nestedPlanFiles);
   const summaryFiles = rootSummaryFiles.concat(nestedSummaryFiles);
   const planCount = planFiles.length;
-  const summaryCount = countMatchedSummaries(planFiles, summaryFiles);
+  const summaryCount = countMatchedCompleteSummaries(planFiles, summaryFiles, phaseDir);
 
   return {
     planCount,

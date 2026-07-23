@@ -25,6 +25,7 @@ const {
   output,
 } = require('./core.cjs');
 const { extractFrontmatter } = require('./frontmatter.cjs');
+const { summaryFileIsComplete, resolveSummaryPath } = require('./plan-scan.cjs');
 const { acquireStateLock, releaseStateLock } = require('./state.cjs');
 const { platformReadSync: safeReadFile, platformWriteSync } = require('./shell-command-projection.cjs');
 
@@ -147,11 +148,15 @@ function scanPhasePlans(phaseDir) {
     return result;
   }
 
-  // Collect plan files (e.g., "04-01-PLAN.md") and summary files ("04-01-SUMMARY.md")
+  // Collect plan files (e.g., "04-01-PLAN.md") and summary files ("04-01-SUMMARY.md").
+  // A summary marks its plan done only when it reads as complete: a plan paused
+  // at a checkpoint (paused/partial summary) or an unreadable summary stays in
+  // `remaining`, so HANDOFF resume routes to it rather than skipping past it.
   const planFiles = entries.filter(f => /-PLAN\.md$/i.test(f)).sort();
   const summaryIds = new Set(
     entries
       .filter(f => /-SUMMARY\.md$/i.test(f))
+      .filter(f => summaryFileIsComplete(resolveSummaryPath(phaseDir, f)))
       .map(f => f.replace(/-SUMMARY\.md$/i, ''))
   );
 
@@ -506,4 +511,5 @@ module.exports = {
   writeCheckpoint,
   deleteCheckpoint,
   cmdCheckpoint,
+  scanPhasePlans,
 };

@@ -73,7 +73,8 @@ export declare class PhaseRunner {
      * Plans in the same wave run concurrently via Promise.allSettled().
      * Waves execute sequentially (wave 1 completes before wave 2 starts).
      * Respects config.parallelization: false to fall back to sequential execution.
-     * Filters out plans with has_summary: true (already completed).
+     * Filters out plans with complete: true (summary present AND not paused/partial),
+     * so a plan paused at a checkpoint stays in the run set.
      */
     private runExecuteStep;
     /**

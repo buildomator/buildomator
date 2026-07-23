@@ -12,6 +12,7 @@ import { GSDError, ErrorClassification } from '../errors.js';
 import { normalizePhaseName } from './helpers.js';
 import { findPhase } from './phase.js';
 import { roadmapAnalyze } from './roadmap.js';
+import { summaryFileIsComplete, resolveSummaryPath } from './plan-scan.js';
 const VALID_SCOPES = new Set(['phase', 'milestone']);
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function countFailLines(content) {
@@ -56,8 +57,17 @@ async function checkPhaseCompletion(phaseArg, projectDir) {
     const plans = pdata.plans ?? [];
     const summaries = pdata.summaries ?? [];
     const plans_total = plans.length;
-    // Derive which plans are missing a summary
+    // Derive which plans are missing a summary. A summary credits its plan only
+    // when it reads as complete: a plan paused at a checkpoint (paused/partial
+    // summary) or an unreadable summary lands in missing_summaries and keeps the
+    // phase incomplete.
+    const phaseDirForStatus = pdata.directory
+        ? join(projectDir, pdata.directory)
+        : null;
     const summaryIds = new Set(summaries
+        .filter(s => phaseDirForStatus
+        ? summaryFileIsComplete(resolveSummaryPath(phaseDirForStatus, s))
+        : false)
         .map(s => s.replace('-SUMMARY.md', '').replace('SUMMARY.md', ''))
         .filter(Boolean));
     const plans_with_summaries = plans.filter(p => {

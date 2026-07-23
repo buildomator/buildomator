@@ -232,6 +232,53 @@ describe('roadmapUpdatePlanProgress', () => {
     expect(updated).toMatch(/\| 12\. hardening \| 1\/2 \| In Progress/);
   });
 
+  it('excludes a paused matched summary from the count and does not tick checkboxes', async () => {
+    const { roadmapUpdatePlanProgress } = await import('./roadmap-update-plan-progress.js');
+
+    const roadmap = [
+      '# Roadmap',
+      '',
+      '## Current Milestone: v3.0',
+      '',
+      '- [ ] **Phase 12: hardening** - harden it',
+      '',
+      '### Phase 12: hardening',
+      '',
+      '**Goal:** Harden it',
+      '**Plans:** 0 plans',
+      '- [ ] 12-01',
+      '- [ ] 12-02',
+      '',
+      '## Progress',
+      '',
+      '| Phase | Plans Complete | Status | Completed |',
+      '|-------|----------------|--------|-----------|',
+      '| 12. hardening | 0/2 | Planned |  |',
+      '',
+    ].join('\n');
+
+    const { roadmapPath } = await setupProject({
+      roadmap,
+      phaseDir: '12-hardening',
+      plans: ['12-01-PLAN.md', '12-02-PLAN.md'],
+    });
+
+    const phaseFullDir = join(tmpDir, '.planning', 'phases', '12-hardening');
+    // Plan 01 paused at a checkpoint; plan 02 not started.
+    await writeFile(join(phaseFullDir, '12-01-SUMMARY.md'), '---\nphase: 12\nplan: 01\nstatus: paused\n---\n# Summary\n', 'utf-8');
+
+    const result = await roadmapUpdatePlanProgress(['12'], tmpDir, undefined);
+
+    expect((result.data as { summary_count: number }).summary_count).toBe(0);
+    expect((result.data as { complete: boolean }).complete).toBe(false);
+
+    const updated = await readFile(roadmapPath, 'utf-8');
+    // Paused plan must not tick the phase checkbox nor its own plan checkbox.
+    expect(updated).not.toMatch(/- \[x\] \*\*Phase 12: hardening\*\*/);
+    expect(updated).toMatch(/- \[ \] 12-01/);
+    expect(updated).toMatch(/\| 12\. hardening \| 0\/2 \| Planned/);
+  });
+
   it('does not cross section boundaries when searching for **Plans:**', async () => {
     const { roadmapUpdatePlanProgress } = await import('./roadmap-update-plan-progress.js');
 

@@ -5,6 +5,10 @@ import { tmpdir } from 'node:os';
 
 import { scanPhasePlans, countMatchedSummaries } from './plan-scan.js';
 
+function summary(status: string): string {
+  return `---\nphase: 40\nplan: 01\nstatus: ${status}\n---\n# Summary\n`;
+}
+
 describe('scanPhasePlans', () => {
   it('counts flat and nested plan files while excluding derivative files', async () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'gsd-plan-scan-'));
@@ -84,6 +88,80 @@ describe('scanPhasePlans', () => {
       const scan = scanPhasePlans(phaseDir);
       expect(scan.summaryCount).toBe(1);
       expect(scan.completed).toBe(true);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('excludes a paused matched summary from summaryCount and completion', async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), 'gsd-plan-scan-'));
+    try {
+      const phaseDir = join(tmpDir, 'phases', '40');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(phaseDir, '40-01-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '40-02-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '40-01-SUMMARY.md'), summary('paused'));
+      await writeFile(join(phaseDir, '40-02-SUMMARY.md'), '# Summary');
+
+      const scan = scanPhasePlans(phaseDir);
+      expect(scan.planCount).toBe(2);
+      expect(scan.summaryCount).toBe(1);
+      expect(scan.completed).toBe(false);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('excludes every incomplete status token', async () => {
+    for (const st of ['partial', 'incomplete', 'blocked', 'gaps', 'gaps_found', 'not-complete', 'not_complete']) {
+      const tmpDir = await mkdtemp(join(tmpdir(), 'gsd-plan-scan-'));
+      try {
+        const phaseDir = join(tmpDir, 'phases', '40');
+        await mkdir(phaseDir, { recursive: true });
+        await writeFile(join(phaseDir, '40-01-PLAN.md'), '# Plan');
+        await writeFile(join(phaseDir, '40-02-PLAN.md'), '# Plan');
+        await writeFile(join(phaseDir, '40-01-SUMMARY.md'), summary(st));
+        await writeFile(join(phaseDir, '40-02-SUMMARY.md'), '# Summary');
+
+        const scan = scanPhasePlans(phaseDir);
+        expect(scan.summaryCount, `status ${st}`).toBe(1);
+        expect(scan.completed, `status ${st}`).toBe(false);
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    }
+  });
+
+  it('counts status-less and status: complete summaries and flips the phase complete', async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), 'gsd-plan-scan-'));
+    try {
+      const phaseDir = join(tmpDir, 'phases', '40');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(phaseDir, '40-01-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '40-02-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '40-01-SUMMARY.md'), '# Summary');
+      await writeFile(join(phaseDir, '40-02-SUMMARY.md'), summary('complete'));
+
+      const scan = scanPhasePlans(phaseDir);
+      expect(scan.summaryCount).toBe(2);
+      expect(scan.completed).toBe(true);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('excludes an unreadable matched summary (treated as not complete)', async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), 'gsd-plan-scan-'));
+    try {
+      const phaseDir = join(tmpDir, 'phases', '40');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(phaseDir, '40-01-PLAN.md'), '# Plan');
+      // A directory in place of the summary file makes reading it as a file fail.
+      await mkdir(join(phaseDir, '40-01-SUMMARY.md'));
+
+      const scan = scanPhasePlans(phaseDir);
+      expect(scan.summaryCount).toBe(0);
+      expect(scan.completed).toBe(false);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }

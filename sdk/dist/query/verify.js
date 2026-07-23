@@ -18,6 +18,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, isAbsolute } from 'node:path';
 import { GSDError, ErrorClassification } from '../errors.js';
 import { extractFrontmatter, parseMustHavesBlock } from './frontmatter.js';
+import { summaryFileIsComplete, resolveSummaryPath } from './plan-scan.js';
 import { comparePhaseNum, normalizePhaseName, phaseTokenMatches, planningPaths, } from './helpers.js';
 import { resolveGsdToolsPath } from '../sdk-package-compatibility.js';
 // ─── verifyPlanStructure ───────────────────────────────────────────────────
@@ -160,9 +161,14 @@ export const verifyPhaseCompleteness = async (args, projectDir, workstream) => {
     }
     const plans = files.filter(f => /-PLAN\.md$/i.test(f));
     const summaries = files.filter(f => /-SUMMARY\.md$/i.test(f));
-    // Extract plan IDs (everything before -PLAN.md / -SUMMARY.md)
+    // Extract plan IDs (everything before -PLAN.md / -SUMMARY.md). A summary
+    // credits its plan only when it reads as complete: a paused/partial (or
+    // unreadable) summary is excluded, so its plan surfaces as incomplete rather
+    // than silently complete.
     const planIds = new Set(plans.map(p => p.replace(/-PLAN\.md$/i, '')));
-    const summaryIds = new Set(summaries.map(s => s.replace(/-SUMMARY\.md$/i, '')));
+    const summaryIds = new Set(summaries
+        .filter(s => summaryFileIsComplete(resolveSummaryPath(phaseDir, s)))
+        .map(s => s.replace(/-SUMMARY\.md$/i, '')));
     // Plans without summaries
     const incompletePlans = [...planIds].filter(id => !summaryIds.has(id));
     if (incompletePlans.length > 0) {
