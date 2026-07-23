@@ -129,6 +129,17 @@ N issues can be auto-repaired. Run: /gsd:health --repair
 ```
 </step>
 
+<step name="community_health_advisory">
+**Run after the health output, only for a public GitHub repo.**
+
+Follow the detection and advisory logic in the reference below. It fires only when the
+project is a public GitHub repo missing a LICENSE and/or SECURITY.md, and it always
+PROPOSES: it never writes a file without the maintainer selecting an option. If detection
+fails soft (no `gh`, private repo, non-GitHub remote), it prints nothing.
+
+@${CLAUDE_PLUGIN_ROOT}/references/community-health-advisory.md
+</step>
+
 <step name="offer_repair">
 **If repairable issues exist and --repair was NOT used:**
 
