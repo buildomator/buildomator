@@ -70,6 +70,56 @@ describe('reconstructFrontmatter', () => {
     const result = reconstructFrontmatter({ data: '[1,2,3]' });
     expect(result).toContain('"[1,2,3]"');
   });
+
+  it('escapes embedded quotes when quoting', () => {
+    // a "b": c  ->  k: "a \"b\": c"
+    expect(reconstructFrontmatter({ k: 'a "b": c' })).toBe('k: "a \\"b\\": c"');
+  });
+
+  it('escapes backslashes when a value is quoted', () => {
+    // C:\temp needs quoting (colon); its backslash must be doubled -> k: "C:\\temp"
+    expect(reconstructFrontmatter({ k: 'C:\\temp' })).toBe('k: "C:\\\\temp"');
+  });
+
+  it('quotes values with a leading YAML indicator', () => {
+    expect(reconstructFrontmatter({ k: '- leading' })).toBe('k: "- leading"');
+  });
+
+  it('quotes values with leading or trailing whitespace', () => {
+    expect(reconstructFrontmatter({ k: ' spaced ' })).toBe('k: " spaced "');
+  });
+
+  it('quotes the empty string', () => {
+    expect(reconstructFrontmatter({ k: '' })).toBe('k: ""');
+  });
+
+  // Stay-bare guards: the parser never type-coerces, so numeric-looking strings
+  // and reserved words round-trip bare and must NOT be quoted (over-reach guard).
+  it('leaves numeric-looking strings bare', () => {
+    expect(reconstructFrontmatter({ k: '10' })).toBe('k: 10');
+    expect(reconstructFrontmatter({ k: '01' })).toBe('k: 01');
+    expect(reconstructFrontmatter({ k: '1.5' })).toBe('k: 1.5');
+  });
+
+  it('leaves reserved words bare', () => {
+    for (const w of ['yes', 'no', 'true', 'false', 'null', 'on', 'off', '~']) {
+      expect(reconstructFrontmatter({ k: w })).toBe(`k: ${w}`);
+    }
+  });
+
+  it('round-trips unsafe scalars through extractFrontmatter', () => {
+    for (const v of ['a "b": c', 'C:\\temp', '- leading', ' spaced ', '']) {
+      const doc = `---\n${reconstructFrontmatter({ k: v })}\n---\n`;
+      expect(extractFrontmatter(doc).k).toBe(v);
+    }
+  });
+
+  it('round-trips stay-bare scalars as strings through extractFrontmatter', () => {
+    for (const v of ['10', '01', '1.5', 'yes', 'no', 'true', 'false', 'null', 'on', 'off', '~']) {
+      const doc = `---\n${reconstructFrontmatter({ k: v })}\n---\n`;
+      expect(extractFrontmatter(doc).k).toBe(v);
+    }
+  });
 });
 
 // ─── spliceFrontmatter ──────────────────────────────────────────────────────
