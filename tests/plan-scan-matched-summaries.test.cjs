@@ -31,20 +31,27 @@ function assert(cond, msg) {
   if (!cond) throw new Error(msg);
 }
 
+// files may be a string (default fixture body) or [relPath, body] to write a
+// specific frontmatter/status into a summary.
 function withPhase(files, fn) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-planscan-'));
   const phaseDir = path.join(root, 'phase');
   fs.mkdirSync(phaseDir, { recursive: true });
-  for (const rel of files) {
+  for (const entry of files) {
+    const [rel, body] = Array.isArray(entry) ? entry : [entry, '# fixture\n'];
     const full = path.join(phaseDir, rel);
     fs.mkdirSync(path.dirname(full), { recursive: true });
-    fs.writeFileSync(full, '# fixture\n');
+    fs.writeFileSync(full, body);
   }
   try {
     return fn(phaseDir);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+}
+
+function summary(status) {
+  return `---\nphase: 40\nplan: 01\nstatus: ${status}\n---\n# Summary\n`;
 }
 
 check('3 plans + 3 plan summaries + 1 stray reports summaryCount 3 and completed', () => {
@@ -87,6 +94,67 @@ check('nested stray SUMMARY is excluded', () => {
     assert(scan.planCount === 1, `planCount ${scan.planCount}`);
     assert(scan.summaryCount === 1, `summaryCount ${scan.summaryCount}`);
     assert(scan.completed === true, 'expected completed true');
+  });
+});
+
+check('paused matched summary is excluded from summaryCount / completed', () => {
+  withPhase([
+    '40-01-PLAN.md', '40-02-PLAN.md',
+    ['40-01-SUMMARY.md', summary('paused')],
+    '40-02-SUMMARY.md',
+  ], (dir) => {
+    const scan = scanPhasePlans(dir);
+    assert(scan.planCount === 2, `planCount ${scan.planCount}`);
+    assert(scan.summaryCount === 1, `summaryCount ${scan.summaryCount}`);
+    assert(scan.completed === false, 'expected completed false with a paused summary');
+  });
+});
+
+check('each incomplete status token excludes its matched summary', () => {
+  for (const st of ['partial', 'incomplete', 'blocked', 'gaps', 'gaps_found', 'not-complete', 'not_complete']) {
+    withPhase([
+      '40-01-PLAN.md', '40-02-PLAN.md',
+      ['40-01-SUMMARY.md', summary(st)],
+      '40-02-SUMMARY.md',
+    ], (dir) => {
+      const scan = scanPhasePlans(dir);
+      assert(scan.summaryCount === 1, `status ${st}: summaryCount ${scan.summaryCount}`);
+      assert(scan.completed === false, `status ${st}: expected completed false`);
+    });
+  }
+});
+
+check('status-less and status: complete matched summaries count; phase flips complete', () => {
+  withPhase([
+    '40-01-PLAN.md', '40-02-PLAN.md',
+    '40-01-SUMMARY.md',
+    ['40-02-SUMMARY.md', summary('complete')],
+  ], (dir) => {
+    const scan = scanPhasePlans(dir);
+    assert(scan.summaryCount === 2, `summaryCount ${scan.summaryCount}`);
+    assert(scan.completed === true, 'expected completed true');
+  });
+});
+
+check('unreadable matched summary is excluded (treated as not complete)', () => {
+  withPhase(['40-01-PLAN.md'], (dir) => {
+    // Create the summary as a directory so reading it as a file fails.
+    fs.mkdirSync(path.join(dir, '40-01-SUMMARY.md'));
+    const scan = scanPhasePlans(dir);
+    assert(scan.summaryCount === 0, `summaryCount ${scan.summaryCount}`);
+    assert(scan.completed === false, 'expected completed false for unreadable summary');
+  });
+});
+
+check('nested paused matched summary resolves status from plans/ subdir', () => {
+  withPhase([
+    path.join('plans', 'PLAN-01-setup.md'),
+    [path.join('plans', 'SUMMARY-01-setup.md'), summary('paused')],
+  ], (dir) => {
+    const scan = scanPhasePlans(dir);
+    assert(scan.planCount === 1, `planCount ${scan.planCount}`);
+    assert(scan.summaryCount === 0, `summaryCount ${scan.summaryCount}`);
+    assert(scan.completed === false, 'expected completed false for nested paused summary');
   });
 });
 
