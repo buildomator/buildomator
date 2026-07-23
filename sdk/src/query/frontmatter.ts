@@ -59,6 +59,39 @@ export function splitInlineArray(body: string): string[] {
   return items;
 }
 
+// ─── Scalar unquoting (round-trip safety) ─────────────────────────────────────
+
+/**
+ * Reverse of the writer's escaping for a double-quoted body (outer quotes
+ * already stripped). Single left-to-right pass so `\\` and `\"` never collide.
+ */
+function unescapeDoubleQuoted(s: string): string {
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '\\' && i + 1 < s.length && (s[i + 1] === '\\' || s[i + 1] === '"')) {
+      out += s[i + 1];
+      i++;
+    } else {
+      out += s[i];
+    }
+  }
+  return out;
+}
+
+/**
+ * Strip surrounding quotes and, for double-quoted values, unescape the body.
+ * Falls back to legacy stray-quote stripping for unbalanced input.
+ */
+function unquoteScalar(v: string): string {
+  if (v.length >= 2 && v[0] === '"' && v[v.length - 1] === '"') {
+    return unescapeDoubleQuoted(v.slice(1, -1));
+  }
+  if (v.length >= 2 && v[0] === "'" && v[v.length - 1] === "'") {
+    return v.slice(1, -1);
+  }
+  return v.replace(/^["']|["']$/g, '');
+}
+
 // ─── parseFrontmatterYamlLines ───────────────────────────────────────────────
 
 /**
@@ -106,14 +139,14 @@ function parseFrontmatterYamlLines(yaml: string): Record<string, unknown> {
         (current.obj as Record<string, unknown>)[key] = splitInlineArray(value.slice(1, -1));
         current.key = null;
       } else {
-        // Simple key: value -- strip surrounding quotes
-        (current.obj as Record<string, unknown>)[key] = value.replace(/^["']|["']$/g, '');
+        // Simple key: value -- strip surrounding quotes and unescape
+        (current.obj as Record<string, unknown>)[key] = unquoteScalar(value);
         current.key = null;
       }
     } else if (line.trim().startsWith('- ')) {
       // Array item
       const afterDash = line.trim().slice(2).trim();
-      let itemValue: unknown = afterDash.replace(/^["']|["']$/g, '');
+      let itemValue: unknown = unquoteScalar(afterDash);
       let isObjItem = false;
 
       // Extract key: value within the array item if present
