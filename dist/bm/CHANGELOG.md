@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.2.2] - 2026-07-23  (status-aware plan/phase completion: a paused plan is no longer skipped on resume)
+
+Safety-critical fix. Thanks to Amy Chapman for the forensics-grade report.
+
+### Fixed
+- **A plan paused at a blocking `checkpoint:human-verify` is no longer miscounted as complete and skipped, dispatching its successor out of `depends_on` order (#25).** GSD decided plan and phase completion by paired-summary *existence* and never read the summary's own `status:` frontmatter, so a plan that paused mid-execution (writing a partial `status: paused` SUMMARY) was counted complete: on resume it was skipped and its dependent successor ran against unbuilt output, inverting the checkpoint's purpose and, under default auto-commit, committing out-of-order work. Completion is now status-aware everywhere it drives a resume, skip, or advance decision. The v4.2.0 #1988 fix closed this for *stray* summaries (pair-to-a-plan before counting); this closes it on the *status* axis that fix did not cover. A readable SUMMARY with no status, `complete`, or any other value still counts complete; only an explicit incomplete status (`paused`, `partial`, `incomplete`, `blocked`, `gaps`, `gaps_found`, `not-complete`) is excluded. The fix spans every completion gate across both resolver twins and the workflows: the core `scanPhasePlans` counter (`plan-scan.cjs`/`.ts`), per-plan `complete` on `phase-plan-index` (`phase.cjs`/`phase.ts`), `core.cjs` `incomplete_plans`, `verify.phase-completeness` (`verify.cjs` + `verify.ts`), the checkpoint scanner that writes `HANDOFF.json` (`checkpoint.cjs`), the ROADMAP checkbox ticker plus its trust-over-disk override (`roadmap.cjs` + `roadmap-update-plan-progress.ts`, `init.cjs`), the public `PhaseRunner`/`GSD.runPhase` skip filter (`phase-runner.ts`, now keying on `!p.complete`), `check-completion.ts`, and the `transition.md` auto-advance gate. It also adds the inverse `safe_resume_gate` (a partial SUMMARY means resume *that* plan) and surfaces a `STATE.md` `stopped_at`-vs-count disagreement instead of silently trusting the file count. CJS and SDK twins stay byte-identical (golden parity held); new regression tests on both sides.
+
 ## [4.2.1] - 2026-07-21  (milestone-lifecycle workflows stop gating on close/sequence mechanics)
 
 Patch release extending the v4.2.0 decision-authority rule into the milestone-lifecycle workflows, which it had not reached.
