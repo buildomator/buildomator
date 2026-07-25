@@ -15,7 +15,7 @@ ssh m1.linuxbe.com     # also resolves to the same host
 
 # The site is a git-driven hourly deploy on that box:
 #   source checkout: /var/www/buildomator.com/source   (git: buildomator/buildomator.com, branch main)
-#   nginx docroot:   /var/www/buildomator.com/current  (owned by www-data)
+#   docroot:         /var/www/buildomator.com/current  (owned www-data; served by Caddy-in-containers since 2026-07-25, was nginx)
 #   deploy log:      /var/www/buildomator.com/deploy.log
 #   cron (jnuyens):  0 * * * * /var/www/buildomator.com/source/rebuild-buildomator.sh
 # rebuild-buildomator.sh is tracked in the buildomator.com repo. It hard-syncs
@@ -39,6 +39,8 @@ grep -o 'v[0-9]\.[0-9]\.[0-9]' <(curl -s https://buildomator.com/) | head -1   #
 **Notes:**
 - Two ownership gotchas that silently break the hourly deploy (both fixed 2026-07-23): `source/.git` must be owned by `jnuyens`, not `www-data`, or `git pull` fails with "dubious ownership"; and `deploy.log` must be writable by `jnuyens` (cron runs as `jnuyens`).
 - The site build fetches the latest Buildomator GitHub release at build time, which is why the hourly rebuild exists (to refresh the version shown on the site).
-- The passwordless `sudo` is used by the deploy to write into the `www-data`-owned docroot.
+- The passwordless `sudo` is used by the deploy to write into the docroot.
 
-**Captured:** 2026-07-22 23:34 UTC
+**2026-07-25 update: the webserver moved from nginx to Caddy running in Docker containers** (the `caddy-sites` compose stack, with Cloudflare in front) to improve security; nginx is retired (inactive). The site still serves (verified 2026-07-25: buildomator.com returns HTTP 200, v4.3.0, with v4.3.1 due on the next hourly rebuild). CAVEAT: the deploy flow also looks re-architected in that migration. A `deploy-webhook.php` and a root-owned `rebuild-buildomator.sh` reappeared at `/var/www/buildomator.com/` (the loose path removed on 2026-07-23), alongside the `caddy-sites` containers. So the cron + `source/rebuild-buildomator.sh` + `www-data`-chown flow documented above is likely SUPERSEDED and should be re-mapped against the new Caddy/webhook setup before relying on it.
+
+**Captured:** 2026-07-22 23:34 UTC. **Updated:** 2026-07-25 (nginx -> Caddy-in-containers).
