@@ -34,7 +34,7 @@ const rawCatalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'sdk', 'shared', '
 ok('kilo declares fable: null', rawCatalog.runtimeTierDefaults.kilo.fable === null);
 
 // ─── 2. No regression on opus/sonnet/haiku ───────────────────────────────────
-ok('claude.opus still claude-opus-4-8', rp.claude.opus.model === 'claude-opus-4-8');
+ok('claude.opus is claude-opus-5', rp.claude.opus.model === 'claude-opus-5');
 ok('claude.sonnet is claude-sonnet-5', rp.claude.sonnet.model === 'claude-sonnet-5');
 ok('claude.haiku still claude-haiku-4-5', rp.claude.haiku.model === 'claude-haiku-4-5');
 

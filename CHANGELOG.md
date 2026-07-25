@@ -8,6 +8,11 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.3.1] - 2026-07-25  (adopt Claude Opus 5)
+
+### Changed
+- **Adopted Claude Opus 5 (`claude-opus-5`) as the `opus` model tier.** Claude Opus 5 shipped 2026-07-24 as Anthropic's flagship for agentic coding, replacing Opus 4.8 (now legacy). Updated the `opus` tier for the four Anthropic-compatible runtimes in the shared `sdk/shared/model-catalog.json` that both resolvers read (`claude`, `copilot` -> `claude-opus-5`; `opencode`, `hermes` -> `anthropic/claude-opus-5`); the non-Anthropic tiers (`codex`/`gemini`/`qwen`) are unchanged. The model id was verified against the live models overview, not assumed. No effort override is set: Opus 5 defaults to `high` effort on Claude Code, which is Anthropic's recommended level for routine work, so GSD agents run on Opus 5 at `high` for free. Also refreshed the `settings-advanced.md` runtime-defaults table, which had drifted (it still showed Opus 4.8, and Sonnet 4.6 from before the Sonnet 5 adoption), and updated the `fable-tier` test assertion.
+
 ## [4.3.0] - 2026-07-23  (community-health advisory, assumption-drift advisory, valid-YAML frontmatter)
 
 Follows gsd-core 1.7.0 for the two ports. Three independent improvements built in parallel.
