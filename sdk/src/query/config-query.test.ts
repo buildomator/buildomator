@@ -283,6 +283,53 @@ describe('resolveModel', () => {
     expect(wsData.profile).toBe('quality');
     expect(wsData.model).toBe('opus');
   });
+
+  it('resolves to defaults when the project has no .planning/ at all', async () => {
+    const { resolveModel } = await import('./config-query.js');
+    // beforeEach always creates .planning/; remove it so this exercises the
+    // no-project-config path rather than an empty-directory one.
+    await rm(join(tmpDir, '.planning'), { recursive: true, force: true });
+    const result = await resolveModel(['gsd-planner'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(data).toEqual({ model: 'opus', profile: 'balanced' });
+    expect(data).not.toHaveProperty('unknown_agent');
+  });
+
+  it('resolves to defaults when .planning/ exists without a config.json', async () => {
+    const { resolveModel } = await import('./config-query.js');
+    // beforeEach already created .planning/ with no config.json.
+    const result = await resolveModel(['gsd-planner'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(data).toEqual({ model: 'opus', profile: 'balanced' });
+    expect(data).not.toHaveProperty('unknown_agent');
+  });
+
+  it('resolves a missing config.json identically to an empty {} config', async () => {
+    const { resolveModel } = await import('./config-query.js');
+    for (const agent of ['gsd-planner', 'gsd-executor']) {
+      await rm(join(tmpDir, '.planning'), { recursive: true, force: true });
+      const missing = (await resolveModel([agent], tmpDir)).data as Record<string, unknown>;
+
+      await mkdir(join(tmpDir, '.planning'), { recursive: true });
+      await writeFile(join(tmpDir, '.planning', 'config.json'), '{}');
+      const empty = (await resolveModel([agent], tmpDir)).data as Record<string, unknown>;
+
+      expect(missing).toEqual(empty);
+      expect(missing.model).not.toBe('');
+    }
+  });
+
+  it('gives an unknown agent the same fallback with a missing config as with {}', async () => {
+    const { resolveModel } = await import('./config-query.js');
+    await rm(join(tmpDir, '.planning'), { recursive: true, force: true });
+    const missing = (await resolveModel(['unknown-agent'], tmpDir)).data as Record<string, unknown>;
+    expect(missing).toEqual({ model: 'sonnet', profile: 'balanced', unknown_agent: true });
+
+    await mkdir(join(tmpDir, '.planning'), { recursive: true });
+    await writeFile(join(tmpDir, '.planning', 'config.json'), '{}');
+    const empty = (await resolveModel(['unknown-agent'], tmpDir)).data as Record<string, unknown>;
+    expect(missing).toEqual(empty);
+  });
 });
 
 // ─── MODEL_PROFILES ─────────────────────────────────────────────────────────
