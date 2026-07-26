@@ -35,7 +35,7 @@ Map to calibration tier:
 
 Resolve advisor model:
 ```bash
-ADVISOR_MODEL=$(gsd-sdk query resolve-model gsd-advisor-researcher --raw)
+ADVISOR_MODEL=$(bm-sdk query resolve-model gsd-advisor-researcher --raw)
 ```
 
 ## Non-technical owner detection

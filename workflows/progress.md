@@ -12,14 +12,14 @@ Read all files referenced by the invoking prompt's execution_context before star
 **Load progress context (paths only):**
 
 ```bash
-INIT=$(gsd-sdk query init.progress)
+INIT=$(bm-sdk query init.progress)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Extract from init JSON: `project_exists`, `roadmap_exists`, `state_exists`, `phases`, `current_phase`, `next_phase`, `milestone_version`, `completed_count`, `phase_count`, `paused_at`, `state_path`, `roadmap_path`, `project_path`, `config_path`.
 
 ```bash
-DISCUSS_MODE=$(gsd-sdk query config-get workflow.discuss_mode 2>/dev/null || echo "discuss")
+DISCUSS_MODE=$(bm-sdk query config-get workflow.discuss_mode 2>/dev/null || echo "discuss")
 ```
 
 If `project_exists` is false (no `.planning/` directory):
@@ -43,15 +43,15 @@ If missing both ROADMAP.md and PROJECT.md: suggest `/gsd:new-project`.
 
 <step name="load">
 **Use targeted extraction (not full file reads) to minimize context:**
-- `ROADMAP=$(gsd-sdk query roadmap.analyze)`
-- `STATE=$(gsd-sdk query state-snapshot)`
+- `ROADMAP=$(bm-sdk query roadmap.analyze)`
+- `STATE=$(bm-sdk query state-snapshot)`
 </step>
 
 <step name="analyze_roadmap">
 **Get roadmap analysis (use instead of manually reading/parsing ROADMAP.md):**
 
 ```bash
-ROADMAP=$(gsd-sdk query roadmap.analyze)
+ROADMAP=$(bm-sdk query roadmap.analyze)
 ```
 
 Returns structured JSON with:
@@ -68,7 +68,7 @@ Returns structured JSON with:
 - Find the 2-3 most recent SUMMARY.md files
 - Use `summary-extract` for efficient parsing:
   ```bash
-  gsd-sdk query summary-extract <path> --fields one_liner
+  bm-sdk query summary-extract <path> --fields one_liner
   ```
 - This shows "what we've been working on"
   </step>
@@ -88,11 +88,11 @@ Returns structured JSON with:
 > blocks are a secondary config aid that may be significantly stale — do NOT use the
 > CLAUDE.md project description as a source for any progress report field.
 
-**Generate progress bar from `gsd-sdk query progress` / `progress.json`, then present rich status report:**
+**Generate progress bar from `bm-sdk query progress` / `progress.json`, then present rich status report:**
 
 ```bash
 # Get formatted progress bar
-PROGRESS_BAR=$(gsd-sdk query progress.bar --raw)
+PROGRESS_BAR=$(bm-sdk query progress.bar --raw)
 ```
 
 Present:
@@ -140,7 +140,7 @@ CONTEXT: [✓ if has_context | - if not]
 Resolve `MVP_MODE` per phase via the centralized resolver. progress has no `--mvp` CLI flag (mode is inherited from the planned phase), so we omit `--cli-flag`:
 
 ```bash
-MVP_MODE=$(gsd-sdk query phase.mvp-mode "${PHASE_NUMBER}" --pick active)
+MVP_MODE=$(bm-sdk query phase.mvp-mode "${PHASE_NUMBER}" --pick active)
 ```
 
 When `MVP_MODE=true`, the per-phase progress block adds a **user-flow status** sub-block sourced from the phase's PLAN.md task names. Each task whose name reads like a user-visible capability (e.g., "Register flow", "Login flow", "Password reset") is rendered as a status line:
@@ -233,7 +233,7 @@ Track:
 Scan ALL phases in the current milestone for outstanding verification debt using the CLI (which respects milestone boundaries via `getMilestonePhaseFilter`):
 
 ```bash
-DEBT=$(gsd-sdk query audit-uat --raw 2>/dev/null)
+DEBT=$(bm-sdk query audit-uat --raw 2>/dev/null)
 ```
 
 Parse JSON for `summary.total_items` and `summary.total_files`.
@@ -296,7 +296,7 @@ Check if `{phase_num}-CONTEXT.md` exists in phase directory.
 Check if current phase has UI indicators:
 
 ```bash
-PHASE_SECTION=$(gsd-sdk query roadmap.get-phase "${CURRENT_PHASE}" 2>/dev/null)
+PHASE_SECTION=$(bm-sdk query roadmap.get-phase "${CURRENT_PHASE}" 2>/dev/null)
 PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" || echo "false")
 ```
 
@@ -442,7 +442,7 @@ Read ROADMAP.md to get the next phase's name and goal.
 Check if next phase has UI indicators:
 
 ```bash
-NEXT_PHASE_SECTION=$(gsd-sdk query roadmap.get-phase "$((Z+1))" 2>/dev/null)
+NEXT_PHASE_SECTION=$(bm-sdk query roadmap.get-phase "$((Z+1))" 2>/dev/null)
 NEXT_HAS_UI=$(echo "$NEXT_PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" || echo "false")
 ```
 

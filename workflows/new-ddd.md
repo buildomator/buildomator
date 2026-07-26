@@ -42,7 +42,7 @@ The answer determines SPEC.md's structure in Step 6.
 
 ## 4. Config Capture
 
-**Do exactly as in `workflows/new-project.md` Step 4 (Config Capture)**, with one change: when writing `.planning/config.json` via `gsd-sdk query config-new-project`, include `"mode": "ddd"` in the top-level config. This marker signals downstream workflows (notably the roadmapper and any future docs-sync workflow) that this project uses DDD mode.
+**Do exactly as in `workflows/new-project.md` Step 4 (Config Capture)**, with one change: when writing `.planning/config.json` via `bm-sdk query config-new-project`, include `"mode": "ddd"` in the top-level config. This marker signals downstream workflows (notably the roadmapper and any future docs-sync workflow) that this project uses DDD mode.
 
 If the SDK schema does not yet accept `"mode": "ddd"`, write it anyway; downstream consumers should ignore unrecognized mode values rather than error. Track this as a downstream SDK schema-update task for the next plugin release.
 
@@ -147,7 +147,7 @@ What's next?
 SPEC.md drafts are non-critical: the artifact lives on disk, can be revised by re-invoking the workflow, no destructive action is taken here, and the user can intervene later. These prompts auto-approve by default to avoid blocking AFK users.
 
 ```bash
-AUTO_APPROVE=$(gsd-sdk query config-get workflow.auto_approve_non_critical --default true)
+AUTO_APPROVE=$(bm-sdk query config-get workflow.auto_approve_non_critical --default true)
 ```
 
 **If `AUTO_APPROVE` is `true`:** Skip the approval prompt. Log the auto-decision:
@@ -196,7 +196,7 @@ AskUserQuestion(
 **If "Approve":** commit SPEC.md and continue:
 
 ```bash
-gsd-sdk query commit "docs(ddd): lock SPEC.md as v1 spec" --files docs/SPEC.md
+bm-sdk query commit "docs(ddd): lock SPEC.md as v1 spec" --files docs/SPEC.md
 ```
 
 ## 8. Generate Thin REQUIREMENTS.md (traceability shell)
@@ -219,7 +219,7 @@ For each major section in SPEC.md (each H2 heading), create one REQ-ID with the 
 This is the minimum-viable bridge for downstream workflows. A future release may auto-decompose H2 sections into finer-grained REQ-IDs (one per command, endpoint, etc.) once usage patterns are clearer.
 
 ```bash
-gsd-sdk query commit "docs(ddd): derive REQUIREMENTS.md from SPEC.md sections" --files .planning/REQUIREMENTS.md
+bm-sdk query commit "docs(ddd): derive REQUIREMENTS.md from SPEC.md sections" --files .planning/REQUIREMENTS.md
 ```
 
 ## 9. Spawn gsd-roadmapper (DDD mode)
@@ -243,7 +243,7 @@ Derive phases from SPEC.md sections rather than from REQ-ID clusters. Each phase
 After the roadmapper returns:
 
 ```bash
-gsd-sdk query commit "docs(ddd): create roadmap from SPEC.md (${N} phases)" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md
+bm-sdk query commit "docs(ddd): create roadmap from SPEC.md (${N} phases)" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md
 ```
 
 ## 10. STATE.md DDD Marker
@@ -263,7 +263,7 @@ Validation: implementation matches SPEC.md (per-phase doc-sync automation held f
 This marker is read by future workflows that need to behave differently under DDD (held for v2.45.x and later).
 
 ```bash
-gsd-sdk query commit "docs(ddd): mark project as DDD mode in STATE.md" --files .planning/STATE.md
+bm-sdk query commit "docs(ddd): mark project as DDD mode in STATE.md" --files .planning/STATE.md
 ```
 
 ## 11. Next Up Block

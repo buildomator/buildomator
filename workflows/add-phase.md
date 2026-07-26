@@ -28,7 +28,7 @@ Exit.
 Load phase operation context:
 
 ```bash
-INIT=$(gsd-sdk query init.phase-op "0")
+INIT=$(bm-sdk query init.phase-op "0")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -42,7 +42,7 @@ Exit.
 
 <step name="add_phase">
 ```bash
-RESULT=$(gsd-sdk query phase.add "${description}")
+RESULT=$(bm-sdk query phase.add "${description}")
 ```
 
 The CLI handles:
@@ -103,7 +103,7 @@ Roadmap updated: .planning/ROADMAP.md
 </process>
 
 <success_criteria>
-- [ ] `gsd-sdk query phase.add` executed successfully
+- [ ] `bm-sdk query phase.add` executed successfully
 - [ ] Phase directory created
 - [ ] Roadmap updated with new phase entry
 - [ ] STATE.md updated with roadmap evolution note

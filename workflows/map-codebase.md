@@ -18,7 +18,7 @@ Always include actual file paths formatted with backticks: `src/services/user.ts
 <ultracode_gate>
 Resolve whether **ultracode mode** is active for this run:
 ```bash
-ULTRA=$(gsd-sdk query config-get workflow.ultracode --default auto 2>/dev/null || echo auto)
+ULTRA=$(bm-sdk query config-get workflow.ultracode --default auto 2>/dev/null || echo auto)
 TODAY=$(date +%F)
 # Active when: ULTRA = "true" (explicit opt-in), OR
 #              ULTRA != "false" AND TODAY <= 2026-06-22 (the window during which
@@ -68,9 +68,9 @@ documents refreshed.
 Load codebase mapping context:
 
 ```bash
-INIT=$(gsd-sdk query init.map-codebase)
+INIT=$(bm-sdk query init.map-codebase)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_MAPPER=$(gsd-sdk query agent-skills gsd-codebase-mapper)
+AGENT_SKILLS_MAPPER=$(bm-sdk query agent-skills gsd-codebase-mapper)
 ```
 
 Extract from init JSON: `mapper_model`, `commit_docs`, `codebase_dir`, `existing_maps`, `has_maps`, `codebase_dir_exists`, `subagent_timeout`, `date`.
@@ -329,7 +329,7 @@ Continue to commit_codebase_map.
 Commit the codebase map:
 
 ```bash
-gsd-sdk query commit "docs: map existing codebase" --files .planning/codebase/*.md
+bm-sdk query commit "docs: map existing codebase" --files .planning/codebase/*.md
 ```
 
 Continue to offer_next.

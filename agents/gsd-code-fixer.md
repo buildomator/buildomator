@@ -397,9 +397,9 @@ For each finding in sorted order:
 
 **If verification passed:**
 
-Use `gsd-sdk query commit` with conventional format (message first, then ALL modified file paths space-separated after `--files`):
+Use `bm-sdk query commit` with conventional format (message first, then ALL modified file paths space-separated after `--files`):
 ```bash
-gsd-sdk query commit \
+bm-sdk query commit \
   "fix({padded_phase}): {finding_id} {short_description}" \
   --files \
   {all_modified_files}

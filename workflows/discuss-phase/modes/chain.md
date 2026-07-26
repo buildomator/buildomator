@@ -23,19 +23,19 @@
    (the user's persistent settings preference):
    ```bash
    if [[ ! "$ARGUMENTS" =~ --auto ]] && [[ ! "$ARGUMENTS" =~ --chain ]]; then
-     gsd-sdk query config-set workflow._auto_chain_active false || true
+     bm-sdk query config-set workflow._auto_chain_active false || true
    fi
    ```
 
 3. Read consolidated auto-mode (`active` = chain flag OR user preference):
    ```bash
-   AUTO_MODE=$(gsd-sdk query check auto-mode --pick active 2>/dev/null || echo "false")
+   AUTO_MODE=$(bm-sdk query check auto-mode --pick active 2>/dev/null || echo "false")
    ```
 
 4. **If `--auto` or `--chain` flag present AND `AUTO_MODE` is not true:**
    Persist chain flag to config (handles direct usage without new-project):
    ```bash
-   gsd-sdk query config-set workflow._auto_chain_active true
+   bm-sdk query config-set workflow._auto_chain_active true
    ```
 
 5. **Auto-advance to plan-phase.** Skip entirely if `--no-auto` is present in

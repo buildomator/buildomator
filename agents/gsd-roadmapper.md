@@ -619,7 +619,7 @@ When files are written and returning to orchestrator:
 
 ### Files Ready for Review
 
-User can review actual files in the editor or via SDK queries (e.g. `gsd-sdk query roadmap.analyze` and `gsd-sdk query state.load`) instead of ad-hoc shell `cat`.
+User can review actual files in the editor or via SDK queries (e.g. `bm-sdk query roadmap.analyze` and `bm-sdk query state.load`) instead of ad-hoc shell `cat`.
 
 {If gaps found during creation:}
 

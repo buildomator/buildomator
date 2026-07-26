@@ -18,15 +18,15 @@ command -v qwen >/dev/null 2>&1 && echo "qwen:available" || echo "qwen:missing"
 command -v cursor >/dev/null 2>&1 && echo "cursor:available" || echo "cursor:missing"
 
 # Check local model servers (OpenAI-compatible HTTP API — no CLI binary required)
-OLLAMA_HOST=$(gsd-sdk query config-get review.ollama_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
+OLLAMA_HOST=$(bm-sdk query config-get review.ollama_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
 if [ -z "$OLLAMA_HOST" ] || [ "$OLLAMA_HOST" = "null" ]; then OLLAMA_HOST="http://localhost:11434"; fi
 curl -s --max-time 2 "${OLLAMA_HOST}/v1/models" >/dev/null 2>&1 && echo "ollama:available" || echo "ollama:missing"
 
-LM_STUDIO_HOST=$(gsd-sdk query config-get review.lm_studio_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
+LM_STUDIO_HOST=$(bm-sdk query config-get review.lm_studio_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
 if [ -z "$LM_STUDIO_HOST" ] || [ "$LM_STUDIO_HOST" = "null" ]; then LM_STUDIO_HOST="http://localhost:1234"; fi
 curl -s --max-time 2 "${LM_STUDIO_HOST}/v1/models" >/dev/null 2>&1 && echo "lm_studio:available" || echo "lm_studio:missing"
 
-LLAMA_CPP_HOST=$(gsd-sdk query config-get review.llama_cpp_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
+LLAMA_CPP_HOST=$(bm-sdk query config-get review.llama_cpp_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
 if [ -z "$LLAMA_CPP_HOST" ] || [ "$LLAMA_CPP_HOST" = "null" ]; then LLAMA_CPP_HOST="http://localhost:8080"; fi
 curl -s --max-time 2 "${LLAMA_CPP_HOST}/v1/models" >/dev/null 2>&1 && echo "llama_cpp:available" || echo "llama_cpp:missing"
 ```
@@ -102,7 +102,7 @@ Rules:
 Collect phase artifacts for the review prompt:
 
 ```bash
-INIT=$(gsd-sdk query init.phase-op "${PHASE_ARG}")
+INIT=$(bm-sdk query init.phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -173,11 +173,11 @@ Write to a temp file: `/tmp/gsd-review-prompt-{phase}.md`
 Read model preferences from planning config. Null/missing values fall back to CLI defaults.
 
 ```bash
-# JSON scalars from gsd-sdk query; use jq -r to strip JSON string quotes (install jq if missing)
-GEMINI_MODEL=$(gsd-sdk query config-get review.models.gemini 2>/dev/null | jq -r '.' 2>/dev/null || true)
-CLAUDE_MODEL=$(gsd-sdk query config-get review.models.claude 2>/dev/null | jq -r '.' 2>/dev/null || true)
-CODEX_MODEL=$(gsd-sdk query config-get review.models.codex 2>/dev/null | jq -r '.' 2>/dev/null || true)
-OPENCODE_MODEL=$(gsd-sdk query config-get review.models.opencode 2>/dev/null | jq -r '.' 2>/dev/null || true)
+# JSON scalars from bm-sdk query; use jq -r to strip JSON string quotes (install jq if missing)
+GEMINI_MODEL=$(bm-sdk query config-get review.models.gemini 2>/dev/null | jq -r '.' 2>/dev/null || true)
+CLAUDE_MODEL=$(bm-sdk query config-get review.models.claude 2>/dev/null | jq -r '.' 2>/dev/null || true)
+CODEX_MODEL=$(bm-sdk query config-get review.models.codex 2>/dev/null | jq -r '.' 2>/dev/null || true)
+OPENCODE_MODEL=$(bm-sdk query config-get review.models.opencode 2>/dev/null | jq -r '.' 2>/dev/null || true)
 ```
 
 For each selected CLI, invoke in sequence (not parallel — avoid rate limits):
@@ -250,9 +250,9 @@ fi
 Read host and model from config. All three local backends share the same `/v1/chat/completions` endpoint — only host and model differ. Use `jq --rawfile` to safely encode the multi-line prompt as JSON without shell-escaping issues.
 
 ```bash
-OLLAMA_HOST=$(gsd-sdk query config-get review.ollama_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
+OLLAMA_HOST=$(bm-sdk query config-get review.ollama_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
 if [ -z "$OLLAMA_HOST" ] || [ "$OLLAMA_HOST" = "null" ]; then OLLAMA_HOST="http://localhost:11434"; fi
-OLLAMA_MODEL=$(gsd-sdk query config-get review.models.ollama 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
+OLLAMA_MODEL=$(bm-sdk query config-get review.models.ollama 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
 if [ -z "$OLLAMA_MODEL" ] || [ "$OLLAMA_MODEL" = "null" ]; then
   OLLAMA_MODEL=$(curl -s --max-time 2 "${OLLAMA_HOST}/v1/models" 2>/dev/null | jq -r '.data[0].id // "llama3"' 2>/dev/null || echo "llama3")
 fi
@@ -270,9 +270,9 @@ fi
 
 **LM Studio (local, OpenAI-compatible):**
 ```bash
-LM_STUDIO_HOST=$(gsd-sdk query config-get review.lm_studio_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
+LM_STUDIO_HOST=$(bm-sdk query config-get review.lm_studio_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
 if [ -z "$LM_STUDIO_HOST" ] || [ "$LM_STUDIO_HOST" = "null" ]; then LM_STUDIO_HOST="http://localhost:1234"; fi
-LM_STUDIO_MODEL=$(gsd-sdk query config-get review.models.lm_studio 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
+LM_STUDIO_MODEL=$(bm-sdk query config-get review.models.lm_studio 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
 if [ -z "$LM_STUDIO_MODEL" ] || [ "$LM_STUDIO_MODEL" = "null" ]; then
   LM_STUDIO_MODEL=$(curl -s --max-time 2 "${LM_STUDIO_HOST}/v1/models" 2>/dev/null | jq -r '.data[0].id // "local-model"' 2>/dev/null || echo "local-model")
 fi
@@ -295,9 +295,9 @@ fi
 
 **llama.cpp (local, OpenAI-compatible):**
 ```bash
-LLAMA_CPP_HOST=$(gsd-sdk query config-get review.llama_cpp_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
+LLAMA_CPP_HOST=$(bm-sdk query config-get review.llama_cpp_host 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
 if [ -z "$LLAMA_CPP_HOST" ] || [ "$LLAMA_CPP_HOST" = "null" ]; then LLAMA_CPP_HOST="http://localhost:8080"; fi
-LLAMA_CPP_MODEL=$(gsd-sdk query config-get review.models.llama_cpp 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
+LLAMA_CPP_MODEL=$(bm-sdk query config-get review.models.llama_cpp 2>/dev/null | jq -r '.' 2>/dev/null || echo "")
 if [ -z "$LLAMA_CPP_MODEL" ] || [ "$LLAMA_CPP_MODEL" = "null" ]; then
   LLAMA_CPP_MODEL=$(curl -s --max-time 2 "${LLAMA_CPP_HOST}/v1/models" 2>/dev/null | jq -r '.data[0].id // "local-model"' 2>/dev/null || echo "local-model")
 fi
@@ -414,7 +414,7 @@ plans_reviewed: [{list of PLAN.md files}]
 
 Commit:
 ```bash
-gsd-sdk query commit "docs: cross-AI review for phase {N}" --files {phase_dir}/{padded_phase}-REVIEWS.md
+bm-sdk query commit "docs: cross-AI review for phase {N}" --files {phase_dir}/{padded_phase}-REVIEWS.md
 ```
 </step>
 

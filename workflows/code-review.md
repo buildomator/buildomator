@@ -13,7 +13,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 <ultracode_gate>
 Resolve whether **ultracode mode** is active for this run:
 ```bash
-ULTRA=$(gsd-sdk query config-get workflow.ultracode --default auto 2>/dev/null || echo auto)
+ULTRA=$(bm-sdk query config-get workflow.ultracode --default auto 2>/dev/null || echo auto)
 TODAY=$(date +%F)
 # Active when: ULTRA = "true" (explicit opt-in), OR
 #              ULTRA != "false" AND TODAY <= 2026-06-22 (the window during which
@@ -30,7 +30,7 @@ Parse arguments and load project state:
 
 ```bash
 PHASE_ARG="${1}"
-INIT=$(gsd-sdk query init.phase-op "${PHASE_ARG}")
+INIT=$(bm-sdk query init.phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -87,7 +87,7 @@ fi
 Check if code review is enabled via config:
 
 ```bash
-CODE_REVIEW_ENABLED=$(gsd-sdk query config-get workflow.code_review 2>/dev/null || echo "true")
+CODE_REVIEW_ENABLED=$(bm-sdk query config-get workflow.code_review 2>/dev/null || echo "true")
 ```
 
 If CODE_REVIEW_ENABLED is "false":
@@ -103,14 +103,14 @@ Default is true — only skip on explicit false. This check runs AFTER phase val
 Determine review depth with priority order:
 
 1. DEPTH_OVERRIDE from --depth flag (highest priority)
-2. Config value: `gsd-sdk query config-get workflow.code_review_depth 2>/dev/null`
+2. Config value: `bm-sdk query config-get workflow.code_review_depth 2>/dev/null`
 3. Default: "standard"
 
 ```bash
 if [ -n "$DEPTH_OVERRIDE" ]; then
   REVIEW_DEPTH="$DEPTH_OVERRIDE"
 else
-  CONFIG_DEPTH=$(gsd-sdk query config-get workflow.code_review_depth 2>/dev/null || echo "")
+  CONFIG_DEPTH=$(bm-sdk query config-get workflow.code_review_depth 2>/dev/null || echo "")
   REVIEW_DEPTH="${CONFIG_DEPTH:-standard}"
 fi
 ```
@@ -337,10 +337,10 @@ Note: the reviewer self-invokes the advisory convention checks for the changed-`
 
 Read fallow config gates:
 ```bash
-FALLOW_ENABLED=$(gsd-sdk query config-get code_quality.fallow.enabled 2>/dev/null || echo "false")
-FALLOW_SCOPE=$(gsd-sdk query config-get code_quality.fallow.scope 2>/dev/null || echo "phase")
-FALLOW_PROFILE=$(gsd-sdk query config-get code_quality.fallow.profile 2>/dev/null || echo "standard")
-FALLOW_MCP=$(gsd-sdk query config-get code_quality.fallow.mcp 2>/dev/null || echo "false")
+FALLOW_ENABLED=$(bm-sdk query config-get code_quality.fallow.enabled 2>/dev/null || echo "false")
+FALLOW_SCOPE=$(bm-sdk query config-get code_quality.fallow.scope 2>/dev/null || echo "phase")
+FALLOW_PROFILE=$(bm-sdk query config-get code_quality.fallow.profile 2>/dev/null || echo "standard")
+FALLOW_MCP=$(bm-sdk query config-get code_quality.fallow.mcp 2>/dev/null || echo "false")
 ```
 
 Defaults are fail-closed and opt-in:
@@ -507,7 +507,7 @@ if [ -f "${REVIEW_PATH}" ]; then
     echo "REVIEW.md created at ${REVIEW_PATH}"
     
     if [ "$COMMIT_DOCS" = "true" ]; then
-      gsd-sdk query commit \
+      bm-sdk query commit \
         "docs(${PADDED_PHASE}): add code review report" \
         --files "${REVIEW_PATH}"
     fi

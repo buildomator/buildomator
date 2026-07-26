@@ -61,7 +61,7 @@ unplanned phase from the roadmap (same logic as /gsd:plan-phase).
 Load GSD phase context:
 
 ```bash
-INIT=$(gsd-sdk query init.plan-phase "$PHASE")
+INIT=$(bm-sdk query init.plan-phase "$PHASE")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 

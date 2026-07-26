@@ -46,7 +46,7 @@ Phase: $ARGUMENTS
 
 A flag is active only if its literal token (`--wave`, `--gaps-only`, `--interactive`) is present in `$ARGUMENTS`. If none appear, run the standard full-phase execution flow with no flag-specific filtering. Do not infer a flag is active just because it is documented here.
 
-Context files are resolved inside the workflow via `gsd-sdk query init.execute-phase` and per-subagent `<files_to_read>` blocks.
+Context files are resolved inside the workflow via `bm-sdk query init.execute-phase` and per-subagent `<files_to_read>` blocks.
 </context>
 
 <process>

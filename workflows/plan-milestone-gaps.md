@@ -63,7 +63,7 @@ Gap: Flow "View dashboard" broken at data fetch
 
 Find highest existing phase:
 ```bash
-HIGHEST=$(gsd-sdk query phases.list --pick directories[-1])
+HIGHEST=$(bm-sdk query phases.list --pick directories[-1])
 ```
 
 New phases continue from there:
@@ -139,7 +139,7 @@ grep -c "Pending" .planning/REQUIREMENTS.md
 For each new phase (N, N+1, …), resolve the directory name via `init.phase-op` so the `project_code` prefix is honoured:
 
 ```bash
-INIT=$(gsd-sdk query init.phase-op "{NN}")
+INIT=$(bm-sdk query init.phase-op "{NN}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 expected_phase_dir=$(echo "$INIT" | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).expected_phase_dir)")
 mkdir -p "${expected_phase_dir}"
@@ -150,7 +150,7 @@ Repeat for each gap-closure phase number. This produces `{CODE}-{NN}-{slug}/` wh
 ## 9. Commit Roadmap and Requirements Update
 
 ```bash
-gsd-sdk query commit "docs(roadmap): add gap closure phases {N}-{M}" --files .planning/ROADMAP.md .planning/REQUIREMENTS.md
+bm-sdk query commit "docs(roadmap): add gap closure phases {N}-{M}" --files .planning/ROADMAP.md .planning/REQUIREMENTS.md
 ```
 
 ## 10. Offer Next Steps

@@ -16,7 +16,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 <ultracode_gate>
 Resolve whether **ultracode mode** is active for this run:
 ```bash
-ULTRA=$(gsd-sdk query config-get workflow.ultracode --default auto 2>/dev/null || echo auto)
+ULTRA=$(bm-sdk query config-get workflow.ultracode --default auto 2>/dev/null || echo auto)
 TODAY=$(date +%F)
 # Active when: ULTRA = "true" (explicit opt-in), OR
 #              ULTRA != "false" AND TODAY <= 2026-06-22 (the window during which
@@ -56,7 +56,7 @@ echo "$ARGUMENTS" | grep -qE '\-\-ws\s+\S+' && GSD_WS=$(echo "$ARGUMENTS" | grep
 ## 1.5. Config Gate (feature disabled by default)
 
 ```bash
-CONVERGENCE_ENABLED=$(gsd-sdk query config-get workflow.plan_review_convergence 2>/dev/null || echo "false")
+CONVERGENCE_ENABLED=$(bm-sdk query config-get workflow.plan_review_convergence 2>/dev/null || echo "false")
 ```
 
 **If `CONVERGENCE_ENABLED` is not `"true"`:** Display and exit:

@@ -47,7 +47,7 @@ available — replace the prompt with a plain-text two-question sequence
 plain text from the user's response.
 
 ```bash
-gsd-sdk query validate.context \
+bm-sdk query validate.context \
   --tokens-used "$TOKENS_USED" \
   --context-window "$CONTEXT_WINDOW"
 ```
@@ -62,7 +62,7 @@ health output.
 **Run health validation:**
 
 ```bash
-gsd-sdk query validate.health $REPAIR_FLAG $BACKFILL_FLAG
+bm-sdk query validate.health $REPAIR_FLAG $BACKFILL_FLAG
 ```
 
 Parse JSON output:
@@ -158,7 +158,7 @@ If yes, re-run with --repair flag and display results.
 Re-run health check without --repair to confirm issues are resolved:
 
 ```bash
-gsd-sdk query validate.health
+bm-sdk query validate.health
 ```
 
 Report final status.

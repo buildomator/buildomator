@@ -16,16 +16,16 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ## 0. Initialize
 
 ```bash
-INIT=$(gsd-sdk query init.phase-op "${PHASE_ARG}")
+INIT=$(bm-sdk query init.phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_AUDITOR=$(gsd-sdk query agent-skills gsd-nyquist-auditor)
+AGENT_SKILLS_AUDITOR=$(bm-sdk query agent-skills gsd-nyquist-auditor)
 ```
 
 Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`.
 
 ```bash
-AUDITOR_MODEL=$(gsd-sdk query resolve-model gsd-nyquist-auditor --raw)
-NYQUIST_CFG=$(gsd-sdk query config-get workflow.nyquist_validation --raw --default true)
+AUDITOR_MODEL=$(bm-sdk query resolve-model gsd-nyquist-auditor --raw)
+NYQUIST_CFG=$(bm-sdk query config-get workflow.nyquist_validation --raw --default true)
 ```
 
 If `NYQUIST_CFG` is `false`: exit with "Nyquist validation is disabled. Enable via /gsd:settings."
@@ -141,7 +141,7 @@ Handle return:
 git add {test_files}
 git commit -m "test(phase-${PHASE}): add Nyquist validation tests"
 
-gsd-sdk query commit "docs(phase-${PHASE}): add/update validation strategy"
+bm-sdk query commit "docs(phase-${PHASE}): add/update validation strategy"
 ```
 
 ## 8. Results + Routing

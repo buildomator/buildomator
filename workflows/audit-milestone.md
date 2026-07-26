@@ -16,23 +16,23 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ## 0. Initialize Milestone Context
 
 ```bash
-INIT=$(gsd-sdk query init.milestone-op)
+INIT=$(bm-sdk query init.milestone-op)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_CHECKER=$(gsd-sdk query agent-skills gsd-integration-checker)
+AGENT_SKILLS_CHECKER=$(bm-sdk query agent-skills gsd-integration-checker)
 ```
 
 Extract from init JSON: `milestone_version`, `milestone_name`, `phase_count`, `completed_phases`, `commit_docs`.
 
 Resolve integration checker model:
 ```bash
-integration_checker_model=$(gsd-sdk query resolve-model gsd-integration-checker --raw)
+integration_checker_model=$(bm-sdk query resolve-model gsd-integration-checker --raw)
 ```
 
 ## 1. Determine Milestone Scope
 
 ```bash
 # Phases in milestone (sorted numerically, handles decimals)
-gsd-sdk query phases.list
+bm-sdk query phases.list
 ```
 
 - Parse version from arguments or detect current from ROADMAP.md
@@ -46,7 +46,7 @@ For each phase directory, read the VERIFICATION.md:
 
 ```bash
 # For each phase, use find-phase to resolve the directory (handles archived phases)
-PHASE_INFO=$(gsd-sdk query find-phase 01 --raw)
+PHASE_INFO=$(bm-sdk query find-phase 01 --raw)
 # Extract directory from JSON, then read VERIFICATION.md from that directory
 # Repeat for each phase number from ROADMAP.md
 ```
@@ -115,7 +115,7 @@ For each phase's SUMMARY.md, extract `requirements-completed` from YAML frontmat
 ```bash
 for summary in .planning/phases/*-*/*-SUMMARY.md; do
   [ -e "$summary" ] || continue
-  gsd-sdk query summary-extract "$summary" --fields requirements_completed --pick requirements_completed
+  bm-sdk query summary-extract "$summary" --fields requirements_completed --pick requirements_completed
 done
 ```
 
@@ -143,7 +143,7 @@ For each REQ-ID, determine status using all three sources:
 Skip if `workflow.nyquist_validation` is explicitly `false` (absent = enabled).
 
 ```bash
-NYQUIST_CONFIG=$(gsd-sdk query config-get workflow.nyquist_validation --raw --default true)
+NYQUIST_CONFIG=$(bm-sdk query config-get workflow.nyquist_validation --raw --default true)
 ```
 
 If `false`: skip entirely.
@@ -167,7 +167,7 @@ Discovery only — never auto-calls `/gsd:validate-phase`.
 Skip if `workflow.drift_gate` is not `true` (absent/false = disabled, default OFF, D-05).
 
 ```bash
-DRIFT_GATE=$(gsd-sdk query config-get workflow.drift_gate --raw --default false)
+DRIFT_GATE=$(bm-sdk query config-get workflow.drift_gate --raw --default false)
 ```
 
 If not `true`: skip entirely.
@@ -175,7 +175,7 @@ If not `true`: skip entirely.
 Otherwise:
 
 ```bash
-DRIFT_FAIL=$(gsd-sdk query config-get workflow.drift_fail_on_score --raw --default "")
+DRIFT_FAIL=$(bm-sdk query config-get workflow.drift_fail_on_score --raw --default "")
 FAIL_FLAG=""
 [ -n "$DRIFT_FAIL" ] && FAIL_FLAG="--fail-on-score $DRIFT_FAIL"
 DRIFT_JSON=$(gsd-tools verify drift --scope . $FAIL_FLAG --json 2>&1)

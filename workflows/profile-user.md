@@ -1,5 +1,5 @@
 <purpose>
-Orchestrate the full developer profiling flow: consent, session analysis (or questionnaire fallback), profile generation, result display, and artifact creation. Heavy lifting is done by `gsd-sdk query` handlers (with legacy `gsd-tools.cjs` parity where needed) and the gsd-user-profiler agent; this workflow orchestrates the sequence, handles branching, and provides the UX.
+Orchestrate the full developer profiling flow: consent, session analysis (or questionnaire fallback), profile generation, result display, and artifact creation. Heavy lifting is done by `bm-sdk query` handlers (with legacy `gsd-tools.cjs` parity where needed) and the gsd-user-profiler agent; this workflow orchestrates the sequence, handles branching, and provides the UX.
 </purpose>
 
 <required_reading>
@@ -125,7 +125,7 @@ Display: "◆ Scanning sessions..."
 
 Run session scan:
 ```bash
-SCAN_RESULT=$(gsd-sdk query scan-sessions --json 2>/dev/null)
+SCAN_RESULT=$(bm-sdk query scan-sessions --json 2>/dev/null)
 ```
 
 Parse the JSON output to get session count and project count.
@@ -145,7 +145,7 @@ Display: "◆ Sampling messages..."
 
 Run profile sampling:
 ```bash
-SAMPLE_RESULT=$(gsd-sdk query profile-sample --json 2>/dev/null)
+SAMPLE_RESULT=$(bm-sdk query profile-sample --json 2>/dev/null)
 ```
 
 Parse the JSON output to get the temp directory path and message count.
@@ -196,7 +196,7 @@ Display: "Using questionnaire to build your profile."
 
 **Get questions:**
 ```bash
-QUESTIONS=$(gsd-sdk query profile-questionnaire --json 2>/dev/null)
+QUESTIONS=$(bm-sdk query profile-questionnaire --json 2>/dev/null)
 ```
 
 Parse the questions JSON. It contains 8 questions, one per dimension.
@@ -219,7 +219,7 @@ Write the answers JSON to `$ANSWERS_PATH`.
 
 **Convert answers to analysis:**
 ```bash
-ANALYSIS_RESULT=$(gsd-sdk query profile-questionnaire --answers "$ANSWERS_PATH" --json 2>/dev/null)
+ANALYSIS_RESULT=$(bm-sdk query profile-questionnaire --answers "$ANSWERS_PATH" --json 2>/dev/null)
 ```
 
 Parse the analysis JSON from the result.
@@ -266,7 +266,7 @@ Write updated analysis JSON back to `$ANALYSIS_PATH`.
 Display: "◆ Writing profile..."
 
 ```bash
-gsd-sdk query write-profile --input "$ANALYSIS_PATH" --json
+bm-sdk query write-profile --input "$ANALYSIS_PATH" --json
 ```
 
 Display: "✓ Profile written to ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/USER-PROFILE.md"
@@ -345,7 +345,7 @@ Generate selected artifacts sequentially:
 **For /gsd:dev-preferences (if selected):**
 
 ```bash
-gsd-sdk query generate-dev-preferences --analysis "$ANALYSIS_PATH" --json
+bm-sdk query generate-dev-preferences --analysis "$ANALYSIS_PATH" --json
 ```
 
 Display: "✓ Generated /gsd:dev-preferences at $HOME/.claude/skills/gsd:dev-preferences/SKILL.md"
@@ -353,7 +353,7 @@ Display: "✓ Generated /gsd:dev-preferences at $HOME/.claude/skills/gsd:dev-pre
 **For CLAUDE.md profile section (if selected):**
 
 ```bash
-gsd-sdk query generate-claude-profile --analysis "$ANALYSIS_PATH" --json
+bm-sdk query generate-claude-profile --analysis "$ANALYSIS_PATH" --json
 ```
 
 Display: "✓ Added profile section to CLAUDE.md"
@@ -361,12 +361,12 @@ Display: "✓ Added profile section to CLAUDE.md"
 **For Global CLAUDE.md (if selected):**
 
 ```bash
-gsd-sdk query generate-claude-profile --analysis "$ANALYSIS_PATH" --global --json
+bm-sdk query generate-claude-profile --analysis "$ANALYSIS_PATH" --global --json
 ```
 
 Display: "✓ Added profile section to $HOME/.claude/CLAUDE.md"
 
-**Error handling:** If any `gsd-sdk query` or gsd-tools.cjs call fails, display the error message and use AskUserQuestion to offer "Retry" or "Skip this artifact". On retry, re-run the command. On skip, continue to next artifact.
+**Error handling:** If any `bm-sdk query` or gsd-tools.cjs call fails, display the error message and use AskUserQuestion to offer "Retry" or "Skip this artifact". On retry, re-run the command. On skip, continue to next artifact.
 
 ---
 
@@ -439,7 +439,7 @@ rm -f "$ANALYSIS_PATH" 2>/dev/null
 - [ ] Profile written to USER-PROFILE.md via write-profile subcommand
 - [ ] Result display shows report card table and highlight reel with evidence
 - [ ] Artifact selection uses multiSelect with all options pre-selected
-- [ ] Artifacts generated sequentially via gsd-sdk query (or gsd-tools.cjs) subcommands
+- [ ] Artifacts generated sequentially via bm-sdk query (or gsd-tools.cjs) subcommands
 - [ ] Refresh diff shows changed dimensions when --refresh was used
 - [ ] Temp files cleaned up on completion
 </success_criteria>

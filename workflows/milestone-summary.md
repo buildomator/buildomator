@@ -50,7 +50,7 @@ Read all files that exist. Missing files are fine — the summary adapts to what
 ## Step 3: Discover Phase Artifacts
 
 ```bash
-gsd-sdk query init.progress
+bm-sdk query init.progress
 ```
 
 This returns phase metadata. For each phase in the milestone scope:
@@ -186,7 +186,7 @@ mkdir -p .planning/reports
 
 Write the summary, then commit:
 ```bash
-gsd-sdk query commit "docs(v${VERSION}): generate milestone summary for onboarding" --files \
+bm-sdk query commit "docs(v${VERSION}): generate milestone summary for onboarding" --files \
   ".planning/reports/MILESTONE_SUMMARY-v${VERSION}.md"
 ```
 
@@ -212,7 +212,7 @@ If the user is done:
 ## Step 9: Update STATE.md
 
 ```bash
-gsd-sdk query state.record-session "" \
+bm-sdk query state.record-session "" \
   "Milestone v${VERSION} summary generated" \
   ".planning/reports/MILESTONE_SUMMARY-v${VERSION}.md"
 ```

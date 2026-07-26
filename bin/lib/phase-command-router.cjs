@@ -8,8 +8,8 @@ function routePhaseCommand({ phase, args, cwd, raw, error }) {
     args,
     subcommands: PHASE_SUBCOMMANDS,
     unsupported: {
-      'list-plans': 'phase list-plans is SDK-only. Use: gsd-sdk query phase.list-plans ...',
-      'list-artifacts': 'phase list-artifacts is SDK-only. Use: gsd-sdk query phase.list-artifacts ...',
+      'list-plans': 'phase list-plans is SDK-only. Use: bm-sdk query phase.list-plans ...',
+      'list-artifacts': 'phase list-artifacts is SDK-only. Use: bm-sdk query phase.list-artifacts ...',
       scaffold: 'phase scaffold is routed through the top-level scaffold command.',
     },
     error,

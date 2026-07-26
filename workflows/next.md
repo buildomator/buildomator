@@ -13,7 +13,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 Read project state to determine current position:
 
 ```bash
-gsd-sdk query state.json 2>/dev/null || echo "{}"
+bm-sdk query state.json 2>/dev/null || echo "{}"
 ```
 
 Also read:
@@ -82,7 +82,7 @@ Use `--force` to bypass this check.
 Exit.
 
 **Prior-phase completeness scan:**
-After passing all three hard-stop gates, scan all phases preceding the current phase in ROADMAP.md order. For each prior phase number `N`, use `gsd-sdk query find-phase <N>` JSON (plans, summaries, incomplete_plans, etc.) to inspect it.
+After passing all three hard-stop gates, scan all phases preceding the current phase in ROADMAP.md order. For each prior phase number `N`, use `bm-sdk query find-phase <N>` JSON (plans, summaries, incomplete_plans, etc.) to inspect it.
 
 Detect three categories of incomplete work:
 1. **Plans without summaries** — a PLAN.md exists in a prior phase directory but no matching SUMMARY.md exists (execution started but not completed).
@@ -126,7 +126,7 @@ Choice [S]:
 ```
 2. Commit the deferral record:
 ```bash
-gsd-sdk query commit "docs: defer incomplete Phase {src} items to backlog"
+bm-sdk query commit "docs: defer incomplete Phase {src} items to backlog"
 ```
 3. Continue routing to `determine_next_action` immediately — no second prompt.
 
@@ -138,7 +138,7 @@ gsd-sdk query commit "docs: defer incomplete Phase {src} items to backlog"
 
 **Skip if `--force` or `--no-resume` was passed.**
 
-Scan ALL phases in ROADMAP order (lowest to highest) for incomplete-execution state. Use `gsd-sdk query roadmap.analyze` to get the phase list, then for each phase number `N` query `gsd-sdk query find-phase <N>` JSON and inspect its `plans` and `summaries` arrays. A phase is **incomplete-execution** when at least one entry in `plans` has no matching SUMMARY.md (i.e., `plans.length > summaries.length`, or `incomplete_plans` array is non-empty if the find-phase JSON exposes that directly).
+Scan ALL phases in ROADMAP order (lowest to highest) for incomplete-execution state. Use `bm-sdk query roadmap.analyze` to get the phase list, then for each phase number `N` query `bm-sdk query find-phase <N>` JSON and inspect its `plans` and `summaries` arrays. A phase is **incomplete-execution** when at least one entry in `plans` has no matching SUMMARY.md (i.e., `plans.length > summaries.length`, or `incomplete_plans` array is non-empty if the find-phase JSON exposes that directly).
 
 Stop at the first such phase. Record its phase number as `INCOMPLETE_PHASE` (the lowest-numbered phase needing continued execution).
 
@@ -146,9 +146,9 @@ Illustrative bash:
 
 ```bash
 INCOMPLETE_PHASE=""
-PHASES=$(gsd-sdk query roadmap.analyze --pick phases 2>/dev/null)
+PHASES=$(bm-sdk query roadmap.analyze --pick phases 2>/dev/null)
 for PHASE_NUM in $(echo "$PHASES" | jq -r '.[].number // .[].phase_number // empty'); do
-  PHASE_JSON=$(gsd-sdk query find-phase "$PHASE_NUM" 2>/dev/null)
+  PHASE_JSON=$(bm-sdk query find-phase "$PHASE_NUM" 2>/dev/null)
   [ -z "$PHASE_JSON" ] && continue
   PLAN_COUNT=$(echo "$PHASE_JSON" | jq '(.plans // []) | length')
   SUMMARY_COUNT=$(echo "$PHASE_JSON" | jq '(.summaries // []) | length')
