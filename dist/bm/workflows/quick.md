@@ -104,8 +104,9 @@ GSD > QUICK TASK (VALIDATE)
 **Step 2: Initialize**
 
 ```bash
-if ! command -v gsd-sdk &>/dev/null; then
-  echo "⚠ gsd-sdk not found in PATH, /bm:quick requires it."
+SDK_BIN="$(command -v bm-sdk || command -v gsd-sdk)"
+if [ -z "$SDK_BIN" ]; then
+  echo "⚠ bm-sdk not found in PATH, /bm:quick requires it (gsd-sdk also works as an alias)."
   echo ""
   echo "Install the query-capable GSD SDK CLI:"
   echo "  npm install -g @opengsd/get-shit-done-redux"
@@ -117,18 +118,18 @@ fi
 ```
 
 ```bash
-INIT=$(gsd-sdk query init.quick "$DESCRIPTION")
+INIT=$(bm-sdk query init.quick "$DESCRIPTION")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_PLANNER=$(gsd-sdk query agent-skills gsd-planner)
-AGENT_SKILLS_EXECUTOR=$(gsd-sdk query agent-skills gsd-executor)
-AGENT_SKILLS_CHECKER=$(gsd-sdk query agent-skills gsd-plan-checker)
-AGENT_SKILLS_VERIFIER=$(gsd-sdk query agent-skills gsd-verifier)
+AGENT_SKILLS_PLANNER=$(bm-sdk query agent-skills gsd-planner)
+AGENT_SKILLS_EXECUTOR=$(bm-sdk query agent-skills gsd-executor)
+AGENT_SKILLS_CHECKER=$(bm-sdk query agent-skills gsd-plan-checker)
+AGENT_SKILLS_VERIFIER=$(bm-sdk query agent-skills gsd-verifier)
 ```
 
 Parse JSON for: `planner_model`, `executor_model`, `checker_model`, `verifier_model`, `commit_docs`, `branch_name`, `quick_id`, `slug`, `date`, `timestamp`, `quick_dir`, `task_dir`, `roadmap_exists`, `planning_exists`.
 
 ```bash
-USE_WORKTREES=$(gsd-sdk query config-get workflow.use_worktrees 2>/dev/null || echo "true")
+USE_WORKTREES=$(bm-sdk query config-get workflow.use_worktrees 2>/dev/null || echo "true")
 ```
 
 Worktree isolation is unsafe only when the quick task touches a submodule path. Parse submodule paths from `.gitmodules` so the guard keys on actual paths, not the file's mere existence:
@@ -587,7 +588,7 @@ Skip this step entirely if `USE_WORKTREES === "false"` (non-worktree mode: PLAN.
 
 ```bash
 if [ "${USE_WORKTREES}" != "false" ]; then
-  COMMIT_DOCS=$(gsd-sdk query config-get commit_docs 2>/dev/null || echo "true")
+  COMMIT_DOCS=$(bm-sdk query config-get commit_docs 2>/dev/null || echo "true")
   if [ "$COMMIT_DOCS" != "false" ]; then
     git add "${QUICK_DIR}/${quick_id}-PLAN.md"
     # No-op skip if nothing actually staged (idempotent re-runs).
@@ -596,7 +597,7 @@ if [ "${USE_WORKTREES}" != "false" ]; then
     else
       # Run hooks normally (#2924). If a project opts out via
       # workflow.worktree_skip_hooks=true, honor that opt-in only.
-      SKIP_HOOKS=$(gsd-sdk query config-get workflow.worktree_skip_hooks 2>/dev/null || echo "false")
+      SKIP_HOOKS=$(bm-sdk query config-get workflow.worktree_skip_hooks 2>/dev/null || echo "false")
       if [ "$SKIP_HOOKS" = "true" ]; then
         git commit --no-verify -m "docs(${quick_id}): pre-dispatch plan for ${DESCRIPTION}" -- "${QUICK_DIR}/${quick_id}-PLAN.md" \
           || { echo "ERROR: pre-dispatch PLAN.md commit failed (--no-verify path). Aborting before executor dispatch." >&2; exit 1; }
@@ -735,10 +736,11 @@ After executor returns:
    # Prefer the bounded cleanup helper. It verifies branch identity, expected
    # base, deletion diffs, merge result, and worktree removal before branch
    # deletion. If it blocks, resolve the reported manifest entry and rerun.
-   if command -v gsd-sdk >/dev/null 2>&1; then
-     gsd-sdk query worktree.cleanup-wave --manifest "$QUICK_WORKTREE_MANIFEST" || exit 1
+   SDK_BIN="$(command -v bm-sdk || command -v gsd-sdk)"
+   if [ -n "$SDK_BIN" ]; then
+     "$SDK_BIN" query worktree.cleanup-wave --manifest "$QUICK_WORKTREE_MANIFEST" || exit 1
    else
-     echo "WARN: gsd-sdk unavailable; using manifest-scoped shell fallback (#3384)." >&2
+     echo "WARN: bm-sdk unavailable; using manifest-scoped shell fallback (#3384)." >&2
 
    # Inclusion-based filter on manifest worktrees only; read line-by-line to preserve whitespace paths (#2774).
    WT_PATHS_FILE=$(mktemp "${TMPDIR:-/tmp}/bm:worktree-paths-XXXXXX")
@@ -797,7 +799,7 @@ After executor returns:
 
        if ! git diff --quiet .planning/STATE.md .planning/ROADMAP.md 2>/dev/null || \
           [ -n "$DELETED_FILES" ]; then
-         COMMIT_DOCS=$(gsd-sdk query config-get commit_docs 2>/dev/null || echo "true")
+         COMMIT_DOCS=$(bm-sdk query config-get commit_docs 2>/dev/null || echo "true")
          if [ "$COMMIT_DOCS" != "false" ]; then
            git add .planning/STATE.md .planning/ROADMAP.md 2>/dev/null || true
            git commit --amend --no-edit 2>/dev/null || true
@@ -863,7 +865,7 @@ Skip this step entirely if `$FULL_MODE` is false.
 
 **Config gate:**
 ```bash
-CODE_REVIEW_ENABLED=$(gsd-sdk query config-get workflow.code_review 2>/dev/null || echo "true")
+CODE_REVIEW_ENABLED=$(bm-sdk query config-get workflow.code_review 2>/dev/null || echo "true")
 ```
 If `"false"`, skip with message "Code review skipped (workflow.code_review=false)".
 
@@ -1024,7 +1026,7 @@ does not affect the commit below.
 
 **Step 8: Final commit and completion**
 
-Stage and commit quick task artifacts. This step MUST always run — even if the executor already committed some files (e.g. when running without worktree isolation). The `gsd-sdk query commit` command (or legacy `gsd-tools.cjs` commit) handles already-committed files gracefully.
+Stage and commit quick task artifacts. This step MUST always run — even if the executor already committed some files (e.g. when running without worktree isolation). The `bm-sdk query commit` command (or legacy `gsd-tools.cjs` commit) handles already-committed files gracefully.
 
 Build file list:
 - `${QUICK_DIR}/${quick_id}-PLAN.md`
@@ -1037,7 +1039,7 @@ Build file list:
 
 ```bash
 # Stage artifacts; filter .planning/ from staging when commit_docs is disabled (#1783).
-COMMIT_DOCS=$(gsd-sdk query config-get commit_docs 2>/dev/null || echo "true")
+COMMIT_DOCS=$(bm-sdk query config-get commit_docs 2>/dev/null || echo "true")
 if [ "$COMMIT_DOCS" = "false" ]; then
   file_list_filtered=$(echo "${file_list}" | tr ' ' '\n' | grep -v '^\.planning/' | tr '\n' ' ')
   git add ${file_list_filtered} 2>/dev/null
@@ -1064,7 +1066,7 @@ if [ -n "$HEAD_AFTER_EXECUTOR" ] \
 else
   # Unsafe to amend (no new work commit, merge commit at HEAD, commit_docs disabled,
   # or nothing staged). Fall back to the original separate-docs-commit behavior.
-  gsd-sdk query commit "docs(quick-${quick_id}): ${DESCRIPTION}" --files ${file_list}
+  bm-sdk query commit "docs(quick-${quick_id}): ${DESCRIPTION}" --files ${file_list}
 fi
 ```
 

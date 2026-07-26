@@ -173,3 +173,5 @@ jobs:
         run: node tests/bm-autoenable.test.cjs
       - name: audit-open does not flag completed quick tasks (CJS/SDK parity)
         run: node tests/audit-open-quick-tasks.test.cjs
+      - name: bm-sdk / gsd-sdk dual-name back-compat tripwire
+        run: node tests/bm-sdk-alias.test.cjs

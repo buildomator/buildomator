@@ -12,7 +12,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 Gather project statistics:
 
 ```bash
-STATS=$(gsd-sdk query stats.json)
+STATS=$(bm-sdk query stats.json)
 if [[ "$STATS" == @file:* ]]; then STATS=$(cat "${STATS#@file:}"); fi
 ```
 
@@ -52,10 +52,10 @@ If no `.planning/` directory exists, inform the user to run `/bm:new-project` fi
 </step>
 
 <step name="mvp_summary">
-Read all phases via `gsd-sdk query roadmap.analyze` (Phase 1's `cmdRoadmapAnalyze` surfaces a `mode` field per phase). Count phases by mode:
+Read all phases via `bm-sdk query roadmap.analyze` (Phase 1's `cmdRoadmapAnalyze` surfaces a `mode` field per phase). Count phases by mode:
 
 ```bash
-ANALYZE=$(gsd-sdk query roadmap.analyze)
+ANALYZE=$(bm-sdk query roadmap.analyze)
 if [[ "$ANALYZE" == @file:* ]]; then ANALYZE=$(cat "${ANALYZE#@file:}"); fi
 MVP_COUNT=$(echo "$ANALYZE" | jq '[.phases[] | select(.mode == "mvp")] | length')
 TOTAL_COUNT=$(echo "$ANALYZE" | jq '.phases | length')

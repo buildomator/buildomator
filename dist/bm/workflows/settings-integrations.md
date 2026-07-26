@@ -2,7 +2,7 @@
 Interactive configuration of third-party integrations for GSD — search API keys
 (Brave / Firecrawl / Exa), code-review CLI routing (`review.models.<cli>`), and
 agent-skill injection (`agent_skills.<agent-type>`). Writes to
-`.planning/config.json` via `gsd-sdk`/`gsd-tools` so unrelated keys are
+`.planning/config.json` via `bm-sdk`/`gsd-tools` so unrelated keys are
 preserved, never clobbered.
 
 Separate from `/bm:settings` (workflow toggles): API keys and cross-tool
@@ -41,7 +41,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 Ensure config exists and resolve the active config path (flat vs workstream, #2282):
 
 ```bash
-gsd-sdk query config-ensure-section
+bm-sdk query config-ensure-section
 if [[ -z "${GSD_CONFIG_PATH:-}" ]]; then
   if [[ -f .planning/active-workstream ]]; then
     WS=$(tr -d '\n\r' < .planning/active-workstream)
@@ -64,10 +64,10 @@ integration field, compute one of:
 - `<value>` — non-secret routing/skill string, shown as-is
 
 ```bash
-BRAVE=$(gsd-sdk query config-get brave_search --default null)
-FIRECRAWL=$(gsd-sdk query config-get firecrawl --default null)
-EXA=$(gsd-sdk query config-get exa_search --default null)
-SEARCH_GITIGNORED=$(gsd-sdk query config-get search_gitignored --default false)
+BRAVE=$(bm-sdk query config-get brave_search --default null)
+FIRECRAWL=$(bm-sdk query config-get firecrawl --default null)
+EXA=$(bm-sdk query config-get exa_search --default null)
+SEARCH_GITIGNORED=$(bm-sdk query config-get search_gitignored --default false)
 ```
 
 For each secret key (`brave_search`, `firecrawl`, `exa_search`) the displayed
@@ -128,16 +128,16 @@ key value. **The answer must not be echoed back** in subsequent question
 descriptions or confirmation text. Write the value via:
 
 ```bash
-gsd-sdk query config-set brave_search "<value>"     # masked in output
-gsd-sdk query config-set firecrawl "<value>"        # masked in output
-gsd-sdk query config-set exa_search "<value>"       # masked in output
-gsd-sdk query config-set search_gitignored true|false
+bm-sdk query config-set brave_search "<value>"     # masked in output
+bm-sdk query config-set firecrawl "<value>"        # masked in output
+bm-sdk query config-set exa_search "<value>"       # masked in output
+bm-sdk query config-set search_gitignored true|false
 ```
 
 For "Clear", write `null`:
 
 ```bash
-gsd-sdk query config-set brave_search null
+bm-sdk query config-set brave_search null
 ```
 </step>
 
@@ -184,7 +184,7 @@ Leave / Replace / Clear, followed by a text-input prompt for the new command
 string. Write via:
 
 ```bash
-gsd-sdk query config-set review.models.<cli> "<command string>"
+bm-sdk query config-set review.models.<cli> "<command string>"
 ```
 
 After each update, return to the "Review model CLI mapping — what next?" question.
@@ -248,7 +248,7 @@ For a selected slug, prompt for the comma-separated skill list (text input).
 Show the current value if any, offer Leave / Replace / Clear. Write via:
 
 ```bash
-gsd-sdk query config-set agent_skills.<slug> "<skill-a,skill-b,skill-c>"
+bm-sdk query config-set agent_skills.<slug> "<skill-a,skill-b,skill-c>"
 ```
 
 After each update, return to the "Agent skills mapping — what next?" question.

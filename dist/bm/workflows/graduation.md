@@ -21,9 +21,9 @@ Read from project config (`config.json`):
 ## Step 1: Guard Checks
 
 ```bash
-GRADUATION_ENABLED=$(gsd-sdk query config-get features.graduation 2>/dev/null || echo "true")
-GRADUATION_WINDOW=$(gsd-sdk query config-get features.graduation_window 2>/dev/null || echo "5")
-GRADUATION_THRESHOLD=$(gsd-sdk query config-get features.graduation_threshold 2>/dev/null || echo "3")
+GRADUATION_ENABLED=$(bm-sdk query config-get features.graduation 2>/dev/null || echo "true")
+GRADUATION_WINDOW=$(bm-sdk query config-get features.graduation_window 2>/dev/null || echo "5")
+GRADUATION_THRESHOLD=$(bm-sdk query config-get features.graduation_threshold 2>/dev/null || echo "3")
 ```
 
 **Skip silently (print nothing) if:**

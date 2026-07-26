@@ -99,7 +99,7 @@ Usage: `/bm:discuss-phase 2 --batch=3`
 Plan a phase as a vertical MVP slice, three structured user-story prompts (`As a / I want to / So that`), SPIDR splitting if the story is too large, then delegates to `/bm:plan-phase` with MVP mode active.
 
 - Mutates the phase's ROADMAP entry: writes `**Mode:** mvp` + replaces `**Goal:**` with the assembled user story
-- Validates the story via `gsd-sdk query user-story.validate` (canonical regex `/^As a .+, I want to .+, so that .+\.$/`)
+- Validates the story via `bm-sdk query user-story.validate` (canonical regex `/^As a .+, I want to .+, so that .+\.$/`)
 - `--force` overrides the status guard (required if the phase is already `in_progress` or `completed`)
 - Pairs with the new-project mode prompt (Vertical MVP vs Horizontal Layers)
 

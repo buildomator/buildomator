@@ -9,4 +9,4 @@ allowed-tools:
 
 Show the following output to the user verbatim, with no extra commentary:
 
-!`if ! command -v gsd-sdk >/dev/null 2>&1; then printf '⚠ gsd-sdk not found in PATH — /bm:set-profile requires it.\n\nInstall the GSD SDK:\n  npm install -g @gsd-build/sdk\n\nOr update GSD to get the latest packages:\n  /bm:update\n'; exit 1; fi; gsd-sdk query config-set-model-profile $ARGUMENTS --raw`
+!`SDK="$(command -v bm-sdk || command -v gsd-sdk)"; if [ -z "$SDK" ]; then printf '⚠ bm-sdk not found in PATH, /bm:set-profile requires it (gsd-sdk also works as an alias).\n\nInstall the GSD SDK:\n  npm install -g @gsd-build/sdk\n\nOr update GSD to get the latest packages:\n  /bm:update\n'; exit 1; fi; "$SDK" query config-set-model-profile $ARGUMENTS --raw`

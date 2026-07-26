@@ -3,23 +3,27 @@
 
 // gsd-shadowing-sdk-detector.js, SessionStart hook
 //
-// Detects a shadowing `gsd-sdk` binary in $PATH that would take precedence
-// over the plugin's bundled wrapper. When found, emits a SessionStart
-// additionalContext warning recommending the user uninstall the global
-// `@gsd-build/sdk` / `get-shit-done-cc` package, since the plugin v2.42.0+
+// Detects a shadowing `bm-sdk` or `gsd-sdk` binary in $PATH that would take
+// precedence over the plugin's bundled wrapper. When found, emits a
+// SessionStart additionalContext warning recommending the user uninstall the
+// global `@gsd-build/sdk` / `get-shit-done-cc` package, since the plugin
 // bundles its own SDK and does not need the standalone package.
 //
-// Background: prior to v2.42.0 the plugin required a separate
-// `npm install -g get-shit-done-cc` install. Now the plugin bundles
-// `sdk/dist/cli.js`. A lingering global symlink at `/opt/homebrew/bin/gsd-sdk`
-// (or similar PATH-first location) will shadow the plugin's wrapper, and
-// the global SDK does not honor `CLAUDE_PLUGIN_ROOT` so it reports
-// `agents_installed: false` for every workflow that calls bare `gsd-sdk`.
-// (See plugin v2.42.5 #PLUGIN-WRAPPER-ENV-EXPORT, which only fires when the
-// plugin's wrapper is actually invoked.)
+// Background: prior to bundling, the plugin required a separate global SDK
+// install. Now the plugin bundles `sdk/dist/cli.js`. A lingering global
+// symlink at `/opt/homebrew/bin/bm-sdk` (or `gsd-sdk`, or a similar PATH-first
+// location) will shadow the plugin's wrapper, and the global SDK does not
+// honor `CLAUDE_PLUGIN_ROOT` so it reports `agents_installed: false` for every
+// workflow that calls bare `bm-sdk`.
+// (See #PLUGIN-WRAPPER-ENV-EXPORT, which only fires when the plugin's wrapper
+// is actually invoked.)
 
 const fs = require('fs');
 const path = require('path');
+
+// Both CLI names resolve to the same bundled SDK. bm-sdk is primary; gsd-sdk
+// remains a working alias.
+const SDK_NAMES = ['bm-sdk', 'gsd-sdk'];
 
 function pluginRoot() {
   if (process.env.CLAUDE_PLUGIN_ROOT) return process.env.CLAUDE_PLUGIN_ROOT;
@@ -46,26 +50,43 @@ function realpath(p) {
   try { return fs.realpathSync(p); } catch { return p; }
 }
 
-function main() {
-  const root = pluginRoot();
-  const expectedUnix = path.join(root, 'bin', 'gsd-sdk');
-  const expectedWin = path.join(root, 'bin', 'gsd-sdk.cmd');
-
-  const found = findInPath('gsd-sdk');
-  if (!found) {
-    process.exit(0);
-  }
+// Returns a shadowing record { name, found, foundReal } if `name` resolves in
+// PATH to something OTHER than a plugin-owned wrapper, else null.
+function checkShadow(name, root) {
+  const found = findInPath(name);
+  if (!found) return null;
 
   const foundReal = realpath(found);
-  const expectedReal = realpath(expectedUnix);
-  const expectedWinReal = realpath(expectedWin);
+  const expectedReals = [
+    realpath(path.join(root, 'bin', 'bm-sdk')),
+    realpath(path.join(root, 'bin', 'bm-sdk.cmd')),
+    realpath(path.join(root, 'bin', 'gsd-sdk')),
+    realpath(path.join(root, 'bin', 'gsd-sdk.cmd')),
+  ];
 
-  if (foundReal === expectedReal || foundReal === expectedWinReal) {
+  if (expectedReals.includes(foundReal)) return null;
+  if (foundReal.includes(path.join('.claude', 'plugins', 'cache', 'gsd-plugin'))) return null;
+
+  return { name, found, foundReal };
+}
+
+function main() {
+  const root = pluginRoot();
+
+  const shadows = [];
+  for (const name of SDK_NAMES) {
+    const hit = checkShadow(name, root);
+    if (hit) shadows.push(hit);
+  }
+
+  if (shadows.length === 0) {
     process.exit(0);
   }
 
-  if (foundReal.includes(path.join('.claude', 'plugins', 'cache', 'gsd-plugin'))) {
-    process.exit(0);
+  const foundLines = [];
+  for (const s of shadows) {
+    foundLines.push('  found `' + s.name + '`: ' + s.found);
+    foundLines.push('  resolves:      ' + s.foundReal);
   }
 
   const out = {
@@ -73,24 +94,25 @@ function main() {
       hookEventName: 'SessionStart',
       additionalContext: [
         '',
-        'GSD: A shadowing `gsd-sdk` binary was detected in your PATH:',
-        '  found:    ' + found,
-        '  resolves: ' + foundReal,
-        '  (plugin bundled wrapper:  ' + expectedUnix + ')',
+        'GSD: A shadowing SDK binary was detected in your PATH:',
+        ...foundLines,
+        '  (plugin bundled wrappers: ' + path.join(root, 'bin') + ')',
         '',
         'The shadowing binary will be used INSTEAD of the plugin\'s bundled SDK',
-        'whenever workflows call bare `gsd-sdk`. The global SDK does not honor',
-        '`CLAUDE_PLUGIN_ROOT`, so init queries report `agents_installed: false`',
-        'and skills like `/bm:new-project` skip the parallel research path.',
+        'whenever workflows call bare `bm-sdk` (or `gsd-sdk`). The global SDK',
+        'does not honor `CLAUDE_PLUGIN_ROOT`, so init queries report',
+        '`agents_installed: false` and skills like `/bm:new-project` skip the',
+        'parallel research path.',
         '',
         'To fix, remove the shadowing global:',
         '  npm uninstall -g @gsd-build/sdk',
         '  npm uninstall -g get-shit-done-cc',
         '',
-        'The plugin v2.42.0+ bundles its own SDK at',
+        'The plugin bundles its own SDK at',
         '`${CLAUDE_PLUGIN_ROOT}/sdk/dist/cli.js` and does not need the',
-        'standalone npm package. After uninstalling, `which gsd-sdk` should',
-        'resolve to a path under `.claude/plugins/cache/gsd-plugin/`.',
+        'standalone npm package. After uninstalling, `which bm-sdk` and',
+        '`which gsd-sdk` should resolve to a path under',
+        '`.claude/plugins/cache/gsd-plugin/`.',
         ''
       ].join('\n')
     }

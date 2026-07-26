@@ -2002,7 +2002,7 @@ function timeAgo(date) {
  * divergence: the old per-workflow bash detected only `origin/HEAD` and then
  * hardcoded `:-main`, so any checkout where `origin/HEAD` is unset (git init +
  * remote add, fresh fetch, many worktrees, CI) silently fell back to `main`
- * even on a `master` repo. Pure git, no gsd-sdk dependency.
+ * even on a `master` repo. Pure git, no bm-sdk dependency.
  *
  * Precedence:
  *   1. `git.base_branch` config override (explicit user intent)

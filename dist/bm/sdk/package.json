@@ -12,6 +12,7 @@
     }
   },
   "bin": {
+    "bm-sdk": "./dist/cli.js",
     "gsd-sdk": "./dist/cli.js"
   },
   "files": [

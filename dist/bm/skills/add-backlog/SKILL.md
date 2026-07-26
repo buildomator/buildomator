@@ -21,7 +21,7 @@ Add a backlog item to the roadmap using 999.x numbering. Backlog items are unseq
 
 2. **Find next backlog number:**
    ```bash
-   NEXT=$(gsd-sdk query phase.next-decimal 999 --raw)
+   NEXT=$(bm-sdk query phase.next-decimal 999 --raw)
    ```
    If no 999.x phases exist, start at 999.1.
 
@@ -43,14 +43,14 @@ Add a backlog item to the roadmap using 999.x numbering. Backlog items are unseq
 
 4. **Create the phase directory:**
    ```bash
-   SLUG=$(gsd-sdk query generate-slug "$ARGUMENTS" --raw)
+   SLUG=$(bm-sdk query generate-slug "$ARGUMENTS" --raw)
    mkdir -p ".planning/phases/${NEXT}-${SLUG}"
    touch ".planning/phases/${NEXT}-${SLUG}/.gitkeep"
    ```
 
 5. **Commit:**
    ```bash
-   gsd-sdk query commit "docs: add backlog item ${NEXT} — ${ARGUMENTS}" .planning/ROADMAP.md ".planning/phases/${NEXT}-${SLUG}/.gitkeep"
+   bm-sdk query commit "docs: add backlog item ${NEXT} — ${ARGUMENTS}" .planning/ROADMAP.md ".planning/phases/${NEXT}-${SLUG}/.gitkeep"
    ```
 
 6. **Report:**

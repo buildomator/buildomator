@@ -6,7 +6,7 @@ Post-merge build & test gate. Runs after all worktrees in a wave are merged (par
 
 ```bash
 # Resolve build command: project config > Xcode > Makefile > language sniff
-BUILD_CMD=$(gsd-sdk query config-get workflow.build_command --default "" 2>/dev/null || true)
+BUILD_CMD=$(bm-sdk query config-get workflow.build_command --default "" 2>/dev/null || true)
 if [ -z "$BUILD_CMD" ]; then
   XCODEPROJ=$(find . -maxdepth 2 -name "*.xcodeproj" -not -path "*/node_modules/*" 2>/dev/null | head -1)
   if [ -n "$XCODEPROJ" ]; then
@@ -60,7 +60,7 @@ fi
 
 ```bash
 # Resolve test command: project config > Xcode > Makefile > language sniff
-TEST_CMD=$(gsd-sdk query config-get workflow.test_command --default "" 2>/dev/null || true)
+TEST_CMD=$(bm-sdk query config-get workflow.test_command --default "" 2>/dev/null || true)
 if [ -z "$TEST_CMD" ]; then
   XCODEPROJ=$(find . -maxdepth 2 -name "*.xcodeproj" -not -path "*/node_modules/*" 2>/dev/null | head -1)
   if [ -n "$XCODEPROJ" ]; then

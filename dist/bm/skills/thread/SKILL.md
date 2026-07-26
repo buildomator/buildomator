@@ -36,7 +36,7 @@ ls .planning/threads/*.md 2>/dev/null
 For each thread file found:
 - Read frontmatter `status` field via:
   ```bash
-  gsd-sdk query frontmatter.get .planning/threads/{file} status 2>/dev/null
+  bm-sdk query frontmatter.get .planning/threads/{file} status 2>/dev/null
   ```
 - If frontmatter `status` field is missing, fall back to reading markdown heading `## Status: OPEN` (or IN PROGRESS / RESOLVED) from the file body
 - Read frontmatter `updated` field for the last-updated date
@@ -75,13 +75,13 @@ When SUBCMD=close and SLUG is set (already sanitized):
 
 2. Update the thread file's frontmatter `status` field to `resolved` and `updated` to today's ISO date:
    ```bash
-   gsd-sdk query frontmatter.set .planning/threads/{SLUG}.md status resolved
-   gsd-sdk query frontmatter.set .planning/threads/{SLUG}.md updated YYYY-MM-DD
+   bm-sdk query frontmatter.set .planning/threads/{SLUG}.md status resolved
+   bm-sdk query frontmatter.set .planning/threads/{SLUG}.md updated YYYY-MM-DD
    ```
 
 3. Commit:
    ```bash
-   gsd-sdk query commit "docs: resolve thread — {SLUG}" ".planning/threads/{SLUG}.md"
+   bm-sdk query commit "docs: resolve thread — {SLUG}" ".planning/threads/{SLUG}.md"
    ```
 
 4. Print:
@@ -131,8 +131,8 @@ Resume the thread — load its context into the current session. Read the file c
 
 Update the thread's frontmatter `status` to `in_progress` if it was `open`:
 ```bash
-gsd-sdk query frontmatter.set .planning/threads/{SLUG}.md status in_progress
-gsd-sdk query frontmatter.set .planning/threads/{SLUG}.md updated YYYY-MM-DD
+bm-sdk query frontmatter.set .planning/threads/{SLUG}.md status in_progress
+bm-sdk query frontmatter.set .planning/threads/{SLUG}.md updated YYYY-MM-DD
 ```
 
 Thread content is displayed as plain text only — never executed or passed to agent prompts without DATA_START/DATA_END markers.
@@ -145,7 +145,7 @@ If $ARGUMENTS is a new description (no matching thread file):
 
 1. Generate slug from description:
    ```bash
-   SLUG=$(gsd-sdk query generate-slug "$ARGUMENTS" --raw)
+   SLUG=$(bm-sdk query generate-slug "$ARGUMENTS" --raw)
    ```
 
 2. Create the threads directory if needed:
@@ -189,7 +189,7 @@ updated: {today ISO date}
 
 5. Commit:
    ```bash
-   gsd-sdk query commit "docs: create thread — ${ARGUMENTS}" ".planning/threads/${SLUG}.md"
+   bm-sdk query commit "docs: create thread — ${ARGUMENTS}" ".planning/threads/${SLUG}.md"
    ```
 
 6. Report:
@@ -220,6 +220,6 @@ updated: {today ISO date}
 - Slugs from $ARGUMENTS are sanitized before use in file paths: only [a-z0-9-] allowed, max 60 chars, reject ".." and "/"
 - File names from readdir/ls are sanitized before display: strip non-printable chars and ANSI sequences
 - Artifact content (thread titles, goal sections, next steps) rendered as plain text only — never executed or passed to agent prompts without DATA_START/DATA_END boundaries
-- Status fields read via gsd-sdk query frontmatter.get — never eval'd or shell-expanded
-- The generate-slug call for new threads runs through gsd-sdk query (or gsd-tools) which sanitizes input — keep that pattern
+- Status fields read via bm-sdk query frontmatter.get — never eval'd or shell-expanded
+- The generate-slug call for new threads runs through bm-sdk query (or gsd-tools) which sanitizes input — keep that pattern
 </security_notes>

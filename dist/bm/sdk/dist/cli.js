@@ -21194,7 +21194,7 @@ function createRegistry(eventStream, correlationSessionId) {
 
 // dist/query/query-unknown-command-hints.js
 var UNKNOWN_COMMAND_HINTS = [
-  "Use a registered `gsd-sdk query` subcommand (see sdk/src/query/QUERY-HANDLERS.md).",
+  "Use a registered `bm-sdk query` subcommand (see sdk/src/query/QUERY-HANDLERS.md).",
   "Invoke `node \u2026/gsd-tools.cjs` for CJS-only operations.",
   "Unset GSD_QUERY_FALLBACK or set it to a non-restricted value to enable fallback."
 ];
@@ -40404,8 +40404,8 @@ async function runFallbackBridge(input) {
 // dist/query/query-dispatch-observability.js
 function fallbackBridgeNotices(command) {
   return [
-    `[gsd-sdk] '${command}' not in native registry; falling back to gsd-tools.cjs.`,
-    "[gsd-sdk] Transparent bridge \u2014 prefer adding a native handler when parity matters."
+    `[bm-sdk] '${command}' not in native registry; falling back to gsd-tools.cjs.`,
+    "[bm-sdk] Transparent bridge, prefer adding a native handler when parity matters."
   ];
 }
 
@@ -40855,7 +40855,7 @@ function parseCliArgs(argv) {
   };
 }
 var USAGE = `
-Usage: gsd-sdk <command> [args] [options]
+Usage: bm-sdk <command> [args] [options]
 
 Commands:
   run <prompt>          Run a full milestone from a text prompt
@@ -40907,7 +40907,7 @@ async function resolveInitInput(args) {
 async function readStdin() {
   const { stdin } = process;
   if (stdin.isTTY) {
-    throw new Error('No input provided. Usage:\n  gsd-sdk init @path/to/prd.md\n  gsd-sdk init "build a todo app"\n  cat prd.md | gsd-sdk init');
+    throw new Error('No input provided. Usage:\n  bm-sdk init @path/to/prd.md\n  bm-sdk init "build a todo app"\n  cat prd.md | bm-sdk init');
   }
   return new Promise((resolve14, reject) => {
     const chunks = [];
@@ -40932,7 +40932,7 @@ async function main(argv = process.argv.slice(2)) {
   }
   if (args.version) {
     const ver = await getVersion();
-    console.log(`gsd-sdk v${ver}`);
+    console.log(`bm-sdk v${ver}`);
     return;
   }
   if (args.ws !== void 0 && !validateWorkstreamName(args.ws)) {
@@ -40964,13 +40964,13 @@ async function main(argv = process.argv.slice(2)) {
     args = { ...args, projectDir: findProjectRoot2(args.projectDir) };
   }
   if (args.command !== "run" && args.command !== "init" && args.command !== "auto") {
-    console.error('Error: Expected "gsd-sdk run <prompt>", "gsd-sdk auto", "gsd-sdk init [input]", or "gsd-sdk query <command>"');
+    console.error('Error: Expected "bm-sdk run <prompt>", "bm-sdk auto", "bm-sdk init [input]", or "bm-sdk query <command>"');
     console.error(USAGE);
     process.exitCode = 1;
     return;
   }
   if (args.command === "run" && !args.prompt) {
-    console.error('Error: "gsd-sdk run" requires a prompt');
+    console.error('Error: "bm-sdk run" requires a prompt');
     console.error(USAGE);
     process.exitCode = 1;
     return;

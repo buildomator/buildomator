@@ -16,7 +16,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 Ensure config exists and resolve the workstream-aware config path (mirrors `settings.md`):
 
 ```bash
-gsd-sdk query config-ensure-section
+bm-sdk query config-ensure-section
 if [[ -z "${GSD_CONFIG_PATH:-}" ]]; then
   if [[ -f .planning/active-workstream ]]; then
     WS=$(tr -d '\n\r' < .planning/active-workstream)
@@ -421,7 +421,7 @@ AskUserQuestion([
 
 If "Other (Group B or custom)" is selected, prompt the user to enter the runtime name as a free-text string.
 If the selected runtime differs from the stored `runtime` key, update `runtime` via
-`gsd-sdk query config-set runtime <value>` before proceeding to Step C.
+`bm-sdk query config-set runtime <value>` before proceeding to Step C.
 
 **Step C — Configure tier overrides for the selected runtime:**
 
@@ -464,12 +464,12 @@ AskUserQuestion([
 
 For each tier where the user chose "Enter model ID":
 ```bash
-gsd-sdk query config-set model_profile_overrides.<runtime>.<tier> "<model-id>"
+bm-sdk query config-set model_profile_overrides.<runtime>.<tier> "<model-id>"
 ```
 
 For each tier where the user chose "Clear override", remove the key by setting it to null:
 ```bash
-gsd-sdk query config-set model_profile_overrides.<runtime>.<tier> null
+bm-sdk query config-set model_profile_overrides.<runtime>.<tier> null
 ```
 
 "Keep current" selections are skipped entirely. Never write a key the user did not explicitly
@@ -480,19 +480,19 @@ change.
 <step name="update_config">
 Merge new settings into the existing config at `$GSD_CONFIG_PATH`. Core correctness invariant:
 **preserve every unrelated key** — do not clobber siblings. Apply each selected value via
-`gsd-sdk query config-set <key> <value>` so the central validator (`isValidConfigKey`) accepts
+`bm-sdk query config-set <key> <value>` so the central validator (`isValidConfigKey`) accepts
 the write and the deep-merge preserves unrelated keys and sibling sub-objects.
 
 ```bash
 # Example — only write keys the user changed. "Keep current" selections are skipped.
-gsd-sdk query config-set workflow.plan_bounce_passes 5
-gsd-sdk query config-set workflow.subagent_timeout 900
-gsd-sdk query config-set git.base_branch main
-gsd-sdk query config-set context_window 1000000
+bm-sdk query config-set workflow.plan_bounce_passes 5
+bm-sdk query config-set workflow.subagent_timeout 900
+bm-sdk query config-set git.base_branch main
+bm-sdk query config-set context_window 1000000
 # Runtime model tier examples:
-gsd-sdk query config-set runtime gemini
-gsd-sdk query config-set model_profile_overrides.gemini.opus gemini-3-ultra
-gsd-sdk query config-set model_profile_overrides.gemini.haiku null
+bm-sdk query config-set runtime gemini
+bm-sdk query config-set model_profile_overrides.gemini.opus gemini-3-ultra
+bm-sdk query config-set model_profile_overrides.gemini.haiku null
 ```
 
 Conceptual shape after merge (unchanged top-level keys like `model_profile`,
@@ -544,7 +544,7 @@ anything not listed in Sections 1–7 MUST survive the update):
 ```
 
 Never emit a full overwrite of the file that omits keys the user did not touch. Always
-route each write through `gsd-sdk query config-set` so sibling preservation is handled by
+route each write through `bm-sdk query config-set` so sibling preservation is handled by
 the central setter.
 </step>
 
@@ -597,7 +597,7 @@ UI/AI phase gates), use /bm:settings.
 - [ ] Numeric inputs validated — non-numeric rejected and re-prompted
 - [ ] Branch-template inputs validated — non-default must contain a placeholder
 - [ ] Null-allowed fields accept an empty input as a clear
-- [ ] Writes routed through `gsd-sdk query config-set` so unrelated keys are preserved
+- [ ] Writes routed through `bm-sdk query config-set` so unrelated keys are preserved
 - [ ] Section 7 shows current runtime and built-in tier table
 - [ ] Group B runtimes display "(no built-in default — your runtime handles model selection)"
 - [ ] Override set/clear/keep paths all work correctly for each tier

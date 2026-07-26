@@ -6,7 +6,7 @@ Cross-phase audit of all UAT and verification files. Finds every outstanding ite
 
 <step name="initialize">
 ```bash
-AUDIT=$(gsd-sdk query audit-uat --raw)
+AUDIT=$(bm-sdk query audit-uat --raw)
 ```
 
 Parse JSON for `results` array and `summary` object.

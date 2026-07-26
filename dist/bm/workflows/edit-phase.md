@@ -34,7 +34,7 @@ Exit.
 Load phase operation context:
 
 ```bash
-INIT=$(gsd-sdk query init.phase-op "${target}")
+INIT=$(bm-sdk query init.phase-op "${target}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -50,7 +50,7 @@ Exit.
 Read the current phase section from ROADMAP.md:
 
 ```bash
-PHASE_DATA=$(gsd-sdk query roadmap get-phase "${target}")
+PHASE_DATA=$(bm-sdk query roadmap get-phase "${target}")
 ```
 
 Parse the JSON result. If `found` is false:
@@ -78,7 +78,7 @@ Also parse the full section text to extract additional fields not in the SDK res
 Determine the phase status from disk. Compare against STATE.md current phase:
 
 ```bash
-ANALYZE=$(gsd-sdk query roadmap analyze)
+ANALYZE=$(bm-sdk query roadmap analyze)
 ```
 
 Find the phase entry in the `phases` array. Extract `disk_status`.
@@ -180,7 +180,7 @@ Wait for user input. Use the clarified intent to rewrite all fields:
 If `depends_on` is being updated (or preserved as non-empty), validate that every referenced phase number exists in ROADMAP.md:
 
 ```bash
-ALL_PHASES=$(gsd-sdk query roadmap analyze)
+ALL_PHASES=$(bm-sdk query roadmap analyze)
 ```
 
 Parse the `phases` array to get all valid phase numbers.
@@ -239,7 +239,7 @@ Read the full ROADMAP.md content, locate the phase section by its header (`## Ph
 After writing ROADMAP.md, update STATE.md Roadmap Evolution:
 
 ```bash
-gsd-sdk query state.add-roadmap-evolution \
+bm-sdk query state.add-roadmap-evolution \
   --phase {target} \
   --action edited \
   --note "edited fields: {changed_field_list}"

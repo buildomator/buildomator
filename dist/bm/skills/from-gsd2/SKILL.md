@@ -14,7 +14,7 @@ Reverse-migrate a GSD-2 project (`.gsd/` directory) back to GSD v1 (`.planning/`
 
 Maps the GSD-2 hierarchy (Milestone → Slice → Task) to the GSD v1 hierarchy (Milestone sections in ROADMAP.md → Phase → Plan), preserving completion state, research files, and summaries.
 
-**CJS-only:** `from-gsd2` is not on the `gsd-sdk query` registry; call `gsd-tools.cjs` as shown below (see `docs/CLI-TOOLS.md`).
+**CJS-only:** `from-gsd2` is not on the `bm-sdk query` registry; call `gsd-tools.cjs` as shown below (see `docs/CLI-TOOLS.md`).
 </objective>
 
 <process>

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * @deprecated The supported programmatic surface is `gsd-sdk query` (SDK query registry)
+ * @deprecated The supported programmatic surface is `bm-sdk query` (SDK query registry)
  * and the `@gsd-build/sdk` package. This Node CLI remains the compatibility implementation
  * for shell scripts and older workflows; prefer calling the SDK from agents and automation.
  *

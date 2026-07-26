@@ -255,7 +255,7 @@ gh issue create \
 ## Step 8: Update STATE.md
 
 ```bash
-gsd-sdk query state.record-session "" \
+bm-sdk query state.record-session "" \
   "Forensic investigation complete" \
   ".planning/forensics/report-{timestamp}.md"
 ```

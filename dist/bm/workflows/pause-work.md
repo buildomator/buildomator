@@ -58,7 +58,7 @@ Report any summaries with placeholder content as incomplete items.
 **Write structured handoff to `.planning/HANDOFF.json`:**
 
 ```bash
-timestamp=$(gsd-sdk query current-timestamp full --raw)
+timestamp=$(bm-sdk query current-timestamp full --raw)
 ```
 
 ```json
@@ -193,13 +193,13 @@ Be specific enough for a fresh Claude to understand immediately.
 
 Use `current-timestamp` for the last_updated field:
 ```bash
-timestamp=$(gsd-sdk query current-timestamp full --raw)
+timestamp=$(bm-sdk query current-timestamp full --raw)
 ```
 </step>
 
 <step name="commit">
 ```bash
-gsd-sdk query commit "wip: [context-name] paused at [X]/[Y]" --files [handoff-path] .planning/HANDOFF.json
+bm-sdk query commit "wip: [context-name] paused at [X]/[Y]" --files [handoff-path] .planning/HANDOFF.json
 ```
 </step>
 
