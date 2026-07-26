@@ -297,6 +297,53 @@ test('gsd-shadowing-sdk-detector: warns when shadowing global is present', async
   }
 });
 
+// 8b-bm. gsd-shadowing-sdk-detector.js — warns when a shadowing bm-sdk is first in PATH
+test('gsd-shadowing-sdk-detector: warns when shadowing bm-sdk global is present', async () => {
+  const pluginRoot = path.resolve(__dirname, '..');
+  const fakeDir = mkTmp('fake-shadow-bm');
+  fs.writeFileSync(path.join(fakeDir, 'bm-sdk'), '#!/bin/sh\necho fake\n');
+  fs.chmodSync(path.join(fakeDir, 'bm-sdk'), 0o755);
+  const r = await runHook(path.join(HOOKS, 'gsd-shadowing-sdk-detector.js'), '', {
+    env: {
+      ...process.env,
+      PATH: fakeDir + ':' + path.join(pluginRoot, 'bin') + ':/usr/bin:/bin',
+      CLAUDE_PLUGIN_ROOT: pluginRoot,
+    },
+  });
+  if (r.code !== 0) throw new Error('expected exit 0, got ' + r.code + '; stderr=' + r.stderr);
+  let parsed;
+  try { parsed = JSON.parse(r.stdout); }
+  catch { throw new Error('expected JSON output, got: ' + JSON.stringify(r.stdout)); }
+  const ctx = parsed.hookSpecificOutput?.additionalContext || '';
+  if (!/shadowing/i.test(ctx)) {
+    throw new Error('expected "shadowing" in additionalContext, got: ' + JSON.stringify(parsed));
+  }
+  if (!/bm-sdk/.test(ctx)) {
+    throw new Error('expected the advisory to name bm-sdk, got: ' + JSON.stringify(ctx));
+  }
+  if (!/npm uninstall/i.test(ctx)) {
+    throw new Error('expected "npm uninstall" guidance in additionalContext');
+  }
+});
+
+// 8b-both. gsd-shadowing-sdk-detector.js — silent when both plugin wrappers resolve first
+test('gsd-shadowing-sdk-detector: silent when plugin-owned bm-sdk resolves first', async () => {
+  const pluginRoot = path.resolve(__dirname, '..');
+  const r = await runHook(path.join(HOOKS, 'gsd-shadowing-sdk-detector.js'), '', {
+    env: {
+      ...process.env,
+      // Only the plugin bin dir on PATH: both bm-sdk and gsd-sdk resolve to the
+      // bundled wrappers, so nothing is shadowing.
+      PATH: path.join(pluginRoot, 'bin') + ':/usr/bin:/bin',
+      CLAUDE_PLUGIN_ROOT: pluginRoot,
+    },
+  });
+  if (r.code !== 0) throw new Error('expected exit 0, got ' + r.code + '; stderr=' + r.stderr);
+  if (r.stdout.trim() !== '') {
+    throw new Error('expected silent (no stdout), got: ' + JSON.stringify(r.stdout));
+  }
+});
+
 // 8c. gsd-shadowing-sdk-detector.js — silent when nothing in PATH
 test('gsd-shadowing-sdk-detector: silent when no gsd-sdk anywhere', async () => {
   const r = await runHook(path.join(HOOKS, 'gsd-shadowing-sdk-detector.js'), '', {

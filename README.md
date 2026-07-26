@@ -18,19 +18,19 @@ GSD Plugin installs *inside* a Claude Code session, not from your host shell. If
 
 ### No prerequisites
 
-As of **v2.42.0** the plugin bundles its own copy of the GSD SDK at `sdk/dist/cli.js` and ships a `bin/gsd-sdk` wrapper that Claude Code automatically puts on `PATH` for plugin Bash calls. You no longer need to `npm install -g get-shit-done-cc` (or its successor `get-shit-done-redux`). Closes [#4](https://github.com/buildomator/buildomator/issues/4).
+As of **v2.42.0** the plugin bundles its own copy of the GSD SDK at `sdk/dist/cli.js` and ships a `bin/bm-sdk` wrapper (plus a `bin/gsd-sdk` alias) that Claude Code automatically puts on `PATH` for plugin Bash calls. `bm-sdk` is the primary command name; `gsd-sdk` keeps working as a fully equivalent alias through the 4.x line and retires at v5.0 on 2026-10-01. You no longer need to `npm install -g get-shit-done-cc` (or its successor `get-shit-done-redux`). Closes [#4](https://github.com/buildomator/buildomator/issues/4).
 
 ### Pre-install: remove any pre-v2.42.0 global SDK install
 
-If you previously installed `get-shit-done-cc` / `get-shit-done-redux` or `@gsd-build/sdk` / `@gsd-redux/sdk` via `npm -g` (or `npx`), the global binary at `/opt/homebrew/bin/gsd-sdk` (Apple Silicon) or `/usr/local/bin/gsd-sdk` (Intel macOS / Linux) takes precedence in `$PATH` over the plugin's bundled wrapper. The global SDK does NOT honor `CLAUDE_PLUGIN_ROOT`, so every plugin workflow that calls bare `gsd-sdk` (init queries, agent-skill lookups, config reads) reports `agents_installed: false`, and skills like `/bm:new-project` silently degrade by skipping the parallel research path. The plugin's v2.42.5 wrapper-env-export patch only fires when the wrapper itself is invoked, so a shadowing global bypasses it.
+If you previously installed `get-shit-done-cc` / `get-shit-done-redux` or `@gsd-build/sdk` / `@gsd-redux/sdk` via `npm -g` (or `npx`), the global binary at `/opt/homebrew/bin/gsd-sdk` (Apple Silicon) or `/usr/local/bin/gsd-sdk` (Intel macOS / Linux) takes precedence in `$PATH` over the plugin's bundled wrapper. The npm package now maps both `bm-sdk` and `gsd-sdk` to the same CLI, so a shadowing global can hijack either name. The global SDK does NOT honor `CLAUDE_PLUGIN_ROOT`, so every plugin workflow that calls bare `bm-sdk` (or `gsd-sdk`) for init queries, agent-skill lookups, or config reads reports `agents_installed: false`, and skills like `/bm:new-project` silently degrade by skipping the parallel research path. The plugin's wrapper-env-export patch only fires when the wrapper itself is invoked, so a shadowing global bypasses it.
 
 Check whether you have a shadowing install:
 
 ```bash
-which gsd-sdk
+which bm-sdk gsd-sdk
 ```
 
-If the output is anything OTHER than a path under `~/.claude/plugins/cache/` (typical bad outputs are `/opt/homebrew/bin/gsd-sdk` or `/usr/local/bin/gsd-sdk`), uninstall it from your host shell before going further:
+If either name resolves to anything OTHER than a path under `~/.claude/plugins/cache/` (typical bad outputs are `/opt/homebrew/bin/gsd-sdk` or `/usr/local/bin/gsd-sdk`), uninstall it from your host shell before going further:
 
 ```bash
 npm uninstall -g @gsd-build/sdk
@@ -40,7 +40,7 @@ npm uninstall -g @opengsd/get-shit-done-redux
 npm uninstall -g get-shit-done-redux   # if you tried the unscoped name (404s on npm; v2.43.x docs incorrectly referenced this form, fixed in v2.44.6)
 ```
 
-Re-run `which gsd-sdk`. The expected post-uninstall output is either a path under `~/.claude/plugins/cache/` (after the plugin is installed in Step 3) or `gsd-sdk not found` (before installation). Both are correct.
+Re-run `which bm-sdk gsd-sdk`. The expected post-uninstall output is either a path under `~/.claude/plugins/cache/` (after the plugin is installed in Step 3) or not found (before installation). Both are correct.
 
 If you skip this step and install the plugin anyway, v2.43.1+ ships a `gsd-shadowing-sdk-detector` SessionStart hook that will detect the conflict at the start of every Claude Code session and emit a one-time advisory pointing back to this section.
 
@@ -300,7 +300,7 @@ npm uninstall -g @opengsd/get-shit-done-redux      # post-rug package, if you in
 
 > **History:** this step's wording has changed twice. Versions ≤ v2.41.0 told users to uninstall while the plugin still needed the package's `gsd-sdk` binary, which silently broke every `/gsd:*` command ([#4](https://github.com/buildomator/buildomator/issues/4)). v2.41.1 corrected the README to "keep installed". v2.42.0 bundles the SDK inside the plugin, making the uninstall genuinely safe again. Thanks to @ThomasHezard for catching the original bug and @herman925 for confirming. The post-rug package name (`get-shit-done-redux`) was added in v2.43.6.
 
-If you're on **v2.42.0 or newer** the plugin's `bin/gsd-sdk` wrapper takes over once the global one is gone; nothing breaks. If you're on an older plugin version, leave the global package alone until you've upgraded the plugin first.
+If you're on **v2.42.0 or newer** the plugin's bundled `bin/bm-sdk` wrapper (and its `bin/gsd-sdk` alias) takes over once the global one is gone; nothing breaks. If you're on an older plugin version, leave the global package alone until you've upgraded the plugin first.
 
 #### 3. Stop using `/bm:update`
 
