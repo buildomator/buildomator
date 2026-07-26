@@ -15,7 +15,6 @@
  * // { data: { model: 'opus', profile: 'balanced' } }
  * ```
  */
-import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { GSDError, ErrorClassification } from '../errors.js';
 import { loadConfig } from '../config.js';
@@ -152,8 +151,6 @@ export const resolveModel = async (args, projectDir, workstream) => {
     if (!agentType) {
         throw new GSDError('agent-type required', ErrorClassification.Validation);
     }
-    const configFilePath = planningPaths(projectDir, workstream).config;
-    const configExists = existsSync(configFilePath);
     const config = await loadConfig(projectDir, workstream);
     const profile = String(config.model_profile || 'balanced').toLowerCase();
     // Check per-agent override first
@@ -167,14 +164,7 @@ export const resolveModel = async (args, projectDir, workstream) => {
         return { data: result };
     }
     const agentModels = MODEL_PROFILES[agentType];
-    // No project config -> return empty model id (CJS parity)
     const resolveModelIds = config.resolve_model_ids;
-    if (!configExists) {
-        const result = agentModels
-            ? { model: '', profile }
-            : { model: '', profile, unknown_agent: true };
-        return { data: result };
-    }
     // Fall back to profile lookup
     if (!agentModels) {
         const semanticFallback = profile === 'quality' ? 'opus'
