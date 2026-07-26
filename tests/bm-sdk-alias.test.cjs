@@ -44,9 +44,12 @@ check('bm-sdk and gsd-sdk produce byte-identical output for the same query', () 
   const bmOut = cp.execFileSync(path.join(BIN, 'bm-sdk'), args, opts);
   const gsdOut = cp.execFileSync(path.join(BIN, 'gsd-sdk'), args, opts);
   assert.strictEqual(bmOut, gsdOut, 'wrapper outputs differ');
-  // Sanity: output is the expected resolver payload.
+  // Sanity: output is the expected resolver payload. Assert the payload SHAPE,
+  // not a resolved value: the model string is config-dependent and is empty in
+  // a fresh checkout with no project config, so check the keys and types.
   const parsed = JSON.parse(bmOut);
-  assert.ok(parsed.model, 'resolve-model output missing model field');
+  assert.ok(typeof parsed.model === 'string', 'resolve-model output missing model field');
+  assert.ok(typeof parsed.profile === 'string', 'resolve-model output missing profile field');
 });
 
 check('sdk/package.json bin maps both bm-sdk and gsd-sdk to ./dist/cli.js', () => {

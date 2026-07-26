@@ -46,21 +46,25 @@ jobs:
           test ! -d sdk/node_modules
           echo "✓ no sdk/node_modules in the tree (proves bundle must be self-contained)"
 
-      - name: Test 1 - bin/gsd-sdk wrapper resolves (CLAUDE_PLUGIN_ROOT-driven)
+      - name: Test 1 - bin/bm-sdk wrapper resolves, gsd-sdk alias too (CLAUDE_PLUGIN_ROOT-driven)
         run: |
           set -e
-          out=$(CLAUDE_PLUGIN_ROOT="$PWD" bin/gsd-sdk --version)
-          echo "out: $out"
-          echo "$out" | grep -q "gsd-sdk v" || { echo "FAIL: expected 'gsd-sdk v...' in output"; exit 1; }
+          out=$(CLAUDE_PLUGIN_ROOT="$PWD" bin/bm-sdk --version)
+          echo "bm-sdk out: $out"
+          echo "$out" | grep -q "bm-sdk v" || { echo "FAIL: expected 'bm-sdk v...' from bin/bm-sdk"; exit 1; }
+          # gsd-sdk remains a working alias through the 4.x line (identifies as bm-sdk).
+          alias_out=$(CLAUDE_PLUGIN_ROOT="$PWD" bin/gsd-sdk --version)
+          echo "gsd-sdk alias out: $alias_out"
+          echo "$alias_out" | grep -q "bm-sdk v" || { echo "FAIL: gsd-sdk alias did not resolve"; exit 1; }
 
       - name: Test 2 - PATH-based resolution (simulates Claude Code plugin loader)
         run: |
           set -e
           export PATH="$PWD/bin:$PATH"
           export CLAUDE_PLUGIN_ROOT="$PWD"
-          out=$(gsd-sdk --version)
+          out=$(bm-sdk --version)
           echo "out: $out"
-          echo "$out" | grep -q "gsd-sdk v" || { echo "FAIL: PATH resolution did not find bundled wrapper"; exit 1; }
+          echo "$out" | grep -q "bm-sdk v" || { echo "FAIL: PATH resolution did not find bundled bm-sdk wrapper"; exit 1; }
 
       - name: "Test 3 - real query: state.load on a synthetic project"
         run: |
@@ -82,14 +86,14 @@ jobs:
       - name: Test 5 - MCP stdio framing regression (issue #3)
         run: node tests/mcp-stdio-framing.test.cjs
 
-      - name: Test 6 - workflow-style callsite (naked gsd-sdk via PATH)
+      - name: Test 6 - workflow-style callsite (naked bm-sdk via PATH)
         run: |
           set -e
           export PATH="$PWD/bin:$PATH"
           export CLAUDE_PLUGIN_ROOT="$PWD"
-          out=$(bash -c 'gsd-sdk query commands 2>&1' | head -5)
+          out=$(bash -c 'bm-sdk query commands 2>&1' | head -5)
           echo "$out"
-          echo "$out" | grep -q '"agent-skills"' || { echo "FAIL: naked gsd-sdk callsite did not resolve via PATH"; exit 1; }
+          echo "$out" | grep -q '"agent-skills"' || { echo "FAIL: naked bm-sdk callsite did not resolve via PATH"; exit 1; }
 
       - name: Verify no node_modules was created during the run
         # If any step accidentally invoked `npm install` or `npx`, this would
@@ -138,17 +142,22 @@ jobs:
             console.log("OK bm manifest: name=bm version="+bm.version);
           '
 
-      - name: bm Test 1 - dist/bm/bin/gsd-sdk resolves via its own CLAUDE_PLUGIN_ROOT
+      - name: bm Test 1 - dist/bm/bin/bm-sdk resolves via its own CLAUDE_PLUGIN_ROOT (gsd-sdk alias too)
         run: |
           set -e
           # chmod defensively in case the git copy lost the exec bit; report if it did.
-          if [ ! -x dist/bm/bin/gsd-sdk ]; then
-            echo "NOTE: dist/bm/bin/gsd-sdk lost its exec bit in the copy; restoring +x"
-            chmod +x dist/bm/bin/gsd-sdk
-          fi
-          out=$(CLAUDE_PLUGIN_ROOT="$PWD/dist/bm" dist/bm/bin/gsd-sdk --version)
-          echo "out: $out"
-          echo "$out" | grep -q "gsd-sdk v" || { echo "FAIL: expected 'gsd-sdk v...' from the bm wrapper"; exit 1; }
+          for w in bm-sdk gsd-sdk; do
+            if [ ! -x "dist/bm/bin/$w" ]; then
+              echo "NOTE: dist/bm/bin/$w lost its exec bit in the copy; restoring +x"
+              chmod +x "dist/bm/bin/$w"
+            fi
+          done
+          out=$(CLAUDE_PLUGIN_ROOT="$PWD/dist/bm" dist/bm/bin/bm-sdk --version)
+          echo "bm-sdk out: $out"
+          echo "$out" | grep -q "bm-sdk v" || { echo "FAIL: expected 'bm-sdk v...' from the bm wrapper"; exit 1; }
+          alias_out=$(CLAUDE_PLUGIN_ROOT="$PWD/dist/bm" dist/bm/bin/gsd-sdk --version)
+          echo "gsd-sdk alias out: $alias_out"
+          echo "$alias_out" | grep -q "bm-sdk v" || { echo "FAIL: dist/bm gsd-sdk alias did not resolve"; exit 1; }
 
       - name: "bm Test 3 - real query: state.load via the bm root on a synthetic project"
         run: |
