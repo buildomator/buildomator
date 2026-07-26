@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.4.0] - 2026-07-26  (bm-sdk is the primary CLI name)
+
+Plugin-native rebrand step; no upstream port. Follows the same gsd-core line as 4.3.x for provenance.
+
+### Changed
+- **The SDK CLI command is now `bm-sdk`, with `gsd-sdk` kept as a working alias.** This is the `/gsd:` to `/bm:` rebrand reaching the command surface, done additively so nothing breaks in the 4.x line. New `bin/bm-sdk` and `bin/bm-sdk.cmd` wrappers sit alongside the unchanged `bin/gsd-sdk` wrappers (both resolve to the same CLI, verified byte-identical output), `sdk/package.json` lists `bm-sdk` first with `gsd-sdk` second, and every internal invocation across workflows, agents, skills, and hooks now calls `bm-sdk`. Presence-check guards prefer `bm-sdk` and fall back to `gsd-sdk`, so a mixed install keeps working. `gsd-sdk` continues to work through the whole 4.x line and is removed at v5.0 on 2026-10-01, together with the `/gsd:` prefix retirement. If you call the CLI directly, switch to `bm-sdk` at your convenience; there is no rush.
+
 ## [4.3.1] - 2026-07-25  (adopt Claude Opus 5)
 
 ### Changed
