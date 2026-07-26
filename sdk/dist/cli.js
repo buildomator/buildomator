@@ -6253,7 +6253,6 @@ var frontmatterGet = async (args, projectDir) => {
 
 // dist/query/config-query.js
 init_errors();
-import { existsSync as existsSync3 } from "node:fs";
 import { readFile as readFile4 } from "node:fs/promises";
 init_helpers();
 
@@ -6365,8 +6364,6 @@ var resolveModel = async (args, projectDir, workstream) => {
   if (!agentType) {
     throw new GSDError("agent-type required", ErrorClassification.Validation);
   }
-  const configFilePath = planningPaths(projectDir, workstream).config;
-  const configExists = existsSync3(configFilePath);
   const config = await loadConfig(projectDir, workstream);
   const profile = String(config.model_profile || "balanced").toLowerCase();
   const overrides = config.model_overrides;
@@ -6378,10 +6375,6 @@ var resolveModel = async (args, projectDir, workstream) => {
   }
   const agentModels = MODEL_PROFILES[agentType];
   const resolveModelIds = config.resolve_model_ids;
-  if (!configExists) {
-    const result = agentModels ? { model: "", profile } : { model: "", profile, unknown_agent: true };
-    return { data: result };
-  }
   if (!agentModels) {
     const semanticFallback = profile === "quality" ? "opus" : profile === "budget" ? "haiku" : profile === "inherit" ? "inherit" : "sonnet";
     return { data: { model: semanticFallback, profile, unknown_agent: true } };
@@ -6415,12 +6408,12 @@ init_state_document();
 
 // dist/query/roadmap.js
 init_errors();
-import { existsSync as existsSync5 } from "node:fs";
+import { existsSync as existsSync4 } from "node:fs";
 import { readFile as readFile5, writeFile, readdir } from "node:fs/promises";
 import { join as join6 } from "node:path";
 
 // dist/query/plan-scan.js
-import { existsSync as existsSync4, readdirSync, readFileSync as readFileSync3 } from "node:fs";
+import { existsSync as existsSync3, readdirSync, readFileSync as readFileSync3 } from "node:fs";
 import { join as join5 } from "node:path";
 var PLAN_OUTLINE_RE = /-OUTLINE\.md$/i;
 var PLAN_PRE_BOUNCE_RE = /\.pre-bounce\.md$/i;
@@ -6447,7 +6440,7 @@ function summaryFileIsComplete(summaryPath) {
 }
 function resolveSummaryPath(phaseDir, summaryFile) {
   const rootPath = join5(phaseDir, summaryFile);
-  if (existsSync4(rootPath))
+  if (existsSync3(rootPath))
     return rootPath;
   return join5(phaseDir, "plans", summaryFile);
 }
@@ -6511,7 +6504,7 @@ function scanPhasePlans(phaseDir) {
   let nestedSummaryFiles = [];
   let hasNestedPlans = false;
   const nestedDir = join5(phaseDir, "plans");
-  if (existsSync4(nestedDir)) {
+  if (existsSync3(nestedDir)) {
     try {
       const nestedFiles = readdirSync(nestedDir);
       nestedPlanFiles = nestedFiles.filter(isNestedPlanFile);
@@ -6964,7 +6957,7 @@ var requirementsMarkComplete = async (args, projectDir, workstream) => {
     throw new GSDError("no valid requirement IDs found", ErrorClassification.Validation);
   }
   const paths = planningPaths(projectDir, workstream);
-  if (!existsSync5(paths.requirements)) {
+  if (!existsSync4(paths.requirements)) {
     return { data: { updated: false, reason: "REQUIREMENTS.md not found", ids: reqIds } };
   }
   let reqContent = (await readFile5(paths.requirements, "utf-8")).replace(/\r\n/g, "\n");
@@ -7768,7 +7761,7 @@ var requirementsExtractFromPlans = async (args, projectDir, workstream) => {
 init_errors();
 init_helpers();
 import { readFile as readFile11, readdir as readdir5 } from "node:fs/promises";
-import { existsSync as existsSync6, readdirSync as readdirSync2, readFileSync as readFileSync4, mkdirSync, writeFileSync, unlinkSync } from "node:fs";
+import { existsSync as existsSync5, readdirSync as readdirSync2, readFileSync as readFileSync4, mkdirSync, writeFileSync, unlinkSync } from "node:fs";
 import { join as join10, relative as relative2 } from "node:path";
 async function determinePhaseStatus(plans, summaries, phaseDir, defaultWhenNoPlans = "Pending") {
   if (plans === 0)
@@ -7921,7 +7914,7 @@ var statsJson = async (args, projectDir, workstream) => {
   let requirementsTotal = 0;
   let requirementsComplete = 0;
   try {
-    if (existsSync6(reqPath)) {
+    if (existsSync5(reqPath)) {
       const reqContent = readFileSync4(reqPath, "utf-8");
       const checked = reqContent.match(/^- \[x\] \*\*/gm);
       const unchecked = reqContent.match(/^- \[ \] \*\*/gm);
@@ -7932,7 +7925,7 @@ var statsJson = async (args, projectDir, workstream) => {
   }
   let lastActivity = null;
   try {
-    if (existsSync6(statePath)) {
+    if (existsSync5(statePath)) {
       const stateContent = readFileSync4(statePath, "utf-8");
       const activityMatch = stateContent.match(/^last_activity:\s*(.+)$/im) || stateContent.match(/\*\*Last Activity:\*\*\s*(.+)/i) || stateContent.match(/^Last Activity:\s*(.+)$/im) || stateContent.match(/^Last activity:\s*(.+)$/im);
       if (activityMatch)
@@ -8173,7 +8166,7 @@ var todoComplete = async (args, projectDir) => {
   const pendingDir = join10(projectDir, ".planning", "todos", "pending");
   const completedDir = join10(projectDir, ".planning", "todos", "completed");
   const sourcePath = join10(pendingDir, filename);
-  if (!existsSync6(sourcePath)) {
+  if (!existsSync5(sourcePath)) {
     throw new GSDError(`Todo not found: ${filename}`, ErrorClassification.Validation);
   }
   mkdirSync(completedDir, { recursive: true });
@@ -8415,7 +8408,7 @@ var frontmatterValidate = async (args, projectDir) => {
 // dist/query/config-mutation.js
 init_errors();
 import { readFile as readFile14, writeFile as writeFile4, mkdir, rename, unlink as unlink2 } from "node:fs/promises";
-import { existsSync as existsSync8 } from "node:fs";
+import { existsSync as existsSync7 } from "node:fs";
 import { homedir as homedir3 } from "node:os";
 import { join as join12 } from "node:path";
 
@@ -8576,7 +8569,7 @@ init_helpers();
 // dist/query/state-mutation.js
 init_errors();
 import { open, unlink, stat, readFile as readFile13, writeFile as writeFile3, readdir as readdir6 } from "node:fs/promises";
-import { constants, unlinkSync as unlinkSync2, existsSync as existsSync7, mkdirSync as mkdirSync2, writeFileSync as writeFileSync2, readdirSync as readdirSync3, readFileSync as readFileSync5 } from "node:fs";
+import { constants, unlinkSync as unlinkSync2, existsSync as existsSync6, mkdirSync as mkdirSync2, writeFileSync as writeFileSync2, readdirSync as readdirSync3, readFileSync as readFileSync5 } from "node:fs";
 import { isAbsolute as isAbsolute2, join as join11, relative as relative3, resolve as resolve2 } from "node:path";
 init_helpers();
 init_state_document();
@@ -9316,7 +9309,7 @@ var statePlannedPhase = async (args, projectDir, workstream) => {
   }
   const phaseLabel = String(phaseNumber).trim();
   const statePath = planningPaths(projectDir, workstream).state;
-  if (!existsSync7(statePath)) {
+  if (!existsSync6(statePath)) {
     return { data: { error: "STATE.md not found" } };
   }
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
@@ -9488,7 +9481,7 @@ var stateSignalResume = async (_args, projectDir, _workstream) => {
   ];
   let removed = false;
   for (const p of paths) {
-    if (existsSync7(p)) {
+    if (existsSync6(p)) {
       try {
         unlinkSync2(p);
         removed = true;
@@ -9501,7 +9494,7 @@ var stateSignalResume = async (_args, projectDir, _workstream) => {
 var stateValidate = async (_args, projectDir, workstream) => {
   const paths = planningPaths(projectDir, workstream);
   const statePath = paths.state;
-  if (!existsSync7(statePath)) {
+  if (!existsSync6(statePath)) {
     return { data: { error: "STATE.md not found" } };
   }
   const content = await readFile13(statePath, "utf-8");
@@ -9512,7 +9505,7 @@ var stateValidate = async (_args, projectDir, workstream) => {
   const totalPlansRaw = stateExtractField(content, "Total Plans in Phase");
   const totalPlansInPhase = totalPlansRaw ? parseInt(totalPlansRaw, 10) : null;
   const phasesDir = paths.phases;
-  if (currentPhase && existsSync7(phasesDir)) {
+  if (currentPhase && existsSync6(phasesDir)) {
     const normalized = normalizePhaseName(currentPhase.replace(/\s+of\s+\d+.*/, "").trim());
     try {
       const entries = readdirSync3(phasesDir, { withFileTypes: true });
@@ -9553,14 +9546,14 @@ var stateSync = async (args, projectDir, workstream) => {
   const verify = args.includes("--verify");
   const paths = planningPaths(projectDir, workstream);
   const statePath = paths.state;
-  if (!existsSync7(statePath)) {
+  if (!existsSync6(statePath)) {
     return { data: { error: "STATE.md not found" } };
   }
   const content = await readFile13(statePath, "utf-8");
   const changes = [];
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const phasesDir = paths.phases;
-  if (!existsSync7(phasesDir)) {
+  if (!existsSync6(phasesDir)) {
     return { data: { synced: true, changes: [], dry_run: verify } };
   }
   let entries;
@@ -9735,7 +9728,7 @@ var statePrune = async (args, projectDir, workstream) => {
   const dryRun = parsed["dry-run"] === true;
   const paths = planningPaths(projectDir, workstream);
   const statePath = paths.state;
-  if (!existsSync7(statePath)) {
+  if (!existsSync6(statePath)) {
     return { data: { error: "STATE.md not found" } };
   }
   const fullContent = await readFile13(statePath, "utf-8");
@@ -9802,7 +9795,7 @@ var statePrune = async (args, projectDir, workstream) => {
   if (archived.length > 0) {
     const timestamp = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
     let archiveContent = "";
-    if (existsSync7(archivePath)) {
+    if (existsSync6(archivePath)) {
       archiveContent = readFileSync5(archivePath, "utf-8");
     } else {
       archiveContent = "# STATE Archive\n\nPruned entries from STATE.md. Recoverable but no longer loaded into agent context.\n\n";
@@ -10079,7 +10072,7 @@ var configSetModelProfile = async (args, projectDir, workstream) => {
 };
 var configNewProject = async (args, projectDir, workstream) => {
   const paths = planningPaths(projectDir, workstream);
-  if (existsSync8(paths.config)) {
+  if (existsSync7(paths.config)) {
     return { data: { created: false, reason: "already_exists" } };
   }
   let userChoices = {};
@@ -10092,7 +10085,7 @@ var configNewProject = async (args, projectDir, workstream) => {
     }
   }
   const planningDir = paths.planning;
-  if (!existsSync8(planningDir)) {
+  if (!existsSync7(planningDir)) {
     await mkdir(planningDir, { recursive: true });
   }
   const homeDir = homedir3();
@@ -10103,9 +10096,9 @@ var configNewProject = async (args, projectDir, workstream) => {
     globalDefaults = JSON.parse(defaultsRaw);
   } catch {
   }
-  const hasBraveSearch = !!(process.env.BRAVE_API_KEY || existsSync8(join12(homeDir, ".gsd", "brave_api_key")));
-  const hasFirecrawl = !!(process.env.FIRECRAWL_API_KEY || existsSync8(join12(homeDir, ".gsd", "firecrawl_api_key")));
-  const hasExaSearch = !!(process.env.EXA_API_KEY || existsSync8(join12(homeDir, ".gsd", "exa_api_key")));
+  const hasBraveSearch = !!(process.env.BRAVE_API_KEY || existsSync7(join12(homeDir, ".gsd", "brave_api_key")));
+  const hasFirecrawl = !!(process.env.FIRECRAWL_API_KEY || existsSync7(join12(homeDir, ".gsd", "firecrawl_api_key")));
+  const hasExaSearch = !!(process.env.EXA_API_KEY || existsSync7(join12(homeDir, ".gsd", "exa_api_key")));
   const defaults = {
     model_profile: "balanced",
     commit_docs: true,
@@ -10385,7 +10378,7 @@ var templateFill = async (args, projectDir) => {
 // dist/query/verify.js
 init_errors();
 import { readFile as readFile15, readdir as readdir8 } from "node:fs/promises";
-import { existsSync as existsSync9, readdirSync as readdirSync4, readFileSync as readFileSync6, statSync as statSync2 } from "node:fs";
+import { existsSync as existsSync8, readdirSync as readdirSync4, readFileSync as readFileSync6, statSync as statSync2 } from "node:fs";
 import { join as join14, isAbsolute as isAbsolute3 } from "node:path";
 init_helpers();
 var verifyPlanStructure = async (args, projectDir) => {
@@ -10626,7 +10619,7 @@ var verifyReferences = async (args, projectDir) => {
   for (const ref of atRefs) {
     const cleanRef = ref.slice(1);
     const resolved = cleanRef.startsWith("~/") ? join14(process.env.HOME || "", cleanRef.slice(2)) : join14(projectDir, cleanRef);
-    if (existsSync9(resolved)) {
+    if (existsSync8(resolved)) {
       found.push(cleanRef);
     } else {
       missing.push(cleanRef);
@@ -10640,7 +10633,7 @@ var verifyReferences = async (args, projectDir) => {
     if (found.includes(cleanRef) || missing.includes(cleanRef))
       continue;
     const resolved = join14(projectDir, cleanRef);
-    if (existsSync9(resolved)) {
+    if (existsSync8(resolved)) {
       found.push(cleanRef);
     } else {
       missing.push(cleanRef);
@@ -10663,7 +10656,7 @@ var verifySummary = async (args, projectDir) => {
   const checkCountIdx = args.indexOf("--check-count");
   const checkCount = checkCountIdx !== -1 ? parseInt(args[checkCountIdx + 1], 10) || 2 : 2;
   const fullPath = join14(projectDir, summaryPath);
-  if (!existsSync9(fullPath)) {
+  if (!existsSync8(fullPath)) {
     return {
       data: {
         passed: false,
@@ -10696,7 +10689,7 @@ var verifySummary = async (args, projectDir) => {
   const filesToCheck = Array.from(mentionedFiles).slice(0, checkCount);
   const missing = [];
   for (const file of filesToCheck) {
-    if (!existsSync9(join14(projectDir, file))) {
+    if (!existsSync8(join14(projectDir, file))) {
       missing.push(file);
     }
   }
@@ -10769,7 +10762,7 @@ var verifySchemaDrift = async (args, projectDir, workstream) => {
   const { checkSchemaDrift: checkSchemaDrift2 } = await Promise.resolve().then(() => (init_schema_detect(), schema_detect_exports));
   const { execGit: execGit2 } = await Promise.resolve().then(() => (init_commit(), commit_exports));
   const phasesDir = planningPaths(projectDir, workstream).phases;
-  if (!existsSync9(phasesDir)) {
+  if (!existsSync8(phasesDir)) {
     return {
       data: {
         drift_detected: false,
@@ -10783,7 +10776,7 @@ var verifySchemaDrift = async (args, projectDir, workstream) => {
   let phaseDirName = dirNames.find((d) => phaseTokenMatches(d, normalized)) ?? null;
   if (!phaseDirName && /^[\d.]+/.test(phaseArg)) {
     const exact = join14(phasesDir, phaseArg);
-    if (existsSync9(exact))
+    if (existsSync8(exact))
       phaseDirName = phaseArg;
   }
   if (!phaseDirName) {
@@ -11000,7 +10993,7 @@ var decisionsParse = async (args, projectDir) => {
 
 // dist/query/check-decision-coverage.js
 import { readdir as readdir9, readFile as readFile17 } from "node:fs/promises";
-import { existsSync as existsSync10 } from "node:fs";
+import { existsSync as existsSync9 } from "node:fs";
 import { join as join16, isAbsolute as isAbsolute5 } from "node:path";
 import { execFile as execFileCb } from "node:child_process";
 import { promisify } from "node:util";
@@ -11034,7 +11027,7 @@ async function readIfExists(path) {
   }
 }
 async function loadPlanContents(phaseDir) {
-  if (!existsSync10(phaseDir))
+  if (!existsSync9(phaseDir))
     return [];
   let entries = [];
   try {
@@ -11185,7 +11178,7 @@ var checkDecisionCoveragePlan = async (args, projectDir, workstream) => {
     };
     return { data: data2 };
   }
-  if (!contextPath || !existsSync10(contextPath)) {
+  if (!contextPath || !existsSync9(contextPath)) {
     const data2 = {
       passed: true,
       skipped: true,
@@ -11305,7 +11298,7 @@ var checkDecisionCoverageVerify = async (args, projectDir, workstream) => {
     };
     return { data: data2 };
   }
-  if (!contextPath || !existsSync10(contextPath)) {
+  if (!contextPath || !existsSync9(contextPath)) {
     const data2 = {
       skipped: true,
       blocking: false,
@@ -11334,7 +11327,7 @@ var checkDecisionCoverageVerify = async (args, projectDir, workstream) => {
   const planContents = await loadPlanContents(phaseDir);
   const summaryParts = [];
   let summaryContent = "";
-  if (existsSync10(phaseDir)) {
+  if (existsSync9(phaseDir)) {
     try {
       const entries = await readdir9(phaseDir);
       for (const e3 of entries.filter((x) => /-SUMMARY\.md$/.test(x))) {
@@ -11465,7 +11458,7 @@ init_errors();
 init_helpers();
 import { readFile as readFile18 } from "node:fs/promises";
 import { join as join17 } from "node:path";
-import { existsSync as existsSync11, readdirSync as readdirSync5 } from "node:fs";
+import { existsSync as existsSync10, readdirSync as readdirSync5 } from "node:fs";
 var UI_INDICATOR_RE = /UI|interface|frontend|component|layout|page|screen|view|form|dashboard|widget/i;
 async function roadmapPhaseLineHasUiIndicators(projectDir, phaseNum, workstream) {
   const roadmapPath = planningPaths(projectDir, workstream).roadmap;
@@ -11482,7 +11475,7 @@ async function roadmapPhaseLineHasUiIndicators(projectDir, phaseNum, workstream)
   return UI_INDICATOR_RE.test(m3[0]);
 }
 function hasUiSpecFile(phaseDirFull) {
-  if (!existsSync11(phaseDirFull))
+  if (!existsSync10(phaseDirFull))
     return false;
   try {
     const files = readdirSync5(phaseDirFull);
@@ -11577,7 +11570,7 @@ var checkPhaseReady = async (args, projectDir, workstream) => {
 // dist/query/route-next-action.js
 init_helpers();
 import { readFile as readFile19, readdir as readdir10 } from "node:fs/promises";
-import { readFileSync as readFileSync7, existsSync as existsSync12, readdirSync as readdirSync6 } from "node:fs";
+import { readFileSync as readFileSync7, existsSync as existsSync11, readdirSync as readdirSync6 } from "node:fs";
 import { join as join18 } from "node:path";
 function readConsecutiveCallCount(planningDir) {
   try {
@@ -11618,7 +11611,7 @@ async function verificationPassed(phaseDirAbs) {
 }
 var routeNextAction = async (_args, projectDir, workstream) => {
   const planning = planningPaths(projectDir, workstream).planning;
-  const continueHere = existsSync12(join18(planning, ".continue-here.md"));
+  const continueHere = existsSync11(join18(planning, ".continue-here.md"));
   const sj = await stateJson([], projectDir, workstream);
   const sjd = sj.data;
   if (sjd.error) {
@@ -11874,7 +11867,7 @@ var routeNextAction = async (_args, projectDir, workstream) => {
 init_errors();
 init_helpers();
 import { readFile as readFile20 } from "node:fs/promises";
-import { existsSync as existsSync13, readdirSync as readdirSync7 } from "node:fs";
+import { existsSync as existsSync12, readdirSync as readdirSync7 } from "node:fs";
 import { join as join19 } from "node:path";
 init_schema_detect();
 var UI_INDICATOR_RE2 = /UI|interface|frontend|component|layout|page|screen|view|form|dashboard|widget/i;
@@ -11923,7 +11916,7 @@ var detectPhaseType = async (args, projectDir, workstream) => {
   }
   let hasUiSpecFile2 = false;
   let dirFiles = [];
-  if (phaseDirFull && existsSync13(phaseDirFull)) {
+  if (phaseDirFull && existsSync12(phaseDirFull)) {
     try {
       dirFiles = readdirSync7(phaseDirFull, { recursive: false });
     } catch {
@@ -11939,7 +11932,7 @@ var detectPhaseType = async (args, projectDir, workstream) => {
     const allRelPaths = [...dirFiles];
     for (const f of dirFiles) {
       const sub = join19(phaseDirFull, f);
-      if (existsSync13(sub)) {
+      if (existsSync12(sub)) {
         try {
           const subStat = readdirSync7(sub);
           for (const sf of subStat) {
@@ -11978,7 +11971,7 @@ var detectPhaseType = async (args, projectDir, workstream) => {
 // dist/query/check-completion.js
 init_errors();
 init_helpers();
-import { existsSync as existsSync14 } from "node:fs";
+import { existsSync as existsSync13 } from "node:fs";
 import { readFile as readFile21, readdir as readdir11 } from "node:fs/promises";
 import { join as join20 } from "node:path";
 var VALID_SCOPES = /* @__PURE__ */ new Set(["phase", "milestone"]);
@@ -12035,7 +12028,7 @@ async function checkPhaseCompletion(phaseArg, projectDir) {
   let uatContent = null;
   if (found && pdata.directory) {
     const phaseDirFull = join20(projectDir, pdata.directory);
-    if (existsSync14(phaseDirFull)) {
+    if (existsSync13(phaseDirFull)) {
       try {
         const files = (await readdir11(phaseDirFull)).sort((a3, b) => a3.localeCompare(b));
         const verFile = files.includes("VERIFICATION.md") ? "VERIFICATION.md" : files.find((f) => f.endsWith("-VERIFICATION.md"));
@@ -12109,7 +12102,7 @@ var checkCompletion = async (args, projectDir) => {
 init_errors();
 init_helpers();
 import { readFile as readFile22 } from "node:fs/promises";
-import { existsSync as existsSync15 } from "node:fs";
+import { existsSync as existsSync14 } from "node:fs";
 import { join as join21 } from "node:path";
 async function readFileSafe2(filePath) {
   try {
@@ -12132,7 +12125,7 @@ var checkGates = async (args, projectDir, workstream) => {
   const warnings = [];
   const paths = planningPaths(projectDir, workstream);
   const continueHerePath = join21(projectDir, ".continue-here.md");
-  if (existsSync15(continueHerePath)) {
+  if (existsSync14(continueHerePath)) {
     blockers.push({
       gate: "continue-here",
       file: ".continue-here.md",
@@ -12185,7 +12178,7 @@ var checkGates = async (args, projectDir, workstream) => {
 init_errors();
 init_helpers();
 import { readFile as readFile23 } from "node:fs/promises";
-import { existsSync as existsSync16, readdirSync as readdirSync8 } from "node:fs";
+import { existsSync as existsSync15, readdirSync as readdirSync8 } from "node:fs";
 import { join as join22 } from "node:path";
 var NOT_FOUND_RESULT = {
   status: "missing",
@@ -12222,7 +12215,7 @@ var checkVerificationStatus = async (args, projectDir) => {
   }
   const phaseDirFull = join22(projectDir, pdata.directory);
   let verPath = null;
-  if (existsSync16(phaseDirFull)) {
+  if (existsSync15(phaseDirFull)) {
     try {
       const files = readdirSync8(phaseDirFull);
       const verFile = files.find((f) => f.endsWith("-VERIFICATION.md") || f === "VERIFICATION.md");
@@ -12510,14 +12503,14 @@ var DECISION_ROUTING_STATIC_CATALOG = [
 
 // dist/query/skills.js
 init_helpers();
-import { existsSync as existsSync17, realpathSync } from "node:fs";
+import { existsSync as existsSync16, realpathSync } from "node:fs";
 import { join as join23, resolve as resolve4, sep } from "node:path";
 var GLOBAL_SKILL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
 function resolveWithinBase(target, baseDir) {
   try {
-    const resolvedBase = existsSync17(baseDir) ? realpathSync(baseDir) : resolve4(baseDir);
+    const resolvedBase = existsSync16(baseDir) ? realpathSync(baseDir) : resolve4(baseDir);
     const absTarget = resolve4(baseDir, target);
-    const resolvedTarget = existsSync17(absTarget) ? realpathSync(absTarget) : absTarget;
+    const resolvedTarget = existsSync16(absTarget) ? realpathSync(absTarget) : absTarget;
     const baseWithSep = resolvedBase.endsWith(sep) ? resolvedBase : resolvedBase + sep;
     if (resolvedTarget !== resolvedBase && !resolvedTarget.startsWith(baseWithSep)) {
       return null;
@@ -12581,7 +12574,7 @@ var agentSkills = async (args, projectDir) => {
         continue;
       }
       const skillMd2 = join23(skillDir, "SKILL.md");
-      if (!existsSync17(skillMd2)) {
+      if (!existsSync16(skillMd2)) {
         process.stderr.write(`[agent-skills] WARNING: Global skill not found at "${displayPath}/SKILL.md" \u2014 skipping
 `);
         continue;
@@ -12600,7 +12593,7 @@ var agentSkills = async (args, projectDir) => {
       continue;
     }
     const skillMd = join23(projectDir, entry, "SKILL.md");
-    if (!existsSync17(skillMd)) {
+    if (!existsSync16(skillMd)) {
       process.stderr.write(`[agent-skills] WARNING: Skill not found at "${entry}/SKILL.md" \u2014 skipping
 `);
       continue;
@@ -12621,7 +12614,7 @@ ${lines}
 init_errors();
 init_helpers();
 import { readFile as readFile25, writeFile as writeFile8, mkdir as mkdir3, readdir as readdir13, rename as rename3, rm } from "node:fs/promises";
-import { existsSync as existsSync19 } from "node:fs";
+import { existsSync as existsSync18 } from "node:fs";
 import { join as join25, relative as relative5 } from "node:path";
 init_state_document();
 
@@ -12754,11 +12747,11 @@ function computeNextDecimalPhase(basePhase, decimalSet) {
 }
 
 // dist/query/phase-filesystem-adapter.js
-import { existsSync as existsSync18 } from "node:fs";
+import { existsSync as existsSync17 } from "node:fs";
 import { mkdir as mkdir2, readdir as readdir12, rename as rename2, writeFile as writeFile6 } from "node:fs/promises";
 import { join as join24 } from "node:path";
 async function listDirectories(dirPath) {
-  if (!existsSync18(dirPath))
+  if (!existsSync17(dirPath))
     return [];
   try {
     const entries = await readdir12(dirPath, { withFileTypes: true });
@@ -12954,7 +12947,7 @@ var phaseAddBatch = async (args, projectDir, workstream) => {
     }
   }
   const roadmapPath = planningPaths(projectDir, workstream).roadmap;
-  if (!existsSync19(roadmapPath)) {
+  if (!existsSync18(roadmapPath)) {
     throw new GSDError("ROADMAP.md not found", ErrorClassification.Validation);
   }
   let config = {};
@@ -13257,7 +13250,7 @@ _Pending verification_
     default:
       throw new GSDError(`Unknown scaffold type: ${type}`, ErrorClassification.Validation);
   }
-  if (existsSync19(filePath)) {
+  if (existsSync18(filePath)) {
     return {
       data: {
         created: false,
@@ -13387,7 +13380,7 @@ var phaseRemove = async (args, projectDir, workstream) => {
   assertNoNullBytes(targetPhase, "targetPhase");
   const paths = planningPaths(projectDir, workstream);
   const phasesDir = paths.phases;
-  if (!existsSync19(paths.roadmap)) {
+  if (!existsSync18(paths.roadmap)) {
     throw new GSDError("ROADMAP.md not found", ErrorClassification.Validation);
   }
   const normalized = normalizePhaseName(targetPhase);
@@ -13430,7 +13423,7 @@ var phaseRemove = async (args, projectDir, workstream) => {
   await updateRoadmapAfterPhaseRemoval(projectDir, targetPhase, isDecimal, parseInt(normalized, 10), workstream);
   let stateUpdated = false;
   const statePath = paths.state;
-  if (existsSync19(statePath)) {
+  if (existsSync18(statePath)) {
     const lockPath = await acquireStateLock(statePath);
     try {
       let stateContent = await readFile25(statePath, "utf-8");
@@ -13537,7 +13530,7 @@ var phaseComplete = async (args, projectDir, workstream) => {
     } catch {
     }
   }
-  if (existsSync19(paths.roadmap)) {
+  if (existsSync18(paths.roadmap)) {
     await readModifyWriteRoadmapMd(projectDir, async (roadmapContent) => {
       const phaseEscaped = escapeRegex2(phaseNum);
       const checkboxPattern = new RegExp(`(-\\s*\\[)[ ](\\]\\s*.*Phase\\s+${phaseEscaped}[:\\s][^\\n]*)`, "i");
@@ -13567,7 +13560,7 @@ var phaseComplete = async (args, projectDir, workstream) => {
         roadmapContent = roadmapContent.replace(planCheckboxPattern, "$1x$2");
       }
       const reqPath = paths.requirements;
-      if (existsSync19(reqPath)) {
+      if (existsSync18(reqPath)) {
         const currentMilestoneRoadmap = await extractCurrentMilestone(roadmapContent, projectDir);
         const phaseSectionMatch = currentMilestoneRoadmap.match(new RegExp(`(#{2,4}\\s*Phase\\s+${phaseEscaped}[:\\s][\\s\\S]*?)(?=#{2,4}\\s*Phase\\s+|$)`, "i"));
         const sectionText = phaseSectionMatch ? phaseSectionMatch[1] : "";
@@ -13617,7 +13610,7 @@ var phaseComplete = async (args, projectDir, workstream) => {
     }
   } catch {
   }
-  if (isLastPhase && existsSync19(paths.roadmap)) {
+  if (isLastPhase && existsSync18(paths.roadmap)) {
     try {
       const roadmapContent = await readFile25(paths.roadmap, "utf-8");
       const roadmapForPhases = completedPhaseInPrimaryMilestone ? await extractCurrentMilestone(roadmapContent, projectDir) : roadmapContent;
@@ -13635,7 +13628,7 @@ var phaseComplete = async (args, projectDir, workstream) => {
     }
   }
   let stateUpdated = false;
-  if (existsSync19(paths.state)) {
+  if (existsSync18(paths.state)) {
     const lockPath = await acquireStateLock(paths.state);
     try {
       const rawState = await readFile25(paths.state, "utf-8");
@@ -13662,7 +13655,7 @@ var phaseComplete = async (args, projectDir, workstream) => {
       let derivedCompletedPhases = null;
       let derivedTotalPhases = null;
       let derivedTotalPlans = null;
-      if (existsSync19(paths.roadmap)) {
+      if (existsSync18(paths.roadmap)) {
         try {
           const freshRoadmap = await readFile25(paths.roadmap, "utf-8");
           const tableCompletePattern = /\|\s*\d+[A-Z]?\S*\s*\|[^|]*\|\s*Complete\s*\|/gi;
@@ -13753,7 +13746,7 @@ $1`);
       next_phase_name: nextPhaseName,
       is_last_phase: isLastPhase,
       date: today,
-      roadmap_updated: existsSync19(paths.roadmap),
+      roadmap_updated: existsSync18(paths.roadmap),
       state_updated: stateUpdated,
       requirements_updated: requirementsUpdated,
       warnings,
@@ -13765,7 +13758,7 @@ var phasesClear = async (args, projectDir, workstream) => {
   const phasesDir = planningPaths(projectDir, workstream).phases;
   const confirm = Array.isArray(args) && args.includes("--confirm");
   let cleared = 0;
-  if (existsSync19(phasesDir)) {
+  if (existsSync18(phasesDir)) {
     const entries = await readdir13(phasesDir, { withFileTypes: true });
     const dirs = entries.filter((e3) => e3.isDirectory() && !/^999(?:\.|$)/.test(e3.name));
     if (dirs.length > 0 && !confirm) {
@@ -13786,14 +13779,14 @@ var phasesList = async (args, projectDir, workstream) => {
   const type = typeIdx !== -1 ? args[typeIdx + 1] : null;
   const phase = phaseIdx !== -1 ? args[phaseIdx + 1] : null;
   const includeArchived = args.includes("--include-archived");
-  if (!existsSync19(phasesDir)) {
+  if (!existsSync18(phasesDir)) {
     return { data: type ? { files: [], count: 0 } : { directories: [], count: 0 } };
   }
   const entries = await readdir13(phasesDir, { withFileTypes: true });
   let dirs = entries.filter((e3) => e3.isDirectory()).map((e3) => e3.name);
   if (includeArchived) {
     const milestonesDir = join25(paths.planning, "milestones");
-    if (existsSync19(milestonesDir)) {
+    if (existsSync18(milestonesDir)) {
       const milestoneEntries = await readdir13(milestonesDir, { withFileTypes: true });
       for (const mDir of milestoneEntries.filter((e3) => e3.isDirectory() && e3.name.endsWith("-phases"))) {
         const milestone = mDir.name.replace(/-phases$/, "");
@@ -13817,7 +13810,7 @@ var phasesList = async (args, projectDir, workstream) => {
     const files = [];
     for (const dir of dirs) {
       const dirPath = join25(phasesDir, dir);
-      if (!existsSync19(dirPath))
+      if (!existsSync18(dirPath))
         continue;
       const dirFiles = await readdir13(dirPath);
       let filtered;
@@ -13851,7 +13844,7 @@ var phaseNextDecimal = async (args, projectDir, workstream) => {
     decimalSet.add(suffix);
   }
   const roadmapPath = paths.roadmap;
-  if (existsSync19(roadmapPath)) {
+  if (existsSync18(roadmapPath)) {
     try {
       const roadmapContent = await readFile25(roadmapPath, "utf-8");
       for (const suffix of collectDecimalSuffixesFromRoadmap(normalized, roadmapContent)) {
@@ -13947,11 +13940,11 @@ var milestoneComplete = async (args, projectDir, workstream) => {
     }
   } catch {
   }
-  if (existsSync19(roadmapPath)) {
+  if (existsSync18(roadmapPath)) {
     const roadmapContent = await readFile25(roadmapPath, "utf-8");
     await writeFile8(join25(archiveDir, `${version}-ROADMAP.md`), roadmapContent, "utf-8");
   }
-  if (existsSync19(reqPath)) {
+  if (existsSync18(reqPath)) {
     const reqContent = await readFile25(reqPath, "utf-8");
     const archiveHeader = `# Requirements Archive: ${version} ${milestoneName}
 
@@ -13966,7 +13959,7 @@ For current requirements, see \`.planning/REQUIREMENTS.md\`.
     await writeFile8(join25(archiveDir, `${version}-REQUIREMENTS.md`), archiveHeader + reqContent, "utf-8");
   }
   const auditFile = join25(projectDir, ".planning", `${version}-MILESTONE-AUDIT.md`);
-  if (existsSync19(auditFile)) {
+  if (existsSync18(auditFile)) {
     await rename3(auditFile, join25(archiveDir, `${version}-MILESTONE-AUDIT.md`));
   }
   const accomplishmentsList = accomplishments.map((a3) => `- ${a3}`).join("\n");
@@ -13980,7 +13973,7 @@ ${accomplishmentsList || "- (none recorded)"}
 ---
 
 `;
-  if (existsSync19(milestonesPath)) {
+  if (existsSync18(milestonesPath)) {
     const existing = await readFile25(milestonesPath, "utf-8");
     if (!existing.trim()) {
       await writeFile8(milestonesPath, normalizeMd(`# Milestones
@@ -14001,7 +13994,7 @@ ${milestoneEntry}`), "utf-8");
 
 ${milestoneEntry}`), "utf-8");
   }
-  if (existsSync19(statePath)) {
+  if (existsSync18(statePath)) {
     await readModifyWriteStateMdFull(projectDir, (stateContent) => {
       let next = stateReplaceFieldWithFallback(stateContent, "Status", null, `${version} milestone complete`);
       next = stateReplaceFieldWithFallback(next, "Last Activity", "Last activity", today);
@@ -14058,19 +14051,19 @@ ${closedPositionBody}`;
       tasks: totalTasks,
       accomplishments,
       archived: {
-        roadmap: existsSync19(join25(archiveDir, `${version}-ROADMAP.md`)),
-        requirements: existsSync19(join25(archiveDir, `${version}-REQUIREMENTS.md`)),
-        audit: existsSync19(join25(archiveDir, `${version}-MILESTONE-AUDIT.md`)),
+        roadmap: existsSync18(join25(archiveDir, `${version}-ROADMAP.md`)),
+        requirements: existsSync18(join25(archiveDir, `${version}-REQUIREMENTS.md`)),
+        audit: existsSync18(join25(archiveDir, `${version}-MILESTONE-AUDIT.md`)),
         phases: phasesArchived
       },
       milestones_updated: true,
-      state_updated: existsSync19(statePath)
+      state_updated: existsSync18(statePath)
     }
   };
 };
 
 // dist/query/summary.js
-import { existsSync as existsSync20, readdirSync as readdirSync9, readFileSync as readFileSync8 } from "node:fs";
+import { existsSync as existsSync19, readdirSync as readdirSync9, readFileSync as readFileSync8 } from "node:fs";
 import { readFile as readFile26 } from "node:fs/promises";
 import { join as join26 } from "node:path";
 init_helpers();
@@ -14115,7 +14108,7 @@ function readSubdirectories(dirPath, sort) {
 function getArchivedPhaseDirs(cwd) {
   const milestonesDir = join26(cwd, ".planning", "milestones");
   const results = [];
-  if (!existsSync20(milestonesDir))
+  if (!existsSync19(milestonesDir))
     return results;
   try {
     const milestoneEntries = readdirSync9(milestonesDir, { withFileTypes: true });
@@ -14154,7 +14147,7 @@ var summaryExtract = async (args, projectDir) => {
   } catch {
     return { data: { error: "File not found", path: summaryPath } };
   }
-  if (!existsSync20(fullPath)) {
+  if (!existsSync19(fullPath)) {
     return { data: { error: "File not found", path: summaryPath } };
   }
   let content;
@@ -14194,7 +14187,7 @@ var historyDigest = async (_args, projectDir, workstream) => {
   for (const a3 of archived) {
     allPhaseDirs.push({ name: a3.name, fullPath: a3.fullPath });
   }
-  if (existsSync20(phasesDir)) {
+  if (existsSync19(phasesDir)) {
     try {
       const currentDirs = readdirSync9(phasesDir, { withFileTypes: true }).filter((e3) => e3.isDirectory()).map((e3) => e3.name).sort((a3, b) => comparePhaseNum(a3, b));
       for (const dir of currentDirs) {
@@ -14281,12 +14274,12 @@ init_commit();
 init_helpers();
 init_errors();
 init_workstream_name_policy();
-import { existsSync as existsSync23, readdirSync as readdirSync11, readFileSync as readFileSync11, writeFileSync as writeFileSync4, mkdirSync as mkdirSync3, renameSync, rmdirSync } from "node:fs";
+import { existsSync as existsSync22, readdirSync as readdirSync11, readFileSync as readFileSync11, writeFileSync as writeFileSync4, mkdirSync as mkdirSync3, renameSync, rmdirSync } from "node:fs";
 import { join as join29, relative as relative7 } from "node:path";
 
 // dist/query/active-workstream-store.js
 init_workstream_utils();
-import { readFileSync as readFileSync9, writeFileSync as writeFileSync3, unlinkSync as unlinkSync3, existsSync as existsSync21 } from "node:fs";
+import { readFileSync as readFileSync9, writeFileSync as writeFileSync3, unlinkSync as unlinkSync3, existsSync as existsSync20 } from "node:fs";
 import { join as join27 } from "node:path";
 function pointerPath(projectDir) {
   return join27(projectDir, ".planning", "active-workstream");
@@ -14305,7 +14298,7 @@ function readActiveWorkstream(projectDir) {
       }
       return null;
     }
-    if (!existsSync21(workstreamDir(projectDir, name))) {
+    if (!existsSync20(workstreamDir(projectDir, name))) {
       try {
         unlinkSync3(filePath);
       } catch {
@@ -14330,7 +14323,7 @@ function writeActiveWorkstream(projectDir, name) {
     throw new Error("Invalid workstream name: must be alphanumeric, hyphens, underscores, or dots");
   }
   const wsDir = workstreamDir(projectDir, name);
-  if (!existsSync21(wsDir)) {
+  if (!existsSync20(wsDir)) {
     throw new Error(`Workstream directory does not exist: ${name}`);
   }
   writeFileSync3(filePath, name + "\n", "utf-8");
@@ -14338,7 +14331,7 @@ function writeActiveWorkstream(projectDir, name) {
 
 // dist/query/workstream-inventory.js
 init_helpers();
-import { existsSync as existsSync22, readdirSync as readdirSync10, readFileSync as readFileSync10 } from "node:fs";
+import { existsSync as existsSync21, readdirSync as readdirSync10, readFileSync as readFileSync10 } from "node:fs";
 import { join as join28, relative as relative6 } from "node:path";
 init_state_document();
 var planningRoot = (projectDir) => join28(projectDir, ".planning");
@@ -14353,7 +14346,7 @@ function wsPlanningPaths(projectDir, name) {
   };
 }
 function readSubdirectories2(dir) {
-  if (!existsSync22(dir))
+  if (!existsSync21(dir))
     return [];
   return readdirSync10(dir, { withFileTypes: true }).filter((e3) => e3.isDirectory()).map((e3) => e3.name);
 }
@@ -14388,7 +14381,7 @@ function readStateProjection(statePath) {
 }
 function inspectWorkstream(projectDir, name, options = {}) {
   const wsDir = join28(workstreamsRoot(projectDir), name);
-  if (!existsSync22(wsDir))
+  if (!existsSync21(wsDir))
     return null;
   const active = options.active === void 0 ? readActiveWorkstream(projectDir) : options.active;
   const p = wsPlanningPaths(projectDir, name);
@@ -14418,9 +14411,9 @@ function inspectWorkstream(projectDir, name, options = {}) {
     path: toPosixPath2(relative6(projectDir, wsDir)),
     active: name === active,
     files: {
-      roadmap: existsSync22(p.roadmap),
-      state: existsSync22(p.state),
-      requirements: existsSync22(p.requirements)
+      roadmap: existsSync21(p.roadmap),
+      state: existsSync21(p.state),
+      requirements: existsSync21(p.requirements)
     },
     status: state.status,
     current_phase: state.current_phase,
@@ -14436,7 +14429,7 @@ function inspectWorkstream(projectDir, name, options = {}) {
 }
 function listWorkstreamInventories(projectDir) {
   const wsRoot = workstreamsRoot(projectDir);
-  if (!existsSync22(wsRoot)) {
+  if (!existsSync21(wsRoot)) {
     return {
       mode: "flat",
       active: null,
@@ -14470,7 +14463,7 @@ var workstreamGet = async (_args, projectDir) => {
   return {
     data: {
       active,
-      mode: existsSync23(wsRoot) ? "workstream" : "flat"
+      mode: existsSync22(wsRoot) ? "workstream" : "flat"
     }
   };
 };
@@ -14507,12 +14500,12 @@ var workstreamCreate = async (args, projectDir) => {
   if (!slug)
     return { data: { created: false, reason: "invalid workstream name \u2014 must contain at least one alphanumeric character" } };
   const baseDir = planningRoot(projectDir);
-  if (!existsSync23(baseDir)) {
+  if (!existsSync22(baseDir)) {
     return { data: { created: false, reason: ".planning/ directory not found \u2014 run /gsd-new-project first" } };
   }
   const wsRoot = workstreamsRoot(projectDir);
   const wsDir = join29(wsRoot, slug);
-  if (existsSync23(wsDir) && existsSync23(join29(wsDir, "STATE.md"))) {
+  if (existsSync22(wsDir) && existsSync22(join29(wsDir, "STATE.md"))) {
     return { data: { created: false, error: "already_exists", workstream: slug, path: toPosixPath2(relative7(projectDir, wsDir)) } };
   }
   mkdirSync3(wsDir, { recursive: true });
@@ -14542,7 +14535,7 @@ var workstreamCreate = async (args, projectDir) => {
     ""
   ].join("\n");
   const statePath = join29(wsDir, "STATE.md");
-  if (!existsSync23(statePath)) {
+  if (!existsSync22(statePath)) {
     writeFileSync4(statePath, stateContent, "utf-8");
   }
   writeActiveWorkstream(projectDir, slug);
@@ -14561,7 +14554,7 @@ var workstreamCreate = async (args, projectDir) => {
 function syncRootStateMirror(projectDir, name) {
   const wsStatePath = join29(workstreamsRoot(projectDir), name, "STATE.md");
   const rootStatePath = join29(planningRoot(projectDir), "STATE.md");
-  if (!existsSync23(wsStatePath))
+  if (!existsSync22(wsStatePath))
     return;
   try {
     const content = readFileSync11(wsStatePath, "utf-8");
@@ -14583,12 +14576,12 @@ var workstreamSet = async (args, projectDir) => {
     return { data: { active: null, error: "invalid_name", message: "Workstream name must be alphanumeric, hyphens, underscores, or dots only" } };
   }
   const wsDir = join29(workstreamsRoot(projectDir), name);
-  if (!existsSync23(wsDir)) {
+  if (!existsSync22(wsDir)) {
     return { data: { active: null, error: "not_found", workstream: name } };
   }
   writeActiveWorkstream(projectDir, name);
   syncRootStateMirror(projectDir, name);
-  return { data: { active: name, set: true, mirror_synced: existsSync23(join29(wsDir, "STATE.md")) } };
+  return { data: { active: name, set: true, mirror_synced: existsSync22(join29(wsDir, "STATE.md")) } };
 };
 var workstreamStatus = async (args, projectDir) => {
   const name = args[0];
@@ -14599,7 +14592,7 @@ var workstreamStatus = async (args, projectDir) => {
     throw new GSDError("Invalid workstream name", ErrorClassification.Validation);
   }
   const wsDir = join29(workstreamsRoot(projectDir), name);
-  if (!existsSync23(wsDir)) {
+  if (!existsSync22(wsDir)) {
     return { data: { found: false, workstream: name } };
   }
   const inventory = inspectWorkstream(projectDir, name);
@@ -14630,7 +14623,7 @@ var workstreamComplete = async (args, projectDir) => {
   const root = planningRoot(projectDir);
   const wsRoot = workstreamsRoot(projectDir);
   const wsDir = join29(wsRoot, name);
-  if (!existsSync23(wsDir)) {
+  if (!existsSync22(wsDir)) {
     return { data: { completed: false, error: "not_found", workstream: name } };
   }
   const active = readActiveWorkstream(projectDir);
@@ -14640,7 +14633,7 @@ var workstreamComplete = async (args, projectDir) => {
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   let archivePath = join29(archiveDir, `ws-${name}-${today}`);
   let suffix = 1;
-  while (existsSync23(archivePath)) {
+  while (existsSync22(archivePath)) {
     archivePath = join29(archiveDir, `ws-${name}-${today}-${suffix++}`);
   }
   mkdirSync3(archivePath, { recursive: true });
@@ -14717,7 +14710,7 @@ var workstreamProgress = async (_args, projectDir) => {
 };
 
 // dist/query/docs-init.js
-import { closeSync, existsSync as existsSync24, openSync, readFileSync as readFileSync12, readSync, readdirSync as readdirSync12, statSync as statSync3 } from "node:fs";
+import { closeSync, existsSync as existsSync23, openSync, readFileSync as readFileSync12, readSync, readdirSync as readdirSync12, statSync as statSync3 } from "node:fs";
 import { join as join30, relative as relative8 } from "node:path";
 init_helpers();
 var GSD_MARKER = "<!-- generated-by: gsd-doc-writer -->";
@@ -14738,7 +14731,7 @@ var SKIP_DIRS = /* @__PURE__ */ new Set([
 ]);
 function pathExistsInternal(cwd, rel) {
   try {
-    return existsSync24(join30(cwd, rel));
+    return existsSync23(join30(cwd, rel));
   } catch {
     return false;
   }
@@ -14899,14 +14892,14 @@ function checkAgentsInstalled(config) {
   const runtime = detectRuntime(config);
   const agentsDir = resolveAgentsDir(runtime);
   const expectedAgents = Object.keys(MODEL_PROFILES);
-  if (!existsSync24(agentsDir)) {
+  if (!existsSync23(agentsDir)) {
     return { agents_installed: false, missing_agents: expectedAgents };
   }
   const missing = [];
   for (const agent of expectedAgents) {
     const agentFile = join30(agentsDir, `${agent}.md`);
     const agentFileCopilot = join30(agentsDir, `${agent}.agent.md`);
-    if (!existsSync24(agentFile) && !existsSync24(agentFileCopilot)) {
+    if (!existsSync23(agentFile) && !existsSync23(agentFileCopilot)) {
       missing.push(agent);
     }
   }
@@ -14917,7 +14910,7 @@ function checkAgentsInstalled(config) {
 }
 var docsInit = async (_args, projectDir) => {
   const config = await loadConfig(projectDir);
-  const configExists = existsSync24(join30(projectDir, ".planning", "config.json"));
+  const configExists = existsSync23(join30(projectDir, ".planning", "config.json"));
   const docModelResult = await resolveModel(["gsd-doc-writer"], projectDir);
   const docWriterData = docModelResult.data;
   const doc_writer_model = configExists ? docWriterData?.model || "" : "";
@@ -14987,13 +14980,13 @@ var websearch = async (args) => {
 // dist/query/profile.js
 init_helpers();
 init_errors();
-import { existsSync as existsSync26, readdirSync as readdirSync16, readFileSync as readFileSync14, writeFileSync as writeFileSync5, mkdirSync as mkdirSync4, unlinkSync as unlinkSync4 } from "node:fs";
+import { existsSync as existsSync25, readdirSync as readdirSync16, readFileSync as readFileSync14, writeFileSync as writeFileSync5, mkdirSync as mkdirSync4, unlinkSync as unlinkSync4 } from "node:fs";
 import { join as join34, basename as basename3, resolve as resolve5 } from "node:path";
 import { homedir as homedir5 } from "node:os";
 import { createHash, randomBytes } from "node:crypto";
 
 // dist/query/profile-scan-sessions.js
-import { existsSync as existsSync25, readdirSync as readdirSync13, readFileSync as readFileSync13, statSync as statSync4 } from "node:fs";
+import { existsSync as existsSync24, readdirSync as readdirSync13, readFileSync as readFileSync13, statSync as statSync4 } from "node:fs";
 import { basename, join as join31 } from "node:path";
 import { homedir as homedir4 } from "node:os";
 function formatBytes(bytes) {
@@ -15049,7 +15042,7 @@ function getProjectName(projectDirName, indexData) {
 }
 function getScanSessionsRoot(overridePath) {
   const dir = overridePath || join31(homedir4(), ".claude", "projects");
-  if (!existsSync25(dir))
+  if (!existsSync24(dir))
     return null;
   return dir;
 }
@@ -15596,7 +15589,7 @@ function generateClaudeInstruction(dimension, rating) {
 // dist/query/profile.js
 var STORE_DIR = join34(homedir5(), ".gsd", "knowledge");
 function ensureStore() {
-  if (!existsSync26(STORE_DIR))
+  if (!existsSync25(STORE_DIR))
     mkdirSync4(STORE_DIR, { recursive: true });
 }
 function learningsWrite(entry) {
@@ -15616,7 +15609,7 @@ function learningsWrite(entry) {
   return { created: true, id };
 }
 function learningsList() {
-  if (!existsSync26(STORE_DIR))
+  if (!existsSync25(STORE_DIR))
     return [];
   const results = [];
   for (const file of readdirSync16(STORE_DIR).filter((f) => f.endsWith(".json"))) {
@@ -15650,7 +15643,7 @@ var learningsQuery = async (args) => {
 var learningsCopy = async (_args, projectDir, workstream) => {
   const paths = planningPaths(projectDir, workstream);
   const learningsPath = join34(paths.planning, "LEARNINGS.md");
-  if (!existsSync26(learningsPath)) {
+  if (!existsSync25(learningsPath)) {
     return { data: { copied: false, total: 0, created: 0, skipped: 0, reason: "No LEARNINGS.md found" } };
   }
   const content = readFileSync14(learningsPath, "utf-8");
@@ -15680,7 +15673,7 @@ function learningsPruneStore(olderThan) {
   }
   const days = parseInt(match[1], 10);
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1e3);
-  if (!existsSync26(STORE_DIR))
+  if (!existsSync25(STORE_DIR))
     return { removed: 0, kept: 0 };
   const files = readdirSync16(STORE_DIR).filter((f) => f.endsWith(".json"));
   let removed = 0;
@@ -15727,7 +15720,7 @@ var learningsDelete = async (args) => {
     throw new GSDError(`Invalid learning ID: "${id}"`, ErrorClassification.Validation);
   }
   const filePath = join34(STORE_DIR, `${id}.json`);
-  if (!existsSync26(filePath)) {
+  if (!existsSync25(filePath)) {
     return { data: { id, deleted: false } };
   }
   unlinkSync4(filePath);
@@ -15833,7 +15826,7 @@ var profileQuestionnaire = async (args, _projectDir) => {
 };
 
 // dist/query/skill-manifest.js
-import { existsSync as existsSync27, readdirSync as readdirSync17, readFileSync as readFileSync15, writeFileSync as writeFileSync6 } from "node:fs";
+import { existsSync as existsSync26, readdirSync as readdirSync17, readFileSync as readFileSync15, writeFileSync as writeFileSync6 } from "node:fs";
 import { join as join35, resolve as resolve6 } from "node:path";
 import { homedir as homedir6 } from "node:os";
 init_helpers();
@@ -15842,7 +15835,7 @@ function buildSkillManifest(cwd, skillsDir = null) {
     root: resolve6(skillsDir),
     path: resolve6(skillsDir),
     scope: "custom",
-    present: existsSync27(skillsDir),
+    present: existsSync26(skillsDir),
     kind: "skills"
   }] : [
     { root: ".claude/skills", path: join35(cwd, ".claude", "skills"), scope: "project", kind: "skills" },
@@ -15876,7 +15869,7 @@ function buildSkillManifest(cwd, skillsDir = null) {
       root: rootInfo.root,
       path: rootPath,
       scope: rootInfo.scope,
-      present: existsSync27(rootPath),
+      present: existsSync26(rootPath),
       deprecated: "deprecated" in rootInfo ? !!rootInfo.deprecated : false
     };
     if (!rootSummary.present) {
@@ -15911,7 +15904,7 @@ function buildSkillManifest(cwd, skillsDir = null) {
         continue;
       const entryName = entry.name.toString();
       const skillMdPath = join35(rootPath, entryName, "SKILL.md");
-      if (!existsSync27(skillMdPath))
+      if (!existsSync26(skillMdPath))
         continue;
       let content;
       try {
@@ -15975,7 +15968,7 @@ var skillManifest = async (args, projectDir) => {
   const manifest = buildSkillManifest(projectDir, skillsDir);
   if (args.includes("--write")) {
     const planningDir = join35(projectDir, ".planning");
-    if (existsSync27(planningDir)) {
+    if (existsSync26(planningDir)) {
       const manifestPath = join35(planningDir, "skill-manifest.json");
       writeFileSync6(manifestPath, JSON.stringify(manifest, null, 2), "utf-8");
     }
@@ -15984,13 +15977,13 @@ var skillManifest = async (args, projectDir) => {
 };
 
 // dist/query/audit-open.js
-import { existsSync as existsSync28, readdirSync as readdirSync18, readFileSync as readFileSync16 } from "node:fs";
+import { existsSync as existsSync27, readdirSync as readdirSync18, readFileSync as readFileSync16 } from "node:fs";
 import { basename as basename4, join as join36 } from "node:path";
 init_helpers();
 var INCOMPLETE_QUICK_STATUSES = /* @__PURE__ */ new Set(["incomplete", "gaps", "gaps_found", "partial", "blocked"]);
 function scanDebugSessions(planDir) {
   const debugDir = join36(planDir, "debug");
-  if (!existsSync28(debugDir))
+  if (!existsSync27(debugDir))
     return [];
   const results = [];
   let files;
@@ -16039,7 +16032,7 @@ function scanDebugSessions(planDir) {
 }
 function scanQuickTasks(planDir) {
   const quickDir = join36(planDir, "quick");
-  if (!existsSync28(quickDir))
+  if (!existsSync27(quickDir))
     return [];
   let entries;
   try {
@@ -16064,7 +16057,7 @@ function scanQuickTasks(planDir) {
     }
     let status = "missing";
     const description = "";
-    if (summaryPath && existsSync28(summaryPath)) {
+    if (summaryPath && existsSync27(summaryPath)) {
       try {
         const content = readFileSync16(summaryPath, "utf-8");
         const fm = extractFrontmatter2(content);
@@ -16093,7 +16086,7 @@ function scanQuickTasks(planDir) {
 }
 function scanThreads(planDir) {
   const threadsDir = join36(planDir, "threads");
-  if (!existsSync28(threadsDir))
+  if (!existsSync27(threadsDir))
     return [];
   let files;
   try {
@@ -16150,7 +16143,7 @@ function scanThreads(planDir) {
 }
 function scanTodos(planDir) {
   const pendingDir = join36(planDir, "todos", "pending");
-  if (!existsSync28(pendingDir))
+  if (!existsSync27(pendingDir))
     return [];
   let files;
   try {
@@ -16187,7 +16180,7 @@ function scanTodos(planDir) {
 }
 function scanSeeds(planDir) {
   const seedsDir = join36(planDir, "seeds");
-  if (!existsSync28(seedsDir))
+  if (!existsSync27(seedsDir))
     return [];
   let files;
   try {
@@ -16233,7 +16226,7 @@ function scanSeeds(planDir) {
 }
 function scanUatGaps(planDir) {
   const phasesDir = join36(planDir, "phases");
-  if (!existsSync28(phasesDir))
+  if (!existsSync27(phasesDir))
     return [];
   let dirs;
   try {
@@ -16277,7 +16270,7 @@ function scanUatGaps(planDir) {
 }
 function scanVerificationGaps(planDir) {
   const phasesDir = join36(planDir, "phases");
-  if (!existsSync28(phasesDir))
+  if (!existsSync27(phasesDir))
     return [];
   let dirs;
   try {
@@ -16319,7 +16312,7 @@ function scanVerificationGaps(planDir) {
 }
 function scanContextQuestions(planDir) {
   const phasesDir = join36(planDir, "phases");
-  if (!existsSync28(phasesDir))
+  if (!existsSync27(phasesDir))
     return [];
   let dirs;
   try {
@@ -16594,7 +16587,7 @@ var auditOpen = async (args, projectDir, workstream) => {
 };
 
 // dist/query/detect-custom-files.js
-import { existsSync as existsSync29, readdirSync as readdirSync19, readFileSync as readFileSync17 } from "node:fs";
+import { existsSync as existsSync28, readdirSync as readdirSync19, readFileSync as readFileSync17 } from "node:fs";
 import { join as join37, relative as relative9, resolve as resolve7 } from "node:path";
 var GSD_MANAGED_DIRS = [
   "get-shit-done",
@@ -16605,7 +16598,7 @@ var GSD_MANAGED_DIRS = [
 ];
 function walkDir(dir, baseDir) {
   const results = [];
-  if (!existsSync29(dir))
+  if (!existsSync28(dir))
     return results;
   for (const entry of readdirSync19(dir, { withFileTypes: true })) {
     const fullPath = join37(dir, entry.name);
@@ -16625,11 +16618,11 @@ var detectCustomFiles = async (args) => {
     return { data: { error: "Usage: detect-custom-files --config-dir <path>" } };
   }
   const resolvedConfigDir = resolve7(configDir);
-  if (!existsSync29(resolvedConfigDir)) {
+  if (!existsSync28(resolvedConfigDir)) {
     return { data: { error: `Config directory not found: ${resolvedConfigDir}` } };
   }
   const manifestPath = join37(resolvedConfigDir, "gsd-file-manifest.json");
-  if (!existsSync29(manifestPath)) {
+  if (!existsSync28(manifestPath)) {
     return {
       data: {
         custom_files: [],
@@ -16655,7 +16648,7 @@ var detectCustomFiles = async (args) => {
   const customFiles = [];
   for (const managedDir of GSD_MANAGED_DIRS) {
     const absDir = join37(resolvedConfigDir, managedDir);
-    if (!existsSync29(absDir))
+    if (!existsSync28(absDir))
       continue;
     for (const relPath of walkDir(absDir, resolvedConfigDir)) {
       if (!manifestKeys.has(relPath)) {
@@ -16675,7 +16668,7 @@ var detectCustomFiles = async (args) => {
 
 // dist/query/uat.js
 init_errors();
-import { existsSync as existsSync30, readdirSync as readdirSync20, readFileSync as readFileSync18 } from "node:fs";
+import { existsSync as existsSync29, readdirSync as readdirSync20, readFileSync as readFileSync18 } from "node:fs";
 import { join as join38, relative as relative10 } from "node:path";
 init_helpers();
 function buildUatCheckpoint(currentTest) {
@@ -16705,7 +16698,7 @@ var uatRenderCheckpoint = async (args, projectDir) => {
   } catch {
     return { data: { error: `UAT file not found: ${filePath}` } };
   }
-  if (!existsSync30(resolvedPath)) {
+  if (!existsSync29(resolvedPath)) {
     return { data: { error: `UAT file not found: ${filePath}` } };
   }
   const content = readFileSync18(resolvedPath, "utf-8");
@@ -16884,7 +16877,7 @@ function parseVerificationItems(content, status, fm) {
 }
 var auditUat = async (_args, projectDir, workstream) => {
   const paths = planningPaths(projectDir, workstream);
-  if (!existsSync30(paths.phases)) {
+  if (!existsSync29(paths.phases)) {
     throw new GSDError("No phases directory found in planning directory", ErrorClassification.Blocked);
   }
   const isDirInMilestone = await getMilestonePhaseFilter(projectDir, workstream);
@@ -16951,7 +16944,7 @@ var auditUat = async (_args, projectDir, workstream) => {
 
 // dist/query/intel.js
 init_helpers();
-import { existsSync as existsSync31, readFileSync as readFileSync19, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, statSync as statSync7 } from "node:fs";
+import { existsSync as existsSync30, readFileSync as readFileSync19, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, statSync as statSync7 } from "node:fs";
 import { join as join39 } from "node:path";
 import { createHash as createHash2 } from "node:crypto";
 var INTEL_FILES = {
@@ -16978,7 +16971,7 @@ function intelFilePath(projectDir, filename) {
 }
 function safeReadJson(filePath) {
   try {
-    if (!existsSync31(filePath))
+    if (!existsSync30(filePath))
       return null;
     return JSON.parse(readFileSync19(filePath, "utf-8"));
   } catch {
@@ -16987,7 +16980,7 @@ function safeReadJson(filePath) {
 }
 function hashFile(filePath) {
   try {
-    if (!existsSync31(filePath))
+    if (!existsSync30(filePath))
       return null;
     const content = readFileSync19(filePath);
     return createHash2("sha256").update(content).digest("hex");
@@ -17032,7 +17025,7 @@ function searchJsonEntries(data, term, depth = 0) {
   return results;
 }
 function searchArchMd(filePath, term) {
-  if (!existsSync31(filePath))
+  if (!existsSync30(filePath))
     return [];
   const lowerTerm = term.toLowerCase();
   const content = readFileSync19(filePath, "utf-8");
@@ -17048,7 +17041,7 @@ var intelStatus = async (_args, projectDir, _workstream) => {
   let overallStale = false;
   for (const [, filename] of Object.entries(INTEL_FILES)) {
     const filePath = intelFilePath(projectDir, filename);
-    if (!existsSync31(filePath)) {
+    if (!existsSync30(filePath)) {
       files[filename] = { exists: false, updated_at: null, stale: true };
       overallStale = true;
       continue;
@@ -17101,7 +17094,7 @@ var intelSnapshot = async (_args, projectDir, _workstream) => {
     return { data: { disabled: true, message: INTEL_DISABLED_MSG } };
   }
   const dir = intelDir(projectDir);
-  if (!existsSync31(dir))
+  if (!existsSync30(dir))
     mkdirSync5(dir, { recursive: true });
   const hashes = {};
   let fileCount = 0;
@@ -17125,7 +17118,7 @@ var intelValidate = async (_args, projectDir, _workstream) => {
   const warnings = [];
   for (const [, filename] of Object.entries(INTEL_FILES)) {
     const filePath = intelFilePath(projectDir, filename);
-    if (!existsSync31(filePath)) {
+    if (!existsSync30(filePath)) {
       errors.push(`Missing intel file: ${filename}`);
       continue;
     }
@@ -17187,7 +17180,7 @@ var intelExtractExports = async (args, projectDir, _workstream) => {
   } catch {
     return { data: { file: raw, exports: [], method: "none" } };
   }
-  if (!existsSync31(filePath)) {
+  if (!existsSync30(filePath)) {
     return { data: { file: filePath, exports: [], method: "none" } };
   }
   const content = readFileSync19(filePath, "utf-8");
@@ -17291,7 +17284,7 @@ var intelPatchMeta = async (args, projectDir, _workstream) => {
     const msg = err instanceof Error ? err.message : String(err);
     return { data: { patched: false, error: msg } };
   }
-  if (!existsSync31(filePath)) {
+  if (!existsSync30(filePath)) {
     return { data: { patched: false, error: `File not found: ${filePath}` } };
   }
   try {
@@ -17322,7 +17315,7 @@ var intelUpdate = async (_args, projectDir, _workstream) => {
 };
 
 // dist/query/profile-output.js
-import { existsSync as existsSync32, mkdirSync as mkdirSync6, readFileSync as readFileSync20, readdirSync as readdirSync21, writeFileSync as writeFileSync8 } from "node:fs";
+import { existsSync as existsSync31, mkdirSync as mkdirSync6, readFileSync as readFileSync20, readdirSync as readdirSync21, writeFileSync as writeFileSync8 } from "node:fs";
 import { homedir as homedir7 } from "node:os";
 import { dirname as dirname2, isAbsolute as isAbsolute6, join as join40 } from "node:path";
 init_errors();
@@ -17366,7 +17359,7 @@ var CLAUDE_MD_PROFILE_PLACEHOLDER = [
 ].join("\n");
 function safeReadFile(filePath) {
   try {
-    return existsSync32(filePath) ? readFileSync20(filePath, "utf-8") : null;
+    return existsSync31(filePath) ? readFileSync20(filePath, "utf-8") : null;
   } catch {
     return null;
   }
@@ -17569,7 +17562,7 @@ function generateSkillsSection(cwd) {
   const discovered = [];
   for (const dir of SKILL_SEARCH_DIRS) {
     const absDir = join40(cwd, dir);
-    if (!existsSync32(absDir))
+    if (!existsSync31(absDir))
       continue;
     let entries;
     try {
@@ -17583,7 +17576,7 @@ function generateSkillsSection(cwd) {
       if (entry.name.startsWith("gsd-"))
         continue;
       const skillMdPath = join40(absDir, entry.name, "SKILL.md");
-      if (!existsSync32(skillMdPath))
+      if (!existsSync31(skillMdPath))
         continue;
       const content = safeReadFile(skillMdPath);
       if (!content)
@@ -17624,7 +17617,7 @@ function cmdWriteProfileLogic(cwd, options) {
   let analysisPath = options.input;
   if (!isAbsolute6(analysisPath))
     analysisPath = join40(cwd, analysisPath);
-  if (!existsSync32(analysisPath)) {
+  if (!existsSync31(analysisPath)) {
     throw new GSDError(`Analysis file not found: ${analysisPath}`, ErrorClassification.Validation);
   }
   let analysis;
@@ -17676,7 +17669,7 @@ function cmdWriteProfileLogic(cwd, options) {
 `);
   }
   const templatePath = join40(TEMPLATE_DIR, "user-profile.md");
-  if (!existsSync32(templatePath)) {
+  if (!existsSync31(templatePath)) {
     throw new GSDError(`Template not found: ${templatePath}`, ErrorClassification.Validation);
   }
   let template = readFileSync20(templatePath, "utf-8");
@@ -17798,7 +17791,7 @@ var generateDevPreferences = async (args, projectDir) => {
   let ap = analysisPath;
   if (!isAbsolute6(ap))
     ap = join40(projectDir, ap);
-  if (!existsSync32(ap)) {
+  if (!existsSync31(ap)) {
     throw new GSDError(`Analysis file not found: ${ap}`, ErrorClassification.Validation);
   }
   let analysis;
@@ -17822,7 +17815,7 @@ var generateDevPreferences = async (args, projectDir) => {
     learning_style: "Learning Support"
   };
   const templatePath = join40(TEMPLATE_DIR, "dev-preferences.md");
-  if (!existsSync32(templatePath)) {
+  if (!existsSync31(templatePath)) {
     throw new GSDError(`Template not found: ${templatePath}`, ErrorClassification.Validation);
   }
   let template = readFileSync20(templatePath, "utf-8");
@@ -17902,7 +17895,7 @@ var generateClaudeProfile = async (args, projectDir) => {
   let ap = analysisPath;
   if (!isAbsolute6(ap))
     ap = join40(projectDir, ap);
-  if (!existsSync32(ap)) {
+  if (!existsSync31(ap)) {
     throw new GSDError(`Analysis file not found: ${ap}`, ErrorClassification.Validation);
   }
   let analysis;
@@ -17983,7 +17976,7 @@ var generateClaudeProfile = async (args, projectDir) => {
     targetPath = isAbsolute6(configClaudeMdPath) ? configClaudeMdPath : join40(projectDir, configClaudeMdPath);
   }
   let action;
-  if (existsSync32(targetPath)) {
+  if (existsSync31(targetPath)) {
     let existingContent = readFileSync20(targetPath, "utf-8");
     const startMarker = "<!-- GSD:profile-start -->";
     const endMarker = "<!-- GSD:profile-end -->";
@@ -18166,7 +18159,7 @@ ${CLAUDE_MD_PROFILE_PLACEHOLDER}
 // dist/query/mvp.js
 init_errors();
 import { readFile as readFile27 } from "node:fs/promises";
-import { existsSync as existsSync33 } from "node:fs";
+import { existsSync as existsSync32 } from "node:fs";
 import { relative as relative11, resolve as resolve8, sep as sep2 } from "node:path";
 var phaseMvpMode = async (args, projectDir, workstream) => {
   const phaseNum = args[0];
@@ -18214,7 +18207,7 @@ var taskIsBehaviorAdding = async (args, projectDir) => {
     if (rel === ".." || rel.startsWith(`..${sep2}`)) {
       throw new GSDError(`Task file is outside project scope: ${requestedPath}`, ErrorClassification.Validation);
     }
-    if (!existsSync33(resolvedTaskPath)) {
+    if (!existsSync32(resolvedTaskPath)) {
       throw new GSDError(`Task file not found: ${requestedPath}`, ErrorClassification.Validation);
     }
     content = await readFile27(resolvedTaskPath, "utf-8");
@@ -18435,7 +18428,7 @@ var DOMAIN_STATIC_CATALOG = [
 // dist/query/state-project-load.js
 init_helpers();
 import { readFile as readFile28 } from "node:fs/promises";
-import { existsSync as existsSync34 } from "node:fs";
+import { existsSync as existsSync33 } from "node:fs";
 import { join as join41 } from "node:path";
 var PLUGIN_ROOT_FROM_ENV_STATE_LOAD = process.env.CLAUDE_PLUGIN_ROOT;
 var stateProjectLoad = async (_args, projectDir, workstream) => {
@@ -18449,8 +18442,8 @@ var stateProjectLoad = async (_args, projectDir, workstream) => {
       throw err;
     }
   }
-  const configExists = existsSync34(join41(planDir, "config.json"));
-  const roadmapExists = existsSync34(join41(planDir, "ROADMAP.md"));
+  const configExists = existsSync33(join41(planDir, "config.json"));
+  const roadmapExists = existsSync33(join41(planDir, "ROADMAP.md"));
   const stateExists = stateRaw.length > 0;
   return {
     data: {
@@ -18491,7 +18484,7 @@ function formatStateLoadRawStdout(data) {
 // dist/query/roadmap-update-plan-progress.js
 init_helpers();
 init_errors();
-import { existsSync as existsSync35 } from "node:fs";
+import { existsSync as existsSync34 } from "node:fs";
 import { join as join42 } from "node:path";
 function phaseMarkdownRegexSource(phaseNum) {
   const stripped = String(phaseNum).replace(/^[A-Z]{1,6}-(?=\d)/i, "");
@@ -18538,7 +18531,7 @@ var roadmapUpdatePlanProgress = async (args, projectDir, workstream) => {
   const status = isComplete ? "Complete" : summaryCount > 0 ? "In Progress" : "Planned";
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const roadmapPath = planningPaths(projectDir, workstream).roadmap;
-  if (!existsSync35(roadmapPath)) {
+  if (!existsSync34(roadmapPath)) {
     return {
       data: {
         updated: false,
@@ -18599,7 +18592,7 @@ var roadmapUpdatePlanProgress = async (args, projectDir, workstream) => {
 
 // dist/query/validate.js
 import { readFile as readFile29, readdir as readdir14, writeFile as writeFile9 } from "node:fs/promises";
-import { existsSync as existsSync36 } from "node:fs";
+import { existsSync as existsSync35 } from "node:fs";
 import { join as join43, resolve as resolve9 } from "node:path";
 import { homedir as homedir8 } from "node:os";
 init_errors();
@@ -18849,7 +18842,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     else
       info.push(issue);
   };
-  if (!existsSync36(planBase)) {
+  if (!existsSync35(planBase)) {
     addIssue("error", "E001", ".planning/ directory not found", "Run /gsd-new-project to initialize");
     return {
       data: {
@@ -18861,7 +18854,7 @@ var validateHealth = async (args, projectDir, workstream) => {
       }
     };
   }
-  if (!existsSync36(projectPath)) {
+  if (!existsSync35(projectPath)) {
     addIssue("error", "E002", "PROJECT.md not found", "Run /gsd-new-project to create");
   } else {
     try {
@@ -18875,10 +18868,10 @@ var validateHealth = async (args, projectDir, workstream) => {
     } catch {
     }
   }
-  if (!existsSync36(roadmapPath)) {
+  if (!existsSync35(roadmapPath)) {
     addIssue("error", "E003", "ROADMAP.md not found", "Run /gsd-new-milestone to create roadmap");
   }
-  if (!existsSync36(statePath)) {
+  if (!existsSync35(statePath)) {
     addIssue("error", "E004", "STATE.md not found", "Run /gsd-health --repair to regenerate", true);
     repairs.push("regenerateState");
   } else {
@@ -18928,7 +18921,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     } catch {
     }
   }
-  if (!existsSync36(configPath2)) {
+  if (!existsSync35(configPath2)) {
     addIssue("warning", "W003", "config.json not found", "Run /gsd-health --repair to create with defaults", true);
     repairs.push("createConfig");
   } else {
@@ -18945,7 +18938,7 @@ var validateHealth = async (args, projectDir, workstream) => {
       repairs.push("resetConfig");
     }
   }
-  if (existsSync36(configPath2)) {
+  if (existsSync35(configPath2)) {
     try {
       const configRaw = await readFile29(configPath2, "utf-8");
       const configParsed = JSON.parse(configRaw);
@@ -19014,7 +19007,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     }
   } catch {
   }
-  if (existsSync36(roadmapPath)) {
+  if (existsSync35(roadmapPath)) {
     try {
       const roadmapContent = await readFile29(roadmapPath, "utf-8");
       const roadmapPhases = /* @__PURE__ */ new Set();
@@ -19097,7 +19090,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     } catch {
     }
   }
-  if (existsSync36(statePath) && existsSync36(roadmapPath)) {
+  if (existsSync35(statePath) && existsSync35(roadmapPath)) {
     try {
       const stateContent = await readFile29(statePath, "utf-8");
       const roadmapContentFull = await readFile29(roadmapPath, "utf-8");
@@ -19116,7 +19109,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     } catch {
     }
   }
-  if (existsSync36(configPath2)) {
+  if (existsSync35(configPath2)) {
     try {
       const configRaw = await readFile29(configPath2, "utf-8");
       const configParsed = JSON.parse(configRaw);
@@ -19211,7 +19204,7 @@ var validateHealth = async (args, projectDir, workstream) => {
             break;
           }
           case "addNyquistKey": {
-            if (existsSync36(configPath2)) {
+            if (existsSync35(configPath2)) {
               try {
                 const configRaw = await readFile29(configPath2, "utf-8");
                 const configParsed = JSON.parse(configRaw);
@@ -19267,7 +19260,7 @@ var validateAgents = async (_args, _projectDir) => {
   const expected = Object.keys(MODEL_PROFILES);
   const installed = [];
   const missing = [];
-  if (!existsSync36(agentsDir)) {
+  if (!existsSync35(agentsDir)) {
     return {
       data: {
         agents_dir: agentsDir,
@@ -19281,7 +19274,7 @@ var validateAgents = async (_args, _projectDir) => {
   for (const agent of expected) {
     const agentFile = join43(agentsDir, `${agent}.md`);
     const agentFileCopilot = join43(agentsDir, `${agent}.agent.md`);
-    if (existsSync36(agentFile) || existsSync36(agentFileCopilot)) {
+    if (existsSync35(agentFile) || existsSync35(agentFileCopilot)) {
       installed.push(agent);
     } else {
       missing.push(agent);
@@ -19442,7 +19435,7 @@ var phaseListPlans = async (args, projectDir, workstream) => {
 };
 
 // dist/query/init.js
-import { existsSync as existsSync37, readdirSync as readdirSync22, readFileSync as readFileSync21 } from "node:fs";
+import { existsSync as existsSync36, readdirSync as readdirSync22, readFileSync as readFileSync21 } from "node:fs";
 import { join as join45, relative as relative13, basename as basename5 } from "node:path";
 import { execSync as execSync2 } from "node:child_process";
 import { homedir as homedir9 } from "node:os";
@@ -19470,7 +19463,7 @@ function extractPhaseArg(args) {
   return first && !first.startsWith("--") ? first : void 0;
 }
 function pathExists(base, relPath) {
-  return existsSync37(join45(base, relPath));
+  return existsSync36(join45(base, relPath));
 }
 function gitWorktreeInfo(base) {
   try {
@@ -19520,7 +19513,7 @@ async function shouldDropArchivedPhaseMatch(phaseInfo, roadmapPhase, projectDir,
 }
 function getLatestCompletedMilestone(projectDir) {
   const milestonesPath = join45(projectDir, ".planning", "MILESTONES.md");
-  if (!existsSync37(milestonesPath))
+  if (!existsSync36(milestonesPath))
     return null;
   try {
     const content = readFileSync21(milestonesPath, "utf-8");
@@ -19536,14 +19529,14 @@ function checkAgentsInstalled2(config) {
   const runtime = detectRuntime(config);
   const agentsDir = resolveAgentsDir(runtime);
   const expectedAgents = Object.keys(MODEL_PROFILES);
-  if (!existsSync37(agentsDir)) {
+  if (!existsSync36(agentsDir)) {
     return { agents_installed: false, missing_agents: expectedAgents };
   }
   const missing = [];
   for (const agent of expectedAgents) {
     const agentFile = join45(agentsDir, `${agent}.md`);
     const agentFileCopilot = join45(agentsDir, `${agent}.agent.md`);
-    if (!existsSync37(agentFile) && !existsSync37(agentFileCopilot)) {
+    if (!existsSync36(agentFile) && !existsSync36(agentFileCopilot)) {
       missing.push(agent);
     }
   }
@@ -19632,7 +19625,7 @@ function withProjectRoot(projectDir, result, config) {
   }
   const projectMdPath = join45(projectDir, ".planning", "PROJECT.md");
   try {
-    if (existsSync37(projectMdPath)) {
+    if (existsSync36(projectMdPath)) {
       const content = readFileSync21(projectMdPath, "utf-8");
       const h1Match = content.match(/^#\s+(.+)$/m);
       if (h1Match) {
@@ -19653,7 +19646,7 @@ var initExecutePhase = async (args, projectDir, workstream) => {
   const planningDir = paths.planning;
   const { phaseInfo, roadmapPhase } = await getPhaseInfoWithFallback(phase, projectDir, workstream);
   const phase_req_ids = extractReqIds(roadmapPhase);
-  const configExists = existsSync37(join45(planningDir, "config.json"));
+  const configExists = existsSync36(join45(planningDir, "config.json"));
   const [executorModel, verifierModel] = configExists ? await Promise.all([
     getModelAlias("gsd-executor", projectDir),
     getModelAlias("gsd-verifier", projectDir)
@@ -19692,8 +19685,8 @@ var initExecutePhase = async (args, projectDir, workstream) => {
     milestone_version: milestone.version,
     milestone_name: milestone.name,
     milestone_slug: generateSlugInternal(milestone.name),
-    state_exists: existsSync37(join45(planningDir, "STATE.md")),
-    roadmap_exists: existsSync37(join45(planningDir, "ROADMAP.md")),
+    state_exists: existsSync36(join45(planningDir, "STATE.md")),
+    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
     config_exists: configExists,
     state_path: toPosixPath2(relative13(projectDir, join45(planningDir, "STATE.md"))),
     roadmap_path: toPosixPath2(relative13(projectDir, join45(planningDir, "ROADMAP.md"))),
@@ -19711,7 +19704,7 @@ var initPlanPhase = async (args, projectDir, workstream) => {
   const planningDir = paths.planning;
   const { phaseInfo, roadmapPhase } = await getPhaseInfoWithFallback(phase, projectDir, workstream);
   const phase_req_ids = extractReqIds(roadmapPhase);
-  const configExists = existsSync37(join45(planningDir, "config.json"));
+  const configExists = existsSync36(join45(planningDir, "config.json"));
   const [researcherModel, plannerModel, checkerModel] = configExists ? await Promise.all([
     getModelAlias("gsd-phase-researcher", projectDir),
     getModelAlias("gsd-planner", projectDir),
@@ -19755,8 +19748,8 @@ var initPlanPhase = async (args, projectDir, workstream) => {
     has_reviews: phaseInfo?.has_reviews || false,
     has_plans: plans.length > 0,
     plan_count: plans.length,
-    planning_exists: existsSync37(planningDir),
-    roadmap_exists: existsSync37(join45(planningDir, "ROADMAP.md")),
+    planning_exists: existsSync36(planningDir),
+    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
     state_path: toPosixPath2(relative13(projectDir, join45(planningDir, "STATE.md"))),
     roadmap_path: toPosixPath2(relative13(projectDir, join45(planningDir, "ROADMAP.md"))),
     requirements_path: toPosixPath2(relative13(projectDir, join45(planningDir, "REQUIREMENTS.md"))),
@@ -19797,7 +19790,7 @@ var initNewMilestone = async (_args, projectDir) => {
   const phasesDir = join45(planningDir, "phases");
   let phaseDirCount = 0;
   try {
-    if (existsSync37(phasesDir)) {
+    if (existsSync36(phasesDir)) {
       phaseDirCount = readdirSync22(phasesDir, { withFileTypes: true }).filter((entry) => entry.isDirectory()).length;
     }
   } catch {
@@ -19820,8 +19813,8 @@ var initNewMilestone = async (_args, projectDir) => {
     phase_dir_count: phaseDirCount,
     phase_archive_path: latestCompleted ? toPosixPath2(relative13(projectDir, join45(projectDir, ".planning", "milestones", `${latestCompleted.version}-phases`))) : null,
     project_exists: pathExists(projectDir, ".planning/PROJECT.md"),
-    roadmap_exists: existsSync37(join45(planningDir, "ROADMAP.md")),
-    state_exists: existsSync37(join45(planningDir, "STATE.md")),
+    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
+    state_exists: existsSync36(join45(planningDir, "STATE.md")),
     project_path: ".planning/PROJECT.md",
     roadmap_path: toPosixPath2(relative13(projectDir, join45(planningDir, "ROADMAP.md"))),
     state_path: toPosixPath2(relative13(projectDir, join45(planningDir, "STATE.md")))
@@ -19844,7 +19837,7 @@ var initQuick = async (args, projectDir) => {
   const quickId = dateStr + "-" + timeEncoded;
   const branchSlug = slug || "quick";
   const quickBranchName = config.git.quick_branch_template ? config.git.quick_branch_template.replace("{num}", quickId).replace("{quick}", quickId).replace("{slug}", branchSlug) : null;
-  const configExists = existsSync37(join45(planningDir, "config.json"));
+  const configExists = existsSync36(join45(planningDir, "config.json"));
   const [plannerModel, executorModel, checkerModel, verifierModel] = configExists ? await Promise.all([
     getModelAlias("gsd-planner", projectDir),
     getModelAlias("gsd-executor", projectDir),
@@ -19865,8 +19858,8 @@ var initQuick = async (args, projectDir) => {
     timestamp: now.toISOString(),
     quick_dir: ".planning/quick",
     task_dir: slug ? `.planning/quick/${quickId}-${slug}` : null,
-    roadmap_exists: existsSync37(join45(planningDir, "ROADMAP.md")),
-    planning_exists: existsSync37(join45(projectDir, ".planning"))
+    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
+    planning_exists: existsSync36(join45(projectDir, ".planning"))
   };
   return { data: withProjectRoot(projectDir, result, config) };
 };
@@ -19879,10 +19872,10 @@ var initResume = async (_args, projectDir) => {
   } catch {
   }
   const result = {
-    state_exists: existsSync37(join45(planningDir, "STATE.md")),
-    roadmap_exists: existsSync37(join45(planningDir, "ROADMAP.md")),
+    state_exists: existsSync36(join45(planningDir, "STATE.md")),
+    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
     project_exists: pathExists(projectDir, ".planning/PROJECT.md"),
-    planning_exists: existsSync37(join45(projectDir, ".planning")),
+    planning_exists: existsSync36(join45(projectDir, ".planning")),
     state_path: toPosixPath2(relative13(projectDir, join45(planningDir, "STATE.md"))),
     roadmap_path: toPosixPath2(relative13(projectDir, join45(planningDir, "ROADMAP.md"))),
     project_path: ".planning/PROJECT.md",
@@ -19899,7 +19892,7 @@ var initVerifyWork = async (args, projectDir, workstream) => {
   }
   const config = await loadConfig(projectDir, workstream);
   const { phaseInfo } = await getPhaseInfoForVerifyWork(phase, projectDir, workstream);
-  const configExists = existsSync37(join45(projectDir, ".planning", "config.json"));
+  const configExists = existsSync36(join45(projectDir, ".planning", "config.json"));
   const [plannerModel, checkerModel] = configExists ? await Promise.all([
     getModelAlias("gsd-planner", projectDir),
     getModelAlias("gsd-plan-checker", projectDir)
@@ -19994,8 +19987,8 @@ var initPhaseOp = async (args, projectDir, workstream) => {
     has_verification: phaseInfo?.has_verification || false,
     has_reviews: phaseInfo?.has_reviews || false,
     plan_count: plans.length,
-    roadmap_exists: existsSync37(join45(planningDir, "ROADMAP.md")),
-    planning_exists: existsSync37(planningDir),
+    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
+    planning_exists: existsSync36(planningDir),
     state_path: toPosixPath2(relative13(projectDir, join45(planningDir, "STATE.md"))),
     roadmap_path: toPosixPath2(relative13(projectDir, join45(planningDir, "ROADMAP.md"))),
     requirements_path: toPosixPath2(relative13(projectDir, join45(planningDir, "REQUIREMENTS.md")))
@@ -20065,9 +20058,9 @@ var initTodos = async (args, projectDir) => {
     area_filter: area,
     pending_dir: toPosixPath2(relative13(projectDir, join45(planningDir, "todos", "pending"))),
     completed_dir: toPosixPath2(relative13(projectDir, join45(planningDir, "todos", "completed"))),
-    planning_exists: existsSync37(planningDir),
-    todos_dir_exists: existsSync37(join45(planningDir, "todos")),
-    pending_dir_exists: existsSync37(pendingDir)
+    planning_exists: existsSync36(planningDir),
+    todos_dir_exists: existsSync36(join45(planningDir, "todos")),
+    pending_dir_exists: existsSync36(pendingDir)
   };
   return { data: withProjectRoot(projectDir, result, config) };
 };
@@ -20152,10 +20145,10 @@ var initMilestoneOp = async (_args, projectDir, workstream) => {
     archived_milestones: archivedMilestones,
     archive_count: archivedMilestones.length,
     project_exists: pathExists(projectDir, ".planning/PROJECT.md"),
-    roadmap_exists: existsSync37(join45(planningDir, "ROADMAP.md")),
-    state_exists: existsSync37(join45(planningDir, "STATE.md")),
-    archive_exists: existsSync37(archiveDir),
-    phases_dir_exists: existsSync37(phasesDir)
+    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
+    state_exists: existsSync36(join45(planningDir, "STATE.md")),
+    archive_exists: existsSync36(archiveDir),
+    phases_dir_exists: existsSync36(phasesDir)
   };
   return { data: withProjectRoot(projectDir, result, config) };
 };
@@ -20195,7 +20188,7 @@ var initNewWorkspace = async (_args, projectDir) => {
       if (!entry.isDirectory() || entry.name.startsWith("."))
         continue;
       const fullPath = join45(projectDir, entry.name);
-      if (existsSync37(join45(fullPath, ".git"))) {
+      if (existsSync36(join45(fullPath, ".git"))) {
         let hasUncommitted = false;
         try {
           const status = execSync2("git status --porcelain", { cwd: fullPath, encoding: "utf8", timeout: 5e3, stdio: "pipe" });
@@ -20227,7 +20220,7 @@ var initListWorkspaces = async (_args, _projectDir) => {
   const home = process.env.HOME || homedir9();
   const defaultBase = join45(home, "gsd-workspaces");
   const workspaces = [];
-  if (existsSync37(defaultBase)) {
+  if (existsSync36(defaultBase)) {
     let entries = [];
     try {
       entries = readdirSync22(defaultBase, { withFileTypes: true });
@@ -20239,7 +20232,7 @@ var initListWorkspaces = async (_args, _projectDir) => {
         continue;
       const wsPath = join45(defaultBase, String(entry.name));
       const manifestPath = join45(wsPath, "WORKSPACE.md");
-      if (!existsSync37(manifestPath))
+      if (!existsSync36(manifestPath))
         continue;
       let repoCount = 0;
       let strategy = "unknown";
@@ -20252,7 +20245,7 @@ var initListWorkspaces = async (_args, _projectDir) => {
         repoCount = tableRows.length;
       } catch {
       }
-      const hasProject = existsSync37(join45(wsPath, ".planning", "PROJECT.md"));
+      const hasProject = existsSync36(join45(wsPath, ".planning", "PROJECT.md"));
       workspaces.push({
         name: entry.name,
         path: wsPath,
@@ -20281,12 +20274,12 @@ var initRemoveWorkspace = async (args, _projectDir) => {
   const defaultBase = join45(home, "gsd-workspaces");
   const wsPath = join45(defaultBase, name);
   const manifestPath = join45(wsPath, "WORKSPACE.md");
-  if (!existsSync37(wsPath)) {
+  if (!existsSync36(wsPath)) {
     return { data: { error: `Workspace not found: ${wsPath}` } };
   }
   const repos = [];
   let strategy = "unknown";
-  if (existsSync37(manifestPath)) {
+  if (existsSync36(manifestPath)) {
     try {
       const manifest = readFileSync21(manifestPath, "utf8");
       const strategyMatch = manifest.match(/^Strategy:\s*(.+)$/m);
@@ -20305,7 +20298,7 @@ var initRemoveWorkspace = async (args, _projectDir) => {
   const dirtyRepos = [];
   for (const repo of repos) {
     const repoPath = join45(wsPath, repo.name);
-    if (!existsSync37(repoPath))
+    if (!existsSync36(repoPath))
       continue;
     try {
       const status = execSync2("git status --porcelain", { cwd: repoPath, encoding: "utf8", timeout: 5e3, stdio: "pipe" });
@@ -20318,7 +20311,7 @@ var initRemoveWorkspace = async (args, _projectDir) => {
   const result = {
     workspace_name: name,
     workspace_path: wsPath,
-    has_manifest: existsSync37(manifestPath),
+    has_manifest: existsSync36(manifestPath),
     strategy,
     repos,
     repo_count: repos.length,
@@ -20346,7 +20339,7 @@ var initIngestDocs = async (_args, projectDir) => {
 };
 
 // dist/query/init-complex.js
-import { existsSync as existsSync38, readdirSync as readdirSync23, statSync as statSync8 } from "node:fs";
+import { existsSync as existsSync37, readdirSync as readdirSync23, statSync as statSync8 } from "node:fs";
 import { execSync as execSync3 } from "node:child_process";
 import { readFile as readFile31 } from "node:fs/promises";
 import { join as join46, relative as relative14 } from "node:path";
@@ -20358,7 +20351,7 @@ async function getModelAlias2(agentType, projectDir) {
   return typeof data.model === "string" ? data.model : "sonnet";
 }
 function pathExists2(base, relPath) {
-  return existsSync38(join46(base, relPath));
+  return existsSync37(join46(base, relPath));
 }
 function gitWorktreeInfo2(base) {
   try {
@@ -20393,7 +20386,7 @@ var NEW_PROJECT_REQUIRED_AGENTS = [
   "gsd-roadmapper"
 ];
 function hasAgentDefinition(agentsDir, agent) {
-  return existsSync38(join46(agentsDir, `${agent}.md`)) || existsSync38(join46(agentsDir, `${agent}.agent.md`));
+  return existsSync37(join46(agentsDir, `${agent}.md`)) || existsSync37(join46(agentsDir, `${agent}.agent.md`));
 }
 async function resolveAgentSkillPayloadAgents(requiredAgents, projectDir) {
   const available = [];
@@ -20438,9 +20431,9 @@ function deriveStatusFromCheckbox(phaseNum, checkboxStates) {
 var initNewProject = async (_args, projectDir, workstream) => {
   const config = await loadConfig(projectDir, workstream);
   const gsdHome = join46(homedir10(), ".gsd");
-  const hasBraveSearch = !!(process.env.BRAVE_API_KEY || existsSync38(join46(gsdHome, "brave_api_key")));
-  const hasFirecrawl = !!(process.env.FIRECRAWL_API_KEY || existsSync38(join46(gsdHome, "firecrawl_api_key")));
-  const hasExaSearch = !!(process.env.EXA_API_KEY || existsSync38(join46(gsdHome, "exa_api_key")));
+  const hasBraveSearch = !!(process.env.BRAVE_API_KEY || existsSync37(join46(gsdHome, "brave_api_key")));
+  const hasFirecrawl = !!(process.env.FIRECRAWL_API_KEY || existsSync37(join46(gsdHome, "firecrawl_api_key")));
+  const hasExaSearch = !!(process.env.EXA_API_KEY || existsSync37(join46(gsdHome, "exa_api_key")));
   const codeExtensions = /* @__PURE__ */ new Set([
     ".ts",
     ".js",
@@ -20667,8 +20660,8 @@ var initProgress = async (_args, projectDir, workstream) => {
     paused_at: pausedAt,
     has_work_in_progress: !!currentPhase,
     project_exists: pathExists2(projectDir, ".planning/PROJECT.md"),
-    roadmap_exists: existsSync38(paths.roadmap),
-    state_exists: existsSync38(paths.state),
+    roadmap_exists: existsSync37(paths.roadmap),
+    state_exists: existsSync37(paths.state),
     state_path: toPosixPath2(relative14(projectDir, paths.state)),
     roadmap_path: toPosixPath2(relative14(projectDir, paths.roadmap)),
     project_path: ".planning/PROJECT.md",
@@ -20804,7 +20797,7 @@ var initManager = async (_args, projectDir, workstream) => {
   let waitingSignal = null;
   try {
     const waitingPath = join46(projectDir, ".planning", "WAITING.json");
-    if (existsSync38(waitingPath)) {
+    if (existsSync37(waitingPath)) {
       const { readFileSync: readFileSync24 } = await import("node:fs");
       waitingSignal = JSON.parse(readFileSync24(waitingPath, "utf-8"));
     }
