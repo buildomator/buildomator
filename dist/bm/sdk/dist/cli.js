@@ -40546,7 +40546,7 @@ function formatSuccess(data, format, pickField) {
 `;
   }
   const output = formatPick(data, pickField);
-  return `${JSON.stringify(output === void 0 ? null : output, null, 2)}
+  return `${JSON.stringify(output === void 0 ? null : output)}
 `;
 }
 function validateQueryDispatchInput(queryArgv) {

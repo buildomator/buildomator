@@ -74,7 +74,7 @@ function outputResult(result, raw, rawText) {
   if (raw && rawText) {
     process.stdout.write(String(rawText));
   } else {
-    process.stdout.write(JSON.stringify(result, null, 2));
+    process.stdout.write(JSON.stringify(result));
   }
 }
 

@@ -42,7 +42,7 @@ export function formatSuccess(data, format, pickField) {
         return data.endsWith('\n') ? data : `${data}\n`;
     }
     const output = formatPick(data, pickField);
-    return `${JSON.stringify(output === undefined ? null : output, null, 2)}\n`;
+    return `${JSON.stringify(output === undefined ? null : output)}\n`;
 }
 export function validateQueryDispatchInput(queryArgv) {
     const queryArgs = [...queryArgv];

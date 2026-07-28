@@ -223,7 +223,7 @@ function output(result, raw, rawValue) {
   if (raw && rawValue !== undefined) {
     data = String(rawValue);
   } else {
-    const json = JSON.stringify(result, null, 2);
+    const json = JSON.stringify(result);
     // Large payloads exceed Claude Code's Bash tool buffer (~50KB).
     // Write to tmpfile and output the path prefixed with @file: so callers can detect it.
     if (json.length > 50000) {

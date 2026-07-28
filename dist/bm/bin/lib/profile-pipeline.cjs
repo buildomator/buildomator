@@ -379,10 +379,10 @@ async function cmdExtractMessages(projectArg, options, raw, overridePath) {
   };
 
   if (sessionsSkipped > 0 && sessionsProcessed > 0) {
-    process.stdout.write(JSON.stringify(result, null, 2));
+    process.stdout.write(JSON.stringify(result));
     process.exit(2);
   } else if (sessionsProcessed === 0 && sessionsSkipped > 0) {
-    process.stdout.write(JSON.stringify(result, null, 2));
+    process.stdout.write(JSON.stringify(result));
     process.exit(1);
   } else {
     output(result, raw);
