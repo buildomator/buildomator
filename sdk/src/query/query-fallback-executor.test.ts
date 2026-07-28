@@ -34,7 +34,7 @@ describe('runCjsFallbackDispatch', () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('expected success');
-    expect(result.stdout).toBe('{\n  "ok": true\n}\n');
+    expect(result.stdout).toBe('{"ok":true}\n');
   });
 
   it('returns text output with trailing newline', async () => {
@@ -62,7 +62,7 @@ describe('runCjsFallbackDispatch', () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('expected success');
-    expect(result.stdout).toBe('[\n  "state",\n  "load",\n  "--ws",\n  "ws-1"\n]\n');
+    expect(result.stdout).toBe('["state","load","--ws","ws-1"]\n');
   });
 
   it('returns structured error when subprocess fails', async () => {

@@ -41,7 +41,7 @@ describe('runQueryDispatch', () => {
 
     expect(out.ok).toBe(true);
     if (!out.ok) throw new Error('expected success');
-    expect(out.stdout).toBe('{\n  "ok": true\n}\n');
+    expect(out.stdout).toBe('{"ok":true}\n');
     expect(out.exit_code).toBe(0);
   });
 

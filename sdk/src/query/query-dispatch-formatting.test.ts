@@ -6,15 +6,8 @@ describe('query-dispatch-formatting', () => {
     expect(formatSuccess('USAGE', 'text')).toBe('USAGE\n');
   });
 
-  it('formats json with pretty printing', () => {
-    expect(formatSuccess({ nested: { value: 3 } }, 'json')).toBe([
-      '{',
-      '  "nested": {',
-      '    "value": 3',
-      '  }',
-      '}',
-      '',
-    ].join('\n'));
+  it('formats json compactly on a single line', () => {
+    expect(formatSuccess({ nested: { value: 3 } }, 'json')).toBe('{"nested":{"value":3}}\n');
   });
 
   it('formats json and applies pick', () => {

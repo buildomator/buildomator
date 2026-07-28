@@ -219,9 +219,11 @@ If `REVIEW_CMD` is non-empty and not `"null"`, run the external review:
    DIFF_STATS=$(git diff --stat ${BASE_BRANCH}...HEAD)
    ```
 
-2. **Load phase context from STATE.md:**
+2. **Load phase context:**
+   Source structured phase fields from `state.json` (not a line-slice of `state.load`, whose body has no `status` field). Build a readable one-line summary, falling back to the raw object if `jq` is unavailable:
    ```bash
-   STATE_STATUS=$(bm-sdk query state.load 2>/dev/null | head -20)
+   STATE_JSON=$(bm-sdk query state.json 2>/dev/null)
+   STATE_STATUS=$(echo "${STATE_JSON}" | jq -r '"Milestone: \(.milestone // "?") \(.milestone_name // "") | Status: \(.status // "?") | Last activity: \(.last_activity // "?")"' 2>/dev/null || echo "${STATE_JSON}")
    ```
 
 3. **Build review prompt and pipe to command via stdin:**
