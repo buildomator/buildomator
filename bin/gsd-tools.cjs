@@ -1137,7 +1137,7 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
         // No manifest — cannot determine what is custom. Return empty list
         // (same behaviour as saveLocalPatches in install.js when no manifest).
         const out = { custom_files: [], custom_count: 0, manifest_found: false };
-        process.stdout.write(JSON.stringify(out, null, 2));
+        process.stdout.write(JSON.stringify(out));
         break;
       }
 
@@ -1146,7 +1146,7 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
         manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
       } catch {
         const out = { custom_files: [], custom_count: 0, manifest_found: false, error: 'manifest parse error' };
-        process.stdout.write(JSON.stringify(out, null, 2));
+        process.stdout.write(JSON.stringify(out));
         break;
       }
 
@@ -1195,7 +1195,7 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
         manifest_found: true,
         manifest_version: manifest.version || null,
       };
-      process.stdout.write(JSON.stringify(out, null, 2));
+      process.stdout.write(JSON.stringify(out));
       break;
     }
 

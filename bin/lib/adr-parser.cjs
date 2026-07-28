@@ -374,7 +374,7 @@ function main(argv) {
   const safePath = requireSafePath(opts.input, path.resolve(opts.projectDir), 'ADR input path', { allowAbsolute: true });
   const content = fs.readFileSync(safePath, 'utf8');
   const parsed = parseAdrMarkdown(content, { sourcePath: opts.input, format: opts.format });
-  process.stdout.write(JSON.stringify(parsed, null, 2));
+  process.stdout.write(JSON.stringify(parsed));
 }
 
 if (require.main === module) {
