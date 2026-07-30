@@ -8,6 +8,16 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-07-30  (token-lean query output + resolve-model fix)
+
+Plugin-native; no upstream port. Two independent improvements to the `bm-sdk query` path.
+
+### Changed
+- **`bm-sdk query` now emits compact single-line JSON instead of pretty-printed output.** Query results are the most-run command surface (state and plan lookups run over a thousand times a month), and the pretty-print indentation was pure token overhead on every call. The output is now minified, which cuts the bytes carried into agent context by roughly 15 to 20 percent on the large `init.*` context bundles (and similar across the board), with no field loss. The `--raw` / text / field-pick output modes are unchanged, and on-disk files the tools write (like `config.json`) stay human-readable. Both resolver twins (CJS and SDK) minify identically, so cross-twin parity is unaffected. The one workflow that parsed the old multi-line output by line position (`ship.md`) now reads structured fields from `state.json` instead.
+
+### Fixed
+- **`resolve-model` no longer returns an empty model when `.planning/config.json` is absent.** The SDK resolver had an early return that yielded an empty model for a missing config file (under a comment that wrongly claimed CJS parity), while any present config, even an empty `{}`, resolved correctly. A missing file now flows through the same defaults path as an empty config, so a fresh project resolves the default `balanced` tier like everything else. The CJS resolver was already correct and is unchanged. Regression tests pin missing-config resolution equal to empty-config across both twins.
+
 ## [4.4.0] - 2026-07-26  (bm-sdk is the primary CLI name)
 
 Plugin-native rebrand step; no upstream port. Follows the same gsd-core line as 4.3.x for provenance.
