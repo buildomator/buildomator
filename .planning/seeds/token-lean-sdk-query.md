@@ -27,6 +27,24 @@ now CONCRETE, from ogaude's per-namespace.key `rtk discover` data on #27
    `init.execute-phase` 55, `init.phase-op` 48; the biggest token bundles),
    `roadmap.get-phase` (75), `state.load` (19).
 
+   STEP 1 (minify default output) SHIPPED in v4.5.0 (quick 260729-09s): ~15-20%
+   byte cut on these bundles, no field loss.
+
+   STEP 2 (field-projection) RE-SCOPED DOWN 2026-07-31: the original "could halve
+   the init.* bundles" estimate was WRONG - it was measured in a source checkout
+   where `agents_installed:false` made `missing_agents` list all 33 agent names
+   (682 bytes, 38% of the bundle). Measured via the INSTALLED plugin,
+   `missing_agents` is `[]` and `init.execute-phase` is 1,099 bytes (not 1,781).
+   In steady state the bundle is mostly used fields; the genuinely-unused ones are
+   small (`project_title`, `*_path`, branch templates, milestone metadata) ~= 15-20%,
+   each still needing a full cross-consumer audit (workflows + executor/verifier
+   agents + the init handler's own logic - e.g. `missing_agents` is load-bearing
+   for the agents-not-installed advisory even though execute-phase.md never greps
+   it). So step 2 is MARGINAL: ~15-20% more at real audit + breakage risk. Lean
+   PARK unless token pressure is acute; if pursued, caller-driven `--fields` on
+   `init.execute-phase` first as a measured pilot. Do NOT chase `missing_agents` -
+   it is only fat in the transient agents-not-installed error path.
+
 OUT OF SCOPE (mutations/actions, no output to shrink - neither compact nor RTK
 helps): `commit` (218), `worktree.cleanup-wave` (87),
 `roadmap.update-plan-progress` (64), `state.begin-phase`/`record-session` (67).
