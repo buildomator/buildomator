@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.5.1] - 2026-08-01  (self-healing tool-envelope leaks in planning artifacts)
+
+Plugin-native; no upstream port. Mitigation for a Claude Code tool-call serialization defect.
+
+### Fixed
+- **Leaked tool-call envelope tags are now stripped from planning artifacts by a PostToolUse hook.** Claude Code intermittently appends its own tool-call closing tags (`</content>`, and often `</invoke>`) to the tail of a large single-shot `Write`, so a generated document ends with stray markup after its last real line. This is a decoder-level model defect (tracked upstream), not something a plugin can prevent at the write, but a new `hooks/gsd-envelope-sanitizer.cjs` runs after the write and removes the trailing unbalanced closers. It is tightly scoped to `.planning/*.md` files, fails closed (it never strips a tag that has a matching opener, so legitimate balanced XML and real content are untouched), is idempotent (safe when both the `gsd` and `bm` plugins are enabled), and is fail-soft (it never blocks or errors a tool call). The trigger correlates with how XML-tag-dense the written content is: a sweep of one user's projects found the leak concentrated in the most tag-heavy artifacts (plans) and absent from plain-markdown ones.
+
 ## [4.5.0] - 2026-07-30  (token-lean query output + resolve-model fix)
 
 Plugin-native; no upstream port. Two independent improvements to the `bm-sdk query` path.
