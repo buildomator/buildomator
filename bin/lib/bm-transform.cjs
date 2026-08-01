@@ -39,7 +39,7 @@ const SANITIZER_LITERAL_TO = '/bm[:-]';
 //      files continue to resolve the bm cache dir until the deferred markdown
 //      sweep replaces them with a plugin-agnostic glob.
 //   2. hooks.json inline resolvers: the plugin-name segment is the assignment
-//      g='gsd' (17 resolvers, marketplace segment is a readdirSync wildcard).
+//      g='gsd' (18 resolvers, marketplace segment is a readdirSync wildcard).
 //   3. run-bash-hook.cjs resolveCandidates: const pkgSegment = 'gsd'.
 //   4. check-plugin-update.sh: PKG_SEGMENT="gsd".
 const FALLBACK_PAIRS = [

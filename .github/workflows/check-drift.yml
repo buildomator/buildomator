@@ -44,6 +44,8 @@ jobs:
         run: node bin/maintenance/check-handoff-schema.cjs
       - name: Run checkpoint write-guards test (regression for #17)
         run: node tests/checkpoint-write-guards.test.cjs
+      - name: Run envelope-sanitizer test (regression for #29)
+        run: node tests/envelope-sanitizer.test.cjs
 
   mcp-stdio-framing:
     name: MCP stdio framing (regression for #3)

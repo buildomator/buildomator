@@ -202,7 +202,7 @@ check('the fallback carriers flip the plugin segment to bm with zero gsd-form li
   // marketplace directory is a runtime readdirSync wildcard and only the fixed
   // plugin-name segment is stamped. Each carrier has one distinct literal shape.
   const hooks = fs.readFileSync(path.join(OUT, 'hooks/hooks.json'), 'utf8');
-  assert.strictEqual((hooks.match(/g='bm'/g) || []).length, 17, "hooks.json must carry 17 g='bm'");
+  assert.strictEqual((hooks.match(/g='bm'/g) || []).length, 18, "hooks.json must carry 18 g='bm'");
   assert.strictEqual((hooks.match(/g='gsd'/g) || []).length, 0, "no g='gsd' may remain in hooks.json");
   assert.strictEqual((hooks.match(/cache\/gsd-plugin\/gsd/g) || []).length, 0, 'no gsd-form slash literal in hooks.json');
   const launcher = fs.readFileSync(path.join(OUT, 'hooks/run-bash-hook.cjs'), 'utf8');
