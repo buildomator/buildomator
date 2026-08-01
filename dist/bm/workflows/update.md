@@ -1,5 +1,5 @@
 <purpose>
-Check for GSD updates via npm, display changelog for versions between installed and latest, obtain user confirmation, and execute clean installation with cache clearing.
+First detect the distribution channel (Claude Code marketplace plugin vs legacy npm install). For a marketplace-plugin install, report installed vs latest plugin version and guide the user to refresh via `/plugin` plus `/reload-plugins`, without running any installer. Only for a legacy npm install: check npm for the latest version, display the changelog between installed and latest, obtain user confirmation, and execute a clean install with cache clearing.
 </purpose>
 
 <required_reading>
@@ -7,6 +7,81 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <process>
+
+<step name="detect_distribution">
+Detect the distribution channel FIRST. A Claude Code marketplace-plugin install lives under `$HOME/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`; there is no npm package to reinstall, so this workflow must route those installs to `/plugin` refresh plus `/reload-plugins` instead of the npm path.
+
+The block below is self-contained and safe to run in a plain Bash step: it needs no `CLAUDE_PLUGIN_ROOT`, no `jq`, and no `node`. Version strings are parsed from plugin.json with `grep`/`sed` only, so it works on a minimal PATH. It always exits 0.
+
+```bash
+CACHE_ROOT="$HOME/.claude/plugins/cache"
+
+extract_version() {
+  # Read the "version" string value from a plugin.json using POSIX text tools only.
+  grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$1" 2>/dev/null \
+    | sed -E 's/.*"([^"]+)"[[:space:]]*$/\1/' \
+    | head -1
+}
+
+PLUGIN_VERSIONS=""
+for f in "$CACHE_ROOT"/*/bm/*/.claude-plugin/plugin.json "$CACHE_ROOT"/*/gsd/*/.claude-plugin/plugin.json; do
+  [ -f "$f" ] || continue
+  verdir=$(basename "$(dirname "$(dirname "$f")")")
+  # Accept only semver-like version directories (start with a digit, contain two dots).
+  case "$verdir" in
+    [0-9]*.*.*) ;;
+    *) continue ;;
+  esac
+  ver=$(extract_version "$f")
+  [ -n "$ver" ] || continue
+  PLUGIN_VERSIONS="$PLUGIN_VERSIONS
+$ver"
+done
+
+# Trim leading blank line and keep only non-empty entries.
+PLUGIN_VERSIONS=$(printf '%s\n' "$PLUGIN_VERSIONS" | grep -v '^$')
+
+if [ -z "$PLUGIN_VERSIONS" ]; then
+  echo "DISTRIBUTION=npm"
+  exit 0
+fi
+
+INSTALLED_PLUGIN_VERSION=$(printf '%s\n' "$PLUGIN_VERSIONS" | sort -V | tail -1)
+echo "DISTRIBUTION=plugin"
+echo "INSTALLED_PLUGIN_VERSION=$INSTALLED_PLUGIN_VERSION"
+
+# Resolve the latest published version best-effort. Never fail the flow.
+LATEST_PLUGIN_VERSION=""
+if command -v gh >/dev/null 2>&1; then
+  LATEST_PLUGIN_VERSION=$(gh release view --repo buildomator/buildomator --json tagName --jq .tagName 2>/dev/null | sed -E 's/^v//')
+fi
+if [ -z "$LATEST_PLUGIN_VERSION" ] && command -v curl >/dev/null 2>&1; then
+  MKT=$(curl -fsSL --max-time 10 "https://raw.githubusercontent.com/buildomator/buildomator/main/.claude-plugin/marketplace.json" 2>/dev/null || true)
+  if [ -n "$MKT" ]; then
+    LATEST_PLUGIN_VERSION=$(printf '%s' "$MKT" | grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' | sed -E 's/.*"([^"]+)"[[:space:]]*$/\1/' | sort -V | tail -1)
+  fi
+fi
+[ -n "$LATEST_PLUGIN_VERSION" ] || LATEST_PLUGIN_VERSION="unknown"
+echo "LATEST_PLUGIN_VERSION=$LATEST_PLUGIN_VERSION"
+
+if [ "$LATEST_PLUGIN_VERSION" = "unknown" ]; then
+  echo "Could not check the latest published version; you can still refresh to pick up any update."
+elif [ "$LATEST_PLUGIN_VERSION" = "$INSTALLED_PLUGIN_VERSION" ]; then
+  echo "You are already on the latest plugin version ($INSTALLED_PLUGIN_VERSION)."
+else
+  echo "An update is available: installed $INSTALLED_PLUGIN_VERSION, latest $LATEST_PLUGIN_VERSION."
+fi
+
+echo "To update the plugin:"
+echo "  1. Run /plugin, open Marketplace, select the Buildomator plugin, and refresh it."
+echo "  2. Run /reload-plugins in each Claude Code session that is already open; new sessions load the new version automatically."
+exit 0
+```
+
+Parse the block output:
+- `DISTRIBUTION=plugin`: this is a marketplace-plugin install. When an update is available, you may best-effort show what changed (try `gh release view --repo buildomator/buildomator --json body` or the raw `CHANGELOG.md` from the repo default branch; skip silently on any failure). Present the block's version lines and the two guidance steps to the user, then STOP. Do NOT run any installer and do NOT continue to `get_installed_version` or the npm steps: the user performs the `/plugin` refresh and `/reload-plugins` themselves because those are Claude Code CLI commands an agent cannot invoke.
+- `DISTRIBUTION=npm`: no plugin cache exists. Continue to `get_installed_version` and the existing npm flow unchanged.
+</step>
 
 <step name="get_installed_version">
 Detect whether GSD is installed locally or globally by checking both locations and validating install integrity.
@@ -613,6 +688,8 @@ Run `/bm:update --reapply` to merge your modifications into the new version.
 </process>
 
 <success_criteria>
+- [ ] Distribution channel detected before any npm logic runs
+- [ ] Marketplace-plugin installs receive refresh guidance only (no npx install executed)
 - [ ] Installed version read correctly
 - [ ] Latest version checked via npm
 - [ ] Update skipped if already current

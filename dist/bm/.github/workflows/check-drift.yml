@@ -46,6 +46,8 @@ jobs:
         run: node tests/checkpoint-write-guards.test.cjs
       - name: Run envelope-sanitizer test (regression for #29)
         run: node tests/envelope-sanitizer.test.cjs
+      - name: Run update plugin-distribution routing test
+        run: node tests/update-plugin-distribution.test.cjs
 
   mcp-stdio-framing:
     name: MCP stdio framing (regression for #3)
