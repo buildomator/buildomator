@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.5.2] - 2026-08-02  (/bm:update detects the plugin distribution)
+
+Plugin-native patch.
+
+### Fixed
+- **`/bm:update` no longer tries to install upstream open-gsd over a marketplace-plugin install.** The update command was written only for the legacy npm `get-shit-done` layout, so on a Claude Code marketplace-plugin install it would fall through to `npx @opengsd/get-shit-done-redux` and overlay a different distribution. It now detects the plugin distribution first (a filesystem check of the plugins cache, working for both the `gsd-plugin` and `buildomator` marketplace names), reports the installed and latest versions, and points you at the correct refresh path (refresh via `/plugin` Marketplace, then `/reload-plugins`). It only falls back to the legacy npm updater when no plugin cache is present. Documentation is unchanged: this is a behavior fix, and the command still cannot self-reload, so the manual refresh step remains.
+
 ## [4.5.1] - 2026-08-01  (self-healing tool-envelope leaks in planning artifacts)
 
 Plugin-native; no upstream port. Mitigation for a Claude Code tool-call serialization defect.
