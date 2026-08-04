@@ -1,5 +1,5 @@
 ---
-name: gsd:docs-update
+name: docs-update
 description: Generate or update project documentation verified against the codebase
 argument-hint: "[--force] [--verify-only]"
 allowed-tools:

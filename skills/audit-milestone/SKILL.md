@@ -1,5 +1,5 @@
 ---
-name: gsd:audit-milestone
+name: audit-milestone
 description: Audit milestone completion against original intent before archiving
 argument-hint: "[version]"
 allowed-tools:

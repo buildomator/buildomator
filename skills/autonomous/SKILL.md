@@ -1,5 +1,5 @@
 ---
-name: gsd:autonomous
+name: autonomous
 description: Run all remaining phases autonomously — discuss→plan→execute per phase
 argument-hint: "[--from N] [--to N] [--only N] [--interactive]"
 allowed-tools:

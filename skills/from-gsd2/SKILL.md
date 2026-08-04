@@ -1,5 +1,5 @@
 ---
-name: gsd:from-gsd2
+name: from-gsd2
 description: Import a GSD-2 (.gsd/) project back to GSD v1 (.planning/) format
 argument-hint: "[--path <dir>] [--force]"
 allowed-tools:

@@ -1,5 +1,5 @@
 ---
-name: gsd:update
+name: update
 description: Update GSD to latest version with changelog display
 allowed-tools:
   - Bash
