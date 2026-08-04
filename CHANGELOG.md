@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.5.3] - 2026-08-04  (fix doubled command prefix)
+
+Plugin-native patch.
+
+### Fixed
+- **Slash commands no longer show a doubled namespace prefix** (`/bm:bm:next`, `/gsd:gsd:next`). Claude Code namespaces a plugin skill as `/<plugin>:<skill-name>`, but every skill's `name:` frontmatter also carried the prefix (`name: gsd:next`, rewritten to `name: bm:next` in the bm build), so the plugin name was prepended onto an already-prefixed name. All 86 skill `name:` fields are now bare, so commands render with a single prefix again: `/bm:next`, `/gsd:next`. Body invocation references and agent names are unchanged. Refresh the plugin and run `/reload-plugins` to pick it up.
+
 ## [4.5.2] - 2026-08-02  (/bm:update detects the plugin distribution)
 
 Plugin-native patch.
