@@ -7,8 +7,11 @@
  */
 
 // Rewrite every `gsd:` namespace prefix to `bm:` wherever it appears: slash
-// commands (/gsd:plan-phase, /gsd:capture, ...), subagent_type/type agent
-// references (gsd:gsd-<agent>), and agent/skill frontmatter names (name: gsd:<x>).
+// commands (/gsd:plan-phase, /gsd:capture, ...) and subagent_type/type agent
+// references (gsd:gsd-<agent>). Skill frontmatter names are BARE (e.g.
+// `name: next`), so the rewrite never sees them; Claude Code plugin namespacing
+// alone renders /bm:<x> in the generated package (a prefixed name would double
+// to /bm:bm:<x>). No colon-prefix rewrite for skill names is reintroduced here.
 // The negative lookahead spares gsd:// MCP resource URIs (the char after the
 // colon is a slash). Surviving tokens have no `gsd:` colon prefix at all: gsd-*
 // filenames and the gsd-local-patches dir (no colon), the cache/gsd-plugin/gsd

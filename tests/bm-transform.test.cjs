@@ -116,8 +116,8 @@ check('rewriteCommandRefs flips a type= agent ref', () => {
   assert.strictEqual(rewriteCommandRefs('type: gsd:gsd-planner'), 'type: bm:gsd-planner');
 });
 
-check('rewriteCommandRefs flips a frontmatter name: gsd:<x>', () => {
-  assert.strictEqual(rewriteCommandRefs('name: gsd:plan-phase'), 'name: bm:plan-phase');
+check('rewriteCommandRefs leaves a bare skill frontmatter name untouched', () => {
+  assert.strictEqual(rewriteCommandRefs('name: next'), 'name: next');
 });
 
 check('rewriteCommandRefs flips the SDK regex token /gsd:\\S+ so zero-leak holds', () => {
