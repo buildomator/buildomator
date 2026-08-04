@@ -1,5 +1,5 @@
 ---
-name: bm:progress
+name: progress
 description: Check project progress, show context, and route to next action (execute or plan). Use --forensic to append a 6-check integrity audit after the standard report.
 argument-hint: "[--forensic]"
 effort: low

@@ -1,5 +1,5 @@
 ---
-name: bm:spike-wrap-up
+name: spike-wrap-up
 description: Package spike findings into a persistent project skill for future build conversations
 allowed-tools:
   - Read

@@ -1,5 +1,5 @@
 ---
-name: bm:intel
+name: intel
 description: "Query, inspect, or refresh codebase intelligence files in .planning/intel/"
 argument-hint: "[query <term>|status|diff|refresh]"
 allowed-tools:

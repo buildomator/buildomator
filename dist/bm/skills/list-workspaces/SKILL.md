@@ -1,5 +1,5 @@
 ---
-name: bm:list-workspaces
+name: list-workspaces
 description: List active GSD workspaces and their status
 allowed-tools:
   - Bash

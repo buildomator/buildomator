@@ -1,5 +1,5 @@
 ---
-name: bm:extract-learnings
+name: extract-learnings
 description: Extract decisions, lessons, patterns, and surprises from completed phase artifacts
 argument-hint: <phase-number>
 allowed-tools:

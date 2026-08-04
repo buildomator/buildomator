@@ -1,5 +1,5 @@
 ---
-name: bm:health
+name: health
 description: Diagnose planning directory health and optionally repair issues
 argument-hint: "[--repair]"
 allowed-tools:

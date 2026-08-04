@@ -1,5 +1,5 @@
 ---
-name: bm:remove-workspace
+name: remove-workspace
 description: Remove a GSD workspace and clean up worktrees
 argument-hint: "<workspace-name>"
 allowed-tools:

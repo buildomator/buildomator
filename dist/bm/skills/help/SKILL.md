@@ -1,5 +1,5 @@
 ---
-name: bm:help
+name: help
 description: Show available GSD commands and usage guide
 allowed-tools:
   - Read

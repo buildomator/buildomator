@@ -1,5 +1,5 @@
 ---
-name: bm:explore
+name: explore
 description: Socratic ideation and idea routing — think through ideas before committing to plans
 argument-hint: "[topic]"
 allowed-tools:

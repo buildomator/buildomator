@@ -1,5 +1,5 @@
 ---
-name: bm:import
+name: import
 description: Ingest external plans with conflict detection against project decisions before writing anything.
 argument-hint: "--from <filepath>"
 allowed-tools:

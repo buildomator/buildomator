@@ -1,5 +1,5 @@
 ---
-name: bm:resume-at
+name: resume-at
 description: Schedule a future resume of work - e.g. '/bm:resume-at 09:00', '/bm:resume-at +2h', or '/bm:resume-at 04:00 --cmd /bm:execute-phase 9'
 argument-hint: "<HH:MM | ISO 8601 | +<duration>> [--cmd <command>]"
 allowed-tools:

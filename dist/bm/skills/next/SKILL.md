@@ -1,5 +1,5 @@
 ---
-name: bm:next
+name: next
 description: Automatically advance to the next logical step in the GSD workflow
 argument-hint: "[--force]"
 allowed-tools:

@@ -1,5 +1,5 @@
 ---
-name: bm:ui-review
+name: ui-review
 description: Retroactive 6-pillar visual audit of implemented frontend code
 argument-hint: "[phase]"
 allowed-tools:

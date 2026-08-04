@@ -1,5 +1,5 @@
 ---
-name: bm:debug
+name: debug
 description: Systematic debugging with persistent state across context resets
 argument-hint: "[list | status <slug> | continue <slug> | --diagnose] [issue description]"
 allowed-tools:
