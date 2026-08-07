@@ -28,4 +28,4 @@ All -> rebuild sdk/dist, regen dist/bm, `build-bm --check`. Both twins are hand-
 Context: [[project_upstream_switch_2026_05]], [[reference_model_resolver_single_source]] (two hand-synced twins).
 
 ## Outcome (2026-08-07)
-All 4 applicable items ported and shipped in **v4.5.4** (commits 04baf33..1dd2932; release 0f86031). Dropped items (#2667, #3033, #2788) recorded above with rationale. Bonus finding (SDK init-complex.ts:588 planCount-guard divergence) remains OPEN as a separate optional reconcile.
+All 4 applicable items ported and shipped in **v4.5.4** (commits 04baf33..1dd2932; release 0f86031). Dropped items (#2667, #3033, #2788) recorded above with rationale. Bonus finding (SDK init-complex.ts:588 planCount-guard divergence) remains RESOLVED: fixed across all 3 SDK sites (init-complex.ts initProgress+initManager, roadmap.ts) in quick 260807-rce, shipped v4.5.5.
