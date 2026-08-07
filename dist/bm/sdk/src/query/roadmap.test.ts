@@ -1039,6 +1039,42 @@ describe('roadmapAnalyze', () => {
     expect(p10!.disk_status).toBe('partial');
   });
 
+  it('does not promote a with-plans paused phase to complete when the checkbox is ticked', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), ROADMAP_CONTENT);
+    await writeFile(join(tmpDir, '.planning', 'STATE.md'), STATE_WITH_MILESTONE);
+
+    // Phase 9 is [x] in the roadmap but has a plan whose only summary is paused,
+    // so it scans as 'planned' and the checkbox must not re-promote it.
+    const p9dir = join(tmpDir, '.planning', 'phases', '09-foundation');
+    await writeFile(join(p9dir, '09-01-PLAN.md'), '---\n---\n');
+    await writeFile(join(p9dir, '09-01-SUMMARY.md'), ['---', 'status: paused', '---', ''].join('\n'));
+
+    const result = await roadmapAnalyze([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    const phases = data.phases as Array<Record<string, unknown>>;
+    const p9 = phases.find(p => p.number === '9');
+
+    expect(p9!.plan_count).toBe(1);
+    expect(p9!.roadmap_complete).toBe(true);
+    expect(p9!.disk_status).not.toBe('complete');
+    expect(p9!.disk_status).toBe('planned');
+  });
+
+  it('still promotes a zero-plan checked phase to complete (legacy case)', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), ROADMAP_CONTENT);
+    await writeFile(join(tmpDir, '.planning', 'STATE.md'), STATE_WITH_MILESTONE);
+
+    // Phase 9 dir is empty (no plans) and the roadmap has [x].
+    const result = await roadmapAnalyze([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    const phases = data.phases as Array<Record<string, unknown>>;
+    const p9 = phases.find(p => p.number === '9');
+
+    expect(p9!.plan_count).toBe(0);
+    expect(p9!.roadmap_complete).toBe(true);
+    expect(p9!.disk_status).toBe('complete');
+  });
+
   it('detects missing phase details from checklist', async () => {
     const roadmapWithExtra = ROADMAP_CONTENT + '\n- [ ] **Phase 99: Future Phase**\n';
     await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), roadmapWithExtra);

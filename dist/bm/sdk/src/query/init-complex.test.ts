@@ -395,6 +395,73 @@ describe('initProgress', () => {
       await rm(tmp, { recursive: true, force: true });
     }
   });
+
+  it('does not promote a with-plans paused phase to complete when the checkbox is ticked', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'gsd-init-complex-paused-'));
+    try {
+      const phaseDir = join(tmp, '.planning', 'phases', '40-migration');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(tmp, '.planning', 'config.json'), JSON.stringify({ model_profile: 'balanced' }));
+      await writeFile(join(tmp, '.planning', 'STATE.md'), ['---', 'milestone: v1.0', '---'].join('\n'));
+      await writeFile(join(tmp, '.planning', 'ROADMAP.md'), [
+        '# Roadmap',
+        '',
+        '## v1.0: Migration',
+        '',
+        '- [x] Phase 40: migration',
+        '',
+        '### Phase 40: migration',
+        '',
+        '**Goal:** Migrate it',
+        '',
+      ].join('\n'));
+      await writeFile(join(phaseDir, '40-01-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '40-01-SUMMARY.md'), ['---', 'status: paused', '---', '', '# Summary'].join('\n'));
+
+      const result = await initProgress([], tmp);
+      const data = result.data as Record<string, unknown>;
+      const phases = data.phases as Record<string, unknown>[];
+      const phase40 = phases.find(p => p.number === '40');
+
+      expect(phase40?.plan_count).toBe(1);
+      expect(phase40?.status).not.toBe('complete');
+      expect(phase40?.status).toBe('in_progress');
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('still promotes a zero-plan checked phase to complete (legacy case)', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'gsd-init-complex-legacy-'));
+    try {
+      const phaseDir = join(tmp, '.planning', 'phases', '41-legacy');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(tmp, '.planning', 'config.json'), JSON.stringify({ model_profile: 'balanced' }));
+      await writeFile(join(tmp, '.planning', 'STATE.md'), ['---', 'milestone: v1.0', '---'].join('\n'));
+      await writeFile(join(tmp, '.planning', 'ROADMAP.md'), [
+        '# Roadmap',
+        '',
+        '## v1.0: Legacy',
+        '',
+        '- [x] Phase 41: legacy',
+        '',
+        '### Phase 41: legacy',
+        '',
+        '**Goal:** Legacy work',
+        '',
+      ].join('\n'));
+
+      const result = await initProgress([], tmp);
+      const data = result.data as Record<string, unknown>;
+      const phases = data.phases as Record<string, unknown>[];
+      const phase41 = phases.find(p => p.number === '41');
+
+      expect(phase41?.plan_count).toBe(0);
+      expect(phase41?.status).toBe('complete');
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('initManager', () => {
@@ -539,6 +606,73 @@ describe('initManager', () => {
       expect(data.queued_milestone_version).toBeNull();
       expect(data.queued_milestone_name).toBeNull();
     });
+  });
+
+  it('does not promote a with-plans paused phase to complete when the checkbox is ticked', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'gsd-init-manager-paused-'));
+    try {
+      const phaseDir = join(tmp, '.planning', 'phases', '40-migration');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(tmp, '.planning', 'config.json'), JSON.stringify({ model_profile: 'balanced' }));
+      await writeFile(join(tmp, '.planning', 'STATE.md'), ['---', 'milestone: v1.0', '---'].join('\n'));
+      await writeFile(join(tmp, '.planning', 'ROADMAP.md'), [
+        '# Roadmap',
+        '',
+        '## v1.0: Migration',
+        '',
+        '- [x] Phase 40: migration',
+        '',
+        '### Phase 40: migration',
+        '',
+        '**Goal:** Migrate it',
+        '',
+      ].join('\n'));
+      await writeFile(join(phaseDir, '40-01-PLAN.md'), '# Plan');
+      await writeFile(join(phaseDir, '40-01-SUMMARY.md'), ['---', 'status: paused', '---', '', '# Summary'].join('\n'));
+
+      const result = await initManager([], tmp);
+      const data = result.data as Record<string, unknown>;
+      const phases = data.phases as Record<string, unknown>[];
+      const phase40 = phases.find(p => p.number === '40');
+
+      expect(phase40?.plan_count).toBe(1);
+      expect(phase40?.disk_status).not.toBe('complete');
+      expect(phase40?.disk_status).toBe('planned');
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('still promotes a zero-plan checked phase to complete (legacy case)', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'gsd-init-manager-legacy-'));
+    try {
+      const phaseDir = join(tmp, '.planning', 'phases', '41-legacy');
+      await mkdir(phaseDir, { recursive: true });
+      await writeFile(join(tmp, '.planning', 'config.json'), JSON.stringify({ model_profile: 'balanced' }));
+      await writeFile(join(tmp, '.planning', 'STATE.md'), ['---', 'milestone: v1.0', '---'].join('\n'));
+      await writeFile(join(tmp, '.planning', 'ROADMAP.md'), [
+        '# Roadmap',
+        '',
+        '## v1.0: Legacy',
+        '',
+        '- [x] Phase 41: legacy',
+        '',
+        '### Phase 41: legacy',
+        '',
+        '**Goal:** Legacy work',
+        '',
+      ].join('\n'));
+
+      const result = await initManager([], tmp);
+      const data = result.data as Record<string, unknown>;
+      const phases = data.phases as Record<string, unknown>[];
+      const phase41 = phases.find(p => p.number === '41');
+
+      expect(phase41?.plan_count).toBe(0);
+      expect(phase41?.disk_status).toBe('complete');
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
   });
 });
 
