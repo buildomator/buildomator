@@ -640,13 +640,13 @@ Step 1 — HEAD attachment assertion (MANDATORY, runs before any reset/commit):
   HEAD_REF=$(git symbolic-ref --quiet HEAD || echo "DETACHED")
   ACTUAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
   if [ "$HEAD_REF" = "DETACHED" ] || echo "$ACTUAL_BRANCH" | grep -Eq '^(main|master|develop|trunk|release/.*)$'; then
-    echo "FATAL: worktree HEAD is on '$ACTUAL_BRANCH' (expected per-agent branch like worktree-agent-*)." >&2
+    echo "FATAL: worktree HEAD is on '$ACTUAL_BRANCH' (expected per-agent branch like agent-*, worktree-agent-*, or worktree-wf_*)." >&2
     echo "Refusing to commit/reset on a protected ref. DO NOT self-recover via 'git update-ref refs/heads/$ACTUAL_BRANCH' — that destroys concurrent work (#2924)." >&2
     echo "Aborting before any commits. Surface as a blocker for human review." >&2
     exit 1
   fi
-  if ! echo "$ACTUAL_BRANCH" | grep -Eq '^worktree-agent-[A-Za-z0-9._/-]+$'; then
-    echo "FATAL: worktree HEAD '$ACTUAL_BRANCH' is not in the worktree-agent-* namespace (Claude Code's per-agent worktree branch namespace)." >&2
+  if ! echo "$ACTUAL_BRANCH" | grep -Eq '^((worktree-)?agent-|worktree-wf_)[A-Za-z0-9._/-]+$'; then
+    echo "FATAL: worktree HEAD '$ACTUAL_BRANCH' is not in a per-agent worktree branch namespace (agent-*, worktree-agent-*, or worktree-wf_*)." >&2
     echo "Refusing to commit; surface as blocker (#2924)." >&2
     exit 1
   fi

@@ -99,6 +99,12 @@ jobs:
         run: node tests/mktemp-portable.test.cjs
       - name: Run CJS/SDK config-schema parity test
         run: node tests/config-schema-sdk-parity.test.cjs
+      - name: Run worktree branch-namespace guard test
+        run: node tests/worktree-safety.test.cjs
+      - name: Run phase-complete backlog-sentinel guard test
+        run: node tests/phase-complete-backlog-sentinel.test.cjs
+      - name: Run code-fixer worktree-gate guard test
+        run: node tests/code-fixer-worktree-gate.test.cjs
       - name: Smoke test verify drift JSON output
         run: |
           node bin/gsd-tools.cjs verify drift --scope . --json | node -e \
