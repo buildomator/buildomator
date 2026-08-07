@@ -8,6 +8,16 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.5.4] - 2026-08-07  (upstream sync ports: project-root, backlog-skip, worktree)
+
+Ports four Claude-relevant fixes from upstream gsd-core 1.8.0-1.9.x into both resolver twins. Other upstream work in that range was multi-runtime infrastructure (OpenCode/Pi/Kimi/VS Code/host-integration) and does not apply to this Claude-only plugin.
+
+### Fixed
+- **`findProjectRoot` no longer crosses a nested git-repo boundary (gsd-core #2843).** When a nested child repository sat below the starting directory, the resolver trusted the child's own `.git` and walked up to a wrong ancestor project that happened to have a `.planning/`. It now stops at the nearest git boundary before trusting an ancestor's `.planning/`, so nested repos and worktrees resolve to the correct project. Declared `sub_repos`/multi-repo config still crosses as intended. Fixed in both twins.
+- **Phase-completion's next-phase scan skips backlog sentinels (gsd-core #2786).** The stage-2 roadmap scan could advance `next_phase` into a `### Phase 999.x (BACKLOG)` heading; it now skips 999.x sentinels the same way the on-disk scan already did. Both twins.
+- **`/bm:code-review-fix` honors `workflow.use_worktrees` (gsd-core #2825).** The code-fixer previously created a git worktree unconditionally; it now respects the opt-out and edits on the current branch when worktrees are disabled.
+- **Worktree branch guards accept the `agent-<id>` and `worktree-wf_*` namespaces (gsd-core #1995, #3021).** The per-agent branch guards matched only `worktree-agent-*`; they now also accept the `agent-<id>` and Workflow-backend `worktree-wf_*` shapes, so a Claude Code branch-naming change or the Workflow backend does not hard-fail worktree execution. The protected-ref deny-list is unchanged.
+
 ## [4.5.3] - 2026-08-04  (fix doubled command prefix)
 
 Plugin-native patch.
