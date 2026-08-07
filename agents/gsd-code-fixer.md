@@ -193,7 +193,7 @@ If a finding references multiple files (in Fix section or Issue section):
 <execution_flow>
 
 <step name="setup_worktree">
-**Isolation: create a dedicated git worktree BEFORE touching any files.** This agent runs as a background process that makes commits; operating on the main working tree would race the foreground session (shared index, HEAD, on-disk files).
+**Isolation (when enabled): create a dedicated git worktree BEFORE touching any files.** This agent runs as a background process that makes commits; operating on the main working tree would race the foreground session (shared index, HEAD, on-disk files). Isolation is gated on `workflow.use_worktrees` (default true): when it is explicitly `false`, the agent works directly on the current branch in the main tree and every worktree/sentinel/cleanup step below is skipped.
 
 The cleanup tail (commit fixes -> remove worktree -> drop recovery sentinel) MUST be **transactional**: either all of (worktree, branch advance, sentinel) end clean, or — if interrupted between the last commit and `git worktree remove` — a discoverable recovery sentinel is left behind so a future run, `/gsd:resume-work`, or `/gsd:progress` can complete the cleanup (#2839: a non-transactional tail silently left orphan worktrees + unmerged branches with no resume marker).
 
@@ -201,6 +201,10 @@ The cleanup tail (commit fixes -> remove worktree -> drop recovery sentinel) MUS
 # Parse padded_phase from config first; snippet below is illustrative.
 branch=$(git branch --show-current)
 test -n "$branch" || { echo "Detached HEAD is not supported for review-fix (#2686)"; exit 1; }
+
+# Isolation gate: only an explicit false disables the dedicated worktree. Read
+# it the same way the sibling workflows do (bm-sdk on PATH in this agent bash).
+USE_WORKTREES=$(bm-sdk query config-get workflow.use_worktrees 2>/dev/null || echo "true")
 
 # Recovery-sentinel handling (#2839): if the sentinel already exists, a prior
 # run was interrupted between fix commits and `git worktree remove`. Extract
@@ -233,35 +237,43 @@ if [ -f "$sentinel" ]; then
   rm -f "$sentinel"
 fi
 
-wt=$(mktemp -d "/tmp/sv-${padded_phase}-reviewfix-XXXXXX")
+if [ "$USE_WORKTREES" = "false" ]; then
+  # Direct mode: no isolation. Commit fixes straight onto the current branch in
+  # the main tree — no mktemp, no worktree, no sentinel, no cd.
+  wt="."
+  reviewfix_branch="$branch"
+else
+  wt=$(mktemp -d "/tmp/sv-${padded_phase}-reviewfix-XXXXXX")
 
-# Attach the worktree to a NEW temp branch, not $branch directly (#2990: git
-# refuses to check out the same branch in two worktrees). The temp branch
-# shares history with $branch, so its commits fast-forward $branch on cleanup.
-reviewfix_branch="gsd-reviewfix/${padded_phase}-$$"
-git worktree add -b "$reviewfix_branch" "$wt" "$branch"
+  # Attach the worktree to a NEW temp branch, not $branch directly (#2990: git
+  # refuses to check out the same branch in two worktrees). The temp branch
+  # shares history with $branch, so its commits fast-forward $branch on cleanup.
+  reviewfix_branch="gsd-reviewfix/${padded_phase}-$$"
+  git worktree add -b "$reviewfix_branch" "$wt" "$branch"
 
-# Write the recovery sentinel ONLY AFTER `git worktree add` succeeds, so it
-# never points at a worktree that failed to create.
-node -e '
-  const fs = require("fs");
-  const [sentinelPath, worktree_path, branch, reviewfix_branch, padded_phase] = process.argv.slice(1);
-  fs.writeFileSync(sentinelPath, JSON.stringify({
-    worktree_path,
-    branch,
-    reviewfix_branch,
-    padded_phase,
-    started_at: new Date().toISOString()
-  }, null, 2));
-' "$sentinel" "$wt" "$branch" "$reviewfix_branch" "$padded_phase"
+  # Write the recovery sentinel ONLY AFTER `git worktree add` succeeds, so it
+  # never points at a worktree that failed to create.
+  node -e '
+    const fs = require("fs");
+    const [sentinelPath, worktree_path, branch, reviewfix_branch, padded_phase] = process.argv.slice(1);
+    fs.writeFileSync(sentinelPath, JSON.stringify({
+      worktree_path,
+      branch,
+      reviewfix_branch,
+      padded_phase,
+      started_at: new Date().toISOString()
+    }, null, 2));
+  ' "$sentinel" "$wt" "$branch" "$reviewfix_branch" "$padded_phase"
 
-cd "$wt"
+  cd "$wt"
+fi
 ```
 
 Concrete steps:
+0. **Isolation gate:** Read `USE_WORKTREES=$(bm-sdk query config-get workflow.use_worktrees 2>/dev/null || echo "true")`. Only an explicit `false` disables isolation. When false, set `wt="."` and `reviewfix_branch="$branch"`, skip steps 4-7 (no mktemp, no worktree, no sentinel, no cd), and commit fixes directly on `$branch` in the main tree; steps 4-7 below apply only when worktrees are enabled.
 1. Parse `padded_phase` and `phase_dir` from the `<config>` block (needed for the path and the sentinel location).
 2. Resolve the current branch: `branch=$(git branch --show-current)`. If empty (detached HEAD), print an error and exit — commits in a detached-HEAD worktree would not advance the branch.
-3. **Recovery check (#2839, #2990):** If `${phase_dir}/.review-fix-recovery-pending.json` already exists, a prior run was interrupted. Parse the JSON, best-effort remove the orphan worktree it points at (`--force`) and delete the stale `reviewfix_branch` (`git branch -D`), then delete the stale sentinel before continuing. This makes a re-run of `/gsd:code-review --fix` self-healing.
+3. **Recovery check (#2839, #2990):** If `${phase_dir}/.review-fix-recovery-pending.json` already exists, a prior run was interrupted. Parse the JSON, best-effort remove the orphan worktree it points at (`--force`) and delete the stale `reviewfix_branch` (`git branch -D`), then delete the stale sentinel before continuing. This makes a re-run of `/gsd:code-review --fix` self-healing and runs in both modes (a no-op when there is nothing to heal).
 4. Create a unique worktree path: `wt=$(mktemp -d "/tmp/sv-${padded_phase}-reviewfix-XXXXXX")`. The `mktemp` suffix prevents concurrent same-phase runs from colliding.
 5. Run `git worktree add -b "$reviewfix_branch" "$wt" "$branch"` — creates a NEW branch (`gsd-reviewfix/${padded_phase}-$$`) from the current tip and attaches the worktree to it. Attaching to a new branch (not `$branch` directly) lets it coexist with the user's checkout (#2990). Commits advance `$reviewfix_branch`; the cleanup tail fast-forwards `$branch` to it.
 6. **Write the recovery sentinel** at `${phase_dir}/.review-fix-recovery-pending.json` containing `{worktree_path, branch, reviewfix_branch, padded_phase, started_at}`. Doing this AFTER `git worktree add` ensures it only ever points at a real worktree; including `reviewfix_branch` lets recovery clean both the orphan worktree AND its temp branch.
@@ -269,9 +281,16 @@ Concrete steps:
 
 **If `git worktree add` fails**, surface the error and exit — do not force-remove the path (another concurrent run may hold it), do not write the sentinel (the worktree does not exist), do not delete `$reviewfix_branch` (if `-b` failed, no temp branch was created).
 
-**Cleanup tail (transactional, ALWAYS — even on failure):** After writing REVIEW-FIX.md and before returning to the orchestrator, run the cleanup in this exact order:
+**Cleanup tail (transactional, runs when a worktree was created — even on failure):** After writing REVIEW-FIX.md and before returning to the orchestrator, run the cleanup in this exact order:
 
 ```bash
+# Direct mode (workflow.use_worktrees = false): commits already landed on
+# $branch in the main tree, so there is nothing to fast-forward, remove, or
+# clean up. Skip the whole tail.
+if [ "$USE_WORKTREES" = "false" ]; then
+  echo "use_worktrees=false: fixes committed directly on $branch, no worktree cleanup needed"
+else
+
 # Step 1 (#2990): fast-forward $branch to capture the agent's commits on
 # $reviewfix_branch. Run from the main repo (not $wt). --ff-only fails loudly
 # on divergence (user committed concurrently) and leaves the temp branch for
@@ -304,9 +323,10 @@ fi
 
 # Step 4: drop the recovery sentinel ONLY after `git worktree remove` succeeds.
 rm -f "$sentinel"
+fi
 ```
 
-This cleanup is unconditional — treat it as a finally-block obligation. Even on early exit (config error, no findings, etc.), run the tail in order (fast-forward → worktree remove → temp branch delete → sentinel rm). The sentinel must NEVER be removed before `git worktree remove` succeeds; the temp branch must NEVER be deleted while the fast-forward is diverged.
+When a worktree was created, this cleanup is a finally-block obligation. Even on early exit (config error, no findings, etc.), run the tail in order (fast-forward → worktree remove → temp branch delete → sentinel rm). The sentinel must NEVER be removed before `git worktree remove` succeeds; the temp branch must NEVER be deleted while the fast-forward is diverged. In direct mode (`use_worktrees=false`) there is no worktree, so the tail is skipped entirely.
 </step>
 
 <step name="load_context">
@@ -511,9 +531,9 @@ _Iteration: {N}_
 
 <critical_rules>
 
-**ALWAYS run inside the isolated worktree** (see `setup_worktree`): every file read, edit, and commit happens inside `$wt`, attached to the NEW `$reviewfix_branch` (#2990, #2686). If `git worktree add` fails, exit with an error rather than force-removing a path another run may hold.
+**When a worktree was created (workflow.use_worktrees not false), ALWAYS run inside the isolated worktree** (see `setup_worktree`): every file read, edit, and commit happens inside `$wt`, attached to the NEW `$reviewfix_branch` (#2990, #2686). If `git worktree add` fails, exit with an error rather than force-removing a path another run may hold. In direct mode (`use_worktrees=false`) the agent works on `$branch` in the main tree.
 
-**ALWAYS run the transactional four-step cleanup tail in order** (#2839, #2990), unconditionally (finally block) — see `setup_worktree`: (1) `merge --ff-only` $branch (fail loudly + preserve temp branch on divergence), (2) `git worktree remove "$wt" --force`, (3) `branch -D "$reviewfix_branch"` only if the ff succeeded, (4) `rm -f "$sentinel"` only after step 2 succeeds. Reversing the order recreates the orphan-worktree bug.
+**When a worktree was created (workflow.use_worktrees not false), ALWAYS run the transactional four-step cleanup tail in order** (#2839, #2990), as a finally block — see `setup_worktree`: (1) `merge --ff-only` $branch (fail loudly + preserve temp branch on divergence), (2) `git worktree remove "$wt" --force`, (3) `branch -D "$reviewfix_branch"` only if the ff succeeded, (4) `rm -f "$sentinel"` only after step 2 succeeds. Reversing the order recreates the orphan-worktree bug. In direct mode there is no worktree, so the tail is skipped.
 
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
