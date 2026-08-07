@@ -386,14 +386,16 @@ export const initProgress: QueryHandler = async (_args, projectDir, workstream) 
         planCount > 0 ? 'in_progress' :
         hasResearch ? 'researched' : 'pending';
 
-      // #2674: align with initManager — a ROADMAP `- [x] Phase N` checkbox
-      // wins over disk state. A stub phase dir with no SUMMARY is leftover
-      // scaffolding; the user's explicit [x] is the authoritative signal.
+      // #2674: align with initManager. Trust a ROADMAP `- [x] Phase N`
+      // checkbox over disk state ONLY for legacy phases with no plans on disk;
+      // when plans exist, keep the stricter status-aware disk status so a
+      // wrongly-ticked checkbox cannot re-promote a phase whose only summary
+      // is paused.
       const strippedNum = phaseNumber.replace(/^0+/, '') || '0';
       const roadmapComplete =
         checkboxStates.get(phaseNumber) === true ||
         checkboxStates.get(strippedNum) === true;
-      if (roadmapComplete && status !== 'complete') {
+      if (roadmapComplete && status !== 'complete' && planCount === 0) {
         status = 'complete';
       }
       if (terminalLabels.has(phaseNumber) || terminalLabels.has(strippedNum)) {
@@ -584,8 +586,12 @@ export const initManager: QueryHandler = async (_args, projectDir, workstream) =
       }
     } catch { /* intentionally empty */ }
 
+    // Trust the checkbox over disk ONLY for legacy phases with no plans on
+    // disk; when plans exist, keep the stricter status-aware disk status so a
+    // wrongly-ticked checkbox cannot re-promote a phase whose only summary is
+    // paused.
     const roadmapComplete = checkboxStates.get(phaseNum) || false;
-    if (roadmapComplete && diskStatus !== 'complete') {
+    if (roadmapComplete && diskStatus !== 'complete' && planCount === 0) {
       diskStatus = 'complete';
     }
 

@@ -6889,7 +6889,7 @@ var roadmapAnalyze = async (_args, projectDir, workstream) => {
     const checkboxPattern = new RegExp(`-\\s*\\[(x| )\\]\\s*.*Phase\\s+${escapeRegex2(phaseNum)}[:\\s]`, "i");
     const checkboxMatch = content.match(checkboxPattern);
     const roadmapComplete = checkboxMatch ? checkboxMatch[1] === "x" : false;
-    if (roadmapComplete && diskStatus !== "complete") {
+    if (roadmapComplete && diskStatus !== "complete" && planCount === 0) {
       diskStatus = "complete";
     }
     phases.push({
@@ -20615,7 +20615,7 @@ var initProgress = async (_args, projectDir, workstream) => {
       let status = scan.completed ? "complete" : planCount > 0 ? "in_progress" : hasResearch ? "researched" : "pending";
       const strippedNum = phaseNumber.replace(/^0+/, "") || "0";
       const roadmapComplete = checkboxStates.get(phaseNumber) === true || checkboxStates.get(strippedNum) === true;
-      if (roadmapComplete && status !== "complete") {
+      if (roadmapComplete && status !== "complete" && planCount === 0) {
         status = "complete";
       }
       if (terminalLabels.has(phaseNumber) || terminalLabels.has(strippedNum)) {
@@ -20773,7 +20773,7 @@ var initManager = async (_args, projectDir, workstream) => {
     } catch {
     }
     const roadmapComplete = checkboxStates.get(phaseNum) || false;
-    if (roadmapComplete && diskStatus !== "complete") {
+    if (roadmapComplete && diskStatus !== "complete" && planCount === 0) {
       diskStatus = "complete";
     }
     const MAX_NAME_WIDTH = 20;

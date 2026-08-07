@@ -701,8 +701,12 @@ export const roadmapAnalyze: QueryHandler = async (_args, projectDir, workstream
     const checkboxMatch = content.match(checkboxPattern);
     const roadmapComplete = checkboxMatch ? checkboxMatch[1] === 'x' : false;
 
-    // If roadmap marks phase complete, trust that over disk
-    if (roadmapComplete && diskStatus !== 'complete') {
+    // If roadmap marks phase complete, trust that over disk ONLY for legacy
+    // phases with no PLAN/SUMMARY pairs on disk. When plans exist, keep the
+    // stricter status-aware disk status: a single-plan phase whose only summary
+    // is paused scans as 'planned', and a wrongly-ticked checkbox must not
+    // re-promote it to complete.
+    if (roadmapComplete && diskStatus !== 'complete' && planCount === 0) {
       diskStatus = 'complete';
     }
 
