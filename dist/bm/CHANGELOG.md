@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.5.5] - 2026-08-07  (SDK completion-guard parity)
+
+Plugin-native patch. Surfaced while triaging the upstream sync (a divergence in our own two resolver twins).
+
+### Fixed
+- **A ticked roadmap checkbox can no longer promote a with-plans paused phase to complete in the SDK resolver.** The checkbox-over-disk override in the SDK's `initProgress`, `initManager`, and `roadmap.analyze` handlers lacked the `planCount === 0` guard the CJS twin already had, so an `- [x]` on a phase whose only summary is paused could force it to `complete` and route or commit out of order (the same class as the earlier resume-ordering fix). All three SDK sites now match the CJS: the checkbox promotes only a zero-plan legacy phase; a phase with plans keeps its status-aware disk state. Both resolver twins are now aligned across every checkbox-override site.
+
 ## [4.5.4] - 2026-08-07  (upstream sync ports: project-root, backlog-skip, worktree)
 
 Ports four Claude-relevant fixes from upstream gsd-core 1.8.0-1.9.x into both resolver twins. Other upstream work in that range was multi-runtime infrastructure (OpenCode/Pi/Kimi/VS Code/host-integration) and does not apply to this Claude-only plugin.
