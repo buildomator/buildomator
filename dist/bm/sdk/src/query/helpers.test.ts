@@ -566,14 +566,16 @@ describe('findProjectRoot (multi-repo .planning resolution)', () => {
 
   it('falls back to .git heuristic when parent has .planning/ but no matching sub_repos', async () => {
     await mkdir(join(workspace, '.planning'), { recursive: true });
-    // Config doesn't list the child, but child has .git and parent has .planning/.
+    // Config doesn't list the child; .git lives at the workspace root next to
+    // .planning/, so the child sits inside the same repo (no nested boundary).
     await writeFile(
       join(workspace, '.planning', 'config.json'),
       JSON.stringify({ sub_repos: [] }),
       'utf-8',
     );
+    await mkdir(join(workspace, '.git'), { recursive: true });
     const app = join(workspace, 'app');
-    await mkdir(join(app, '.git'), { recursive: true });
+    await mkdir(app, { recursive: true });
 
     expect(findProjectRoot(app)).toBe(workspace);
   });
@@ -581,10 +583,36 @@ describe('findProjectRoot (multi-repo .planning resolution)', () => {
   it('swallows unparseable config.json and falls back to .git heuristic', async () => {
     await mkdir(join(workspace, '.planning'), { recursive: true });
     await writeFile(join(workspace, '.planning', 'config.json'), '{ not json', 'utf-8');
+    // .git at the workspace root (co-located with .planning/), not in the child.
+    await mkdir(join(workspace, '.git'), { recursive: true });
     const app = join(workspace, 'app');
-    await mkdir(join(app, '.git'), { recursive: true });
+    await mkdir(app, { recursive: true });
 
     expect(findProjectRoot(app)).toBe(workspace);
+  });
+
+  it('does not cross a nested child git repo boundary to an ancestor .planning/', async () => {
+    // workspace/.planning/ (no config), workspace/child/.git/, start deep in child.
+    // The child is its own repo, so the ancestor .planning/ is a different
+    // project and must not be returned.
+    await mkdir(join(workspace, '.planning'), { recursive: true });
+    await mkdir(join(workspace, 'child', '.git'), { recursive: true });
+    const start = join(workspace, 'child', 'src');
+    await mkdir(start, { recursive: true });
+
+    expect(findProjectRoot(start)).toBe(start);
+    expect(findProjectRoot(start)).not.toBe(workspace);
+  });
+
+  it('resolves co-located single repo when .git sits at the workspace root', async () => {
+    // workspace/.git + workspace/.planning + start in a plain subdir with no
+    // nested .git: the heuristic returns the workspace root.
+    await mkdir(join(workspace, '.planning'), { recursive: true });
+    await mkdir(join(workspace, '.git'), { recursive: true });
+    const start = join(workspace, 'src', 'lib');
+    await mkdir(start, { recursive: true });
+
+    expect(findProjectRoot(start)).toBe(workspace);
   });
 
   it('supports legacy multiRepo: true when child is inside a git repo', async () => {

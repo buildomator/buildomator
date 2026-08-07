@@ -471,9 +471,9 @@ if [ -f .git ]; then  # worktree
     echo "DO NOT use 'git update-ref' to rewind the protected branch — surface as blocker (#2924)." >&2
     exit 1
   fi
-  # Allow-list: HEAD must be in the worktree-agent-<id> namespace; catches feature/* etc. the deny-list would allow (#2924).
-  if ! echo "$ACTUAL_BRANCH" | grep -Eq '^worktree-agent-[A-Za-z0-9._/-]+$'; then
-    echo "FATAL: refusing to commit — worktree HEAD '$ACTUAL_BRANCH' is not in the worktree-agent-* namespace." >&2
+  # Allow-list: HEAD must be in a per-agent worktree branch namespace (agent-*, worktree-agent-*, worktree-wf_*); catches feature/* etc. the deny-list would allow (#2924).
+  if ! echo "$ACTUAL_BRANCH" | grep -Eq '^((worktree-)?agent-|worktree-wf_)[A-Za-z0-9._/-]+$'; then
+    echo "FATAL: refusing to commit; worktree HEAD '$ACTUAL_BRANCH' is not in a per-agent worktree branch namespace (agent-*, worktree-agent-*, worktree-wf_*)." >&2
     echo "Agent commits must live on per-agent branches; surface as blocker (#2924)." >&2
     exit 1
   fi

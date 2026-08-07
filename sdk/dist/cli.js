@@ -662,6 +662,23 @@ function findProjectRoot(startDir) {
     }
     return false;
   }
+  function nearestGitRoot(from, upTo) {
+    let d = from;
+    while (d !== fsRoot) {
+      if (d === upTo)
+        break;
+      try {
+        if (existsSync2(join4(d, ".git")))
+          return d;
+      } catch {
+      }
+      const next = dirname(d);
+      if (next === d)
+        break;
+      d = next;
+    }
+    return null;
+  }
   let dir = resolvedStart;
   let depth = 0;
   while (dir !== fsRoot && depth < FIND_PROJECT_ROOT_MAX_DEPTH) {
@@ -700,6 +717,11 @@ function findProjectRoot(startDir) {
       if (matched)
         return parent;
       if (isInsideGitRepo(parent)) {
+        if (nearestGitRoot(resolvedStart, parent) !== null) {
+          dir = parent;
+          depth += 1;
+          continue;
+        }
         return parent;
       }
     }
@@ -13617,6 +13639,8 @@ var phaseComplete = async (args, projectDir, workstream) => {
       const phasePattern = /(?:#{2,4}|-\s*\[[ xX]\])\s*(?:\*\*|__)?\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n*]+)/gi;
       let pm;
       while ((pm = phasePattern.exec(roadmapForPhases)) !== null) {
+        if (/^999(?:\.|$)/.test(pm[1]))
+          continue;
         if (comparePhaseNum(pm[1], phaseNum) > 0) {
           nextPhaseNum = pm[1];
           nextPhaseName = pm[2].replace(/\(INSERTED\)/i, "").trim().toLowerCase().replace(/\s+/g, "-");

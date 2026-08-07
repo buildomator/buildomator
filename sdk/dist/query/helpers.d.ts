@@ -163,7 +163,9 @@ export declare function planningPaths(projectDir: string, workstream?: string): 
  *      immediate child segment of the starting directory.
  *   3. Parent has `.planning/config.json` with `multiRepo: true` (legacy).
  *   4. Parent has `.planning/` AND an ancestor of `startDir` (up to the
- *      candidate parent) contains `.git` — heuristic fallback.
+ *      candidate parent) contains `.git` — heuristic fallback, applied only
+ *      when no nested `.git` sits between the start dir and the parent
+ *      (a nested child repo boundary is never crossed by the heuristic).
  *
  * Returns `startDir` unchanged when no ancestor `.planning/` is found
  * (first-run or single-repo projects). Never walks above the user's home

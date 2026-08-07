@@ -7,8 +7,9 @@ Guards for executor agents in Claude Code worktrees. Three checks must run befor
 ## Worktree branch check (run once at spawn-time)
 
 FIRST ACTION: HEAD assertion MUST run before any reset/checkout. Worktrees
-spawned by Claude Code's `isolation="worktree"` use the `worktree-agent-<id>`
-namespace. If HEAD is on a protected ref (main/master/develop/trunk/release/*)
+spawned by Claude Code's `isolation="worktree"` use a per-agent branch namespace
+(`agent-<id>`, `worktree-agent-<id>`, or the workflow-backend `worktree-wf_<id>`).
+If HEAD is on a protected ref (main/master/develop/trunk/release/*)
 or detached, HALT — do NOT self-recover by force-rewinding via `git update-ref`,
 that destroys concurrent commits in multi-active scenarios (#2924). Only after
 this passes is `git reset --hard` safe (#2015 — affects all platforms).
@@ -17,11 +18,11 @@ this passes is `git reset --hard` safe (#2015 — affects all platforms).
 HEAD_REF=$(git symbolic-ref --quiet HEAD || echo "DETACHED")
 ACTUAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if [ "$HEAD_REF" = "DETACHED" ] || echo "$ACTUAL_BRANCH" | grep -Eq '^(main|master|develop|trunk|release/.*)$'; then
-  echo "FATAL: worktree HEAD on '$ACTUAL_BRANCH' (expected worktree-agent-*); refusing to self-recover via 'git update-ref' (#2924)." >&2
+  echo "FATAL: worktree HEAD on '$ACTUAL_BRANCH' (expected agent-*, worktree-agent-*, or worktree-wf_*); refusing to self-recover via 'git update-ref' (#2924)." >&2
   exit 1
 fi
-if ! echo "$ACTUAL_BRANCH" | grep -Eq '^worktree-agent-[A-Za-z0-9._/-]+$'; then
-  echo "FATAL: worktree HEAD '$ACTUAL_BRANCH' is not in the worktree-agent-* namespace; refusing to commit (#2924)." >&2
+if ! echo "$ACTUAL_BRANCH" | grep -Eq '^((worktree-)?agent-|worktree-wf_)[A-Za-z0-9._/-]+$'; then
+  echo "FATAL: worktree HEAD '$ACTUAL_BRANCH' is not in a per-agent worktree branch namespace (agent-*, worktree-agent-*, or worktree-wf_*); refusing to commit (#2924)." >&2
   exit 1
 fi
 ACTUAL_BASE=$(git merge-base HEAD {EXPECTED_BASE})

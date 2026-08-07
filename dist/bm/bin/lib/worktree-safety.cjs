@@ -318,7 +318,10 @@ function normalizeCleanupManifestEntry(entry) {
   const branch = typeof entry.branch === 'string' ? entry.branch : '';
   const expectedBase = typeof entry.expected_base === 'string' ? entry.expected_base : '';
   if (!worktreePath || !branch || !expectedBase) return null;
-  if (!/^worktree-agent-[A-Za-z0-9._/-]+$/.test(branch)) return null;
+  // Accept the per-agent branch namespaces: agent-*, worktree-agent-*, and the
+  // workflow-backend worktree-wf_* form. Anything else (protected refs, etc.)
+  // is rejected.
+  if (!/^((worktree-)?agent-|worktree-wf_)[A-Za-z0-9._/-]+$/.test(branch)) return null;
   return {
     agent_id: typeof entry.agent_id === 'string' ? entry.agent_id : null,
     worktree_path: worktreePath,

@@ -98,7 +98,9 @@ function detectSubRepos(cwd) {
  * Detection strategy (checked in order for each ancestor):
  * 1. Parent has `.planning/config.json` with `sub_repos` listing this directory
  * 2. Parent has `.planning/config.json` with `multiRepo: true` (legacy format)
- * 3. Parent has `.planning/` and current dir has its own `.git` (heuristic)
+ * 3. Parent has `.planning/` and current dir has its own `.git` (heuristic),
+ *    applied only when no nested `.git` sits between the start dir and the parent
+ *    (a nested child repo boundary is never crossed by the heuristic)
  *
  * Returns `startDir` unchanged when no ancestor `.planning/` is found (first-run
  * or single-repo projects).
@@ -127,6 +129,27 @@ function findProjectRoot(startDir) {
       d = path.dirname(d);
     }
     return false;
+  }
+
+  // Return the nearest ancestor of `from` (inclusive) that has a `.git`,
+  // stopping before `upTo` (exclusive). Pure filesystem walk, no git subprocess.
+  // A `.git` at `upTo` itself does not count, so a co-located repo passes; a
+  // `.git` strictly below `upTo` means the start dir sits inside a nested child
+  // repo whose ancestor `.planning/` belongs to a different project.
+  function nearestGitRoot(from, upTo) {
+    let d = from;
+    while (d !== root) {
+      if (d === upTo) break;
+      try {
+        if (fs.existsSync(path.join(d, '.git'))) return d;
+      } catch {
+        // ignore fs errors and keep walking
+      }
+      const next = path.dirname(d);
+      if (next === d) break;
+      d = next;
+    }
+    return null;
   }
 
   let dir = resolved;
@@ -161,8 +184,15 @@ function findProjectRoot(startDir) {
         // config.json missing or malformed — fall back to .git heuristic
       }
 
-      // Heuristic: parent has .planning/ and we're inside a git repo
+      // Heuristic: parent has .planning/ and we're inside a git repo.
+      // The heuristic must not cross a nested child repo boundary: a .git
+      // strictly below the candidate parent means the ancestor .planning
+      // belongs to a different project, so keep walking upward instead.
       if (isInsideGitRepo(parent)) {
+        if (nearestGitRoot(resolved, parent) !== null) {
+          dir = parent;
+          continue;
+        }
         return parent;
       }
     }

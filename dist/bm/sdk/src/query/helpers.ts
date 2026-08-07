@@ -484,7 +484,9 @@ const FIND_PROJECT_ROOT_MAX_DEPTH = 10;
  *      immediate child segment of the starting directory.
  *   3. Parent has `.planning/config.json` with `multiRepo: true` (legacy).
  *   4. Parent has `.planning/` AND an ancestor of `startDir` (up to the
- *      candidate parent) contains `.git` — heuristic fallback.
+ *      candidate parent) contains `.git` — heuristic fallback, applied only
+ *      when no nested `.git` sits between the start dir and the parent
+ *      (a nested child repo boundary is never crossed by the heuristic).
  *
  * Returns `startDir` unchanged when no ancestor `.planning/` is found
  * (first-run or single-repo projects). Never walks above the user's home
@@ -529,6 +531,27 @@ export function findProjectRoot(startDir: string): string {
       d = next;
     }
     return false;
+  }
+
+  // Return the nearest ancestor of `from` (inclusive) that has a `.git`,
+  // stopping before `upTo` (exclusive). Pure filesystem walk, no git subprocess.
+  // A `.git` at `upTo` itself does not count, so a co-located repo passes; a
+  // `.git` strictly below `upTo` means the start dir sits inside a nested child
+  // repo whose ancestor `.planning/` belongs to a different project.
+  function nearestGitRoot(from: string, upTo: string): string | null {
+    let d = from;
+    while (d !== fsRoot) {
+      if (d === upTo) break;
+      try {
+        if (existsSync(join(d, '.git'))) return d;
+      } catch {
+        // ignore fs errors and keep walking
+      }
+      const next = dirname(d);
+      if (next === d) break;
+      d = next;
+    }
+    return null;
   }
 
   let dir = resolvedStart;
@@ -578,7 +601,15 @@ export function findProjectRoot(startDir: string): string {
       if (matched) return parent;
 
       // Heuristic: parent has .planning/ and we're inside a git repo.
+      // The heuristic must not cross a nested child repo boundary: a .git
+      // strictly below the candidate parent means the ancestor .planning
+      // belongs to a different project, so keep walking upward instead.
       if (isInsideGitRepo(parent)) {
+        if (nearestGitRoot(resolvedStart, parent) !== null) {
+          dir = parent;
+          depth += 1;
+          continue;
+        }
         return parent;
       }
     }
