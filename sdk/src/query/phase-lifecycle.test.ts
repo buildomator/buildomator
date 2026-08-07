@@ -1353,6 +1353,49 @@ describe('phaseComplete', () => {
     expect(state).toMatch(/Status:\s*Milestone complete/);
   });
 
+  it('treats a trailing 999.x backlog heading as not-a-next-phase', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = `${ROADMAP_FOR_COMPLETE}\n### Phase 999.1: Backlog parking lot\n\n**Goal:** Parked ideas\n`;
+    await setupTestProject(tmpDir, {
+      roadmap,
+      state: STATE_FOR_COMPLETE,
+      phases: ['09-foundation', '10-read-only-queries', '11-final-phase'],
+    });
+    const p11Dir = join(tmpDir, '.planning', 'phases', '11-final-phase');
+    await writeFile(join(p11Dir, '11-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p11Dir, '11-01-SUMMARY.md'), 'summary', 'utf-8');
+    await writeFile(join(tmpDir, '.planning', 'REQUIREMENTS.md'), REQUIREMENTS_FOR_COMPLETE, 'utf-8');
+
+    const result = await phaseComplete(['11'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data.is_last_phase).toBe(true);
+    expect(data.next_phase).toBeNull();
+  });
+
+  it('treats a trailing 999.x backlog checkbox as not-a-next-phase', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = ROADMAP_FOR_COMPLETE.replace(
+      '- [ ] Phase 11: Final Phase',
+      '- [ ] Phase 11: Final Phase\n- [ ] **Phase 999.1: Backlog parking lot**'
+    );
+    await setupTestProject(tmpDir, {
+      roadmap,
+      state: STATE_FOR_COMPLETE,
+      phases: ['09-foundation', '10-read-only-queries', '11-final-phase'],
+    });
+    const p11Dir = join(tmpDir, '.planning', 'phases', '11-final-phase');
+    await writeFile(join(p11Dir, '11-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p11Dir, '11-01-SUMMARY.md'), 'summary', 'utf-8');
+    await writeFile(join(tmpDir, '.planning', 'REQUIREMENTS.md'), REQUIREMENTS_FOR_COMPLETE, 'utf-8');
+
+    const result = await phaseComplete(['11'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data.is_last_phase).toBe(true);
+    expect(data.next_phase).toBeNull();
+  });
+
   it('collects UAT/VERIFICATION warnings without blocking', async () => {
     const { phaseComplete } = await import('./phase-lifecycle.js');
     await setupTestProject(tmpDir, {
