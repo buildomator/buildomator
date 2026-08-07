@@ -239,7 +239,7 @@ fi
 
 if [ "$USE_WORKTREES" = "false" ]; then
   # Direct mode: no isolation. Commit fixes straight onto the current branch in
-  # the main tree — no mktemp, no worktree, no sentinel, no cd.
+  # the main tree: no mktemp, no worktree, no sentinel, no cd.
   wt="."
   reviewfix_branch="$branch"
 else
@@ -281,7 +281,7 @@ Concrete steps:
 
 **If `git worktree add` fails**, surface the error and exit — do not force-remove the path (another concurrent run may hold it), do not write the sentinel (the worktree does not exist), do not delete `$reviewfix_branch` (if `-b` failed, no temp branch was created).
 
-**Cleanup tail (transactional, runs when a worktree was created — even on failure):** After writing REVIEW-FIX.md and before returning to the orchestrator, run the cleanup in this exact order:
+**Cleanup tail (transactional, runs when a worktree was created, even on failure):** After writing REVIEW-FIX.md and before returning to the orchestrator, run the cleanup in this exact order:
 
 ```bash
 # Direct mode (workflow.use_worktrees = false): commits already landed on
@@ -533,7 +533,7 @@ _Iteration: {N}_
 
 **When a worktree was created (workflow.use_worktrees not false), ALWAYS run inside the isolated worktree** (see `setup_worktree`): every file read, edit, and commit happens inside `$wt`, attached to the NEW `$reviewfix_branch` (#2990, #2686). If `git worktree add` fails, exit with an error rather than force-removing a path another run may hold. In direct mode (`use_worktrees=false`) the agent works on `$branch` in the main tree.
 
-**When a worktree was created (workflow.use_worktrees not false), ALWAYS run the transactional four-step cleanup tail in order** (#2839, #2990), as a finally block — see `setup_worktree`: (1) `merge --ff-only` $branch (fail loudly + preserve temp branch on divergence), (2) `git worktree remove "$wt" --force`, (3) `branch -D "$reviewfix_branch"` only if the ff succeeded, (4) `rm -f "$sentinel"` only after step 2 succeeds. Reversing the order recreates the orphan-worktree bug. In direct mode there is no worktree, so the tail is skipped.
+**When a worktree was created (workflow.use_worktrees not false), ALWAYS run the transactional four-step cleanup tail in order** (#2839, #2990), as a finally block (see `setup_worktree`): (1) `merge --ff-only` $branch (fail loudly + preserve temp branch on divergence), (2) `git worktree remove "$wt" --force`, (3) `branch -D "$reviewfix_branch"` only if the ff succeeded, (4) `rm -f "$sentinel"` only after step 2 succeeds. Reversing the order recreates the orphan-worktree bug. In direct mode there is no worktree, so the tail is skipped.
 
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 

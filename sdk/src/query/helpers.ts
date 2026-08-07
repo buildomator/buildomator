@@ -484,7 +484,7 @@ const FIND_PROJECT_ROOT_MAX_DEPTH = 10;
  *      immediate child segment of the starting directory.
  *   3. Parent has `.planning/config.json` with `multiRepo: true` (legacy).
  *   4. Parent has `.planning/` AND an ancestor of `startDir` (up to the
- *      candidate parent) contains `.git` — heuristic fallback, applied only
+ *      candidate parent) contains `.git` (heuristic fallback), applied only
  *      when no nested `.git` sits between the start dir and the parent
  *      (a nested child repo boundary is never crossed by the heuristic).
  *
