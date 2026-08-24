@@ -1929,14 +1929,25 @@ function getMilestonePhaseFilter(cwd, versionOverride) {
   const normalized = new Set(
     [...milestonePhaseNums].map(n => (n.replace(/^0+(?=\d)/, '') || '0').toLowerCase())
   );
+  // Longest-first so a declared hyphenated id (`proj-42`) is tested before its
+  // own prefix (`proj`) when scanning for a segment-boundary match below.
+  const normalizedIdsLongestFirst = [...normalized].sort((a, b) => b.length - a.length);
 
   function isDirInMilestone(dirName) {
     // Try numeric match first
     const m = dirName.match(/^0*(\d+[A-Za-z]?(?:\.\d+)*)/);
     if (m && normalized.has(m[1].toLowerCase())) return true;
-    // Try custom ID match (e.g. PROJ-42-description → PROJ-42)
-    const customMatch = dirName.match(/^([A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*)/);
-    if (customMatch && normalized.has(customMatch[1].toLowerCase())) return true;
+    // Letter-leading directory (`A-tool-output-contract`, `PROJ-42-desc`): a
+    // milestone id owns the dir when the id equals the whole lowercased name or
+    // is a hyphen-delimited leading segment of it. Scoped to letter-leading
+    // names so numeric continuation dirs (`14-02-photos`) stay owned by the
+    // numeric grammar above.
+    if (/^[A-Za-z]/.test(dirName)) {
+      const lowerDir = dirName.toLowerCase();
+      for (const id of normalizedIdsLongestFirst) {
+        if (lowerDir === id || lowerDir.startsWith(id + '-')) return true;
+      }
+    }
     // #3600: project-code-prefixed directory (`CK-01-name`) against a
     // numeric ROADMAP heading (`### Phase 1:`). Strip the same prefix
     // shape `normalizePhaseName` recognises (`^[A-Z]{1,6}-(?=\d)`) and

@@ -643,7 +643,7 @@ export const roadmapAnalyze: QueryHandler = async (_args, projectDir, workstream
   const phasesDir = planningPaths(projectDir, workstream).phases;
 
   // IMPORTANT: Create regex INSIDE the function to avoid /g lastIndex persistence
-  const phasePattern = /#{2,4}\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
+  const phasePattern = /#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
   const phases: Array<Record<string, unknown>> = [];
   let match: RegExpExecArray | null;
 
@@ -657,7 +657,7 @@ export const roadmapAnalyze: QueryHandler = async (_args, projectDir, workstream
     // Extract goal from the section
     const sectionStart = match.index;
     const restOfContent = content.slice(sectionStart);
-    const nextHeader = restOfContent.match(/\n#{2,4}\s+Phase\s+\d/i);
+    const nextHeader = restOfContent.match(/\n#{2,4}\s+Phase\s+[A-Za-z]?\d/i);
     const sectionEnd = nextHeader ? sectionStart + nextHeader.index! : content.length;
     const section = content.slice(sectionStart, sectionEnd);
 
@@ -745,7 +745,7 @@ export const roadmapAnalyze: QueryHandler = async (_args, projectDir, workstream
   const completedPhases = phases.filter(p => p.disk_status === 'complete').length;
 
   // Detect phases in summary list without detail sections (malformed ROADMAP)
-  const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+(\d+[A-Z]?(?:\.\d+)*)/gi;
+  const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gi;
   const checklistPhases = new Set<string>();
   let checklistMatch: RegExpExecArray | null;
   while ((checklistMatch = checklistPattern.exec(content)) !== null) {

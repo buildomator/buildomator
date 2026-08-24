@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 // Will be imported once implemented
-import { stateJson, stateGet, stateSnapshot } from './state.js';
+import { stateJson, stateGet, stateSnapshot, getMilestonePhaseFilter } from './state.js';
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────
 
@@ -612,5 +612,46 @@ describe('stateSnapshot — CR #3275 fmScalar non-string scalar coercion', () =>
     expect(data.total_plans_in_phase).toBe(5);
 
     await rm(localDir, { recursive: true, force: true });
+  });
+});
+
+// ─── getMilestonePhaseFilter: letter-named membership ────────────────────────
+
+describe('getMilestonePhaseFilter letter-named phase membership', () => {
+  async function makeProject(roadmap: string): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), 'gsd-letter-'));
+    await mkdir(join(dir, '.planning'), { recursive: true });
+    await writeFile(join(dir, '.planning', 'ROADMAP.md'), roadmap);
+    return dir;
+  }
+
+  it('counts a letter-named dir and a numeric dir in a mixed milestone', async () => {
+    const dir = await makeProject('# Roadmap\n\n## Current Milestone\n\n### Phase A: Tool Output Contract\n### Phase 01: Inventory\n');
+    const filter = await getMilestonePhaseFilter(dir);
+    expect(filter.phaseCount).toBe(2);
+    expect(filter('A-tool-output-contract')).toBe(true);
+    expect(filter('01-inventory')).toBe(true);
+    expect(filter('B-evidence-artifact-contract')).toBe(false);
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('counts all 12 letter phases A..L and excludes an undeclared M', async () => {
+    const letters = 'ABCDEFGHIJKL'.split('');
+    const roadmap = '# Roadmap\n\n## Current Milestone\n\n' +
+      letters.map((l, i) => `### Phase ${l}: Work ${i + 1}`).join('\n') + '\n';
+    const dir = await makeProject(roadmap);
+    const filter = await getMilestonePhaseFilter(dir);
+    expect(filter.phaseCount).toBe(12);
+    for (const l of letters) expect(filter(`${l}-work-item`)).toBe(true);
+    expect(filter('M-extra')).toBe(false);
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('matches a hyphenated declared id PROJ-42 via the segment rule', async () => {
+    const dir = await makeProject('# Roadmap\n\n## Current Milestone\n\n### Phase PROJ-42: Widget\n');
+    const filter = await getMilestonePhaseFilter(dir);
+    expect(filter('PROJ-42-description')).toBe(true);
+    expect(filter('PROJ-99-other')).toBe(false);
+    await rm(dir, { recursive: true, force: true });
   });
 });
