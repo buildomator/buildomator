@@ -1,7 +1,6 @@
 ---
 name: version
 description: Print the installed GSD plugin version and check online for updates
-effort: low
 allowed-tools:
   - Bash
 ---

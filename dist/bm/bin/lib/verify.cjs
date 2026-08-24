@@ -12,6 +12,17 @@ const { extractFrontmatter, parseMustHavesBlock } = require('./frontmatter.cjs')
 const { writeStateMd } = require('./state.cjs');
 const { summaryFileIsComplete, resolveSummaryPath } = require('./plan-scan.cjs');
 
+// Sentinel phases (0 drafts, 999 backlog) are never-on-roadmap by convention,
+// so both "missing dir" and "missing roadmap entry" warnings are wrong for
+// them, and they are never part of sequential numbering. Matches the parsed
+// leading integer: 0 or 999. Letter-led ids are never sentinels.
+function isSentinelPhaseId(p) {
+  const match = String(p).match(/^0*(\d+)/);
+  if (!match) return false;
+  const major = parseInt(match[1], 10);
+  return major === 0 || major === 999;
+}
+
 function cmdVerifySummary(cwd, summaryPath, checkFileCount, raw) {
   if (!summaryPath) {
     error('summary-path required');
@@ -509,6 +520,7 @@ function cmdValidateConsistency(cwd, raw) {
 
   // Check: phases in ROADMAP but not on disk
   for (const p of roadmapPhases) {
+    if (isSentinelPhaseId(p)) continue;
     if (!diskPhases.has(p) && !diskPhases.has(normalizePhaseName(p))) {
       warnings.push(`Phase ${p} in ROADMAP.md but no directory on disk`);
     }
@@ -516,6 +528,7 @@ function cmdValidateConsistency(cwd, raw) {
 
   // Check: phases on disk but not in ROADMAP
   for (const p of diskPhases) {
+    if (isSentinelPhaseId(p)) continue;
     const unpadded = String(parseInt(p, 10));
     if (!roadmapPhases.has(p) && !roadmapPhases.has(unpadded)) {
       warnings.push(`Phase ${p} exists on disk but not in ROADMAP.md`);
@@ -526,7 +539,7 @@ function cmdValidateConsistency(cwd, raw) {
   const config = loadConfig(cwd);
   if (config.phase_naming !== 'custom') {
     const integerPhases = [...diskPhases]
-      .filter(p => !p.includes('.'))
+      .filter(p => !p.includes('.') && !isSentinelPhaseId(p))
       .map(p => parseInt(p, 10))
       .sort((a, b) => a - b);
 
@@ -848,6 +861,7 @@ function cmdValidateHealth(cwd, options, raw) {
 
     // Phases in ROADMAP but not on disk
     for (const p of roadmapPhases) {
+      if (isSentinelPhaseId(p)) continue;
       const padded = String(parseInt(p, 10)).padStart(2, '0');
       if (!diskPhases.has(p) && !diskPhases.has(padded)) {
         // Skip phases explicitly flagged as not-yet-started in the summary list
@@ -858,6 +872,7 @@ function cmdValidateHealth(cwd, options, raw) {
 
     // Phases on disk but not in ROADMAP
     for (const p of diskPhases) {
+      if (isSentinelPhaseId(p)) continue;
       const unpadded = String(parseInt(p, 10));
       if (!roadmapPhases.has(p) && !roadmapPhases.has(unpadded)) {
         addIssue('warning', 'W007', `Phase ${p} exists on disk but not in ROADMAP.md`, 'Add to roadmap or remove directory');

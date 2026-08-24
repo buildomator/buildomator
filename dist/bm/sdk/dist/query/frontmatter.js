@@ -181,6 +181,12 @@ function parseFrontmatterYamlLines(yaml) {
  * `extractFrontmatter` (used by `summary-extract` and `history-digest` in gsd-tools.cjs).
  */
 export function extractFrontmatterLeading(content) {
+    // Strip a single leading UTF-8 BOM (U+FEFF). Windows tooling such as
+    // PowerShell Out-File writes one by default; without the strip the byte-0
+    // fence match fails and the parse collapses to an empty object, silently
+    // dropping every frontmatter field.
+    if (content.charCodeAt(0) === 0xFEFF)
+        content = content.slice(1);
     const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
     if (!match)
         return {};

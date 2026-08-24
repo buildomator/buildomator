@@ -204,7 +204,7 @@ function cmdRoadmapAnalyze(cwd, raw) {
   const phasesDir = planningPaths(cwd).phases;
 
   // Extract all phase headings: ## Phase N: Name or ### Phase N: Name
-  const phasePattern = /#{2,4}\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
+  const phasePattern = /#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
   const phases = [];
   let match;
 
@@ -227,7 +227,7 @@ function cmdRoadmapAnalyze(cwd, raw) {
     // Extract goal from the section
     const sectionStart = match.index;
     const restOfContent = content.slice(sectionStart);
-    const nextHeader = restOfContent.match(/\n#{2,4}\s+Phase\s+\d/i);
+    const nextHeader = restOfContent.match(/\n#{2,4}\s+Phase\s+[A-Za-z]?\d/i);
     const sectionEnd = nextHeader ? sectionStart + nextHeader.index : content.length;
     const section = content.slice(sectionStart, sectionEnd);
 
@@ -321,7 +321,7 @@ function cmdRoadmapAnalyze(cwd, raw) {
   const completedPhases = phases.filter(p => p.disk_status === 'complete').length;
 
   // Detect phases in summary list without detail sections (malformed ROADMAP)
-  const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+(\d+[A-Z]?(?:\.\d+)*)/gi;
+  const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gi;
   const checklistPhases = new Set();
   let checklistMatch;
   while ((checklistMatch = checklistPattern.exec(content)) !== null) {

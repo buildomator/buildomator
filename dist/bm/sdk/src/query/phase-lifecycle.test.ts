@@ -339,6 +339,64 @@ describe('phaseAdd', () => {
     expect(data.phase_number).toBe(11);
   });
 
+  it('inserts inside the active milestone, before the shipped-archive heading', async () => {
+    const { phaseAdd } = await import('./phase-lifecycle.js');
+    const roadmap = `# Roadmap
+
+## v1.0: Active Milestone
+
+### Phase 1: First
+
+**Goal:** a
+
+### Phase 2: Second
+
+**Goal:** b
+
+---
+
+## v0.9: Shipped Archive
+
+### Phase 0: Old
+
+done
+
+---
+`;
+    const state = `---\ngsd_state_version: 1.0\nmilestone: v1.0\n---\n\n# Project State\n`;
+    await setupTestProject(tmpDir, { roadmap, state });
+
+    await phaseAdd(['New Feature'], tmpDir);
+    const out = await readFile(join(tmpDir, '.planning', 'ROADMAP.md'), 'utf-8');
+    const idxNew = out.indexOf('### Phase 3: New Feature');
+    const idxPhase2 = out.indexOf('### Phase 2: Second');
+    const idxArchive = out.indexOf('## v0.9: Shipped Archive');
+    expect(idxNew).toBeGreaterThan(-1);
+    expect(idxNew).toBeGreaterThan(idxPhase2);
+    expect(idxNew).toBeLessThan(idxArchive);
+  });
+
+  it('keeps legacy insertion before the trailing separator when no milestone resolves', async () => {
+    const { phaseAdd } = await import('./phase-lifecycle.js');
+    const roadmap = `# Roadmap
+
+### Phase 1: Only
+
+**Goal:** a
+
+---
+`;
+    const state = `---\ngsd_state_version: 1.0\n---\n\n# Project State\n`;
+    await setupTestProject(tmpDir, { roadmap, state });
+
+    await phaseAdd(['Second Thing'], tmpDir);
+    const out = await readFile(join(tmpDir, '.planning', 'ROADMAP.md'), 'utf-8');
+    const idxNew = out.indexOf('### Phase 2: Second Thing');
+    const idxLastSep = out.lastIndexOf('\n---');
+    expect(idxNew).toBeGreaterThan(-1);
+    expect(idxNew).toBeLessThan(idxLastSep);
+  });
+
   it('throws GSDError with Validation for empty description', async () => {
     const { phaseAdd } = await import('./phase-lifecycle.js');
     await setupTestProject(tmpDir);
@@ -1764,6 +1822,39 @@ describe('readModifyWriteRoadmapMd — CR-3267 finding 4: non-ENOENT errors prop
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
+  });
+});
+
+// ─── extractOneLinerFromBody: summary-shaped-heading anchor ────────────────
+
+describe('extractOneLinerFromBody (policy copy)', () => {
+  it('skips a leading non-summary heading and reads the labeled Summary heading', async () => {
+    const { extractOneLinerFromBody } = await import('./phase-lifecycle-policy.js');
+    const doc = '## Deviation rules\n\n**Some rule bold run**\n\n# Phase 4: Foo Summary\n\n**One-liner:** real prose here.\n';
+    expect(extractOneLinerFromBody(doc)).toBe('real prose here.');
+  });
+
+  it('bare-bold form under a Summary heading returns the bold text', async () => {
+    const { extractOneLinerFromBody } = await import('./phase-lifecycle-policy.js');
+    expect(extractOneLinerFromBody('# Phase 4: Foo Summary\n\n**JWT auth with refresh rotation.**\n'))
+      .toBe('JWT auth with refresh rotation.');
+  });
+
+  it('no summary-shaped heading returns null', async () => {
+    const { extractOneLinerFromBody } = await import('./phase-lifecycle-policy.js');
+    expect(extractOneLinerFromBody('## Deviation rules\n\n**Some rule bold run**\n\n## Notes\n\n**Another bold run**\n'))
+      .toBe(null);
+  });
+
+  it('labeled form with empty prose under Summary returns null', async () => {
+    const { extractOneLinerFromBody } = await import('./phase-lifecycle-policy.js');
+    expect(extractOneLinerFromBody('# Phase 4: Foo Summary\n\n**One-liner:**\n')).toBe(null);
+  });
+
+  it('happy path: summary heading first is unchanged', async () => {
+    const { extractOneLinerFromBody } = await import('./phase-lifecycle-policy.js');
+    expect(extractOneLinerFromBody('# Overview\n\n**A substantive one-liner.**\n'))
+      .toBe('A substantive one-liner.');
   });
 });
 

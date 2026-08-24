@@ -333,6 +333,37 @@ describe('validateConsistency', () => {
     expect((data.warnings as string[]).length).toBe(0);
   });
 
+  it('does not warn for sentinel phases (0 / 999) on disk or in the roadmap', async () => {
+    await createPlanning({
+      roadmap: '# Roadmap\n\n## Phase 1: Real\n\n## Phase 999.1: Backlog\n',
+      phases: [
+        { dir: '01-real' },
+        { dir: '999-backlog' },
+        { dir: '999.1-icebox' },
+        { dir: '0-drafts' },
+      ],
+      config: { phase_naming: 'sequential' },
+    });
+    const result = await validateConsistency([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    for (const w of data.warnings as string[]) {
+      expect(w).not.toContain('999');
+      expect(w).not.toMatch(/Phase 0\b/);
+      expect(w).not.toMatch(/Gap in phase numbering.*999/);
+    }
+  });
+
+  it('still warns for a genuinely unknown non-sentinel dir (7-stray)', async () => {
+    await createPlanning({
+      roadmap: '# Roadmap\n\n## Phase 1: Real\n',
+      phases: [{ dir: '01-real' }, { dir: '7-stray' }],
+      config: { phase_naming: 'sequential' },
+    });
+    const result = await validateConsistency([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect((data.warnings as string[]).some(w => /Phase 0*7 exists on disk but not in ROADMAP/.test(w))).toBe(true);
+  });
+
   it('warns when phase in ROADMAP but not on disk', async () => {
     await createPlanning({
       roadmap: '# Roadmap\n\n## Phase 1: Foundation\n\n## Phase 2: Features\n\n## Phase 3: Polish\n',

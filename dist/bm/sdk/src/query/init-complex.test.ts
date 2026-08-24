@@ -213,6 +213,44 @@ describe('initProgress', () => {
     expect(typeof data.config_path).toBe('string');
   });
 
+  async function makeFrontierProject(): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), 'gsd-frontier-'));
+    await mkdir(join(dir, '.planning', 'phases'), { recursive: true });
+    await writeFile(join(dir, '.planning', 'ROADMAP.md'),
+      '# Roadmap\n\n## v1.0: Active Milestone\n\n### Phase 8: Eighth\n\n**Goal:** eighth\n\n### Phase 9: Ninth\n\n**Goal:** ninth\n', 'utf-8');
+    await writeFile(join(dir, '.planning', 'STATE.md'), '---\nmilestone: v1.0\nstatus: executing\n---\n', 'utf-8');
+    await writeFile(join(dir, '.planning', 'config.json'), JSON.stringify({ model_profile: 'balanced', commit_docs: false }), 'utf-8');
+    return dir;
+  }
+
+  it('B-1: a stray phase-9 artifact dir does not skip pending roadmap phase 8', async () => {
+    const dir = await makeFrontierProject();
+    const p9 = join(dir, '.planning', 'phases', '09-thing');
+    await mkdir(p9, { recursive: true });
+    await writeFile(join(p9, '09-01-UAT.md'), 'evidence', 'utf-8');
+    const result = await initProgress([], dir);
+    const data = result.data as Record<string, unknown>;
+    const next = data.next_phase as Record<string, unknown> | null;
+    expect(next).toBeTruthy();
+    expect(parseInt(String(next!.number), 10)).toBe(8);
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('B-2: aligned tree returns the pending phase as next_phase', async () => {
+    const dir = await makeFrontierProject();
+    for (const d of ['08-eighth', '09-ninth']) {
+      const pd = join(dir, '.planning', 'phases', d);
+      await mkdir(pd, { recursive: true });
+      await writeFile(join(pd, '.gitkeep'), '', 'utf-8');
+    }
+    const result = await initProgress([], dir);
+    const data = result.data as Record<string, unknown>;
+    const next = data.next_phase as Record<string, unknown> | null;
+    expect(next).toBeTruthy();
+    expect(parseInt(String(next!.number), 10)).toBe(8);
+    await rm(dir, { recursive: true, force: true });
+  });
+
   it('reports Codex runtime override models when resolve_model_ids is omit (#3358)', async () => {
     await writeFile(join(tmpDir, '.planning', 'config.json'), JSON.stringify({
       model_profile: 'balanced',

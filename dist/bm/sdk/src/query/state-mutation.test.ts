@@ -158,6 +158,50 @@ describe('stateReplaceField', () => {
   });
 });
 
+// ─── stateUpdateProgress: zero-plan no-op ────────────────────────────────────
+
+describe('stateUpdateProgress zero-plan no-op', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'gsd-updprog-'));
+    await mkdir(join(tmpDir, '.planning', 'phases'), { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  async function writeState(progressLine: string): Promise<void> {
+    await writeFile(join(tmpDir, '.planning', 'STATE.md'),
+      `---\ngsd_state_version: 1.0\nmilestone: v1.0\n---\n\n# Project State\n\n## Current Position\n\nProgress: ${progressLine}\n`, 'utf-8');
+  }
+
+  it('A-1: leaves a shipped 100% Progress line unchanged when zero plans exist', async () => {
+    const { stateUpdateProgress } = await import('./state-mutation.js');
+    await writeState('[██████████] 100%');
+    const before = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    const result = await stateUpdateProgress([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(data.updated).toBe(false);
+    const after = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    expect(after).toBe(before);
+  });
+
+  it('A-2: rewrites Progress to 50% with 2 plans and 1 paired summary', async () => {
+    const { stateUpdateProgress } = await import('./state-mutation.js');
+    await writeState('[░░░░░░░░░░] 0%');
+    const pd = join(tmpDir, '.planning', 'phases', '01-x');
+    await mkdir(pd, { recursive: true });
+    await writeFile(join(pd, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(pd, '01-02-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(pd, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+    await stateUpdateProgress([], tmpDir);
+    const after = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    expect(after).toMatch(/Progress:.*\b50%/);
+  });
+});
+
 // ─── acquireStateLock / releaseStateLock ─────────────────────────────────────
 
 describe('acquireStateLock / releaseStateLock', () => {

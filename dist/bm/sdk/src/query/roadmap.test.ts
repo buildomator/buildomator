@@ -1003,6 +1003,25 @@ describe('roadmapAnalyze', () => {
     expect(data.error).toBe('ROADMAP.md not found');
   });
 
+  it('accepts a letter-prefixed heading id like B7', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'),
+      '# Roadmap\n\n## Current Milestone\n\n### Phase B7: Widget\n\n**Goal:** Build the widget\n');
+    const result = await roadmapAnalyze([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(data.phase_count as number).toBeGreaterThanOrEqual(1);
+    const ids = (data.phases as Array<Record<string, unknown>>).map(p => String(p.number));
+    expect(ids).toContain('B7');
+  });
+
+  it('leaves numeric-only roadmap analyze unchanged', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'),
+      '# Roadmap\n\n## Current Milestone\n\n### Phase 1: First\n\n**Goal:** a\n\n### Phase 2: Second\n\n**Goal:** b\n');
+    const result = await roadmapAnalyze([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    const ids = (data.phases as Array<Record<string, unknown>>).map(p => String(p.number)).sort();
+    expect(ids).toEqual(['1', '2']);
+  });
+
   it('overrides disk_status to complete when roadmap checkbox is checked', async () => {
     await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), ROADMAP_CONTENT);
     await writeFile(join(tmpDir, '.planning', 'STATE.md'), STATE_WITH_MILESTONE);

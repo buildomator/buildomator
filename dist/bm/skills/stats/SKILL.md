@@ -1,7 +1,6 @@
 ---
 name: stats
 description: Display project statistics — phases, plans, requirements, git metrics, and timeline
-effort: low
 allowed-tools:
   - Read
   - Bash

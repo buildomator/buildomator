@@ -59,6 +59,33 @@ describe('summaryExtract', () => {
     expect(Array.isArray(data.decisions)).toBe(true);
   });
 
+  it('reads the one-liner only from a summary-shaped heading, skipping a leading rule heading', async () => {
+    const rel = '.planning/phases/01-x/01-SUMMARY.md';
+    await writeFile(
+      join(tmpDir, '.planning', 'phases', '01-x', '01-SUMMARY.md'),
+      ['---', 'phase: "01"', '---', '',
+        '## Deviation rules', '', '**Some rule bold run**', '',
+        '# Phase 1: X Summary', '', '**One-liner:** real prose here.', ''].join('\n'),
+      'utf-8',
+    );
+    const r = await summaryExtract([rel], tmpDir);
+    const data = r.data as Record<string, unknown>;
+    expect(data.one_liner).toBe('real prose here.');
+  });
+
+  it('returns null one-liner when no summary-shaped heading exists', async () => {
+    const rel = '.planning/phases/01-x/01-SUMMARY.md';
+    await writeFile(
+      join(tmpDir, '.planning', 'phases', '01-x', '01-SUMMARY.md'),
+      ['---', 'phase: "01"', '---', '',
+        '## Deviation rules', '', '**Some rule bold run**', ''].join('\n'),
+      'utf-8',
+    );
+    const r = await summaryExtract([rel], tmpDir);
+    const data = r.data as Record<string, unknown>;
+    expect(data.one_liner).toBe(null);
+  });
+
   it('filters with --fields', async () => {
     const rel = '.planning/phases/01-x/01-SUMMARY.md';
     await writeFile(

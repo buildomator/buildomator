@@ -1066,8 +1066,13 @@ function stripShippedMilestones(content) {
  * @param {string} [cwd] - Working directory for reading STATE.md
  * @returns {string} Content scoped to current milestone
  */
-function extractCurrentMilestone(content, cwd) {
-  if (!cwd) return stripShippedMilestones(content);
+// Resolve the current milestone's PRIMARY section window in raw ROADMAP content.
+// Shares the version-resolution + section-locating steps between
+// extractCurrentMilestone and currentMilestoneSectionRange so both stay in
+// lockstep. Returns the section bounds plus the internal pieces the extractor
+// needs, or null when no version resolves or the heading is not found.
+function resolveMilestoneSection(content, cwd) {
+  if (!cwd) return null;
 
   // 1. Get current milestone version from STATE.md frontmatter
   let version = null;
@@ -1091,7 +1096,7 @@ function extractCurrentMilestone(content, cwd) {
     }
   }
 
-  if (!version) return stripShippedMilestones(content);
+  if (!version) return null;
 
   // 3. Find the section matching this version
   // Match headings like: ## Roadmap v3.0: Name, ## v3.0 Name, etc.
@@ -1102,7 +1107,7 @@ function extractCurrentMilestone(content, cwd) {
   );
   const sectionMatch = content.match(sectionPattern);
 
-  if (!sectionMatch) return stripShippedMilestones(content);
+  if (!sectionMatch) return null;
 
   const sectionStart = sectionMatch.index;
 
@@ -1146,6 +1151,47 @@ function extractCurrentMilestone(content, cwd) {
   };
 
   const sectionEnd = computeSectionEnd(sectionMatch[0], sectionStart);
+
+  return { sectionStart, sectionEnd, sectionMatch, computeSectionEnd, escapedVersion };
+}
+
+/**
+ * Return the raw-content bounds of the current milestone's primary section as
+ * { start, end }, or null when no milestone resolves. Used to scope write
+ * insertions (a new `### Phase N:` entry) to the active milestone rather than
+ * the whole file.
+ */
+function currentMilestoneSectionRange(content, cwd) {
+  const r = resolveMilestoneSection(content, cwd);
+  return r ? { start: r.sectionStart, end: r.sectionEnd } : null;
+}
+
+/**
+ * Offset in rawContent at which a new phase entry should be inserted. When the
+ * current milestone resolves, insert before the last `\n---` inside that
+ * milestone's window (or at its end when the window has no separator) so the
+ * entry never lands under a trailing shipped-archive block. When no milestone
+ * resolves, keep the legacy whole-file behavior: before the file's last
+ * `\n---`, or at end-of-file when there is none.
+ */
+function phaseEntryInsertOffset(rawContent, cwd) {
+  const range = currentMilestoneSectionRange(rawContent, cwd);
+  if (!range) {
+    const idx = rawContent.lastIndexOf('\n---');
+    return idx > 0 ? idx : rawContent.length;
+  }
+  const window = rawContent.slice(range.start, range.end);
+  const lastSeparator = window.lastIndexOf('\n---');
+  return lastSeparator > 0 ? range.start + lastSeparator : range.end;
+}
+
+function extractCurrentMilestone(content, cwd) {
+  if (!cwd) return stripShippedMilestones(content);
+
+  const resolved = resolveMilestoneSection(content, cwd);
+  if (!resolved) return stripShippedMilestones(content);
+
+  const { sectionStart, sectionEnd, sectionMatch, computeSectionEnd, escapedVersion } = resolved;
 
   // #730 (upstream edd3c6c3): a multi-milestone ROADMAP splits each milestone
   // across a `## Phases` checklist subsection (early) and a separate
@@ -1685,24 +1731,28 @@ function extractOneLinerFromBody(content) {
   const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   // Strip frontmatter first
   const body = normalized.replace(/^---\n[\s\S]*?\n---\n*/, '');
-  // Find the first **...** span on a line after a # heading.
-  // Two supported template forms:
-  //   1) Labeled:  **One-liner:** Real prose here.   (bug #2660 — new template)
+  // Only extract from a summary-shaped heading (its text mentions summary,
+  // overview, or accomplishments). A rule-list or deviation-note heading at the
+  // top of a SUMMARY must never leak its bold run into the one-liner. Two
+  // template forms are supported under such a heading:
+  //   1) Labeled:  **One-liner:** Real prose here.   (new template)
   //   2) Bare:     **Real prose here.**              (legacy template)
-  // For (1), the first bold span ends in a colon and the prose that follows
-  // on the same line is the one-liner. For (2), the bold span itself is the
-  // one-liner.
-  const match = body.match(/^#[^\n]*\n+\*\*([^*\n]+)\*\*([^\n]*)/m);
-  if (!match) return null;
-  const boldInner = match[1].trim();
-  const afterBold = match[2];
-  // Labeled form: bold span is a "Label:" prefix — capture prose after it.
-  if (/:\s*$/.test(boldInner)) {
-    const prose = afterBold.trim();
-    return prose.length > 0 ? prose : null;
+  // For (1) the bold span ends in a colon and the prose after it on the same
+  // line is the one-liner; for (2) the bold span itself is the one-liner.
+  const headingBold = /^#+\s*([^\n]*)\n+\*\*([^*\n]+)\*\*([^\n]*)/gm;
+  let match;
+  while ((match = headingBold.exec(body)) !== null) {
+    if (!/summary|overview|accomplish/i.test(match[1])) continue;
+    const boldInner = match[2].trim();
+    const afterBold = match[3];
+    if (/:\s*$/.test(boldInner)) {
+      const prose = afterBold.trim();
+      if (prose.length > 0) return prose;
+      continue; // labeled heading with empty prose, try the next summary heading
+    }
+    if (boldInner.length > 0) return boldInner;
   }
-  // Bare form: the bold content itself is the one-liner.
-  return boldInner.length > 0 ? boldInner : null;
+  return null;
 }
 
 // ─── Misc utilities ───────────────────────────────────────────────────────────
@@ -1929,14 +1979,25 @@ function getMilestonePhaseFilter(cwd, versionOverride) {
   const normalized = new Set(
     [...milestonePhaseNums].map(n => (n.replace(/^0+(?=\d)/, '') || '0').toLowerCase())
   );
+  // Longest-first so a declared hyphenated id (`proj-42`) is tested before its
+  // own prefix (`proj`) when scanning for a segment-boundary match below.
+  const normalizedIdsLongestFirst = [...normalized].sort((a, b) => b.length - a.length);
 
   function isDirInMilestone(dirName) {
     // Try numeric match first
     const m = dirName.match(/^0*(\d+[A-Za-z]?(?:\.\d+)*)/);
     if (m && normalized.has(m[1].toLowerCase())) return true;
-    // Try custom ID match (e.g. PROJ-42-description → PROJ-42)
-    const customMatch = dirName.match(/^([A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*)/);
-    if (customMatch && normalized.has(customMatch[1].toLowerCase())) return true;
+    // Letter-leading directory (`A-tool-output-contract`, `PROJ-42-desc`): a
+    // milestone id owns the dir when the id equals the whole lowercased name or
+    // is a hyphen-delimited leading segment of it. Scoped to letter-leading
+    // names so numeric continuation dirs (`14-02-photos`) stay owned by the
+    // numeric grammar above.
+    if (/^[A-Za-z]/.test(dirName)) {
+      const lowerDir = dirName.toLowerCase();
+      for (const id of normalizedIdsLongestFirst) {
+        if (lowerDir === id || lowerDir.startsWith(id + '-')) return true;
+      }
+    }
     // #3600: project-code-prefixed directory (`CK-01-name`) against a
     // numeric ROADMAP heading (`### Phase 1:`). Strip the same prefix
     // shape `normalizePhaseName` recognises (`^[A-Z]{1,6}-(?=\d)`) and
@@ -2113,6 +2174,8 @@ module.exports = {
   getMilestonePhaseFilter,
   stripShippedMilestones,
   extractCurrentMilestone,
+  currentMilestoneSectionRange,
+  phaseEntryInsertOffset,
   replaceInCurrentMilestone,
   toPosixPath,
   extractOneLinerFromBody,
