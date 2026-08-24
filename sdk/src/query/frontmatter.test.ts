@@ -153,6 +153,29 @@ describe('extractFrontmatterLeading', () => {
     const content = '---\na: b\n---\n';
     expect(extractFrontmatterLeading(content)).toEqual(extractFrontmatter(content));
   });
+
+  it('tolerates a single leading UTF-8 BOM before the fence', () => {
+    const body = '---\nphase: 01-x\nplan: 2\n---\nbody';
+    const bom = '﻿';
+    expect(extractFrontmatterLeading(bom + body)).toEqual(extractFrontmatterLeading(body));
+    expect(extractFrontmatter(bom + body)).toEqual(extractFrontmatter(body));
+    expect((extractFrontmatter(bom + body) as Record<string, unknown>).phase).toBe('01-x');
+  });
+
+  it('leaves BOM-less docs unchanged', () => {
+    const body = '---\nphase: 01-x\nplan: 2\n---\nbody';
+    expect((extractFrontmatterLeading(body) as Record<string, unknown>).phase).toBe('01-x');
+  });
+
+  it('returns an empty object for a leading BOM with no frontmatter', () => {
+    expect(extractFrontmatterLeading('﻿just body, no fence')).toEqual({});
+  });
+
+  it('ignores a BOM appearing later in the body', () => {
+    const body = '---\nphase: 01-x\nplan: 2\n---\nbo﻿dy';
+    const plain = '---\nphase: 01-x\nplan: 2\n---\nbody';
+    expect(extractFrontmatterLeading(body)).toEqual(extractFrontmatterLeading(plain));
+  });
 });
 
 // ─── stripFrontmatter ───────────────────────────────────────────────────────
