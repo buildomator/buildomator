@@ -145,13 +145,18 @@ export async function getMilestoneInfo(projectDir, workstream) {
  * @param projectDir - Working directory for reading STATE.md
  * @returns Content scoped to current milestone
  */
-export async function extractCurrentMilestone(content, projectDir, workstream) {
+/**
+ * Resolve the active milestone version from STATE.md frontmatter, falling back
+ * to a ROADMAP in-progress marker. Shared by extractCurrentMilestone and
+ * currentMilestoneSectionRange so both agree on which milestone is active.
+ */
+async function resolveMilestoneVersion(content, projectDir, workstream) {
     // Get version from STATE.md frontmatter.
     // Strip optional surrounding YAML quotes (e.g. `milestone: "v0.9"`) for parity
     // with parseMilestoneFromState() above and getMilestoneInfo()'s STATE.md path.
     // Without this, a quoted version yields `escapedVersion = '\\"v0\\.9\\"'`
     // which matches neither markdown headings nor <summary> text, falling
-    // through to stripShippedMilestones() — and reintroducing the same archived-
+    // through to stripShippedMilestones() and reintroducing the same archived-
     // milestone misrouting this fallback addresses.
     let version = null;
     try {
@@ -169,6 +174,60 @@ export async function extractCurrentMilestone(content, projectDir, workstream) {
             version = 'v' + inProgressMatch[1];
         }
     }
+    return version;
+}
+/**
+ * Raw-content bounds { start, end } of the active milestone's primary markdown
+ * section, or null when no version resolves or no version-bearing heading is
+ * found (including the <details>/<summary>-wrapped variant, which has no clean
+ * heading range). Scopes phase-entry insertion to the active milestone.
+ */
+export async function currentMilestoneSectionRange(content, projectDir, workstream) {
+    const version = await resolveMilestoneVersion(content, projectDir, workstream);
+    if (!version)
+        return null;
+    const escapedVersion = escapeRegex(version);
+    const sectionPattern = new RegExp(`(^#{1,3}\\s+.*${escapedVersion}(?![\\d.])[^\\n]*)`, 'mi');
+    const sectionMatch = content.match(sectionPattern);
+    if (!sectionMatch || sectionMatch.index === undefined)
+        return null;
+    const sectionStart = sectionMatch.index;
+    const headingLevelMatch = sectionMatch[1].match(/^(#{1,3})\s/);
+    const headingLevel = headingLevelMatch ? headingLevelMatch[1].length : 2;
+    const restContent = content.slice(sectionStart + sectionMatch[0].length);
+    const currentVersionMatch = version.match(/v(\d+(?:\.\d+)+)/i);
+    const currentVersionStr = currentVersionMatch ? currentVersionMatch[1] : '';
+    const nextMilestoneRegex = new RegExp(`^#{1,${headingLevel}}\\s+(?!Phase\\s+\\S)(?:.*v(\\d+(?:\\.\\d+)+)[^\\n]*|.*(?:✅|📋|🚧|🟡))`, 'gmi');
+    let sectionEnd = content.length;
+    let m;
+    while ((m = nextMilestoneRegex.exec(restContent)) !== null) {
+        const matchedVersion = m[1];
+        if (matchedVersion && currentVersionStr && matchedVersion === currentVersionStr)
+            continue;
+        sectionEnd = sectionStart + sectionMatch[0].length + m.index;
+        break;
+    }
+    return { start: sectionStart, end: sectionEnd };
+}
+/**
+ * Offset in rawContent where a new phase entry should be inserted. When the
+ * active milestone resolves, insert before the last `\n---` inside its window
+ * (or at the window end when there is none) so the entry never lands under a
+ * trailing shipped-archive block. When no milestone resolves, keep the legacy
+ * whole-file behavior: before the file's last `\n---`, or at end-of-file.
+ */
+export async function phaseEntryInsertOffset(rawContent, projectDir, workstream) {
+    const range = await currentMilestoneSectionRange(rawContent, projectDir, workstream);
+    if (!range) {
+        const idx = rawContent.lastIndexOf('\n---');
+        return idx > 0 ? idx : rawContent.length;
+    }
+    const window = rawContent.slice(range.start, range.end);
+    const lastSeparator = window.lastIndexOf('\n---');
+    return lastSeparator > 0 ? range.start + lastSeparator : range.end;
+}
+export async function extractCurrentMilestone(content, projectDir, workstream) {
+    const version = await resolveMilestoneVersion(content, projectDir, workstream);
     if (!version)
         return stripShippedMilestones(content);
     // Find section matching this version
@@ -533,7 +592,7 @@ export const roadmapAnalyze = async (_args, projectDir, workstream) => {
     const content = await extractCurrentMilestone(rawContent, projectDir, workstream);
     const phasesDir = planningPaths(projectDir, workstream).phases;
     // IMPORTANT: Create regex INSIDE the function to avoid /g lastIndex persistence
-    const phasePattern = /#{2,4}\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
+    const phasePattern = /#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
     const phases = [];
     let match;
     while ((match = phasePattern.exec(content)) !== null) {
@@ -546,7 +605,7 @@ export const roadmapAnalyze = async (_args, projectDir, workstream) => {
         // Extract goal from the section
         const sectionStart = match.index;
         const restOfContent = content.slice(sectionStart);
-        const nextHeader = restOfContent.match(/\n#{2,4}\s+Phase\s+\d/i);
+        const nextHeader = restOfContent.match(/\n#{2,4}\s+Phase\s+[A-Za-z]?\d/i);
         const sectionEnd = nextHeader ? sectionStart + nextHeader.index : content.length;
         const section = content.slice(sectionStart, sectionEnd);
         const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
@@ -628,7 +687,7 @@ export const roadmapAnalyze = async (_args, projectDir, workstream) => {
     const totalSummaries = phases.reduce((sum, p) => sum + p.summary_count, 0);
     const completedPhases = phases.filter(p => p.disk_status === 'complete').length;
     // Detect phases in summary list without detail sections (malformed ROADMAP)
-    const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+(\d+[A-Z]?(?:\.\d+)*)/gi;
+    const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gi;
     const checklistPhases = new Set();
     let checklistMatch;
     while ((checklistMatch = checklistPattern.exec(content)) !== null) {

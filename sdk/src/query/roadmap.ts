@@ -180,13 +180,18 @@ export async function getMilestoneInfo(projectDir: string, workstream?: string):
  * @param projectDir - Working directory for reading STATE.md
  * @returns Content scoped to current milestone
  */
-export async function extractCurrentMilestone(content: string, projectDir: string, workstream?: string): Promise<string> {
+/**
+ * Resolve the active milestone version from STATE.md frontmatter, falling back
+ * to a ROADMAP in-progress marker. Shared by extractCurrentMilestone and
+ * currentMilestoneSectionRange so both agree on which milestone is active.
+ */
+async function resolveMilestoneVersion(content: string, projectDir: string, workstream?: string): Promise<string | null> {
   // Get version from STATE.md frontmatter.
   // Strip optional surrounding YAML quotes (e.g. `milestone: "v0.9"`) for parity
   // with parseMilestoneFromState() above and getMilestoneInfo()'s STATE.md path.
   // Without this, a quoted version yields `escapedVersion = '\\"v0\\.9\\"'`
   // which matches neither markdown headings nor <summary> text, falling
-  // through to stripShippedMilestones() — and reintroducing the same archived-
+  // through to stripShippedMilestones() and reintroducing the same archived-
   // milestone misrouting this fallback addresses.
   let version: string | null = null;
   try {
@@ -204,6 +209,68 @@ export async function extractCurrentMilestone(content: string, projectDir: strin
       version = 'v' + inProgressMatch[1];
     }
   }
+  return version;
+}
+
+/**
+ * Raw-content bounds { start, end } of the active milestone's primary markdown
+ * section, or null when no version resolves or no version-bearing heading is
+ * found (including the <details>/<summary>-wrapped variant, which has no clean
+ * heading range). Scopes phase-entry insertion to the active milestone.
+ */
+export async function currentMilestoneSectionRange(content: string, projectDir: string, workstream?: string): Promise<{ start: number; end: number } | null> {
+  const version = await resolveMilestoneVersion(content, projectDir, workstream);
+  if (!version) return null;
+
+  const escapedVersion = escapeRegex(version);
+  const sectionPattern = new RegExp(
+    `(^#{1,3}\\s+.*${escapedVersion}(?![\\d.])[^\\n]*)`,
+    'mi'
+  );
+  const sectionMatch = content.match(sectionPattern);
+  if (!sectionMatch || sectionMatch.index === undefined) return null;
+
+  const sectionStart = sectionMatch.index;
+  const headingLevelMatch = sectionMatch[1].match(/^(#{1,3})\s/);
+  const headingLevel = headingLevelMatch ? headingLevelMatch[1].length : 2;
+  const restContent = content.slice(sectionStart + sectionMatch[0].length);
+  const currentVersionMatch = version.match(/v(\d+(?:\.\d+)+)/i);
+  const currentVersionStr = currentVersionMatch ? currentVersionMatch[1] : '';
+  const nextMilestoneRegex = new RegExp(
+    `^#{1,${headingLevel}}\\s+(?!Phase\\s+\\S)(?:.*v(\\d+(?:\\.\\d+)+)[^\\n]*|.*(?:✅|📋|🚧|🟡))`,
+    'gmi'
+  );
+  let sectionEnd = content.length;
+  let m: RegExpExecArray | null;
+  while ((m = nextMilestoneRegex.exec(restContent)) !== null) {
+    const matchedVersion = m[1];
+    if (matchedVersion && currentVersionStr && matchedVersion === currentVersionStr) continue;
+    sectionEnd = sectionStart + sectionMatch[0].length + m.index;
+    break;
+  }
+  return { start: sectionStart, end: sectionEnd };
+}
+
+/**
+ * Offset in rawContent where a new phase entry should be inserted. When the
+ * active milestone resolves, insert before the last `\n---` inside its window
+ * (or at the window end when there is none) so the entry never lands under a
+ * trailing shipped-archive block. When no milestone resolves, keep the legacy
+ * whole-file behavior: before the file's last `\n---`, or at end-of-file.
+ */
+export async function phaseEntryInsertOffset(rawContent: string, projectDir: string, workstream?: string): Promise<number> {
+  const range = await currentMilestoneSectionRange(rawContent, projectDir, workstream);
+  if (!range) {
+    const idx = rawContent.lastIndexOf('\n---');
+    return idx > 0 ? idx : rawContent.length;
+  }
+  const window = rawContent.slice(range.start, range.end);
+  const lastSeparator = window.lastIndexOf('\n---');
+  return lastSeparator > 0 ? range.start + lastSeparator : range.end;
+}
+
+export async function extractCurrentMilestone(content: string, projectDir: string, workstream?: string): Promise<string> {
+  const version = await resolveMilestoneVersion(content, projectDir, workstream);
 
   if (!version) return stripShippedMilestones(content);
 

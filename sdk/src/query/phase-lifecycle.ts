@@ -32,7 +32,7 @@ import {
   planningPaths,
 } from './helpers.js';
 import { extractFrontmatter } from './frontmatter.js';
-import { extractCurrentMilestone } from './roadmap.js';
+import { extractCurrentMilestone, phaseEntryInsertOffset } from './roadmap.js';
 import { getMilestonePhaseFilter } from './state.js';
 import {
   acquireStateLock,
@@ -188,12 +188,12 @@ export const phaseAdd: QueryHandler = async (args, projectDir, workstream) => {
       // Create directory with .gitkeep so git tracks empty folders
       await ensureDirectoryWithGitkeep(dirPath);
 
-      // Find insertion point: before last "---" or at end
-      const lastSeparator = roadmapRaw.lastIndexOf('\n---');
-      if (lastSeparator > 0) {
-        return roadmapRaw.slice(0, lastSeparator) + computedPhaseEntry + roadmapRaw.slice(lastSeparator);
-      }
-      return roadmapRaw + computedPhaseEntry;
+      // Insert inside the active milestone window (before its trailing
+      // separator) so a new phase never lands under a shipped-archive block on
+      // a long roadmap; falls back to whole-file insertion when no milestone
+      // resolves.
+      const insertAt = await phaseEntryInsertOffset(roadmapRaw, projectDir, workstream);
+      return roadmapRaw.slice(0, insertAt) + computedPhaseEntry + roadmapRaw.slice(insertAt);
     }, workstream);
   }
 
@@ -309,11 +309,8 @@ export const phaseAddBatch: QueryHandler = async (args, projectDir, workstream) 
       const phaseEntry =
         buildPhaseRoadmapEntry(newPhaseId, description, config.phase_naming);
 
-      const lastSeparator = rawContent.lastIndexOf('\n---');
-      rawContent =
-        lastSeparator > 0
-          ? rawContent.slice(0, lastSeparator) + phaseEntry + rawContent.slice(lastSeparator)
-          : rawContent + phaseEntry;
+      const insertAt = await phaseEntryInsertOffset(rawContent, projectDir, workstream);
+      rawContent = rawContent.slice(0, insertAt) + phaseEntry + rawContent.slice(insertAt);
 
       added.push({
         phase_number: typeof newPhaseId === 'number' ? newPhaseId : String(newPhaseId),

@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { escapeRegex, loadConfig, normalizePhaseName, phaseMarkdownRegexSource, comparePhaseNum, findPhaseInternal, getArchivedPhaseDirs, generateSlugInternal, getMilestonePhaseFilter, stripShippedMilestones, extractCurrentMilestone, replaceInCurrentMilestone, toPosixPath, output, error, readSubdirectories, phaseTokenMatches, ERROR_REASON } = require('./core.cjs');
+const { escapeRegex, loadConfig, normalizePhaseName, phaseMarkdownRegexSource, comparePhaseNum, findPhaseInternal, getArchivedPhaseDirs, generateSlugInternal, getMilestonePhaseFilter, stripShippedMilestones, extractCurrentMilestone, phaseEntryInsertOffset, replaceInCurrentMilestone, toPosixPath, output, error, readSubdirectories, phaseTokenMatches, ERROR_REASON } = require('./core.cjs');
 const { platformWriteSync, platformReadSync, platformEnsureDir } = require('./shell-command-projection.cjs');
 const { planningDir, withPlanningLock } = require('./planning-workspace.cjs');
 const { extractFrontmatter } = require('./frontmatter.cjs');
@@ -666,14 +666,11 @@ function cmdPhaseAdd(cwd, description, raw, customId) {
     const dependsOn = config.phase_naming === 'custom' ? '' : `\n**Depends on:** Phase ${typeof _newPhaseId === 'number' ? _newPhaseId - 1 : 'TBD'}`;
     const phaseEntry = `\n### Phase ${_newPhaseId}: ${description}\n\n**Goal:** [To be planned]\n**Requirements**: TBD${dependsOn}\n**Plans:** 0 plans\n\nPlans:\n- [ ] TBD (run /gsd:plan-phase ${_newPhaseId} to break down)\n`;
 
-    // Find insertion point: before last "---" or at end
-    let updatedContent;
-    const lastSeparator = rawContent.lastIndexOf('\n---');
-    if (lastSeparator > 0) {
-      updatedContent = rawContent.slice(0, lastSeparator) + phaseEntry + rawContent.slice(lastSeparator);
-    } else {
-      updatedContent = rawContent + phaseEntry;
-    }
+    // Insert inside the active milestone window (before its trailing separator)
+    // so a new phase never lands under a shipped-archive block on a long
+    // roadmap; falls back to whole-file insertion when no milestone resolves.
+    const insertAt = phaseEntryInsertOffset(rawContent, cwd);
+    const updatedContent = rawContent.slice(0, insertAt) + phaseEntry + rawContent.slice(insertAt);
 
     platformWriteSync(roadmapPath, updatedContent);
     return { newPhaseId: _newPhaseId, dirName: _dirName };
@@ -742,10 +739,8 @@ function cmdPhaseAddBatch(cwd, descriptions, raw) {
       platformWriteSync(path.join(dirPath, '.gitkeep'), '');
       const dependsOn = config.phase_naming === 'custom' ? '' : `\n**Depends on:** Phase ${typeof newPhaseId === 'number' ? newPhaseId - 1 : 'TBD'}`;
       const phaseEntry = `\n### Phase ${newPhaseId}: ${description}\n\n**Goal:** [To be planned]\n**Requirements**: TBD${dependsOn}\n**Plans:** 0 plans\n\nPlans:\n- [ ] TBD (run /gsd:plan-phase ${newPhaseId} to break down)\n`;
-      const lastSeparator = rawContent.lastIndexOf('\n---');
-      rawContent = lastSeparator > 0
-        ? rawContent.slice(0, lastSeparator) + phaseEntry + rawContent.slice(lastSeparator)
-        : rawContent + phaseEntry;
+      const insertAt = phaseEntryInsertOffset(rawContent, cwd);
+      rawContent = rawContent.slice(0, insertAt) + phaseEntry + rawContent.slice(insertAt);
       added.push({
         phase_number: typeof newPhaseId === 'number' ? newPhaseId : String(newPhaseId),
         padded: typeof newPhaseId === 'number' ? String(newPhaseId).padStart(2, '0') : String(newPhaseId),

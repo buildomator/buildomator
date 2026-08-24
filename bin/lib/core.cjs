@@ -1066,8 +1066,13 @@ function stripShippedMilestones(content) {
  * @param {string} [cwd] - Working directory for reading STATE.md
  * @returns {string} Content scoped to current milestone
  */
-function extractCurrentMilestone(content, cwd) {
-  if (!cwd) return stripShippedMilestones(content);
+// Resolve the current milestone's PRIMARY section window in raw ROADMAP content.
+// Shares the version-resolution + section-locating steps between
+// extractCurrentMilestone and currentMilestoneSectionRange so both stay in
+// lockstep. Returns the section bounds plus the internal pieces the extractor
+// needs, or null when no version resolves or the heading is not found.
+function resolveMilestoneSection(content, cwd) {
+  if (!cwd) return null;
 
   // 1. Get current milestone version from STATE.md frontmatter
   let version = null;
@@ -1091,7 +1096,7 @@ function extractCurrentMilestone(content, cwd) {
     }
   }
 
-  if (!version) return stripShippedMilestones(content);
+  if (!version) return null;
 
   // 3. Find the section matching this version
   // Match headings like: ## Roadmap v3.0: Name, ## v3.0 Name, etc.
@@ -1102,7 +1107,7 @@ function extractCurrentMilestone(content, cwd) {
   );
   const sectionMatch = content.match(sectionPattern);
 
-  if (!sectionMatch) return stripShippedMilestones(content);
+  if (!sectionMatch) return null;
 
   const sectionStart = sectionMatch.index;
 
@@ -1146,6 +1151,47 @@ function extractCurrentMilestone(content, cwd) {
   };
 
   const sectionEnd = computeSectionEnd(sectionMatch[0], sectionStart);
+
+  return { sectionStart, sectionEnd, sectionMatch, computeSectionEnd, escapedVersion };
+}
+
+/**
+ * Return the raw-content bounds of the current milestone's primary section as
+ * { start, end }, or null when no milestone resolves. Used to scope write
+ * insertions (a new `### Phase N:` entry) to the active milestone rather than
+ * the whole file.
+ */
+function currentMilestoneSectionRange(content, cwd) {
+  const r = resolveMilestoneSection(content, cwd);
+  return r ? { start: r.sectionStart, end: r.sectionEnd } : null;
+}
+
+/**
+ * Offset in rawContent at which a new phase entry should be inserted. When the
+ * current milestone resolves, insert before the last `\n---` inside that
+ * milestone's window (or at its end when the window has no separator) so the
+ * entry never lands under a trailing shipped-archive block. When no milestone
+ * resolves, keep the legacy whole-file behavior: before the file's last
+ * `\n---`, or at end-of-file when there is none.
+ */
+function phaseEntryInsertOffset(rawContent, cwd) {
+  const range = currentMilestoneSectionRange(rawContent, cwd);
+  if (!range) {
+    const idx = rawContent.lastIndexOf('\n---');
+    return idx > 0 ? idx : rawContent.length;
+  }
+  const window = rawContent.slice(range.start, range.end);
+  const lastSeparator = window.lastIndexOf('\n---');
+  return lastSeparator > 0 ? range.start + lastSeparator : range.end;
+}
+
+function extractCurrentMilestone(content, cwd) {
+  if (!cwd) return stripShippedMilestones(content);
+
+  const resolved = resolveMilestoneSection(content, cwd);
+  if (!resolved) return stripShippedMilestones(content);
+
+  const { sectionStart, sectionEnd, sectionMatch, computeSectionEnd, escapedVersion } = resolved;
 
   // #730 (upstream edd3c6c3): a multi-milestone ROADMAP splits each milestone
   // across a `## Phases` checklist subsection (early) and a separate
@@ -2124,6 +2170,8 @@ module.exports = {
   getMilestonePhaseFilter,
   stripShippedMilestones,
   extractCurrentMilestone,
+  currentMilestoneSectionRange,
+  phaseEntryInsertOffset,
   replaceInCurrentMilestone,
   toPosixPath,
   extractOneLinerFromBody,

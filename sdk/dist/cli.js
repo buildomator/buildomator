@@ -6137,6 +6137,8 @@ function parseFrontmatterYamlLines(yaml) {
   return frontmatter;
 }
 function extractFrontmatterLeading(content) {
+  if (content.charCodeAt(0) === 65279)
+    content = content.slice(1);
   const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
   if (!match)
     return {};
@@ -6612,7 +6614,7 @@ async function getMilestoneInfo(projectDir, workstream) {
     return { version: "v1.0", name: "milestone" };
   }
 }
-async function extractCurrentMilestone(content, projectDir, workstream) {
+async function resolveMilestoneVersion(content, projectDir, workstream) {
   let version = null;
   try {
     const stateRaw = await readFile5(planningPaths(projectDir, workstream).state, "utf-8");
@@ -6628,6 +6630,47 @@ async function extractCurrentMilestone(content, projectDir, workstream) {
       version = "v" + inProgressMatch[1];
     }
   }
+  return version;
+}
+async function currentMilestoneSectionRange(content, projectDir, workstream) {
+  const version = await resolveMilestoneVersion(content, projectDir, workstream);
+  if (!version)
+    return null;
+  const escapedVersion = escapeRegex2(version);
+  const sectionPattern = new RegExp(`(^#{1,3}\\s+.*${escapedVersion}(?![\\d.])[^\\n]*)`, "mi");
+  const sectionMatch = content.match(sectionPattern);
+  if (!sectionMatch || sectionMatch.index === void 0)
+    return null;
+  const sectionStart = sectionMatch.index;
+  const headingLevelMatch = sectionMatch[1].match(/^(#{1,3})\s/);
+  const headingLevel = headingLevelMatch ? headingLevelMatch[1].length : 2;
+  const restContent = content.slice(sectionStart + sectionMatch[0].length);
+  const currentVersionMatch = version.match(/v(\d+(?:\.\d+)+)/i);
+  const currentVersionStr = currentVersionMatch ? currentVersionMatch[1] : "";
+  const nextMilestoneRegex = new RegExp(`^#{1,${headingLevel}}\\s+(?!Phase\\s+\\S)(?:.*v(\\d+(?:\\.\\d+)+)[^\\n]*|.*(?:\u2705|\u{1F4CB}|\u{1F6A7}|\u{1F7E1}))`, "gmi");
+  let sectionEnd = content.length;
+  let m3;
+  while ((m3 = nextMilestoneRegex.exec(restContent)) !== null) {
+    const matchedVersion = m3[1];
+    if (matchedVersion && currentVersionStr && matchedVersion === currentVersionStr)
+      continue;
+    sectionEnd = sectionStart + sectionMatch[0].length + m3.index;
+    break;
+  }
+  return { start: sectionStart, end: sectionEnd };
+}
+async function phaseEntryInsertOffset(rawContent, projectDir, workstream) {
+  const range = await currentMilestoneSectionRange(rawContent, projectDir, workstream);
+  if (!range) {
+    const idx = rawContent.lastIndexOf("\n---");
+    return idx > 0 ? idx : rawContent.length;
+  }
+  const window2 = rawContent.slice(range.start, range.end);
+  const lastSeparator = window2.lastIndexOf("\n---");
+  return lastSeparator > 0 ? range.start + lastSeparator : range.end;
+}
+async function extractCurrentMilestone(content, projectDir, workstream) {
+  const version = await resolveMilestoneVersion(content, projectDir, workstream);
   if (!version)
     return stripShippedMilestones(content);
   const escapedVersion = escapeRegex2(version);
@@ -6837,7 +6880,7 @@ var roadmapAnalyze = async (_args, projectDir, workstream) => {
   }
   const content = await extractCurrentMilestone(rawContent, projectDir, workstream);
   const phasesDir = planningPaths(projectDir, workstream).phases;
-  const phasePattern = /#{2,4}\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
+  const phasePattern = /#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
   const phases = [];
   let match;
   while ((match = phasePattern.exec(content)) !== null) {
@@ -6848,7 +6891,7 @@ var roadmapAnalyze = async (_args, projectDir, workstream) => {
     const phaseName = match[2].replace(/\(INSERTED\)/i, "").trim();
     const sectionStart = match.index;
     const restOfContent = content.slice(sectionStart);
-    const nextHeader = restOfContent.match(/\n#{2,4}\s+Phase\s+\d/i);
+    const nextHeader = restOfContent.match(/\n#{2,4}\s+Phase\s+[A-Za-z]?\d/i);
     const sectionEnd = nextHeader ? sectionStart + nextHeader.index : content.length;
     const section = content.slice(sectionStart, sectionEnd);
     const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
@@ -6919,7 +6962,7 @@ var roadmapAnalyze = async (_args, projectDir, workstream) => {
   const totalPlans = phases.reduce((sum, p) => sum + p.plan_count, 0);
   const totalSummaries = phases.reduce((sum, p) => sum + p.summary_count, 0);
   const completedPhases = phases.filter((p) => p.disk_status === "complete").length;
-  const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+(\d+[A-Z]?(?:\.\d+)*)/gi;
+  const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gi;
   const checklistPhases = /* @__PURE__ */ new Set();
   let checklistMatch;
   while ((checklistMatch = checklistPattern.exec(content)) !== null) {
@@ -7047,13 +7090,18 @@ async function getMilestonePhaseFilter(projectDir, workstream) {
     return passAll;
   }
   const normalized = new Set([...milestonePhaseNums].map((n3) => (n3.replace(/^0+/, "") || "0").toLowerCase()));
+  const normalizedIdsLongestFirst = [...normalized].sort((a3, b) => b.length - a3.length);
   const isDirInMilestone = ((dirName) => {
     const m3 = dirName.match(/^0*(\d+[A-Za-z]?(?:\.\d+)*)/);
     if (m3 && normalized.has(m3[1].toLowerCase()))
       return true;
-    const customMatch = dirName.match(/^([A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*)/);
-    if (customMatch && normalized.has(customMatch[1].toLowerCase()))
-      return true;
+    if (/^[A-Za-z]/.test(dirName)) {
+      const lowerDir = dirName.toLowerCase();
+      for (const id of normalizedIdsLongestFirst) {
+        if (lowerDir === id || lowerDir.startsWith(id + "-"))
+          return true;
+      }
+    }
     const stripped = dirName.replace(/^[A-Z]{1,6}-(?=\d)/i, "");
     if (stripped !== dirName) {
       const sm = stripped.match(/^0*(\d+[A-Za-z]?(?:\.\d+)*)/);
@@ -12920,11 +12968,8 @@ var phaseAdd = async (args, projectDir, workstream) => {
       computedPhaseEntry = resolvedEntry;
       const dirPath = join25(planningPaths(projectDir, workstream).phases, dirName);
       await ensureDirectoryWithGitkeep(dirPath);
-      const lastSeparator = roadmapRaw.lastIndexOf("\n---");
-      if (lastSeparator > 0) {
-        return roadmapRaw.slice(0, lastSeparator) + computedPhaseEntry + roadmapRaw.slice(lastSeparator);
-      }
-      return roadmapRaw + computedPhaseEntry;
+      const insertAt = await phaseEntryInsertOffset(roadmapRaw, projectDir, workstream);
+      return roadmapRaw.slice(0, insertAt) + computedPhaseEntry + roadmapRaw.slice(insertAt);
     }, workstream);
   }
   const result = {
@@ -13006,8 +13051,8 @@ var phaseAddBatch = async (args, projectDir, workstream) => {
       const dirPath = join25(planningPaths(projectDir, workstream).phases, dirName);
       await ensureDirectoryWithGitkeep(dirPath);
       const phaseEntry = buildPhaseRoadmapEntry(newPhaseId, description, config.phase_naming);
-      const lastSeparator = rawContent.lastIndexOf("\n---");
-      rawContent = lastSeparator > 0 ? rawContent.slice(0, lastSeparator) + phaseEntry + rawContent.slice(lastSeparator) : rawContent + phaseEntry;
+      const insertAt = await phaseEntryInsertOffset(rawContent, projectDir, workstream);
+      rawContent = rawContent.slice(0, insertAt) + phaseEntry + rawContent.slice(insertAt);
       added.push({
         phase_number: typeof newPhaseId === "number" ? newPhaseId : String(newPhaseId),
         padded: typeof newPhaseId === "number" ? String(newPhaseId).padStart(2, "0") : String(newPhaseId),

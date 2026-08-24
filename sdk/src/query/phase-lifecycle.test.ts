@@ -339,6 +339,64 @@ describe('phaseAdd', () => {
     expect(data.phase_number).toBe(11);
   });
 
+  it('inserts inside the active milestone, before the shipped-archive heading', async () => {
+    const { phaseAdd } = await import('./phase-lifecycle.js');
+    const roadmap = `# Roadmap
+
+## v1.0: Active Milestone
+
+### Phase 1: First
+
+**Goal:** a
+
+### Phase 2: Second
+
+**Goal:** b
+
+---
+
+## v0.9: Shipped Archive
+
+### Phase 0: Old
+
+done
+
+---
+`;
+    const state = `---\ngsd_state_version: 1.0\nmilestone: v1.0\n---\n\n# Project State\n`;
+    await setupTestProject(tmpDir, { roadmap, state });
+
+    await phaseAdd(['New Feature'], tmpDir);
+    const out = await readFile(join(tmpDir, '.planning', 'ROADMAP.md'), 'utf-8');
+    const idxNew = out.indexOf('### Phase 3: New Feature');
+    const idxPhase2 = out.indexOf('### Phase 2: Second');
+    const idxArchive = out.indexOf('## v0.9: Shipped Archive');
+    expect(idxNew).toBeGreaterThan(-1);
+    expect(idxNew).toBeGreaterThan(idxPhase2);
+    expect(idxNew).toBeLessThan(idxArchive);
+  });
+
+  it('keeps legacy insertion before the trailing separator when no milestone resolves', async () => {
+    const { phaseAdd } = await import('./phase-lifecycle.js');
+    const roadmap = `# Roadmap
+
+### Phase 1: Only
+
+**Goal:** a
+
+---
+`;
+    const state = `---\ngsd_state_version: 1.0\n---\n\n# Project State\n`;
+    await setupTestProject(tmpDir, { roadmap, state });
+
+    await phaseAdd(['Second Thing'], tmpDir);
+    const out = await readFile(join(tmpDir, '.planning', 'ROADMAP.md'), 'utf-8');
+    const idxNew = out.indexOf('### Phase 2: Second Thing');
+    const idxLastSep = out.lastIndexOf('\n---');
+    expect(idxNew).toBeGreaterThan(-1);
+    expect(idxNew).toBeLessThan(idxLastSep);
+  });
+
   it('throws GSDError with Validation for empty description', async () => {
     const { phaseAdd } = await import('./phase-lifecycle.js');
     await setupTestProject(tmpDir);

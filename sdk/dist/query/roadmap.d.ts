@@ -40,28 +40,23 @@ export declare function getMilestoneInfo(projectDir: string, workstream?: string
     name: string;
 }>;
 /**
- * Extract the current milestone section from ROADMAP.md.
- *
- * Two anchoring strategies, tried in order:
- *   1. Markdown heading containing the active version (`^#{1,3}\s+.*vX.Y…`).
- *   2. `<details><summary>vX.Y…</summary>…</details>` block (the GitHub-friendly
- *      collapse pattern; see #2641). When this fallback fires, the captured
- *      `<summary>` text is synthesized as a `##` heading prepended to the
- *      returned slice so downstream consumers that scan for milestone headings
- *      (e.g. the `data.milestones` loop in `roadmapAnalyze`) still see an
- *      active-milestone anchor.
- *
- * If neither strategy matches the active version, falls through to
- * `stripShippedMilestones(content)`.
- *
- * Originally ported from core.cjs lines 1102-1170; the TS implementation has
- * since diverged (Backlog-leak fix #2422, phase-vX.Y truncation fix #2619,
- * fenced-code-block tracking #2787, `<details><summary>` fallback #2641).
- *
- * @param content - Full ROADMAP.md content
- * @param projectDir - Working directory for reading STATE.md
- * @returns Content scoped to current milestone
+ * Raw-content bounds { start, end } of the active milestone's primary markdown
+ * section, or null when no version resolves or no version-bearing heading is
+ * found (including the <details>/<summary>-wrapped variant, which has no clean
+ * heading range). Scopes phase-entry insertion to the active milestone.
  */
+export declare function currentMilestoneSectionRange(content: string, projectDir: string, workstream?: string): Promise<{
+    start: number;
+    end: number;
+} | null>;
+/**
+ * Offset in rawContent where a new phase entry should be inserted. When the
+ * active milestone resolves, insert before the last `\n---` inside its window
+ * (or at the window end when there is none) so the entry never lands under a
+ * trailing shipped-archive block. When no milestone resolves, keep the legacy
+ * whole-file behavior: before the file's last `\n---`, or at end-of-file.
+ */
+export declare function phaseEntryInsertOffset(rawContent: string, projectDir: string, workstream?: string): Promise<number>;
 export declare function extractCurrentMilestone(content: string, projectDir: string, workstream?: string): Promise<string>;
 /**
  * Phase shape returned by extractPhasesFromSection — mirrors the fields used
