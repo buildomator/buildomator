@@ -1825,6 +1825,39 @@ describe('readModifyWriteRoadmapMd — CR-3267 finding 4: non-ENOENT errors prop
   });
 });
 
+// ─── extractOneLinerFromBody: summary-shaped-heading anchor ────────────────
+
+describe('extractOneLinerFromBody (policy copy)', () => {
+  it('skips a leading non-summary heading and reads the labeled Summary heading', async () => {
+    const { extractOneLinerFromBody } = await import('./phase-lifecycle-policy.js');
+    const doc = '## Deviation rules\n\n**Some rule bold run**\n\n# Phase 4: Foo Summary\n\n**One-liner:** real prose here.\n';
+    expect(extractOneLinerFromBody(doc)).toBe('real prose here.');
+  });
+
+  it('bare-bold form under a Summary heading returns the bold text', async () => {
+    const { extractOneLinerFromBody } = await import('./phase-lifecycle-policy.js');
+    expect(extractOneLinerFromBody('# Phase 4: Foo Summary\n\n**JWT auth with refresh rotation.**\n'))
+      .toBe('JWT auth with refresh rotation.');
+  });
+
+  it('no summary-shaped heading returns null', async () => {
+    const { extractOneLinerFromBody } = await import('./phase-lifecycle-policy.js');
+    expect(extractOneLinerFromBody('## Deviation rules\n\n**Some rule bold run**\n\n## Notes\n\n**Another bold run**\n'))
+      .toBe(null);
+  });
+
+  it('labeled form with empty prose under Summary returns null', async () => {
+    const { extractOneLinerFromBody } = await import('./phase-lifecycle-policy.js');
+    expect(extractOneLinerFromBody('# Phase 4: Foo Summary\n\n**One-liner:**\n')).toBe(null);
+  });
+
+  it('happy path: summary heading first is unchanged', async () => {
+    const { extractOneLinerFromBody } = await import('./phase-lifecycle-policy.js');
+    expect(extractOneLinerFromBody('# Overview\n\n**A substantive one-liner.**\n'))
+      .toBe('A substantive one-liner.');
+  });
+});
+
 // ─── CR-3267 regression: buildPhaseRoadmapEntry — no "Phase 0" dependency ──
 
 describe('buildPhaseRoadmapEntry — CR-3267 finding 2: first sequential phase has no predecessor', () => {

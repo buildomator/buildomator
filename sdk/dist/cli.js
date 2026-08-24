@@ -12724,9 +12724,25 @@ function parseMultiwordArg(args, flag) {
 function extractOneLinerFromBody(content) {
   if (!content)
     return null;
-  const body = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n*/, "");
-  const match = body.match(/^#[^\n]*\n+\*\*([^*]+)\*\*/m);
-  return match ? match[1].trim() : null;
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const body = normalized.replace(/^---\n[\s\S]*?\n---\n*/, "");
+  const headingBold = /^#+\s*([^\n]*)\n+\*\*([^*\n]+)\*\*([^\n]*)/gm;
+  let match;
+  while ((match = headingBold.exec(body)) !== null) {
+    if (!/summary|overview|accomplish/i.test(match[1]))
+      continue;
+    const boldInner = match[2].trim();
+    const afterBold = match[3];
+    if (/:\s*$/.test(boldInner)) {
+      const prose = afterBold.trim();
+      if (prose.length > 0)
+        return prose;
+      continue;
+    }
+    if (boldInner.length > 0)
+      return boldInner;
+  }
+  return null;
 }
 function scanSequentialMaxPhaseFromMilestone(milestoneContent) {
   const phasePattern = /(?:^|\n)\s*(?:[-*]\s*(?:\[[x ]\]\s*)?|#{2,4}\s*|\*{1,2}\s*)Phase\s+(\d+)[A-Z]?(?:\.\d+)*:/gi;
@@ -14139,9 +14155,25 @@ init_helpers();
 function extractOneLinerFromBody2(content) {
   if (!content)
     return null;
-  const body = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n*/, "");
-  const match = body.match(/^#[^\n]*\n+\*\*([^*]+)\*\*/m);
-  return match ? match[1].trim() : null;
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const body = normalized.replace(/^---\n[\s\S]*?\n---\n*/, "");
+  const headingBold = /^#+\s*([^\n]*)\n+\*\*([^*\n]+)\*\*([^\n]*)/gm;
+  let match;
+  while ((match = headingBold.exec(body)) !== null) {
+    if (!/summary|overview|accomplish/i.test(match[1]))
+      continue;
+    const boldInner = match[2].trim();
+    const afterBold = match[3];
+    if (/:\s*$/.test(boldInner)) {
+      const prose = afterBold.trim();
+      if (prose.length > 0)
+        return prose;
+      continue;
+    }
+    if (boldInner.length > 0)
+      return boldInner;
+  }
+  return null;
 }
 function coerceFmArray(v3) {
   if (v3 === void 0 || v3 === null)

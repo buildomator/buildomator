@@ -40,9 +40,34 @@ export function parseMultiwordArg(args, flag) {
 export function extractOneLinerFromBody(content) {
     if (!content)
         return null;
-    const body = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n*/, '');
-    const match = body.match(/^#[^\n]*\n+\*\*([^*]+)\*\*/m);
-    return match ? match[1].trim() : null;
+    // Normalize EOLs so matching works for LF and CRLF files.
+    const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const body = normalized.replace(/^---\n[\s\S]*?\n---\n*/, '');
+    // Only extract from a summary-shaped heading (its text mentions summary,
+    // overview, or accomplishments). A rule-list or deviation-note heading at the
+    // top of a SUMMARY must never leak its bold run into the one-liner. Two
+    // template forms are supported under such a heading:
+    //   1) Labeled:  **One-liner:** Real prose here.   (new template)
+    //   2) Bare:     **Real prose here.**              (legacy template)
+    // For (1) the bold span ends in a colon and the prose after it on the same
+    // line is the one-liner; for (2) the bold span itself is the one-liner.
+    const headingBold = /^#+\s*([^\n]*)\n+\*\*([^*\n]+)\*\*([^\n]*)/gm;
+    let match;
+    while ((match = headingBold.exec(body)) !== null) {
+        if (!/summary|overview|accomplish/i.test(match[1]))
+            continue;
+        const boldInner = match[2].trim();
+        const afterBold = match[3];
+        if (/:\s*$/.test(boldInner)) {
+            const prose = afterBold.trim();
+            if (prose.length > 0)
+                return prose;
+            continue; // labeled heading with empty prose, try the next summary heading
+        }
+        if (boldInner.length > 0)
+            return boldInner;
+    }
+    return null;
 }
 /**
  * Scan highest sequential phase number in milestone content.
