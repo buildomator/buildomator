@@ -105,6 +105,20 @@ jobs:
         run: node tests/phase-complete-backlog-sentinel.test.cjs
       - name: Run code-fixer worktree-gate guard test
         run: node tests/code-fixer-worktree-gate.test.cjs
+      - name: Run frontmatter BOM-tolerance guard test
+        run: node tests/frontmatter-bom.test.cjs
+      - name: Run letter-named phase-id guard test
+        run: node tests/letter-phase-ids.test.cjs
+      - name: Run phase-add milestone-scope guard test
+        run: node tests/phase-add-milestone-scope.test.cjs
+      - name: Run one-liner summary-heading guard test
+        run: node tests/one-liner-summary-heading.test.cjs
+      - name: Run progress and frontier guard test
+        run: node tests/progress-and-frontier.test.cjs
+      - name: Run sentinel validate-guard test
+        run: node tests/sentinel-validate-guard.test.cjs
+      - name: Run skill effort-frontmatter guard test
+        run: node tests/effort-frontmatter.test.cjs
       - name: Smoke test verify drift JSON output
         run: |
           node bin/gsd-tools.cjs verify drift --scope . --json | node -e \
