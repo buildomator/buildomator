@@ -716,6 +716,15 @@ export const stateUpdateProgress: QueryHandler = async (_args, projectDir, works
     }
   } catch { /* phases dir may not exist */ }
 
+  // Zero plans in the current-milestone scan means there is nothing to measure
+  // (typically the milestone was just archived and phases/ is empty). Mapping
+  // 0/0 to 0% would clobber a shipped 100% Progress record, so leave STATE.md
+  // untouched. The legitimate 0% case (plans exist, none summarized) still
+  // flows through below because totalPlans > 0.
+  if (totalPlans === 0) {
+    return { data: { updated: false, reason: 'no plans found in current-milestone phases, STATE.md left unchanged (milestone archived?)' } };
+  }
+
   const percent = totalPlans > 0 ? Math.min(100, Math.round(totalSummaries / totalPlans * 100)) : 0;
   const barWidth = 10;
   const filled = Math.round(percent / 100 * barWidth);

@@ -448,6 +448,16 @@ export const initProgress: QueryHandler = async (_args, projectDir, workstream) 
 
   phases.sort((a, b) => parseInt(a.number as string, 10) - parseInt(b.number as string, 10));
 
+  // Derive the frontier from roadmap order, not artifact presence. The disk
+  // loop above can claim nextPhase from a stray out-of-order artifact dir (a
+  // phase-9 evidence dir while roadmap phase 8 is pending and unscaffolded),
+  // silently skipping 8. The status field already folds roadmap checkbox
+  // completeness in, so the first pending/not_started phase in sorted order is
+  // the true next phase; an all-complete milestone keeps the loop-derived value
+  // (null).
+  const frontier = phases.find(p => p.status === 'pending' || p.status === 'not_started');
+  if (frontier) nextPhase = frontier;
+
   // Check paused state in STATE.md
   let pausedAt: string | null = null;
   try {

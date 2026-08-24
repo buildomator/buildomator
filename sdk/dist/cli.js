@@ -9109,6 +9109,9 @@ var stateUpdateProgress = async (_args, projectDir, workstream) => {
     }
   } catch {
   }
+  if (totalPlans === 0) {
+    return { data: { updated: false, reason: "no plans found in current-milestone phases, STATE.md left unchanged (milestone archived?)" } };
+  }
   const percent = totalPlans > 0 ? Math.min(100, Math.round(totalSummaries / totalPlans * 100)) : 0;
   const barWidth = 10;
   const filled = Math.round(percent / 100 * barWidth);
@@ -20738,6 +20741,9 @@ var initProgress = async (_args, projectDir, workstream) => {
     }
   }
   phases.sort((a3, b) => parseInt(a3.number, 10) - parseInt(b.number, 10));
+  const frontier = phases.find((p) => p.status === "pending" || p.status === "not_started");
+  if (frontier)
+    nextPhase = frontier;
   let pausedAt = null;
   try {
     const stateContent = await readFile31(paths.state, "utf-8");
