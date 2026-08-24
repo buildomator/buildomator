@@ -18705,6 +18705,13 @@ function canonicalPlanStem(stem) {
   const m3 = stem.match(/^(\d+[A-Z]?(?:\.\d+)*-\d+)/i);
   return m3 ? m3[1] : stem;
 }
+function isSentinelPhaseId(p) {
+  const match = String(p).match(/^0*(\d+)/);
+  if (!match)
+    return false;
+  const major = parseInt(match[1], 10);
+  return major === 0 || major === 999;
+}
 var verifyKeyLinks = async (args, projectDir) => {
   const planFilePath = args[0];
   if (!planFilePath) {
@@ -18829,11 +18836,15 @@ var validateConsistency = async (_args, projectDir, workstream) => {
   } catch {
   }
   for (const p of roadmapPhases) {
+    if (isSentinelPhaseId(p))
+      continue;
     if (!diskPhases.has(p) && !diskPhases.has(normalizePhaseName(p))) {
       warnings.push(`Phase ${p} in ROADMAP.md but no directory on disk`);
     }
   }
   for (const p of diskPhases) {
+    if (isSentinelPhaseId(p))
+      continue;
     const unpadded = String(parseInt(p, 10));
     if (!roadmapPhases.has(p) && !roadmapPhases.has(unpadded)) {
       warnings.push(`Phase ${p} exists on disk but not in ROADMAP.md`);
@@ -18846,7 +18857,7 @@ var validateConsistency = async (_args, projectDir, workstream) => {
   } catch {
   }
   if (config.phase_naming !== "custom") {
-    const integerPhases = [...diskPhases].filter((p) => !p.includes(".")).map((p) => parseInt(p, 10)).sort((a3, b) => a3 - b);
+    const integerPhases = [...diskPhases].filter((p) => !p.includes(".") && !isSentinelPhaseId(p)).map((p) => parseInt(p, 10)).sort((a3, b) => a3 - b);
     for (let i3 = 1; i3 < integerPhases.length; i3++) {
       if (integerPhases[i3] !== integerPhases[i3 - 1] + 1) {
         warnings.push(`Gap in phase numbering: ${integerPhases[i3 - 1]} \u2192 ${integerPhases[i3]}`);
@@ -19176,6 +19187,8 @@ var validateHealth = async (args, projectDir, workstream) => {
       } catch {
       }
       for (const p of roadmapPhases) {
+        if (isSentinelPhaseId(p))
+          continue;
         const variants = phaseVariants(p);
         const existsOnDisk = [...variants].some((variant) => diskPhases.has(variant));
         const isNotStarted = [...variants].some((variant) => notStartedPhases.has(variant));
@@ -19186,6 +19199,8 @@ var validateHealth = async (args, projectDir, workstream) => {
         }
       }
       for (const p of activeDiskPhases) {
+        if (isSentinelPhaseId(p))
+          continue;
         const variants = phaseVariants(p);
         if (![...variants].some((variant) => roadmapPhaseVariants.has(variant))) {
           addIssue("warning", "W007", `Phase ${p} exists on disk but not in ROADMAP.md`, "Add to roadmap or remove directory");
