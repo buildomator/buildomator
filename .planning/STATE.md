@@ -64,12 +64,13 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 
 ### Pending Todos
 
-4 pending (see `.planning/todos/pending/`):
+10 pending (see `.planning/todos/pending/` for the full list):
 
 - Add more programming language rule packs for the naming-drift/convention checks (tooling; extends Phase 10 D-05)
 - Convert "(Recommended)"-default rubber-stamp prompts into announced auto-actions
 - Collapse plan-phase's two upstream-artifact dead-ends into auto-chaining
 - auto_advance default-on (context-aware) + auto-escalate blocking gaps
+- DRIFT-precision heuristic port from VibeDrift v0.20.0 (tooling; run as `/bm:quick --validate`; see `.planning/notes/vibedrift-scan-260822.md`)
 
 ### Blockers/Concerns
 
