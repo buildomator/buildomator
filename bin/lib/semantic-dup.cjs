@@ -279,14 +279,18 @@ function extractFunctions(src) {
   const VAR_FN_RE = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?function\s*(?:[A-Za-z_$][\w$]*)?\s*\([^)]*\)\s*\{/g;
   // Pattern 3: const/let/var name = (...) => {
   const ARROW_FN_RE = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>\s*\{/g;
-  // Pattern 4: class methods — methodName(...) {  (not constructors for simplicity)
+  // Pattern 4: class methods, methodName(...) {. This also matches two phantom
+  // shapes that are excluded below (see the methodLike handling): a class
+  // constructor (byte-identical DI bodies across unrelated classes) and a
+  // call-shaped head such as test("x", function (a) { ... }) where the argument
+  // list carries a callback rather than a method's parameters.
   const METHOD_RE = /\b([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/g;
 
   const patterns = [
     { re: NAMED_FN_RE, priority: 1 },
     { re: VAR_FN_RE, priority: 2 },
     { re: ARROW_FN_RE, priority: 3 },
-    { re: METHOD_RE, priority: 4 },
+    { re: METHOD_RE, priority: 4, methodLike: true },
   ];
 
   // METHOD_RE also matches control-flow heads (if/for/while/...). Skip those so
@@ -300,11 +304,27 @@ function extractFunctions(src) {
 
   const seen = new Set(); // avoid double-extraction at the same offset
 
-  for (const { re } of patterns) {
+  for (const { re, methodLike } of patterns) {
     let m;
     while ((m = re.exec(blanked)) !== null) {
       const name = m[1];
       if (CONTROL_FLOW.has(name)) continue;
+      if (methodLike) {
+        // A constructor's body is boilerplate DI assignment, byte-identical
+        // across unrelated classes, so it produces false duplicate pairs.
+        if (name === 'constructor') continue;
+        // A call-shaped head (a callback passed as an argument) is not a method
+        // definition. String contents are already blanked, but quote delimiters
+        // and the `function` keyword survive, so an argument segment carrying a
+        // quote or `function` marks a call, not a parameter list. Accepted
+        // precision tradeoff: a real method whose default parameter is a string
+        // or function literal is skipped too; the advisory tier tolerates that
+        // false negative.
+        const openIdx = m[0].indexOf('(');
+        const closeIdx = m[0].lastIndexOf(')');
+        const argSeg = openIdx >= 0 && closeIdx > openIdx ? m[0].slice(openIdx + 1, closeIdx) : '';
+        if (/["'`]/.test(argSeg) || /\bfunction\b/.test(argSeg)) continue;
+      }
       const bodyStart = m.index + m[0].length - 1; // position of opening '{'
 
       if (seen.has(bodyStart)) continue;

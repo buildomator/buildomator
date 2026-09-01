@@ -392,6 +392,52 @@ module.exports = { Beta };
   assert.ok(result.pairs.length >= 1, `expected the class-method clone flagged, got ${result.pairs.length}`);
 });
 
+// ─── phantom exclusion: callback wrappers + DI constructors ──────────────────
+
+// A body well above MIN_BODY_TOKENS, byte-identical across the two files so any
+// indexed shape pairs at similarity 1.0.
+const PHANTOM_BODY = `
+  const rows = load(a);
+  let total = 0;
+  for (const r of rows) { total = total + r.value * 2; }
+  if (total > 100) { emit(total); } else { emit(0); }
+  return total;
+`;
+const cbWrap = (n) => `test("case ${n}", function(a){${PHANTOM_BODY}});\n`;
+const diCtor = (c) => `class ${c} { constructor(db, log, cfg) { this.db = db; this.log = log; this.cfg = cfg; this.ready = false; this.count = 0; this.mode = 1; } }\n`;
+
+const phantomAPath = path.join(tmpDir, 'phantom-a.js');
+const phantomBPath = path.join(tmpDir, 'phantom-b.js');
+fs.writeFileSync(phantomAPath, cbWrap(1) + diCtor('SvcA'), 'utf8');
+fs.writeFileSync(phantomBPath, cbWrap(2) + diCtor('SvcB'), 'utf8');
+const phantomCorpus = ['phantom-a.js', 'phantom-b.js'];
+
+check('phantom exclusion: callback wrappers and DI constructors yield zero pairs', () => {
+  const res = dup.detect(phantomCorpus, { cwd: tmpDir });
+  assert.strictEqual(res.pairs.length, 0, `expected no phantom pairs, got ${JSON.stringify(res.pairs)}`);
+});
+
+// Real, genuinely duplicated class methods across two files must still pair.
+const methodBody = `
+    const rows = load(list);
+    let total = 0;
+    for (const r of rows) { total = total + r.value * 2; }
+    if (total > 100) { emit(total); } else { emit(0); }
+    return total;
+`;
+const methAPath = path.join(tmpDir, 'method-a.js');
+const methBPath = path.join(tmpDir, 'method-b.js');
+fs.writeFileSync(methAPath, `class Alpha { total(list) {${methodBody}} }\n`, 'utf8');
+fs.writeFileSync(methBPath, `class Beta { total(list) {${methodBody}} }\n`, 'utf8');
+const methodCorpus = ['method-a.js', 'method-b.js'];
+
+check('real-method control: identical class methods across files still pair', () => {
+  const res = dup.detect(methodCorpus, { cwd: tmpDir });
+  assert.strictEqual(res.pairs.length, 1, `expected one real-method pair, got ${JSON.stringify(res.pairs)}`);
+  assert.strictEqual(res.pairs[0].a.name, 'total');
+  assert.strictEqual(res.pairs[0].b.name, 'total');
+});
+
 // ─── Footer ──────────────────────────────────────────────────────────────────
 
 // Cleanup temp dir
