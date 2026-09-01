@@ -61,7 +61,7 @@ RELEASE_URL="https://www.npmjs.com/package/@vibedrift/cli/v/${LATEST}"
 # Attempt to fetch release notes from GitHub if the repo is known; fall back
 # gracefully -- the mail is still useful without them.
 RELEASE_BODY=""
-VIBEDRIFT_REPO="lalalune/vibecheck"  # GitHub home for the vibedrift tooling
+VIBEDRIFT_REPO="VibeDrift/VibeDrift"  # GitHub home for the vibedrift tooling (matches @vibedrift/cli repository)
 GH="/opt/homebrew/bin/gh"
 if [ -x "$GH" ]; then
   RELEASE_BODY=$($GH api "repos/$VIBEDRIFT_REPO/releases/tags/v${LATEST}" \

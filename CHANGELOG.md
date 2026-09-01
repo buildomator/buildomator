@@ -8,6 +8,25 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.5.6] - 2026-09-02  (upstream sync ports: parsing, progress, sentinel guards)
+
+Ports ten Claude-relevant correctness fixes from upstream gsd-core v1.10.0 and v1.11.0 into both resolver twins plus the skills and reviewer workflow. The rest of that upstream range was multi-runtime infrastructure (Codex, Cursor, Kimi, Trae, Pi, Gemini, Windows shims) or upstream-only CI and does not apply to this Claude-only plugin. Also repoints the VibeDrift second-upstream release watcher at the project's live GitHub home. No version-facing behavior changes for existing projects; these harden edge cases in roadmap and state parsing.
+
+### Fixed
+- **A leading UTF-8 BOM no longer silently drops all frontmatter (gsd-core #2977).** The frontmatter parser matched the opening `---` fence at byte 0, so a document saved with a leading BOM (common from some Windows editors) parsed as having no frontmatter at all. A single leading BOM is now stripped before the fence match. Both twins.
+- **Letter-named phase directories are counted in their milestone (gsd-core #3213).** Milestone membership used a greedy match that dropped phase directories named with letters (for example `A-`..`L-`), fabricating phase counts. Membership is now segment-boundary aware. Both twins.
+- **`roadmap.analyze` accepts letter-prefixed phase ids (gsd-core #3036).** Custom non-numeric-leading phase ids resolved to a phase count of zero; they are now parsed. Both twins.
+- **New phases are inserted inside the active milestone (gsd-core #3163).** Add-phase located the insertion point with a whole-file scan that could file a new phase under an archived milestone; insertion is now scoped to the active milestone section. Both twins.
+- **The milestone one-liner is read from a summary-shaped heading (gsd-core #3170).** One-liner extraction could copy the wrong heading's text into `MILESTONES.md`; it now anchors to a summary-shaped heading and yields nothing rather than the wrong text. All three sites.
+- **`state update-progress` no longer zeroes a shipped milestone (gsd-core #3233).** When the milestone scan found zero plans (for example just after archiving), progress was rewritten from a shipped 100 percent back to 0; it is now a no-op in that case. Both twins.
+- **`init` derives the next phase from roadmap order (gsd-core #3581).** A stray artifact directory could make `init` skip a pending phase and disagree with `analyze`; the next-phase frontier is now derived from roadmap order. Both twins.
+- **Sentinel phases (0 and 999.x) no longer trip health warnings (gsd-core #3225).** Backlog and meta sentinel directories fired spurious "exists on disk but not in ROADMAP" (W006/W007) warnings and a false numbering-gap warning; the health and consistency checks now skip sentinel phase ids. Both twins.
+- **The Claude reviewer lane no longer inherits `CLAUDE.md` and auto-memory (gsd-core #2483).** The cross-review `claude -p` session now runs with project instructions and auto-memory disabled, so the second opinion is independent and cheaper.
+
+### Changed
+- **Skills no longer carry `effort:` frontmatter (gsd-core #3151).** The `progress`, `stats`, and `version` skills emitted an `effort:` line that invalidated Claude's prompt cache on every invocation; the line is removed.
+- **The VibeDrift release watcher points at the live repository.** `bin/check-vibedrift-release.sh` fetched release notes from a repository path that no longer resolves; it now uses `VibeDrift/VibeDrift`, matching the `@vibedrift/cli` package's own repository field. Version detection (npm-based) was unaffected; only the notes in the notification email were.
+
 ## [4.5.5] - 2026-08-07  (SDK completion-guard parity)
 
 Plugin-native patch. Surfaced while triaging the upstream sync (a divergence in our own two resolver twins).
