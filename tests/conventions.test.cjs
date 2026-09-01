@@ -330,5 +330,65 @@ check('integration: gsd-tools verify conventions --check emits parseable JSON (p
   assert.ok(parsed && typeof parsed === 'object', 'verify conventions must emit a JSON object');
 });
 
+// ─── non-app file exclusion (vote + flag) ──────────────────────────────────────
+
+check('isNonAppPath: test/spec/seed/script/fixture/scratch paths are non-app', () => {
+  const yes = [
+    'tests/foo.js', 'test/foo.js', 'src/__tests__/x.ts', 'src/__mocks__/x.ts',
+    'foo.test.cjs', 'bar.spec.ts', 'spec/thing.js', 'db/seeds/users.js',
+    'scripts/build.cjs', 'fixtures/sample.json', 'src/__fixtures__/a.js', 'scratch/tmp.js',
+  ];
+  for (const p of yes) assert.strictEqual(conventions.isNonAppPath(p), true, `expected non-app: ${p}`);
+});
+
+check('isNonAppPath: real app paths and lookalikes are app', () => {
+  const no = [
+    'src/app.js', 'bin/lib/conventions.cjs', 'src/contest/entry.js',
+    'src/prescript/x.js', 'attestation.js',
+  ];
+  for (const p of no) assert.strictEqual(conventions.isNonAppPath(p), false, `expected app: ${p}`);
+  // non-string input is safely false
+  assert.strictEqual(conventions.isNonAppPath(null), false);
+  assert.strictEqual(conventions.isNonAppPath(42), false);
+});
+
+check('deriveConventions: non-app files do not vote (kebab survives a snake test-file majority)', () => {
+  const sources = {};
+  const files = [];
+  for (let i = 1; i <= 8; i++) {
+    const p = `src/alpha-beta-${String(i).padStart(2, '0')}.js`;
+    // basename alpha-beta-01 → kebab
+    sources[p] = 'const value = 1;\nmodule.exports = value;\n';
+    files.push(p);
+  }
+  for (let i = 1; i <= 20; i++) {
+    const p = `tests/helper_case_${String(i).padStart(2, '0')}.js`;
+    // basename helper_case_01 → snake
+    sources[p] = 'const value = 1;\nmodule.exports = value;\n';
+    files.push(p);
+  }
+  const derived = conventions.deriveConventions(files, { sources });
+  assert.strictEqual(derived.skipped, false);
+  const axis = derived.axes.find((a) => a.name === 'file-name-casing');
+  assert.strictEqual(axis.status, 'named', `axis status was ${axis.status}`);
+  assert.strictEqual(axis.dominant, 'kebab', `axis dominant was ${axis.dominant}`);
+  assert.strictEqual(axis.total, 8, `only the 8 app files should vote, got ${axis.total}`);
+});
+
+check('checkConformance: a non-app file is never flagged; the same source in-app is', () => {
+  const derived = {
+    skipped: false,
+    axes: [{ name: 'file-name-casing', status: 'named', dominant: 'kebab', total: 8, share: 1, contested: false }],
+  };
+  // snake basename deviation plus an empty catch (swallow): both flaggable in-app
+  const src = 'function readThing() {\n  try {\n    doThing();\n  } catch (e) {}\n  return 1;\n}\n';
+  const skipped = conventions.checkConformance([{ file: 'tests/some_helper.js', src }], derived);
+  assert.strictEqual(skipped.skipped, false);
+  assert.strictEqual(skipped.findings.length, 0, `non-app file must yield zero findings, got ${JSON.stringify(skipped.findings)}`);
+  // control: identical source at an app path DOES flag (path-based skip, derivation intact)
+  const flagged = conventions.checkConformance([{ file: 'src/some_helper.js', src }], derived);
+  assert.ok(flagged.findings.length > 0, 'the same source in-app must produce at least one finding');
+});
+
 if (failures) { console.error(`\nconventions: ${failures} failure(s)`); process.exit(1); }
 console.log('\nconventions: all checks passed');
