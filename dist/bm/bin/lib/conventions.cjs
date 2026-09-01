@@ -76,6 +76,33 @@ const MUTATE_VERBS = Object.freeze([
   'add', 'insert', 'apply', 'mutate', 'upsert', 'sync', 'commit', 'register',
 ]);
 
+// Test, spec, seed, script, fixture, and scratch files follow their own naming
+// and error-handling idioms (snake-cased fixtures, empty catches in throwaway
+// scripts, byte-identical seed rows), so judging them against the application's
+// derived conventions is noise. They must neither vote in the derivation nor be
+// flagged during conformance. Matching is on whole path segments (so `contest`,
+// `prescript`, and `attestation` never match) plus a `.test.`/`.spec.` basename
+// infix. Backslashes are normalized to forward slashes before matching.
+const NON_APP_SEGMENT_RE = Object.freeze(
+  /(^|\/)(tests?|__tests__|specs?|seeds?|scripts?|fixtures?|__fixtures__|__mocks__|scratch)(\/|$)/,
+);
+const NON_APP_BASENAME_RE = Object.freeze(/\.(test|spec)\.[^./]+$/);
+
+/**
+ * True when a path belongs to a non-application file family (test, spec, seed,
+ * script, fixture, scratch). Such files are excluded from both the convention
+ * vote and conformance flagging. Returns false for non-string input.
+ * @param {string} p - repo-relative path
+ * @returns {boolean}
+ */
+function isNonAppPath(p) {
+  if (typeof p !== 'string' || !p) return false;
+  const norm = p.replace(/\\/g, '/');
+  if (NON_APP_SEGMENT_RE.test(norm)) return true;
+  const base = norm.slice(norm.lastIndexOf('/') + 1);
+  return NON_APP_BASENAME_RE.test(base);
+}
+
 // ─── Path sanitization (security V5 / T-10-01) ─────────────────────────────────
 
 /**
@@ -313,7 +340,8 @@ function deriveConventions(files, opts = {}) {
       const norm = opts.scope.replace(/\\/g, '/').replace(/\/+$/, '');
       list = list.filter((p) => p.replace(/\\/g, '/').startsWith(norm + '/') || p === norm);
     }
-    if (list.length === 0) return derivedSkipped('no-readable-files');
+    list = list.filter((p) => !isNonAppPath(p));
+    if (list.length === 0) return derivedSkipped('no-app-files');
 
     const tallies = { 'file-name-casing': {}, 'identifier-casing': {}, 'export-style': {}, 'import-style': {} };
     let observed = 0;
@@ -491,6 +519,7 @@ function checkConformance(changedFiles, derived) {
       const file = typeof entry.file === 'string' ? entry.file : '';
       const src = typeof entry.src === 'string' ? entry.src : '';
       if (!file) continue;
+      if (isNonAppPath(file)) continue;
 
       // ── file-name-casing (language-agnostic, CONV-02) ──
       const fileAxis = named['file-name-casing'];
@@ -591,6 +620,7 @@ module.exports = {
   summarizeAxis,
   classifyCasing,
   sanitizePaths,
+  isNonAppPath,
   // additional internals (handy for tests / the verify subcommand in 10-02):
   classifyArchitecture,
   extractIdentifiers,
