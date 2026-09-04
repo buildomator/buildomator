@@ -8,6 +8,17 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.6.0] - 2026-09-02  (Fable 5.1 + native drift-detection precision)
+
+Adopts Claude Fable 5.1 as the top model tier and ports two precision heuristics from the VibeDrift second upstream (v0.20.0) into the native drift detection. No config migration required.
+
+### Added
+- **Claude Fable 5.1 is now the `fable` tier.** The `fable` tier (the quality-profile default for the heaviest agents: planner, roadmapper, debugger, and the other reasoning-heavy lanes) now resolves to `claude-fable-5-1` for the Claude-compatible runtimes; `claude-fable-5` is retired to legacy upstream. Non-Claude runtime aliases are unchanged. The model id was verified against Anthropic's live model documentation.
+
+### Changed
+- **The convention vote and conformance check ignore non-app files.** Test, spec, seed, script, and fixture files no longer participate in the derived per-project naming/style convention, and are no longer flagged against it. Previously a project with many snake_case test files could skew the vote and then flag its own kebab-case app files as drift. App-legitimate names (for example `contest`, `prescript`, `attestation`) are preserved. Ported natively from VibeDrift v0.20.0.
+- **The duplicate-code index drops constructor and callback-wrapper phantoms.** The structural duplicate detector was indexing class constructors and test-style callback wrappers (`test("...", function(){...})`) as if they were real functions, producing phantom duplicate pairs at high similarity. The extractor now skips constructor-named and call-shaped-head matches. The exclusion is narrow: genuine duplicated class methods are still detected (guarded by a positive-control test). Ported natively from VibeDrift v0.20.0.
+
 ## [4.5.6] - 2026-09-02  (upstream sync ports: parsing, progress, sentinel guards)
 
 Ports ten Claude-relevant correctness fixes from upstream gsd-core v1.10.0 and v1.11.0 into both resolver twins plus the skills and reviewer workflow. The rest of that upstream range was multi-runtime infrastructure (Codex, Cursor, Kimi, Trae, Pi, Gemini, Windows shims) or upstream-only CI and does not apply to this Claude-only plugin. Also repoints the VibeDrift second-upstream release watcher at the project's live GitHub home. No version-facing behavior changes for existing projects; these harden edge cases in roadmap and state parsing.
