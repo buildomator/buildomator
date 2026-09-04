@@ -8,7 +8,7 @@
   },
   "runtimeTierDefaults": {
     "claude": {
-      "fable": { "model": "claude-fable-5" },
+      "fable": { "model": "claude-fable-5-1" },
       "opus": { "model": "claude-opus-5" },
       "sonnet": { "model": "claude-sonnet-5" },
       "haiku": { "model": "claude-haiku-4-5" }
@@ -32,19 +32,19 @@
       "haiku": { "model": "qwen3-coder-next" }
     },
     "opencode": {
-      "fable": { "model": "anthropic/claude-fable-5" },
+      "fable": { "model": "anthropic/claude-fable-5-1" },
       "opus": { "model": "anthropic/claude-opus-5" },
       "sonnet": { "model": "anthropic/claude-sonnet-5" },
       "haiku": { "model": "anthropic/claude-haiku-4-5" }
     },
     "copilot": {
-      "fable": { "model": "claude-fable-5" },
+      "fable": { "model": "claude-fable-5-1" },
       "opus": { "model": "claude-opus-5" },
       "sonnet": { "model": "claude-sonnet-5" },
       "haiku": { "model": "claude-haiku-4-5" }
     },
     "hermes": {
-      "fable": { "model": "anthropic/claude-fable-5" },
+      "fable": { "model": "anthropic/claude-fable-5-1" },
       "opus": { "model": "anthropic/claude-opus-5" },
       "sonnet": { "model": "anthropic/claude-sonnet-5" },
       "haiku": { "model": "anthropic/claude-haiku-4-5" }

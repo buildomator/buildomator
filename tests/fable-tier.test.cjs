@@ -1,8 +1,8 @@
 'use strict';
 
-// Regression test for the Claude Fable 5 model tier (v3.4.4).
+// Regression test for the Claude Fable model tier.
 //
-// Fable 5 (claude-fable-5) is a new top tier ABOVE opus. It is added as a
+// Fable (claude-fable-5-1) is the top tier ABOVE opus. It is a
 // first-class model tier in the catalog and wired as the quality-profile
 // default for the heaviest (routingTier: heavy) agents. Anthropic-compatible
 // runtimes get the real model; non-Claude runtimes alias fable to their most
@@ -20,10 +20,10 @@ const ok = (label, cond) => checks.push([!!cond, label]);
 
 // ─── 1. Catalog: fable model per runtime ─────────────────────────────────────
 const rp = mc.RUNTIME_PROFILE_MAP;
-ok('claude.fable -> claude-fable-5', rp.claude.fable && rp.claude.fable.model === 'claude-fable-5');
-ok('copilot.fable -> claude-fable-5', rp.copilot.fable && rp.copilot.fable.model === 'claude-fable-5');
-ok('opencode.fable -> anthropic/claude-fable-5', rp.opencode.fable && rp.opencode.fable.model === 'anthropic/claude-fable-5');
-ok('hermes.fable -> anthropic/claude-fable-5', rp.hermes.fable && rp.hermes.fable.model === 'anthropic/claude-fable-5');
+ok('claude.fable -> claude-fable-5-1', rp.claude.fable && rp.claude.fable.model === 'claude-fable-5-1');
+ok('copilot.fable -> claude-fable-5-1', rp.copilot.fable && rp.copilot.fable.model === 'claude-fable-5-1');
+ok('opencode.fable -> anthropic/claude-fable-5-1', rp.opencode.fable && rp.opencode.fable.model === 'anthropic/claude-fable-5-1');
+ok('hermes.fable -> anthropic/claude-fable-5-1', rp.hermes.fable && rp.hermes.fable.model === 'anthropic/claude-fable-5-1');
 // non-Claude runtimes alias fable to their top (opus-equivalent) model
 ok('codex.fable aliases to gpt-5.4 (opus-equivalent)', rp.codex.fable && rp.codex.fable.model === 'gpt-5.4');
 ok('gemini.fable aliases to gemini-3-pro', rp.gemini.fable && rp.gemini.fable.model === 'gemini-3-pro');
