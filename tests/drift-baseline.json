@@ -5,5 +5,12 @@
     "genuinely_missing": 0,
     "generated_at": "2026-07-23",
     "note": "Counts-based ratchet per Phase 7 CONTEXT D-07. Regenerate with --write-baseline when drift is legitimately reduced."
+  },
+  "user_docs_prose": {
+    "em_en_dash": 155,
+    "marketing_words": 4,
+    "cliche_openers": 0,
+    "generated_at": "2026-09-15",
+    "note": "Prose-slop ratchet over README.md + CHANGELOG.md. Fenced code blocks are stripped before scanning. The em_en_dash count includes historical CHANGELOG entries that are frozen in place rather than rewritten; the ratchet only fails on GROWTH. Regenerate with --write-baseline only after a deliberate cleanup lowers a count."
   }
 }
