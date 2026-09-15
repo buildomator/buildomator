@@ -113,4 +113,33 @@ if [ -f "$JARGON_SCRIPT" ] && command -v node >/dev/null 2>&1; then
   fi
 fi
 
+# ── User-docs prose detector (separate detector, NO auto-regen) ────────────
+#
+# Like the jargon ratchet, the prose ratchet does NOT auto-regen on
+# regression. Auto-regen would defeat the catch: the point is to make the
+# author pause and confirm that a new em/en dash, marketing filler word, or
+# cliche opener in user-facing docs was intentional. The author must run
+#   node bin/maintenance/check-user-docs-prose.cjs --write-baseline
+# explicitly and commit the new baseline. That moment of explicit
+# acknowledgement is the whole point.
+PROSE_SCRIPT="bin/maintenance/check-user-docs-prose.cjs"
+if [ -f "$PROSE_SCRIPT" ] && command -v node >/dev/null 2>&1; then
+  if ! node "$PROSE_SCRIPT" >/dev/null 2>&1; then
+    echo "" >&2
+    echo "ERROR: user-docs prose ratchet regressed." >&2
+    echo "" >&2
+    node "$PROSE_SCRIPT" >&2 || true
+    echo "" >&2
+    echo "Fix the offender: remove the dash, replace the filler word, or drop the opener, then re-run the commit." >&2
+    echo "" >&2
+    echo "Only if a count was deliberately lowered, lock the gain in:" >&2
+    echo "  node bin/maintenance/check-user-docs-prose.cjs --write-baseline" >&2
+    echo "  git add tests/drift-baseline.json" >&2
+    echo "  # then re-run the commit" >&2
+    echo "" >&2
+    echo "Override entirely: git commit --no-verify" >&2
+    exit 1
+  fi
+fi
+
 exit 0

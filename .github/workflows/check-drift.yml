@@ -148,6 +148,19 @@ jobs:
       - name: Run user-docs jargon discrimination test
         run: node tests/user-docs-jargon.test.cjs
 
+  user-docs-prose:
+    name: User-docs prose ratchet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run user-docs prose detector
+        run: node bin/maintenance/check-user-docs-prose.cjs
+      - name: Run user-docs prose discrimination test
+        run: node tests/user-docs-prose.test.cjs
+
   bm-build-drift:
     name: bm package regenerate-and-diff (BUILD-01/BUILD-02)
     # checkout@v4 provides git, which the drift test's integration cases
