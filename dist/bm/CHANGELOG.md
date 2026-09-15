@@ -8,6 +8,16 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.7.0] - 2026-09-16  (prose-slop ratchet for the plugin's own docs)
+
+Adds a machine-checkable prose gate over the plugin's own README and CHANGELOG, and records a fourth idea-source upstream. This is plugin-self CI infrastructure, not a downstream capability. No config migration required.
+
+### Added
+- **Prose-slop ratchet over README and CHANGELOG (`bin/maintenance/check-user-docs-prose.cjs`).** A sibling to the user-docs jargon ratchet. It counts anti-slop violations (em-dash and en-dash characters, a small set of filler marketing words, and cliche opening phrases), strips fenced code blocks first, and fails at commit time and in CI only when a count grows above a recorded baseline. The baseline was captured from the real files, so historical CHANGELOG entries stay frozen in place rather than getting rewritten, and the README side starts and stays at zero. The rule set makes mechanical the anti-slop writing guidance that had no automated check before. Run the checker with `--write-baseline` to accept a deliberate change.
+
+### Changed
+- **The Upstream projects list now names four sources.** Added ASD-STE100 Simplified Technical English, the 1986 aerospace controlled-language standard, as a fourth idea-only upstream alongside VibeDrift. Buildomator never runs it; the new prose ratchet is a native port of its machine-checkable subset. See the Upstream projects section of the README.
+
 ## [4.6.0] - 2026-09-02  (Fable 5.1 + native drift-detection precision)
 
 Adopts Claude Fable 5.1 as the top model tier and ports two precision heuristics from the VibeDrift second upstream (v0.20.0) into the native drift detection. No config migration required.
