@@ -241,13 +241,17 @@ async function syncStateFrontmatter(
  *
  * Holds lock across the entire read -> transform -> write cycle.
  *
+ * A modifier may return null to signal that nothing was parsed and the file
+ * must not be touched (no frontmatter sync, no write). The writer also skips
+ * the disk write when the serialized result equals the on-disk bytes.
+ *
  * @param projectDir - Project root directory
  * @param modifier - Function to transform STATE.md content
  * @returns The final written content
  */
 async function readModifyWriteStateMd(
   projectDir: string,
-  modifier: (content: string) => string | Promise<string>,
+  modifier: (content: string) => string | null | Promise<string | null>,
   workstream?: string,
   options: { resync?: boolean; preserveExistingProgress?: boolean } = {},
 ): Promise<string> {
@@ -267,6 +271,8 @@ async function readModifyWriteStateMd(
     const preFm = extractFrontmatter(content);
     const body = stripFrontmatter(content);
     const modified = await modifier(body);
+    // Nothing parsed: leave the file exactly as it was found on disk.
+    if (modified === null) return content;
     let synced = await syncStateFrontmatter(modified, projectDir, workstream, {
       preserveExistingProgress: options.preserveExistingProgress,
     });
@@ -277,6 +283,9 @@ async function readModifyWriteStateMd(
       synced = `---\n${yamlStr}\n---\n\n${stripFrontmatter(synced)}`;
     }
     const normalized = normalizeMd(synced);
+    // Serialized result matches disk: skip the write so an unchanged file keeps
+    // its bytes and mtime.
+    if (normalized === content) return content;
     await writeFile(statePath, normalized, 'utf-8');
     return normalized;
   } finally {
@@ -291,7 +300,7 @@ async function readModifyWriteStateMd(
  */
 export async function readModifyWriteStateMdFull(
   projectDir: string,
-  modifier: (content: string) => string | Promise<string>,
+  modifier: (content: string) => string | null | Promise<string | null>,
   workstream?: string,
 ): Promise<void> {
   const statePath = planningPaths(projectDir, workstream).state;
@@ -304,8 +313,14 @@ export async function readModifyWriteStateMdFull(
       /* missing */
     }
     const modified = await modifier(content);
+    // Nothing parsed: leave the file exactly as it was found on disk.
+    if (modified === null) return;
     const synced = await syncStateFrontmatter(modified, projectDir, workstream);
-    await writeFile(statePath, normalizeMd(synced), 'utf-8');
+    const normalized = normalizeMd(synced);
+    // Serialized result matches disk: skip the write so an unchanged file keeps
+    // its bytes and mtime.
+    if (normalized === content) return;
+    await writeFile(statePath, normalized, 'utf-8');
   } finally {
     await releaseStateLock(lockPath);
   }
@@ -583,12 +598,12 @@ export const stateAdvancePlan: QueryHandler = async (_args, projectDir, workstre
       compoundPlanField = planField;
     } else {
       result = { error: 'Cannot parse Current Plan or Total Plans in Phase from STATE.md' };
-      return content;
+      return null;
     }
 
     if (isNaN(currentPlan) || isNaN(totalPlans)) {
       result = { error: 'Cannot parse Current Plan or Total Plans in Phase from STATE.md' };
-      return content;
+      return null;
     }
 
     if (currentPlan >= totalPlans) {
@@ -733,8 +748,11 @@ export const stateUpdateProgress: QueryHandler = async (_args, projectDir, works
 
   let updated = false;
   await readModifyWriteStateMd(projectDir, (content) => {
-    const boldProgressPattern = /(\*\*Progress:\*\*\s*).*/i;
-    const plainProgressPattern = /^(Progress:\s*).*/im;
+    // The body Progress line is the only target; the frontmatter progress block
+    // belongs to the frontmatter sync. Match horizontal whitespace only and stop
+    // at end of line.
+    const boldProgressPattern = /(\*\*Progress:\*\*[ \t]*).*$/im;
+    const plainProgressPattern = /^(Progress:[ \t]*).*$/im;
     if (boldProgressPattern.test(content)) {
       updated = true;
       return content.replace(boldProgressPattern, (_match, prefix: string) => `${prefix}${progressStr}`);
@@ -743,7 +761,7 @@ export const stateUpdateProgress: QueryHandler = async (_args, projectDir, works
       updated = true;
       return content.replace(plainProgressPattern, (_match, prefix: string) => `${prefix}${progressStr}`);
     }
-    return content;
+    return null;
   }, workstream);
 
   if (updated) {

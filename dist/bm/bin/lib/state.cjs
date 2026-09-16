@@ -296,7 +296,7 @@ function cmdStateAdvancePlan(cwd, raw) {
 
     if (isNaN(currentPlan) || isNaN(totalPlans)) {
       result = { error: true };
-      return content;
+      return null;
     }
 
     if (currentPlan >= totalPlans) {
@@ -432,17 +432,22 @@ function cmdStateUpdateProgress(cwd, raw) {
   const _totalSummaries = totalSummaries;
 
   readModifyWriteStateMd(statePath, (content) => {
-    // Try **Progress:** bold format first, then plain Progress: format
-    const boldProgressPattern = /(\*\*Progress:\*\*\s*).*/i;
-    const plainProgressPattern = /^(Progress:\s*).*/im;
-    if (boldProgressPattern.test(content)) {
+    // The human-readable body Progress line is the only target here; the
+    // structured frontmatter progress block is owned by the frontmatter sync.
+    // Match horizontal whitespace only and stop at end of line, and confine the
+    // match to the body so a frontmatter progress key can never be consumed.
+    const body = stripFrontmatter(content);
+    const head = content.slice(0, content.length - body.length);
+    const boldProgressPattern = /(\*\*Progress:\*\*[ \t]*).*$/im;
+    const plainProgressPattern = /^(Progress:[ \t]*).*$/im;
+    if (boldProgressPattern.test(body)) {
       updated = true;
-      return content.replace(boldProgressPattern, (_match, prefix) => `${prefix}${progressStr}`);
-    } else if (plainProgressPattern.test(content)) {
+      return head + body.replace(boldProgressPattern, (_match, prefix) => `${prefix}${progressStr}`);
+    } else if (plainProgressPattern.test(body)) {
       updated = true;
-      return content.replace(plainProgressPattern, (_match, prefix) => `${prefix}${progressStr}`);
+      return head + body.replace(plainProgressPattern, (_match, prefix) => `${prefix}${progressStr}`);
     }
-    return content;
+    return null;
   }, cwd);
 
   if (updated) {
@@ -1034,6 +1039,10 @@ function writeStateMd(statePath, content, cwd) {
  *   When resync is false, syncStateFrontmatter still runs to maintain/create the
  *   frontmatter block, but any existing progress.* sub-keys are preserved from
  *   the pre-transform file rather than being rebuilt from disk.
+ *
+ *   A transform may return null to signal that nothing was parsed and the file
+ *   must not be touched (no frontmatter sync, no write). The writer also skips
+ *   the disk write when the serialized result equals the on-disk bytes.
  */
 function readModifyWriteStateMd(statePath, transformFn, cwd, options) {
   const resync = !options || options.resync !== false;
@@ -1044,6 +1053,10 @@ function readModifyWriteStateMd(statePath, transformFn, cwd, options) {
     // restore it when resync is false.
     const preFm = resync ? null : extractFrontmatter(content);
     const modified = transformFn(content);
+    // Nothing parsed: leave the file exactly as it was found on disk.
+    if (modified === null || modified === undefined) {
+      return;
+    }
     let synced = syncStateFrontmatter(modified, cwd);
 
     if (!resync && preFm && preFm.progress) {
@@ -1059,6 +1072,11 @@ function readModifyWriteStateMd(statePath, transformFn, cwd, options) {
       synced = `---\n${yamlStr}\n---\n\n${body}`;
     }
 
+    // Serialized result matches disk: skip the write so an unchanged file keeps
+    // its bytes and mtime.
+    if (synced === content) {
+      return;
+    }
     platformWriteSync(statePath, synced);
   } finally {
     releaseStateLock(lockPath);
