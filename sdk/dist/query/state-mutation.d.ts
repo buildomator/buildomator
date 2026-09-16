@@ -47,7 +47,7 @@ export declare function releaseStateLock(lockPath: string): Promise<void>;
  * (modifier receives entire file content including YAML frontmatter).
  * Used by milestone completion and other flows that replace body fields the same way as the CLI.
  */
-export declare function readModifyWriteStateMdFull(projectDir: string, modifier: (content: string) => string | Promise<string>, workstream?: string): Promise<void>;
+export declare function readModifyWriteStateMdFull(projectDir: string, modifier: (content: string) => string | null | Promise<string | null>, workstream?: string): Promise<void>;
 /**
  * Query handler for state.update command.
  *

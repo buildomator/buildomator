@@ -8788,6 +8788,8 @@ async function readModifyWriteStateMd(projectDir, modifier, workstream, options 
     const preFm = extractFrontmatter2(content);
     const body = stripFrontmatter(content);
     const modified = await modifier(body);
+    if (modified === null)
+      return content;
     let synced = await syncStateFrontmatter(modified, projectDir, workstream, {
       preserveExistingProgress: options.preserveExistingProgress
     });
@@ -8802,6 +8804,8 @@ ${yamlStr}
 ${stripFrontmatter(synced)}`;
     }
     const normalized = normalizeMd(synced);
+    if (normalized === content)
+      return content;
     await writeFile3(statePath, normalized, "utf-8");
     return normalized;
   } finally {
@@ -8818,8 +8822,13 @@ async function readModifyWriteStateMdFull(projectDir, modifier, workstream) {
     } catch {
     }
     const modified = await modifier(content);
+    if (modified === null)
+      return;
     const synced = await syncStateFrontmatter(modified, projectDir, workstream);
-    await writeFile3(statePath, normalizeMd(synced), "utf-8");
+    const normalized = normalizeMd(synced);
+    if (normalized === content)
+      return;
+    await writeFile3(statePath, normalized, "utf-8");
   } finally {
     await releaseStateLock(lockPath);
   }
@@ -9018,11 +9027,11 @@ var stateAdvancePlan = async (_args, projectDir, workstream) => {
       compoundPlanField = planField;
     } else {
       result = { error: "Cannot parse Current Plan or Total Plans in Phase from STATE.md" };
-      return content;
+      return null;
     }
     if (isNaN(currentPlan) || isNaN(totalPlans)) {
       result = { error: "Cannot parse Current Plan or Total Plans in Phase from STATE.md" };
-      return content;
+      return null;
     }
     if (currentPlan >= totalPlans) {
       content = stateReplaceFieldIfTemplate(content, "Status", "Phase complete \u2014 ready for verification").content;
@@ -9119,8 +9128,8 @@ var stateUpdateProgress = async (_args, projectDir, workstream) => {
   const progressStr = `[${bar}] ${percent}%`;
   let updated = false;
   await readModifyWriteStateMd(projectDir, (content) => {
-    const boldProgressPattern = /(\*\*Progress:\*\*\s*).*/i;
-    const plainProgressPattern = /^(Progress:\s*).*/im;
+    const boldProgressPattern = /(\*\*Progress:\*\*[ \t]*).*$/im;
+    const plainProgressPattern = /^(Progress:[ \t]*).*$/im;
     if (boldProgressPattern.test(content)) {
       updated = true;
       return content.replace(boldProgressPattern, (_match, prefix) => `${prefix}${progressStr}`);
@@ -9129,7 +9138,7 @@ var stateUpdateProgress = async (_args, projectDir, workstream) => {
       updated = true;
       return content.replace(plainProgressPattern, (_match, prefix) => `${prefix}${progressStr}`);
     }
-    return content;
+    return null;
   }, workstream);
   if (updated) {
     return { data: { updated: true, percent, completed: totalSummaries, total: totalPlans, bar: progressStr } };

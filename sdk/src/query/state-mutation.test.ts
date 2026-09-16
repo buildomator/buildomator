@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, writeFile, readFile, rm, mkdir } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm, mkdir, utimes, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { existsSync } from 'node:fs';
@@ -199,6 +199,86 @@ describe('stateUpdateProgress zero-plan no-op', () => {
     await stateUpdateProgress([], tmpDir);
     const after = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
     expect(after).toMatch(/Progress:.*\b50%/);
+  });
+});
+
+// ─── write only what you parsed ──────────────────────────────────────────────
+
+describe('write only what you parsed', () => {
+  let tmpDir: string;
+  const PINNED = new Date('2000-01-01T00:00:00Z');
+  const FM = '---\n'
+    + 'gsd_state_version: 1.0\n'
+    + 'milestone: v1.0\n'
+    + 'progress:\n'
+    + '  total_phases: 30\n'
+    + '  completed_plans: 5\n'
+    + '---\n\n'
+    + '# Project State\n\n'
+    + '## Current Position\n\n';
+
+  const sp = () => join(tmpDir, '.planning', 'STATE.md');
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'gsd-writeonly-'));
+    await mkdir(join(tmpDir, '.planning', 'phases'), { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  async function pin(): Promise<number> {
+    await utimes(sp(), PINNED, PINNED);
+    return (await stat(sp())).mtimeMs;
+  }
+
+  async function mtimeOf(): Promise<number> {
+    return (await stat(sp())).mtimeMs;
+  }
+
+  async function seedPlans(): Promise<void> {
+    const pd = join(tmpDir, '.planning', 'phases', '01-x');
+    await mkdir(pd, { recursive: true });
+    await writeFile(join(pd, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(pd, '01-02-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(pd, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+  }
+
+  it('advance-plan on an unparseable STATE.md reports the error and never writes', async () => {
+    const { stateAdvancePlan } = await import('./state-mutation.js');
+    await writeFile(sp(), `${FM}Phase: 3\nStatus: Executing\n\nProgress: [░░░░░░░░░░] 0%\n`, 'utf-8');
+    const before = await readFile(sp(), 'utf-8');
+    const m = await pin();
+    const result = await stateAdvancePlan([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(String(data.error)).toMatch(/Cannot parse/);
+    expect(await readFile(sp(), 'utf-8')).toBe(before);
+    expect(await mtimeOf()).toBe(m);
+  });
+
+  it('update-progress rewrites the body line while frontmatter progress survives', async () => {
+    const { stateUpdateProgress } = await import('./state-mutation.js');
+    await writeFile(sp(), `${FM}Phase: 3\nStatus: Executing\n\nProgress: [░░░░░░░░░░] 0%\n`, 'utf-8');
+    await seedPlans();
+    await stateUpdateProgress([], tmpDir);
+    const after = await readFile(sp(), 'utf-8');
+    expect(after).toMatch(/^Progress:.*50%/m);
+    expect(after).toMatch(/^  total_phases: \d+$/m);
+  });
+
+  it('update-progress with a frontmatter-only Progress key is a byte-identical no-op', async () => {
+    const { stateUpdateProgress } = await import('./state-mutation.js');
+    await writeFile(sp(), `${FM}Phase: 3\nStatus: Executing\n`, 'utf-8');
+    await seedPlans();
+    const before = await readFile(sp(), 'utf-8');
+    const m = await pin();
+    const result = await stateUpdateProgress([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(data.updated).toBe(false);
+    expect(String(data.reason)).toMatch(/Progress field not found/);
+    expect(await readFile(sp(), 'utf-8')).toBe(before);
+    expect(await mtimeOf()).toBe(m);
   });
 });
 
