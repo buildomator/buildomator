@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.7.1] - 2026-09-16  (STATE.md writer data-loss fix)
+
+Fixes a data-loss bug in the STATE.md writer handlers reported upstream as #32. Patch release, no config change.
+
+### Fixed
+- **The `state.*` handlers no longer rewrite STATE.md on a path that reports failure, and `update-progress` no longer deletes the frontmatter `total_phases` line (#32).** Two root causes, one per resolver twin, both closed by a "write only what you parsed" rule. A handler that cannot parse the file now returns without writing, so a caller told "nothing happened" really gets an untouched file (same bytes, same mtime). Separately, `update-progress` now edits only the human-readable progress line in the body and leaves the structured frontmatter block alone, so a greedy pattern can no longer cross a newline and drop `total_phases`. The zero-plan no-op guard and the executor-content preservation logic are unchanged. Both twins carry the fix and matching regression tests.
+
 ## [4.7.0] - 2026-09-16  (prose-slop ratchet for the plugin's own docs)
 
 Adds a machine-checkable prose gate over the plugin's own README and CHANGELOG, and records a fourth idea-source upstream. This is plugin-self CI infrastructure, not a downstream capability. No config migration required.
