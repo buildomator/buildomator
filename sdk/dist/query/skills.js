@@ -10,7 +10,6 @@
  * global skills dir policy rather than a Claude-only hardcoded path. A
  * namespaced `global:<plugin>:<skill>` entry emits a Skill-tool load-by-name
  * directive (no path resolution) so a Claude Code plugin skill can be injected.
- * Fixes #2555.
  *
  * @example
  * ```typescript

@@ -3,7 +3,7 @@
  *
  * Verifies the handler reads `config.agent_skills[agentType]` from
  * `.planning/config.json` and returns the `<agent_skills>` XML block
- * workflows interpolate into Task() prompts (regression for #2555).
+ * workflows interpolate into Task() prompts.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
