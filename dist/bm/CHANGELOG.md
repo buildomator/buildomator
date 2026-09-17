@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.7.2] - 2026-09-17  (agent_skills accepts plugin skills)
+
+Adds the documented `global:<plugin>:<skill>` form to the `agent_skills` config, reported as #33. Patch release, no config migration.
+
+### Fixed
+- **`agent_skills` now accepts `global:<plugin>:<skill>` so a Claude Code plugin skill can be injected into an agent (#33).** The resolver rejected the namespaced form (its name check allowed no colon) and only ever resolved a personal skill under `~/.claude/skills/`, so a skill that ships as a plugin (for example `superpowers:brainstorming`) could not reach gsd-executor, gsd-planner or gsd-verifier. On the Claude runtime the resolver now emits a load-by-name Skill-tool directive in the agent's `<agent_skills>` block, so the agent loads the plugin skill by name at start. It resolves no filesystem path, because the plugin cache is versioned and has no stable path to reference. A plain `global:<name>` (no colon) still resolves to `~/.claude/skills/<name>/SKILL.md` as before, malformed names are skipped with a warning, and non-Claude runtimes skip plugin entries. Both resolver twins carry the change and matching regression tests. This also fixes a separate case where the CJS `agent-skills` output was truncated on piped stdout.
+
 ## [4.7.1] - 2026-09-16  (STATE.md writer data-loss fix)
 
 Fixes a data-loss bug in the STATE.md writer handlers reported upstream as #32. Patch release, no config change.
