@@ -7,7 +7,10 @@
  * `config.agent_skills[agentType]` the same way the legacy
  * `gsd-tools.cjs agent-skills <type>` path does. Project-relative skills stay
  * project-root validated; `global:<name>` now resolves through runtime-aware
- * global skills dir policy rather than a Claude-only hardcoded path. Fixes #2555.
+ * global skills dir policy rather than a Claude-only hardcoded path. A
+ * namespaced `global:<plugin>:<skill>` entry emits a Skill-tool load-by-name
+ * directive (no path resolution) so a Claude Code plugin skill can be injected.
+ * Fixes #2555.
  *
  * @example
  * ```typescript

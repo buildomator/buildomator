@@ -335,7 +335,7 @@ Set via `manager.*` namespace (e.g., `"manager": { "flags": { "discuss": "--auto
 |-----|------|---------|----------------|-------------|
 | `parallelization` | boolean\|object | `true` | `true`, `false`, `{ "enabled": true }` | Enable parallel wave execution; object form allows additional sub-keys |
 | `model_overrides` | object\|null | `null` | `{ "<agent-type>": "<model-id>" }` | Override model selection per agent type |
-| `agent_skills` | object | `{}` | `{ "<agent-type>": "<skill-set>" }` | Assign skill sets to specific agent types |
+| `agent_skills` | object | `{}` | `{ "<agent-type>": ["<project-relative-skill-dir>", "global:<name>", "global:<plugin>:<skill>"] }` | Skills injected into that agent's prompt; `global:<name>` reads the personal skill under the runtime skills dir, `global:<plugin>:<skill>` asks the agent to load a Claude Code plugin skill by name via the Skill tool |
 | `sub_repos` | array | `[]` | Array of relative path strings | Child directories with independent `.git` repos (auto-detected) |
 
 ### Planning Fields

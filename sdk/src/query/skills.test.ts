@@ -6,7 +6,7 @@
  * workflows interpolate into Task() prompts (regression for #2555).
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { execSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
@@ -174,6 +174,126 @@ describe('agentSkills', () => {
   it('does not signal format:"text" for empty result', async () => {
     const r = await agentSkills(['gsd-planner'], tmpDir);
     expect(r.format).toBeUndefined();
+  });
+
+  it('accepts global:<plugin>:<skill> and emits a Skill-tool load-by-name directive', async () => {
+    // No filesystem skill is created: a plugin skill is loaded by name, not by path.
+    await writeConfig(tmpDir, {
+      agent_skills: { 'gsd-executor': ['global:superpowers:brainstorming'] },
+    });
+
+    const r = await agentSkills(['gsd-executor'], tmpDir);
+    expect(r.data).toBe(
+      '<agent_skills>\n' +
+        'Read these user-configured skills:\n' +
+        '- Invoke the Skill tool with skill "superpowers:brainstorming" at agent start (plugin skill, loaded by name, not by path)\n' +
+        '</agent_skills>',
+    );
+    expect(r.format).toBe('text');
+  });
+
+  it('keeps plain global:<name> resolving to <config dir>/skills/<name>/SKILL.md', async () => {
+    const cfgDir = join(tmpDir, 'cfg');
+    await writeSkill(join(cfgDir, 'skills'), 'my-notes');
+    await writeConfig(tmpDir, {
+      agent_skills: { 'gsd-executor': ['global:my-notes'] },
+    });
+
+    const prev = process.env.CLAUDE_CONFIG_DIR;
+    process.env.CLAUDE_CONFIG_DIR = cfgDir;
+    try {
+      const r = await agentSkills(['gsd-executor'], tmpDir);
+      expect(r.data).toBe(
+        '<agent_skills>\n' +
+          'Read these user-configured skills:\n' +
+          `- @${join(cfgDir, 'skills', 'my-notes', 'SKILL.md')}\n` +
+          '</agent_skills>',
+      );
+    } finally {
+      if (prev === undefined) delete process.env.CLAUDE_CONFIG_DIR;
+      else process.env.CLAUDE_CONFIG_DIR = prev;
+    }
+  });
+
+  it('rejects malformed namespaced names with a warning and keeps other entries', async () => {
+    await writeConfig(tmpDir, {
+      agent_skills: {
+        'gsd-executor': [
+          'global:a::b',
+          'global::a',
+          'global:a:',
+          'global:a:b$c',
+          'global:coderabbit:code-review',
+        ],
+      },
+    });
+
+    const warnings: string[] = [];
+    const spy = vi.spyOn(process.stderr, 'write').mockImplementation((chunk: string | Uint8Array) => {
+      warnings.push(String(chunk));
+      return true;
+    });
+    try {
+      const r = await agentSkills(['gsd-executor'], tmpDir);
+      const invalid = warnings.filter((w) => w.includes('Invalid plugin skill name'));
+      expect(invalid).toHaveLength(4);
+      expect(r.data).toBe(
+        '<agent_skills>\n' +
+          'Read these user-configured skills:\n' +
+          '- Invoke the Skill tool with skill "coderabbit:code-review" at agent start (plugin skill, loaded by name, not by path)\n' +
+          '</agent_skills>',
+      );
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('interleaves path, plugin and personal global skills in config order', async () => {
+    const cfgDir = join(tmpDir, 'cfg');
+    await writeSkill(join(tmpDir, '.claude', 'skills'), 'local-skill');
+    await writeSkill(join(cfgDir, 'skills'), 'my-notes');
+    await writeConfig(tmpDir, {
+      agent_skills: {
+        'gsd-executor': ['.claude/skills/local-skill', 'global:superpowers:brainstorming', 'global:my-notes'],
+      },
+    });
+
+    const prev = process.env.CLAUDE_CONFIG_DIR;
+    process.env.CLAUDE_CONFIG_DIR = cfgDir;
+    try {
+      const r = await agentSkills(['gsd-executor'], tmpDir);
+      expect(r.data).toBe(
+        '<agent_skills>\n' +
+          'Read these user-configured skills:\n' +
+          '- @.claude/skills/local-skill/SKILL.md\n' +
+          '- Invoke the Skill tool with skill "superpowers:brainstorming" at agent start (plugin skill, loaded by name, not by path)\n' +
+          `- @${join(cfgDir, 'skills', 'my-notes', 'SKILL.md')}\n` +
+          '</agent_skills>',
+      );
+    } finally {
+      if (prev === undefined) delete process.env.CLAUDE_CONFIG_DIR;
+      else process.env.CLAUDE_CONFIG_DIR = prev;
+    }
+  });
+
+  it('skips plugin skills on non-claude runtimes with a warning', async () => {
+    await writeConfig(tmpDir, {
+      runtime: 'codex',
+      agent_skills: { 'gsd-executor': ['global:superpowers:brainstorming'] },
+    });
+
+    const warnings: string[] = [];
+    const spy = vi.spyOn(process.stderr, 'write').mockImplementation((chunk: string | Uint8Array) => {
+      warnings.push(String(chunk));
+      return true;
+    });
+    try {
+      const r = await agentSkills(['gsd-executor'], tmpDir);
+      expect(r.data).toBe('');
+      expect(warnings.some((w) => w.includes('needs the Claude runtime'))).toBe(true);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

@@ -1702,7 +1702,8 @@ function cmdInitRemoveWorkspace(cwd, name, raw) {
  *
  * Reads `config.agent_skills[agentType]` and validates each skill path exists
  * within the project root. Returns a formatted `<agent_skills>` block or empty
- * string if no skills are configured.
+ * string if no skills are configured. A namespaced `global:<plugin>:<skill>`
+ * entry emits a Skill-tool load-by-name directive instead of resolving a path.
  *
  * @param {object} config - Loaded project config
  * @param {string} agentType - The agent type (e.g., 'gsd-executor', 'gsd-planner')
@@ -1715,6 +1716,8 @@ function buildAgentSkillsBlock(config, agentType, projectRoot) {
   const { getGlobalSkillDir, getGlobalSkillDisplayPath } = require('./runtime-homes.cjs');
   const runtime = (config && config.runtime) || 'claude';
   const globalSkillsBase = require('./runtime-homes.cjs').getGlobalSkillsBase(runtime);
+  // Namespaced `<plugin>:<skill>` form: each colon-separated segment is letters, digits, "_" or "-".
+  const PLUGIN_SKILL_NAME_RE = /^[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/;
 
   if (!config || !config.agent_skills || !agentType) return '';
 
@@ -1735,6 +1738,20 @@ function buildAgentSkillsBlock(config, agentType, projectRoot) {
       // Explicit empty-name guard before regex for clearer error message
       if (!skillName) {
         process.stderr.write(`[agent-skills] WARNING: "global:" prefix with empty skill name — skipping\n`);
+        continue;
+      }
+      // A colon in the name marks the `<plugin>:<skill>` plugin-skill form: no filesystem
+      // resolution, emit a Skill-tool load-by-name directive for the Claude runtime.
+      if (skillName.includes(':')) {
+        if (!PLUGIN_SKILL_NAME_RE.test(skillName)) {
+          process.stderr.write(`[agent-skills] WARNING: Invalid plugin skill name "${skillName}": expected <plugin>:<skill> with segments of letters, digits, "_" or "-", skipping\n`);
+          continue;
+        }
+        if (runtime !== 'claude') {
+          process.stderr.write(`[agent-skills] WARNING: Plugin skill "${skillName}" needs the Claude runtime (Skill tool); runtime "${runtime}" skips it\n`);
+          continue;
+        }
+        validPaths.push({ kind: 'plugin', ref: skillName, display: skillName });
         continue;
       }
       // Sanitize: skill name must be alphanumeric, hyphens, or underscores only
@@ -1762,7 +1779,7 @@ function buildAgentSkillsBlock(config, agentType, projectRoot) {
         process.stderr.write(`[agent-skills] WARNING: Global skill "${skillName}" failed path check (symlink escape?) — skipping\n`);
         continue;
       }
-      validPaths.push({ ref: `${globalSkillDir}/SKILL.md`, display: displayPath });
+      validPaths.push({ kind: 'path', ref: `${globalSkillDir}/SKILL.md`, display: displayPath });
       continue;
     }
 
@@ -1780,12 +1797,18 @@ function buildAgentSkillsBlock(config, agentType, projectRoot) {
       continue;
     }
 
-    validPaths.push({ ref: `${skillPath}/SKILL.md`, display: skillPath });
+    validPaths.push({ kind: 'path', ref: `${skillPath}/SKILL.md`, display: skillPath });
   }
 
   if (validPaths.length === 0) return '';
 
-  const lines = validPaths.map(p => `- @${p.ref}`).join('\n');
+  const lines = validPaths
+    .map(p =>
+      p.kind === 'plugin'
+        ? `- Invoke the Skill tool with skill "${p.ref}" at agent start (plugin skill, loaded by name, not by path)`
+        : `- @${p.ref}`,
+    )
+    .join('\n');
   return `<agent_skills>\nRead these user-configured skills:\n${lines}\n</agent_skills>`;
 }
 
@@ -1802,11 +1825,13 @@ function cmdAgentSkills(cwd, agentType, raw) {
 
   const config = loadConfig(cwd);
   const block = buildAgentSkillsBlock(config, agentType, cwd);
-  // Output raw text (not JSON) so workflows can embed it directly
+  // Emit raw text (not JSON) so workflows can embed it directly. fs.writeSync(1)
+  // blocks until the kernel accepts the bytes and skipping process.exit lets the
+  // event loop drain, so the block survives on piped stdout where an async
+  // process.stdout.write followed by an immediate exit would truncate it.
   if (block) {
-    process.stdout.write(block);
+    fs.writeSync(1, block);
   }
-  process.exit(0);
 }
 
 /**
