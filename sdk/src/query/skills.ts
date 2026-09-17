@@ -7,7 +7,10 @@
  * `config.agent_skills[agentType]` the same way the legacy
  * `gsd-tools.cjs agent-skills <type>` path does. Project-relative skills stay
  * project-root validated; `global:<name>` now resolves through runtime-aware
- * global skills dir policy rather than a Claude-only hardcoded path. Fixes #2555.
+ * global skills dir policy rather than a Claude-only hardcoded path. A
+ * namespaced `global:<plugin>:<skill>` entry emits a Skill-tool load-by-name
+ * directive (no path resolution) so a Claude Code plugin skill can be injected.
+ * Fixes #2555.
  *
  * @example
  * ```typescript
@@ -31,6 +34,8 @@ import { detectRuntime, renderGlobalSkillDisplayPath, resolveGlobalSkillDir, res
 import { loadConfig } from '../config.js';
 
 const GLOBAL_SKILL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
+// Namespaced `<plugin>:<skill>` form: each colon-separated segment is letters, digits, "_" or "-".
+const PLUGIN_SKILL_NAME_RE = /^[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/;
 
 /**
  * Resolve `target` and ensure it stays inside `baseDir` after symlink resolution.
@@ -80,7 +85,7 @@ export const agentSkills: QueryHandler = async (args, projectDir) => {
 
   const runtime = detectRuntime(config as { runtime?: unknown });
   const globalSkillsBase = resolveGlobalSkillsBase(runtime);
-  const validEntries: Array<{ ref: string }> = [];
+  const validEntries: Array<{ kind: 'path' | 'plugin'; ref: string }> = [];
 
   for (const entry of skillPaths) {
     if (typeof entry !== 'string') continue;
@@ -90,6 +95,20 @@ export const agentSkills: QueryHandler = async (args, projectDir) => {
       const skillName = entry.slice(7);
       if (!skillName) {
         process.stderr.write('[agent-skills] WARNING: "global:" prefix with empty skill name — skipping\n');
+        continue;
+      }
+      // A colon in the name marks the `<plugin>:<skill>` plugin-skill form: no filesystem
+      // resolution, emit a Skill-tool load-by-name directive for the Claude runtime.
+      if (skillName.includes(':')) {
+        if (!PLUGIN_SKILL_NAME_RE.test(skillName)) {
+          process.stderr.write(`[agent-skills] WARNING: Invalid plugin skill name "${skillName}": expected <plugin>:<skill> with segments of letters, digits, "_" or "-", skipping\n`);
+          continue;
+        }
+        if (runtime !== 'claude') {
+          process.stderr.write(`[agent-skills] WARNING: Plugin skill "${skillName}" needs the Claude runtime (Skill tool); runtime "${runtime}" skips it\n`);
+          continue;
+        }
+        validEntries.push({ kind: 'plugin', ref: skillName });
         continue;
       }
       if (!GLOBAL_SKILL_NAME_RE.test(skillName)) {
@@ -115,7 +134,7 @@ export const agentSkills: QueryHandler = async (args, projectDir) => {
         process.stderr.write(`[agent-skills] WARNING: Global skill "${skillName}" failed path check (symlink escape?) — skipping\n`);
         continue;
       }
-      validEntries.push({ ref: skillMd });
+      validEntries.push({ kind: 'path', ref: skillMd });
       continue;
     }
 
@@ -129,12 +148,18 @@ export const agentSkills: QueryHandler = async (args, projectDir) => {
       process.stderr.write(`[agent-skills] WARNING: Skill not found at "${entry}/SKILL.md" — skipping\n`);
       continue;
     }
-    validEntries.push({ ref: `${entry}/SKILL.md` });
+    validEntries.push({ kind: 'path', ref: `${entry}/SKILL.md` });
   }
 
   if (validEntries.length === 0) return { data: '' };
 
-  const lines = validEntries.map((e) => `- @${e.ref}`).join('\n');
+  const lines = validEntries
+    .map((e) =>
+      e.kind === 'plugin'
+        ? `- Invoke the Skill tool with skill "${e.ref}" at agent start (plugin skill, loaded by name, not by path)`
+        : `- @${e.ref}`,
+    )
+    .join('\n');
   const block = `<agent_skills>\nRead these user-configured skills:\n${lines}\n</agent_skills>`;
   // Signal the CLI dispatcher to write raw text — workflows embed the result
   // with `$(gsd-sdk query agent-skills …)` and need the XML block verbatim, not

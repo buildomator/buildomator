@@ -12588,6 +12588,7 @@ init_helpers();
 import { existsSync as existsSync16, realpathSync } from "node:fs";
 import { join as join23, resolve as resolve4, sep } from "node:path";
 var GLOBAL_SKILL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
+var PLUGIN_SKILL_NAME_RE = /^[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/;
 function resolveWithinBase(target, baseDir) {
   try {
     const resolvedBase = existsSync16(baseDir) ? realpathSync(baseDir) : resolve4(baseDir);
@@ -12638,6 +12639,20 @@ var agentSkills = async (args, projectDir) => {
         process.stderr.write('[agent-skills] WARNING: "global:" prefix with empty skill name \u2014 skipping\n');
         continue;
       }
+      if (skillName.includes(":")) {
+        if (!PLUGIN_SKILL_NAME_RE.test(skillName)) {
+          process.stderr.write(`[agent-skills] WARNING: Invalid plugin skill name "${skillName}": expected <plugin>:<skill> with segments of letters, digits, "_" or "-", skipping
+`);
+          continue;
+        }
+        if (runtime !== "claude") {
+          process.stderr.write(`[agent-skills] WARNING: Plugin skill "${skillName}" needs the Claude runtime (Skill tool); runtime "${runtime}" skips it
+`);
+          continue;
+        }
+        validEntries.push({ kind: "plugin", ref: skillName });
+        continue;
+      }
       if (!GLOBAL_SKILL_NAME_RE.test(skillName)) {
         process.stderr.write(`[agent-skills] WARNING: Invalid global skill name "${skillName}" \u2014 skipping
 `);
@@ -12666,7 +12681,7 @@ var agentSkills = async (args, projectDir) => {
 `);
         continue;
       }
-      validEntries.push({ ref: skillMd2 });
+      validEntries.push({ kind: "path", ref: skillMd2 });
       continue;
     }
     if (resolveWithinBase(entry, projectDir) === null) {
@@ -12680,11 +12695,11 @@ var agentSkills = async (args, projectDir) => {
 `);
       continue;
     }
-    validEntries.push({ ref: `${entry}/SKILL.md` });
+    validEntries.push({ kind: "path", ref: `${entry}/SKILL.md` });
   }
   if (validEntries.length === 0)
     return { data: "" };
-  const lines = validEntries.map((e3) => `- @${e3.ref}`).join("\n");
+  const lines = validEntries.map((e3) => e3.kind === "plugin" ? `- Invoke the Skill tool with skill "${e3.ref}" at agent start (plugin skill, loaded by name, not by path)` : `- @${e3.ref}`).join("\n");
   const block = `<agent_skills>
 Read these user-configured skills:
 ${lines}
