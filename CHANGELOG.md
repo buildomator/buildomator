@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.7.3] - 2026-09-19  (agent_skills plugin skills are now invocable)
+
+Completes the #33 fix. The agents that receive `agent_skills` now hold the Skill tool, so the load-by-name directive that shipped in v4.7.2 is actually followable. Patch release, no config migration.
+
+### Fixed
+- **Agents can now act on a `global:<plugin>:<skill>` entry (#33).** v4.7.2 emitted a directive telling the agent to load a plugin skill via the Skill tool, but the agents that receive `agent_skills` did not list the Skill tool, so the directive had no effect. The 19 agents that receive `agent_skills` now grant the Skill tool, so gsd-executor, gsd-planner, gsd-verifier and the rest can load a configured plugin skill by name at start. A capability probe confirmed a granted subagent can invoke the Skill tool and load a plugin skill by name; the static grant and the unchanged directive are covered by the gates. After updating, refresh the plugin and run `/reload-plugins` for the new agent tool grants to take effect.
+
 ## [4.7.2] - 2026-09-17  (agent_skills accepts plugin skills)
 
 Adds the documented `global:<plugin>:<skill>` form to the `agent_skills` config, reported as #33. Patch release, no config migration.
