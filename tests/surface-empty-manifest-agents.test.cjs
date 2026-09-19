@@ -41,7 +41,8 @@ function seedAgents(dir) {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'gsd-planner.md'), 'planner\n');
   fs.writeFileSync(path.join(dir, 'gsd-executor.md'), 'executor\n');
-  fs.writeFileSync(path.join(dir, 'other.md'), 'not a gsd file\n');
+  fs.writeFileSync(path.join(dir, 'bm-roadmapper.md'), 'roadmapper\n');
+  fs.writeFileSync(path.join(dir, 'other.md'), 'not a managed file\n');
 }
 
 // Case 1: empty staged dir must not prune anything.
@@ -58,6 +59,7 @@ check('empty staged dir leaves all dest agents untouched', () => {
     const after = new Set(fs.readdirSync(dest));
     assert(after.has('gsd-planner.md'), 'gsd-planner.md must survive');
     assert(after.has('gsd-executor.md'), 'gsd-executor.md must survive');
+    assert(after.has('bm-roadmapper.md'), 'bm-roadmapper.md must survive');
     assert(after.has('other.md'), 'other.md must survive');
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
@@ -80,14 +82,16 @@ check('applySurface with empty Map manifest leaves gsd-* agents untouched', () =
     const after = new Set(fs.readdirSync(agentsDir));
     assert(after.has('gsd-planner.md'), 'gsd-planner.md must survive empty manifest');
     assert(after.has('gsd-executor.md'), 'gsd-executor.md must survive empty manifest');
+    assert(after.has('bm-roadmapper.md'), 'bm-roadmapper.md must survive empty manifest');
     assert(after.has('other.md'), 'other.md must survive empty manifest');
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
 
-// Case 3 (control): populated staged set still prunes superseded gsd-* files.
-check('populated staged set prunes superseded gsd-* and keeps non-gsd', () => {
+// Case 3 (control): populated staged set still prunes superseded gsd-* and bm-*
+// files and never touches a non-managed file.
+check('populated staged set prunes superseded gsd-*/bm-* and keeps non-managed', () => {
   const root = tmpDir('gsd-surface-empty-');
   try {
     const staged = path.join(root, 'staged');
@@ -101,7 +105,8 @@ check('populated staged set prunes superseded gsd-* and keeps non-gsd', () => {
     const after = new Set(fs.readdirSync(dest));
     assert(after.has('gsd-planner.md'), 'staged gsd-planner.md must remain');
     assert(!after.has('gsd-executor.md'), 'superseded gsd-executor.md must be pruned');
-    assert(after.has('other.md'), 'non-gsd other.md must never be touched');
+    assert(!after.has('bm-roadmapper.md'), 'superseded bm-roadmapper.md must be pruned');
+    assert(after.has('other.md'), 'non-managed other.md must never be touched');
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

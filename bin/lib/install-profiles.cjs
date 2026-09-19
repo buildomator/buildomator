@@ -42,6 +42,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { platformWriteSync } = require('./shell-command-projection.cjs');
+const { normalizeAgentName, legacyAgentName } = require('./model-catalog.cjs');
 
 // ---------------------------------------------------------------------------
 // Profile definitions
@@ -130,10 +131,11 @@ function parseRequires(content) {
  * @returns {string[]} deduplicated agent stems like ['gsd-planner', 'gsd-executor']
  */
 function parseCallsAgents(content) {
-  // Match word-boundary gsd-<stem> patterns; stems are lowercase letters and hyphens.
-  // We use a regex that matches `gsd-` followed by one or more lowercase-alpha-or-hyphen chars.
-  // This catches `gsd-planner`, `gsd-plan-checker`, etc. in prose and code.
-  const matches = content.match(/\bgsd-[a-z][a-z-]*/g);
+  // Match word-boundary bm-<stem> or gsd-<stem> patterns; stems are lowercase
+  // letters and hyphens. bm- is the primary spelling; gsd- is the 4.x
+  // backwards-compat spelling accepted until v5.0.
+  // This catches `bm-planner`, `gsd-plan-checker`, etc. in prose and code.
+  const matches = content.match(/\b(?:bm|gsd)-[a-z][a-z-]*/g);
   if (!matches) return [];
   // Deduplicate
   return [...new Set(matches)];
@@ -354,9 +356,15 @@ function stageAgentsForProfile(srcAgentsDir, resolvedProfile) {
       for (const entry of entries) {
         if (!entry.isFile()) continue;
         if (!entry.name.endsWith('.md')) continue;
-        // Agent stem is the full filename without extension, e.g. "gsd-planner"
+        // Agent stem is the full filename without extension, e.g. "bm-planner".
+        // Match the stem under either prefix so a profile built from gsd- refs
+        // still stages the renamed bm- file (and vice versa) until v5.0.
         const stem = entry.name.slice(0, -3);
-        if (!resolvedProfile.agents.has(stem)) continue;
+        if (
+          !resolvedProfile.agents.has(stem) &&
+          !resolvedProfile.agents.has(normalizeAgentName(stem)) &&
+          !resolvedProfile.agents.has(legacyAgentName(stem))
+        ) continue;
         fs.copyFileSync(
           path.join(srcAgentsDir, entry.name),
           path.join(stageDir, entry.name),
@@ -555,6 +563,7 @@ module.exports = {
   PROFILES,
   PROFILE_RANK,
   loadSkillsManifest,
+  parseCallsAgents,
   resolveProfile,
   resolveEffectiveProfile,
   mostRestrictiveProfile,

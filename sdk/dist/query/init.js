@@ -21,7 +21,7 @@ import { join, relative, basename } from 'node:path';
 import { execSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { loadConfig } from '../config.js';
-import { resolveModel, MODEL_PROFILES } from './config-query.js';
+import { resolveModel, MODEL_PROFILES, legacyAgentName } from './config-query.js';
 import { maskIfSecret } from './secrets.js';
 import { findPhase } from './phase.js';
 import { roadmapGetPhase, getMilestoneInfo, extractCurrentMilestone, extractPhasesFromSection } from './roadmap.js';
@@ -170,9 +170,11 @@ function checkAgentsInstalled(config) {
     }
     const missing = [];
     for (const agent of expectedAgents) {
-        const agentFile = join(agentsDir, `${agent}.md`);
-        const agentFileCopilot = join(agentsDir, `${agent}.agent.md`);
-        if (!existsSync(agentFile) && !existsSync(agentFileCopilot)) {
+        // Accept the legacy gsd- filename too so a partially-renamed tree and
+        // users' stale gsd-*.md copies still register as installed until v5.0.
+        const legacy = legacyAgentName(agent);
+        const candidates = [`${agent}.md`, `${agent}.agent.md`, `${legacy}.md`, `${legacy}.agent.md`];
+        if (!candidates.some((f) => existsSync(join(agentsDir, f)))) {
             missing.push(agent);
         }
     }

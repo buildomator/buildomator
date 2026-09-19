@@ -56,8 +56,8 @@ function writeConfig(root, config) {
   fs.writeFileSync(path.join(root, '.planning', 'config.json'), JSON.stringify(config));
 }
 
-function runAgentSkills(root) {
-  const res = spawnSync(process.execPath, [GSD_TOOLS, 'agent-skills', 'gsd-executor'], {
+function runAgentSkills(root, agent = 'gsd-executor') {
+  const res = spawnSync(process.execPath, [GSD_TOOLS, 'agent-skills', agent], {
     cwd: root,
     env: { ...process.env, CLAUDE_CONFIG_DIR: path.join(root, 'cfg') },
     encoding: 'utf8',
@@ -139,6 +139,36 @@ check('non-claude runtime skips the plugin entry with a runtime-naming warning',
     const { stdout, stderr } = runAgentSkills(root);
     assert(stdout === '', `expected empty stdout, got: ${JSON.stringify(stdout)}`);
     assert(stderr.includes('needs the Claude runtime'), `expected runtime warning, got: ${stderr}`);
+  });
+});
+
+check('config keyed gsd-executor answers a bm-executor query (normalization)', () => {
+  withProject((root) => {
+    writeConfig(root, { agent_skills: { 'gsd-executor': ['global:superpowers:brainstorming'] } });
+    const { stdout } = runAgentSkills(root, 'bm-executor');
+    assert(
+      stdout ===
+        '<agent_skills>\n' +
+          'Read these user-configured skills:\n' +
+          DIRECTIVE('superpowers:brainstorming') + '\n' +
+          '</agent_skills>',
+      `unexpected stdout: ${JSON.stringify(stdout)}`,
+    );
+  });
+});
+
+check('config keyed bm-executor answers a gsd-executor query (legacy CLI arg)', () => {
+  withProject((root) => {
+    writeConfig(root, { agent_skills: { 'bm-executor': ['global:superpowers:brainstorming'] } });
+    const { stdout } = runAgentSkills(root, 'gsd-executor');
+    assert(
+      stdout ===
+        '<agent_skills>\n' +
+          'Read these user-configured skills:\n' +
+          DIRECTIVE('superpowers:brainstorming') + '\n' +
+          '</agent_skills>',
+      `unexpected stdout: ${JSON.stringify(stdout)}`,
+    );
   });
 });
 

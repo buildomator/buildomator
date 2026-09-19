@@ -272,12 +272,13 @@ function _syncGsdDir(stagedDir, destDir, context) {
     }
   }
 
-  // Remove gsd-only files from dest that aren't in staged set
+  // Remove managed files from dest that aren't in staged set
   // For commands dir: all .md files are gsd skills
-  // For agents dir: only gsd-* files
+  // For agents dir: only bm-* / gsd-* files (a stale gsd- copy is pruned once
+  // the bm- file replaces it)
   const destEntries = fs.readdirSync(destDir).filter(f => f.endsWith('.md'));
   for (const file of destEntries) {
-    if (context === 'agents' && !file.startsWith('gsd-')) continue;
+    if (context === 'agents' && !file.startsWith('gsd-') && !file.startsWith('bm-')) continue;
     if (!stagedFiles.has(file)) {
       try { fs.unlinkSync(path.join(destDir, file)); } catch {}
     }

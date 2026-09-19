@@ -28,6 +28,7 @@ import { existsSync, realpathSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { detectRuntime, renderGlobalSkillDisplayPath, resolveGlobalSkillDir, resolveGlobalSkillsBase } from './helpers.js';
 import { loadConfig } from '../config.js';
+import { lookupByAgentName } from '../model-catalog.js';
 const GLOBAL_SKILL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
 // Namespaced `<plugin>:<skill>` form: each colon-separated segment is letters, digits, "_" or "-".
 const PLUGIN_SKILL_NAME_RE = /^[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/;
@@ -63,7 +64,7 @@ export const agentSkills = async (args, projectDir) => {
     catch {
         return { data: '' };
     }
-    const raw = config.agent_skills?.[agentType];
+    const raw = lookupByAgentName(config.agent_skills, agentType);
     if (!raw)
         return { data: '' };
     let skillPaths;

@@ -7,7 +7,7 @@ const { execGit, platformWriteSync, platformReadSync, platformEnsureDir } = requ
 const { loadConfig, isGitIgnored, normalizePhaseName, comparePhaseNum, getArchivedPhaseDirs, generateSlugInternal, getMilestoneInfo, getMilestonePhaseFilter, resolveModelInternal, resolveReasoningEffortInternal, stripShippedMilestones, extractCurrentMilestone, toPosixPath, output, error, findPhaseInternal, extractOneLinerFromBody, getRoadmapPhaseInternal } = require('./core.cjs');
 const { planningDir, planningPaths } = require('./planning-workspace.cjs');
 const { extractFrontmatter } = require('./frontmatter.cjs');
-const { MODEL_PROFILES } = require('./model-profiles.cjs');
+const { MODEL_PROFILES, normalizeAgentName } = require('./model-profiles.cjs');
 
 /**
  * Determine phase status by checking plan/summary counts AND verification state.
@@ -242,7 +242,7 @@ function cmdResolveModel(cwd, agentType, raw) {
   const model = resolveModelInternal(cwd, agentType);
   const reasoningEffort = resolveReasoningEffortInternal(cwd, agentType);
 
-  const agentModels = MODEL_PROFILES[agentType];
+  const agentModels = MODEL_PROFILES[normalizeAgentName(agentType)];
   const result = agentModels
     ? { model, profile }
     : { model, profile, unknown_agent: true };

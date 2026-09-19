@@ -40,18 +40,18 @@ ok('claude.haiku still claude-haiku-4-5', rp.claude.haiku.model === 'claude-haik
 
 // ─── 3. Quality profile: heavy agents -> fable; others unchanged ─────────────
 const quality = mc.getAgentToModelMapForProfile('quality');
-const HEAVY = ['gsd-planner', 'gsd-roadmapper', 'gsd-debugger', 'gsd-assumptions-analyzer',
-  'gsd-debug-session-manager', 'gsd-eval-planner', 'gsd-framework-selector',
-  'gsd-security-auditor', 'gsd-user-profiler'];
+const HEAVY = ['bm-planner', 'bm-roadmapper', 'bm-debugger', 'bm-assumptions-analyzer',
+  'bm-debug-session-manager', 'bm-eval-planner', 'bm-framework-selector',
+  'bm-security-auditor', 'bm-user-profiler'];
 for (const a of HEAVY) ok(`quality(${a}) -> fable`, quality[a] === 'fable');
-ok('quality(gsd-executor) stays opus (standard tier, not promoted)', quality['gsd-executor'] === 'opus');
-ok('quality(gsd-verifier) stays sonnet', quality['gsd-verifier'] === 'sonnet');
+ok('quality(bm-executor) stays opus (standard tier, not promoted)', quality['bm-executor'] === 'opus');
+ok('quality(bm-verifier) stays sonnet', quality['bm-verifier'] === 'sonnet');
 
 // balanced / budget profiles untouched by the fable promotion
 const balanced = mc.getAgentToModelMapForProfile('balanced');
-ok('balanced(gsd-planner) still opus', balanced['gsd-planner'] === 'opus');
+ok('balanced(bm-planner) still opus', balanced['bm-planner'] === 'opus');
 const budget = mc.getAgentToModelMapForProfile('budget');
-ok('budget(gsd-planner) still sonnet', budget['gsd-planner'] === 'sonnet');
+ok('budget(bm-planner) still sonnet', budget['bm-planner'] === 'sonnet');
 
 // ─── 4. Config-schema accepts fable in runtime overrides ─────────────────────
 ok('model_profile_overrides.claude.fable is a valid config key',

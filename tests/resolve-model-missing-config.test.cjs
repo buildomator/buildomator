@@ -99,6 +99,38 @@ for (const agent of ['gsd-planner', 'gsd-executor']) {
   });
 }
 
+// ── Check 2b: bm- names resolve identically (primary spelling) ────────────────
+
+for (const agent of ['bm-planner', 'bm-executor']) {
+  check(`resolveModelInternal missing config == empty {} for ${agent}`, () => {
+    const dir = freshProject();
+    fs.mkdirSync(path.join(dir, '.planning'), { recursive: true });
+    const missing = resolveModelInternal(dir, agent);
+    assert(missing !== '' && missing != null, `missing-config model was empty for ${agent}`);
+
+    fs.writeFileSync(path.join(dir, '.planning', 'config.json'), '{}');
+    const empty = resolveModelInternal(dir, agent);
+    assert(missing === empty, `missing (${missing}) != empty-{} (${empty}) for ${agent}`);
+  });
+}
+
+// gsd- and bm- must resolve to the same model on both twins (normalization).
+check('gsd-planner and bm-planner resolve identically (in-process + both twins)', () => {
+  const dir = freshProject();
+  fs.mkdirSync(path.join(dir, '.planning'), { recursive: true });
+  assert(resolveModelInternal(dir, 'gsd-planner') === resolveModelInternal(dir, 'bm-planner'),
+    'in-process gsd-planner != bm-planner');
+  const toolsGsd = runGsdTools(dir, 'gsd-planner');
+  const toolsBm = runGsdTools(dir, 'bm-planner');
+  const sdkGsd = runSdk(dir, 'gsd-planner');
+  const sdkBm = runSdk(dir, 'bm-planner');
+  assert(toolsGsd.model === toolsBm.model, `gsd-tools gsd/bm mismatch: ${toolsGsd.model} vs ${toolsBm.model}`);
+  assert(sdkGsd.model === sdkBm.model, `sdk gsd/bm mismatch: ${sdkGsd.model} vs ${sdkBm.model}`);
+  assert(toolsBm.model === sdkBm.model, `twin mismatch on bm-planner: ${toolsBm.model} vs ${sdkBm.model}`);
+  assert(!toolsGsd.unknown_agent && !toolsBm.unknown_agent && !sdkGsd.unknown_agent && !sdkBm.unknown_agent,
+    'unknown_agent flag set for a known agent');
+});
+
 // ── Check 3: cross-twin parity on model + profile ─────────────────────────────
 
 check('gsd-tools and sdk twins agree on model+profile (missing config, then {})', () => {

@@ -335,13 +335,15 @@ describe('resolveModel', () => {
 // ─── MODEL_PROFILES ─────────────────────────────────────────────────────────
 
 describe('MODEL_PROFILES', () => {
-  it('contains every shipped gsd agent file on disk (#3229)', async () => {
-    const { MODEL_PROFILES } = await import('./config-query.js');
+  it('contains every shipped bm- agent file on disk (keys are bm-<role>)', async () => {
+    const { MODEL_PROFILES, normalizeAgentName } = await import('./config-query.js');
     // config-query.test.ts lives at sdk/src/query/ — three levels from repo root
     const repoRoot = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
+    // Compare through normalizeAgentName so this holds whether the files on
+    // disk are still gsd- (pre-rename) or bm- (post-rename).
     const agentFiles = (await readdir(join(repoRoot, 'agents')))
-      .filter((f) => /^gsd-.*\.md$/.test(f))
-      .map((f) => f.replace(/\.md$/, ''))
+      .filter((f) => /^(?:bm|gsd)-.*\.md$/.test(f))
+      .map((f) => normalizeAgentName(f.replace(/\.md$/, '')))
       .sort();
     expect(Object.keys(MODEL_PROFILES).sort()).toEqual(agentFiles);
   });

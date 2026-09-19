@@ -98,6 +98,29 @@ const RUNTIMES_WITH_REASONING_EFFORT = new Set(
     .map(([runtime]) => runtime)
 );
 
+// The bm- prefix is the primary agent-name spelling. The gsd- prefix is the
+// 4.x backwards-compat spelling accepted for config keys (model_overrides,
+// agent_skills) and CLI arguments (resolve-model, agent-skills); these three
+// helpers translate it and are removed at v5.0.
+function normalizeAgentName(name) {
+  const s = String(name);
+  return s.startsWith('gsd-') ? 'bm-' + s.slice(4) : s;
+}
+
+function legacyAgentName(name) {
+  const s = normalizeAgentName(name);
+  return s.startsWith('bm-') ? 'gsd-' + s.slice(3) : s;
+}
+
+function lookupByAgentName(map, name) {
+  if (!map) return undefined;
+  const direct = map[name];
+  if (direct !== undefined) return direct;
+  const norm = map[normalizeAgentName(name)];
+  if (norm !== undefined) return norm;
+  return map[legacyAgentName(name)];
+}
+
 function nextTier(currentTier) {
   const order = ['light', 'standard', 'heavy'];
   const idx = order.indexOf(String(currentTier));
@@ -141,4 +164,7 @@ module.exports = {
   nextTier,
   formatAgentToModelMapAsTable,
   getAgentToModelMapForProfile,
+  normalizeAgentName,
+  legacyAgentName,
+  lookupByAgentName,
 };

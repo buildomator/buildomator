@@ -1721,7 +1721,8 @@ function buildAgentSkillsBlock(config, agentType, projectRoot) {
 
   if (!config || !config.agent_skills || !agentType) return '';
 
-  let skillPaths = config.agent_skills[agentType];
+  const { lookupByAgentName } = require('./model-profiles.cjs');
+  let skillPaths = lookupByAgentName(config.agent_skills, agentType);
   if (!skillPaths) return '';
 
   // Normalize single string to array

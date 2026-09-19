@@ -115,6 +115,25 @@ function getAgentToModelMapForProfile(normalizedProfile) {
   }
   return out;
 }
+function normalizeAgentName(name) {
+  const s3 = String(name);
+  return s3.startsWith("gsd-") ? "bm-" + s3.slice(4) : s3;
+}
+function legacyAgentName(name) {
+  const s3 = normalizeAgentName(name);
+  return s3.startsWith("bm-") ? "gsd-" + s3.slice(3) : s3;
+}
+function lookupByAgentName(map, name) {
+  if (!map)
+    return void 0;
+  const direct = map[name];
+  if (direct !== void 0)
+    return direct;
+  const norm = map[normalizeAgentName(name)];
+  if (norm !== void 0)
+    return norm;
+  return map[legacyAgentName(name)];
+}
 function resolveRuntimeTierDefault(runtime, alias) {
   return catalog.runtimeTierDefaults[runtime]?.[alias] ?? null;
 }
@@ -6304,6 +6323,7 @@ function maskIfSecret(keyPath, value) {
 // dist/query/config-query.js
 init_model_catalog();
 init_model_catalog();
+init_model_catalog();
 var RUNTIMES_WITH_REASONING_EFFORT = runtimesWithReasoningEffort();
 var configGet = async (args, projectDir, workstream) => {
   const defaultIdx = args.indexOf("--default");
@@ -6390,14 +6410,15 @@ var resolveModel = async (args, projectDir, workstream) => {
   }
   const config = await loadConfig(projectDir, workstream);
   const profile = String(config.model_profile || "balanced").toLowerCase();
+  const agentKey = normalizeAgentName(agentType);
   const overrides = config.model_overrides;
-  const override = overrides?.[agentType];
+  const override = lookupByAgentName(overrides, agentType);
   if (override) {
-    const agentModels2 = MODEL_PROFILES[agentType];
+    const agentModels2 = MODEL_PROFILES[agentKey];
     const result = agentModels2 ? { model: override, profile } : { model: override, profile, unknown_agent: true };
     return { data: result };
   }
-  const agentModels = MODEL_PROFILES[agentType];
+  const agentModels = MODEL_PROFILES[agentKey];
   const resolveModelIds = config.resolve_model_ids;
   if (!agentModels) {
     const semanticFallback = profile === "quality" ? "opus" : profile === "budget" ? "haiku" : profile === "inherit" ? "inherit" : "sonnet";
@@ -6407,7 +6428,7 @@ var resolveModel = async (args, projectDir, workstream) => {
     return { data: { model: "inherit", profile } };
   }
   const alias = agentModels[profile] || agentModels["balanced"] || "sonnet";
-  const phaseType = AGENT_TO_PHASE_TYPE[agentType];
+  const phaseType = AGENT_TO_PHASE_TYPE[agentKey];
   const phaseTier = phaseType && typeof config.models === "object" ? config.models[phaseType] : void 0;
   const tier = typeof phaseTier === "string" ? phaseTier : alias;
   const runtimeTier = resolveRuntimeTier(config, tier);
@@ -12587,6 +12608,7 @@ var DECISION_ROUTING_STATIC_CATALOG = [
 init_helpers();
 import { existsSync as existsSync16, realpathSync } from "node:fs";
 import { join as join23, resolve as resolve4, sep } from "node:path";
+init_model_catalog();
 var GLOBAL_SKILL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
 var PLUGIN_SKILL_NAME_RE = /^[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/;
 function resolveWithinBase(target, baseDir) {
@@ -12614,7 +12636,7 @@ var agentSkills = async (args, projectDir) => {
   } catch {
     return { data: "" };
   }
-  const raw = config.agent_skills?.[agentType];
+  const raw = lookupByAgentName(config.agent_skills, agentType);
   if (!raw)
     return { data: "" };
   let skillPaths;
@@ -15025,9 +15047,9 @@ function checkAgentsInstalled(config) {
   }
   const missing = [];
   for (const agent of expectedAgents) {
-    const agentFile = join30(agentsDir, `${agent}.md`);
-    const agentFileCopilot = join30(agentsDir, `${agent}.agent.md`);
-    if (!existsSync23(agentFile) && !existsSync23(agentFileCopilot)) {
+    const legacy = legacyAgentName(agent);
+    const candidates = [`${agent}.md`, `${agent}.agent.md`, `${legacy}.md`, `${legacy}.agent.md`];
+    if (!candidates.some((f) => existsSync23(join30(agentsDir, f)))) {
       missing.push(agent);
     }
   }
@@ -19415,9 +19437,9 @@ var validateAgents = async (_args, _projectDir) => {
     };
   }
   for (const agent of expected) {
-    const agentFile = join43(agentsDir, `${agent}.md`);
-    const agentFileCopilot = join43(agentsDir, `${agent}.agent.md`);
-    if (existsSync35(agentFile) || existsSync35(agentFileCopilot)) {
+    const legacy = legacyAgentName(agent);
+    const candidates = [`${agent}.md`, `${agent}.agent.md`, `${legacy}.md`, `${legacy}.agent.md`];
+    if (candidates.some((f) => existsSync35(join43(agentsDir, f)))) {
       installed.push(agent);
     } else {
       missing.push(agent);
@@ -19677,9 +19699,9 @@ function checkAgentsInstalled2(config) {
   }
   const missing = [];
   for (const agent of expectedAgents) {
-    const agentFile = join45(agentsDir, `${agent}.md`);
-    const agentFileCopilot = join45(agentsDir, `${agent}.agent.md`);
-    if (!existsSync36(agentFile) && !existsSync36(agentFileCopilot)) {
+    const legacy = legacyAgentName(agent);
+    const candidates = [`${agent}.md`, `${agent}.agent.md`, `${legacy}.md`, `${legacy}.agent.md`];
+    if (!candidates.some((f) => existsSync36(join45(agentsDir, f)))) {
       missing.push(agent);
     }
   }
