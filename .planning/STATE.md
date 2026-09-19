@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 Phase: Milestone v4.1 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-09-19 - Completed #33 (granted the Skill tool to the 19 agent_skills-recipient agents; the v4.7.2 directive is now followable); verified, spike-proven mechanic. Unreleased (bundles with next cut)
+Last activity: 2026-09-19 - Shipped v4.7.3 (Skill tool granted to the 19 agent_skills-recipient agents, completing #33) and replied on #33 (left open for the reporter to confirm after reload)
 
 ## Performance Metrics
 
