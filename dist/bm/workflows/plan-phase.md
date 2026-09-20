@@ -1,5 +1,5 @@
 <purpose>
-Create executable phase prompts (PLAN.md files) for a roadmap phase with integrated research and verification. Default flow: Research (if needed) -> Plan -> Verify -> Done. Orchestrates gsd-phase-researcher, gsd-planner, and gsd-plan-checker agents with a revision loop (max 3 iterations).
+Create executable phase prompts (PLAN.md files) for a roadmap phase with integrated research and verification. Default flow: Research (if needed) -> Plan -> Verify -> Done. Orchestrates bm-phase-researcher, bm-planner, and bm-plan-checker agents with a revision loop (max 3 iterations).
 </purpose>
 
 <required_reading>
@@ -14,14 +14,14 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- bm:gsd-phase-researcher — Researches technical approaches for a phase
-- bm:gsd-pattern-mapper — Analyzes codebase for existing patterns, produces PATTERNS.md
-- bm:gsd-planner — Creates detailed plans from phase scope
-- bm:gsd-plan-checker — Reviews plan quality before execution
+- bm:bm-phase-researcher — Researches technical approaches for a phase
+- bm:bm-pattern-mapper — Analyzes codebase for existing patterns, produces PATTERNS.md
+- bm:bm-planner — Creates detailed plans from phase scope
+- bm:bm-plan-checker — Reviews plan quality before execution
 </available_agent_types>
 
 <runtime_compatibility>
-Always spawn gsd-phase-researcher, gsd-planner, and gsd-plan-checker as separate Agent() calls. Never absorb these roles inline. Role separation is required regardless of `--chain` or `--auto` — those suppress interactive prompts only; they NEVER authorize collapsing plan roles into the orchestrator context. Independent agent contexts are required for the plan-checker gate to be meaningful.
+Always spawn bm-phase-researcher, bm-planner, and bm-plan-checker as separate Agent() calls. Never absorb these roles inline. Role separation is required regardless of `--chain` or `--auto` — those suppress interactive prompts only; they NEVER authorize collapsing plan roles into the orchestrator context. Independent agent contexts are required for the plan-checker gate to be meaningful.
 
 If an Agent() call fails with a real tool-unavailable error, log the gap and stop — do NOT collapse researcher/planner/checker roles inline.
 </runtime_compatibility>
@@ -39,9 +39,9 @@ Load all context in one call (paths only to minimize orchestrator context):
 ```bash
 INIT=$(bm-sdk query init.plan-phase "$PHASE")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_RESEARCHER=$(bm-sdk query agent-skills gsd-phase-researcher)
-AGENT_SKILLS_PLANNER=$(bm-sdk query agent-skills gsd-planner)
-AGENT_SKILLS_CHECKER=$(bm-sdk query agent-skills gsd-plan-checker)
+AGENT_SKILLS_RESEARCHER=$(bm-sdk query agent-skills bm-phase-researcher)
+AGENT_SKILLS_PLANNER=$(bm-sdk query agent-skills bm-planner)
+AGENT_SKILLS_CHECKER=$(bm-sdk query agent-skills bm-plan-checker)
 CONTEXT_WINDOW=$(bm-sdk query config-get context_window 2>/dev/null || echo "200000")
 TDD_MODE=$(bm-sdk query config-get workflow.tdd_mode 2>/dev/null || echo "false")
 MVP_MODE_CFG=$(bm-sdk query config-get workflow.mvp_mode 2>/dev/null || echo "false")
@@ -425,7 +425,7 @@ Pass `ai_spec_path` and `framework_line` to planner in step 7 so it can referenc
 Three branches in research-only mode (`--research-phase <N>`):
 
 1. **`--view`** (or user picks "View" in the prompt below): print `RESEARCH.md` to stdout, no spawn, exit. If `RESEARCH.md` is missing, error with: `--view requires an existing RESEARCH.md; drop --view to spawn the researcher.`
-2. **`--research`** (force-refresh): re-spawn researcher unconditionally — fall through to "Spawn gsd-phase-researcher" below.
+2. **`--research`** (force-refresh): re-spawn researcher unconditionally — fall through to "Spawn bm-phase-researcher" below.
 3. **Neither flag AND `has_research=true`:** emit a brief notice and exit cleanly without prompting:
 
    ```
@@ -477,7 +477,7 @@ GSD > RESEARCHING PHASE {X}
 ◆ Spawning researcher...
 ```
 
-### Spawn gsd-phase-researcher
+### Spawn bm-phase-researcher
 
 ```bash
 PHASE_DESC=$(bm-sdk query roadmap.get-phase "${PHASE}" --pick section)
@@ -515,7 +515,7 @@ Write to: {phase_dir}/{phase_num}-RESEARCH.md
 ```
 Agent(
   prompt=research_prompt,
-  subagent_type="bm:gsd-phase-researcher",
+  subagent_type="bm:bm-phase-researcher",
   model="{researcher_model}",
   description="Research Phase {phase}"
 )
@@ -785,7 +785,7 @@ If missing and Nyquist is still enabled/applicable — ask user:
 
 Proceed to Step 7.8 (or Step 8 if pattern mapper is disabled) only if user selects 2 or 3.
 
-## 7.8. Spawn gsd-pattern-mapper Agent (Optional)
+## 7.8. Spawn bm-pattern-mapper Agent (Optional)
 
 **Skip if** `workflow.pattern_mapper` is explicitly set to `false` in config.json (absent key = enabled). Also skip if no CONTEXT.md and no RESEARCH.md exist for this phase (nothing to extract file lists from).
 
@@ -828,7 +828,7 @@ Spawn with:
 ```
 Agent(
   prompt="{above}",
-  subagent_type="bm:gsd-pattern-mapper",
+  subagent_type="bm:bm-pattern-mapper",
   model="{researcher_model}",
 )
 ```
@@ -844,7 +844,7 @@ After pattern mapper completes, update the path variable:
 PATTERNS_PATH="${PHASE_DIR}/${PADDED_PHASE}-PATTERNS.md"
 ```
 
-## 8. Spawn gsd-planner Agent
+## 8. Spawn bm-planner Agent
 
 Display banner:
 ```
@@ -968,7 +968,7 @@ Every task MUST include these fields — they are NOT optional:
 ```text
 Agent(
   prompt=filled_prompt,
-  subagent_type="bm:gsd-planner",
+  subagent_type="bm:bm-planner",
   model="{planner_model}",
   description="Plan Phase {phase}"
 )
@@ -1024,7 +1024,7 @@ Agent(
   Plan ID | Objective | Wave | Depends On | Requirements
 
   Return: ## OUTLINE COMPLETE with plan count.",
-  subagent_type="bm:gsd-planner",
+  subagent_type="bm:bm-planner",
   model="{planner_model}",
   description="Outline Phase {phase} (chunked)"
 )
@@ -1068,7 +1068,7 @@ For each plan entry extracted from `PLAN-OUTLINE.md`:
      Phase requirement IDs to cover in this plan: {plan_requirements}
 
      Return: ## PLAN COMPLETE with the plan ID.",
-     subagent_type="bm:gsd-planner",
+     subagent_type="bm:bm-planner",
      model="{planner_model}",
      description="Plan {plan_id} (chunked {k}/{N})"
    )
@@ -1183,7 +1183,7 @@ Use AskUserQuestion for each gap (or batch if multiple gaps).
 **If "Split":** Use `/bm:phase --insert` for overflow items, then replan.
 **If "Defer":** Record in CONTEXT.md `## Deferred Ideas` with developer's confirmation. Proceed to step 10.
 
-## 10. Spawn gsd-plan-checker Agent
+## 10. Spawn bm-plan-checker Agent
 
 Display banner:
 ```
@@ -1224,7 +1224,7 @@ ${AGENT_SKILLS_CHECKER}
 ```
 Agent(
   prompt=checker_prompt,
-  subagent_type="bm:gsd-plan-checker",
+  subagent_type="bm:bm-plan-checker",
   model="{checker_model}",
   description="Verify Phase {phase} plans"
 )
@@ -1288,7 +1288,7 @@ Track `stall_reentry_count` (starts at 0; incremented each time "Adjust approach
 
 **If iteration_count < 3:**
 
-Parse issue count from checker return: count BLOCKER + WARNING entries in the YAML issues block (structured output from gsd-plan-checker). If the checker's return contains no YAML issues block (i.e., the plan was approved with no issues), treat `issue_count` as 0 and skip the stall check — the plan passed. Proceed to step 13.
+Parse issue count from checker return: count BLOCKER + WARNING entries in the YAML issues block (structured output from bm-plan-checker). If the checker's return contains no YAML issues block (i.e., the plan was approved with no issues), treat `issue_count` as 0 and skip the stall check — the plan passed. Proceed to step 13.
 
 Display: `Revision iteration {N}/3 -- {blocker_count} blockers, {warning_count} warnings`
 
@@ -1339,7 +1339,7 @@ Return what changed.
 ```
 Agent(
   prompt=revision_prompt,
-  subagent_type="bm:gsd-planner",
+  subagent_type="bm:bm-planner",
   model="{planner_model}",
   description="Revise Phase {phase} plans"
 )
@@ -1407,7 +1407,7 @@ After the script returns, check that the bounced file still has valid YAML front
 
 **After all plans are bounced:**
 
-5. **Re-run plan checker on bounced plans:** Spawn gsd-plan-checker (same as step 10) on all modified plans. If a bounced plan fails the checker, restore original from its pre-bounce.md backup:
+5. **Re-run plan checker on bounced plans:** Spawn bm-plan-checker (same as step 10) on all modified plans. If a bounced plan fails the checker, restore original from its pre-bounce.md backup:
 ```
 ⚠ Bounced plan ${PLAN_FILE} failed checker validation — restoring original from pre-bounce backup.
 ```
@@ -1789,11 +1789,11 @@ If freezes persist, try `--skip-research` to reduce the agent chain from 3 to 2 
 - [ ] Phase directory created if needed
 - [ ] CONTEXT.md loaded early (step 4) and passed to ALL agents
 - [ ] Research completed (unless --skip-research or --gaps or exists)
-- [ ] gsd-phase-researcher spawned with CONTEXT.md
+- [ ] bm-phase-researcher spawned with CONTEXT.md
 - [ ] Existing plans checked
-- [ ] gsd-planner spawned with CONTEXT.md + RESEARCH.md
+- [ ] bm-planner spawned with CONTEXT.md + RESEARCH.md
 - [ ] Plans created (PLANNING COMPLETE or CHECKPOINT handled)
-- [ ] gsd-plan-checker spawned with CONTEXT.md
+- [ ] bm-plan-checker spawned with CONTEXT.md
 - [ ] Verification passed OR user override OR max iterations with user decision
 - [ ] User sees status between agent spawns
 - [ ] User knows next steps

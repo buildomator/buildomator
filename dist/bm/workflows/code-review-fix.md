@@ -1,5 +1,5 @@
 <purpose>
-Auto-fix issues from REVIEW.md. Validates phase, checks config gate, verifies REVIEW.md exists and has fixable issues, spawns gsd-code-fixer agent, handles --auto iteration loop (capped at 3), commits REVIEW-FIX.md once at the end, and presents results.
+Auto-fix issues from REVIEW.md. Validates phase, checks config gate, verifies REVIEW.md exists and has fixable issues, spawns bm-code-fixer agent, handles --auto iteration loop (capped at 3), commits REVIEW-FIX.md once at the end, and presents results.
 </purpose>
 
 <required_reading>
@@ -7,8 +7,8 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-- bm:gsd-code-fixer: Applies fixes to code review findings
-- bm:gsd-code-reviewer: Reviews source files for bugs and issues
+- bm:bm-code-fixer: Applies fixes to code review findings
+- bm:bm-code-reviewer: Reviews source files for bugs and issues
 </available_agent_types>
 
 <process>
@@ -178,7 +178,7 @@ If REVIEW.md contains a `files_reviewed_list` frontmatter field, use that as the
 </step>
 
 <step name="spawn_fixer">
-Spawn the gsd-code-fixer agent with config:
+Spawn the bm-code-fixer agent with config:
 
 ```bash
 # Build config for agent
@@ -189,7 +189,7 @@ echo "Fix scope: ${FIX_SCOPE}"
 Use Agent() to spawn agent:
 
 ```text
-Agent(subagent_type="bm:gsd-code-fixer", prompt="
+Agent(subagent_type="bm:bm-code-fixer", prompt="
 <files_to_read>
 ${REVIEW_PATH}
 </files_to_read>
@@ -268,9 +268,9 @@ if [ "$AUTO_MODE" = "true" ]; then
       done
     fi
     
-    # Spawn gsd-code-reviewer agent to re-review
+    # Spawn bm-code-reviewer agent to re-review
     # (This overwrites REVIEW_PATH with latest review state)
-    Agent(subagent_type="bm:gsd-code-reviewer", prompt="
+    Agent(subagent_type="bm:bm-code-reviewer", prompt="
 <config>
 depth: ${REVIEW_DEPTH}
 phase_dir: ${PHASE_DIR}
@@ -304,7 +304,7 @@ Do NOT commit the output — the orchestrator handles that.
     # Still has issues — spawn fixer again
     echo "Issues remain. Applying fixes for iteration ${ITERATION}..."
     
-    Agent(subagent_type="bm:gsd-code-fixer", prompt="
+    Agent(subagent_type="bm:bm-code-fixer", prompt="
 <files_to_read>
 ${REVIEW_PATH}
 </files_to_read>

@@ -6,7 +6,7 @@
 //
 // The MVP-only reference bodies — planner-mvp-mode.md, user-story-template.md,
 // skeleton-template.md, execute-mvp-tdd.md — must NOT be eagerly `@`-imported by
-// plan-phase / execute-phase or the gsd-planner / gsd-executor agents. An `@`
+// plan-phase / execute-phase or the bm-planner / bm-executor agents. An `@`
 // sigil inlines the whole body into context on EVERY run, even non-MVP ones.
 // They must instead be referenced as lazy paths the agent only Reads when
 // MVP_MODE / WALKING_SKELETON / MVP+TDD is active.
@@ -38,8 +38,8 @@ function hasEagerImport(content, fname) {
 const CASES = [
   { file: 'workflows/plan-phase.md', banned: ['planner-mvp-mode.md', 'skeleton-template.md'] },
   { file: 'workflows/execute-phase.md', banned: ['execute-mvp-tdd.md'] },
-  { file: 'agents/gsd-planner.md', banned: ['planner-mvp-mode.md', 'user-story-template.md', 'skeleton-template.md'] },
-  { file: 'agents/gsd-executor.md', banned: ['execute-mvp-tdd.md'] },
+  { file: 'agents/bm-planner.md', banned: ['planner-mvp-mode.md', 'user-story-template.md', 'skeleton-template.md'] },
+  { file: 'agents/bm-executor.md', banned: ['execute-mvp-tdd.md'] },
 ];
 
 for (const { file, banned } of CASES) {

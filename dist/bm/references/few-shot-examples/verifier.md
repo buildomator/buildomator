@@ -17,7 +17,7 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 
 > **L1 (Existence):** EXISTS -- `get-shit-done/workflows/context-bridge.md` found, 187 lines.
 > **L2 (Substantive):** SUBSTANTIVE -- No TODO/FIXME markers, 4 defined sections (`updateContextTier`, `getContextBudget`, `injectContextWarning`, `resetTierState`), non-trivial logic with config reads and threshold calculations.
-> **L3 (Wired):** WIRED -- Referenced by `get-shit-done/workflows/execute-phase.md` at step 3. Called by `agents/gsd-executor.md` via @-reference include. Arguments verified: receives planning directory path matching the expected parameter.
+> **L3 (Wired):** WIRED -- Referenced by `get-shit-done/workflows/execute-phase.md` at step 3. Called by `agents/bm-executor.md` via @-reference include. Arguments verified: receives planning directory path matching the expected parameter.
 > **Status: PASSED**
 
 **Why this is good:** The verifier checked all three levels independently with specific evidence at each level -- file path, line count, exported symbols, import location, and argument verification. It did not stop at "file exists" but traced wiring through to actual usage with correct arguments.

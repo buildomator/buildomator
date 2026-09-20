@@ -112,6 +112,13 @@ check('rewriteCommandRefs flips a subagent_type agent ref, sparing the dash name
   );
 });
 
+check('rewriteCommandRefs flips a bm:bm- agent ref to bm:bm- (post-rename form)', () => {
+  assert.strictEqual(
+    rewriteCommandRefs('subagent_type=bm:bm-executor'),
+    'subagent_type=bm:bm-executor',
+  );
+});
+
 check('rewriteCommandRefs flips a type= agent ref', () => {
   assert.strictEqual(rewriteCommandRefs('type: bm:gsd-planner'), 'type: bm:gsd-planner');
 });

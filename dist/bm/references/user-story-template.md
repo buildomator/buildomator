@@ -1,6 +1,6 @@
 # User Story Template (MVP Mode)
 
-> Used by `mvp-phase` workflow and `gsd-planner` agent when `MVP_MODE=true`. Defines the canonical "As a / I want to / So that" format and the rules for converting it into the `**Goal:**` line in ROADMAP.md.
+> Used by `mvp-phase` workflow and `bm-planner` agent when `MVP_MODE=true`. Defines the canonical "As a / I want to / So that" format and the rules for converting it into the `**Goal:**` line in ROADMAP.md.
 
 ## Canonical format
 
@@ -41,7 +41,7 @@ Two structural rules:
 
 ## How it lands in PLAN.md
 
-The `gsd-planner` agent (with MVP_MODE=true) emits the user story as the first content under the phase header in `PLAN.md`:
+The `bm-planner` agent (with MVP_MODE=true) emits the user story as the first content under the phase header in `PLAN.md`:
 
 ```markdown
 ## Phase Goal

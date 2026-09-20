@@ -6,7 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execGit, platformWriteSync, platformReadSync, platformEnsureDir } = require('./shell-command-projection.cjs');
-const { MODEL_PROFILES, AGENT_TO_PHASE_TYPE, VALID_PHASE_TYPES, AGENT_DEFAULT_TIERS, VALID_AGENT_TIERS, nextTier } = require('./model-profiles.cjs');
+const { MODEL_PROFILES, AGENT_TO_PHASE_TYPE, VALID_PHASE_TYPES, AGENT_DEFAULT_TIERS, VALID_AGENT_TIERS, nextTier, normalizeAgentName, legacyAgentName, lookupByAgentName } = require('./model-profiles.cjs');
 const { MODEL_ALIAS_MAP, RUNTIME_PROFILE_MAP, KNOWN_RUNTIMES, RUNTIMES_WITH_REASONING_EFFORT } = require('./model-catalog.cjs');
 const {
   resolveWorktreeContext,
@@ -1344,10 +1344,17 @@ function checkAgentsInstalled() {
   }
 
   for (const agent of expectedAgents) {
-    // Check both .md (standard) and .agent.md (Copilot) file formats.
-    const agentFile = path.join(agentsDir, `${agent}.md`);
-    const agentFileCopilot = path.join(agentsDir, `${agent}.agent.md`);
-    if (fs.existsSync(agentFile) || fs.existsSync(agentFileCopilot)) {
+    // Check both .md (standard) and .agent.md (Copilot) file formats, and
+    // accept the legacy gsd- filename so the tree stays consistent while the
+    // files are renamed and for users with stale gsd-*.md copies until v5.0.
+    const legacy = legacyAgentName(agent);
+    const candidates = [
+      `${agent}.md`,
+      `${agent}.agent.md`,
+      `${legacy}.md`,
+      `${legacy}.agent.md`,
+    ];
+    if (candidates.some((f) => fs.existsSync(path.join(agentsDir, f)))) {
       installed.push(agent);
     } else {
       missing.push(agent);
@@ -1480,10 +1487,12 @@ function _resolveRuntimeTier(config, tier) {
 
 function resolveModelInternal(cwd, agentType) {
   const config = loadConfig(cwd);
+  const agentKey = normalizeAgentName(agentType);
 
   // 1. Per-agent override — always respected; highest precedence.
   // Users who set fully-qualified model IDs (e.g., "openai/gpt-5.4") get exactly that.
-  const override = config.model_overrides?.[agentType];
+  // Accept either prefix on the config key (gsd- keys resolve until v5.0).
+  const override = lookupByAgentName(config.model_overrides, agentType);
   if (override) {
     return override;
   }
@@ -1497,8 +1506,8 @@ function resolveModelInternal(cwd, agentType) {
   // (step 3), resolve_model_ids handling (step 4), and profile lookup
   // (step 5) all stay correct without further branching.
   const profile = String(config.model_profile || 'balanced').toLowerCase();
-  const agentModels = MODEL_PROFILES[agentType];
-  const phaseType = AGENT_TO_PHASE_TYPE[agentType];
+  const agentModels = MODEL_PROFILES[agentKey];
+  const phaseType = AGENT_TO_PHASE_TYPE[agentKey];
   const phaseTypeTier = (phaseType && config.models && typeof config.models === 'object')
     ? config.models[phaseType]
     : undefined;
@@ -1594,11 +1603,12 @@ function resolveModelInternal(cwd, agentType) {
  */
 function resolveModelForTier(cwd, agentType, attempt) {
   const config = loadConfig(cwd);
+  const agentKey = normalizeAgentName(agentType);
   const attemptN = Number.isInteger(attempt) && attempt > 0 ? attempt : 0;
 
   // Per-agent override always wins — same as resolveModelInternal step 1.
   // User-supplied full IDs bypass the entire tier mechanism.
-  const override = config.model_overrides?.[agentType];
+  const override = lookupByAgentName(config.model_overrides, agentType);
   if (override) return override;
 
   const dr = config.dynamic_routing;
@@ -1613,7 +1623,7 @@ function resolveModelForTier(cwd, agentType, attempt) {
     return resolveModelInternal(cwd, agentType);
   }
 
-  const defaultTier = AGENT_DEFAULT_TIERS[agentType];
+  const defaultTier = AGENT_DEFAULT_TIERS[agentKey];
   if (!defaultTier || !VALID_AGENT_TIERS.has(defaultTier)) {
     // Unmapped agent — no default tier; fall back so we don't silently
     // pick the wrong model.
@@ -1667,6 +1677,7 @@ function resolveModelForTier(cwd, agentType, attempt) {
  */
 function resolveReasoningEffortInternal(cwd, agentType) {
   const config = loadConfig(cwd);
+  const agentKey = normalizeAgentName(agentType);
   if (!config.runtime) return null;
   // Strict allowlist: reasoning_effort only propagates for runtimes whose
   // install path actually accepts it. Adding a new runtime here is the only
@@ -1677,10 +1688,10 @@ function resolveReasoningEffortInternal(cwd, agentType) {
   if (!RUNTIMES_WITH_REASONING_EFFORT.has(config.runtime)) return null;
   // Per-agent override means user supplied a fully-qualified ID; reasoning_effort
   // for that case must be set via per-agent mechanism, not tier inference.
-  if (config.model_overrides?.[agentType]) return null;
+  if (lookupByAgentName(config.model_overrides, agentType)) return null;
 
   const profile = String(config.model_profile || 'balanced').toLowerCase();
-  const agentModels = MODEL_PROFILES[agentType];
+  const agentModels = MODEL_PROFILES[agentKey];
   if (!agentModels) return null;
 
   // #3023 (CR Major): mirror the phase-type tier lookup from
@@ -1695,7 +1706,7 @@ function resolveReasoningEffortInternal(cwd, agentType) {
   // phase-type first; only fall back to profile when there's no valid
   // phase-type override; only return null when the resolved tier is
   // 'inherit' or unknown.
-  const phaseType = AGENT_TO_PHASE_TYPE[agentType];
+  const phaseType = AGENT_TO_PHASE_TYPE[agentKey];
   const phaseTypeTier = (phaseType && config.models && typeof config.models === 'object')
     ? config.models[phaseType]
     : undefined;

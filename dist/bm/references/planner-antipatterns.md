@@ -1,6 +1,6 @@
 # Planner Anti-Patterns and Specificity Examples
 
-> Reference file for gsd-planner agent. Loaded on-demand via `@` reference.
+> Reference file for bm-planner agent. Loaded on-demand via `@` reference.
 
 ## Checkpoint Anti-Patterns
 

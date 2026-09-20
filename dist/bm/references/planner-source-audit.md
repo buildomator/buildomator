@@ -1,6 +1,6 @@
 # Planner Source Audit & Authority Limits
 
-Reference for `agents/gsd-planner.md` — extended rules for multi-source coverage audits and planner authority constraints.
+Reference for `agents/bm-planner.md` — extended rules for multi-source coverage audits and planner authority constraints.
 
 ## Multi-Source Coverage Audit Format
 

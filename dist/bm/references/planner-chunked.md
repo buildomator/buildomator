@@ -1,6 +1,6 @@
 # Chunked Mode Return Formats
 
-Used when `plan-phase` spawns `gsd-planner` with `CHUNKED_MODE=true` (triggered by `--chunked`
+Used when `plan-phase` spawns `bm-planner` with `CHUNKED_MODE=true` (triggered by `--chunked`
 flag or `workflow.plan_chunked: true` config). Splits the single long-lived planner Task into
 shorter-lived Tasks to bound the blast radius of Windows stdio hangs.
 

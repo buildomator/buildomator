@@ -12,7 +12,7 @@ allowed-tools:
 <objective>
 Debug issues using scientific method with subagent isolation.
 
-**Orchestrator role:** Gather symptoms, spawn gsd-debugger agent, handle checkpoints, spawn continuations.
+**Orchestrator role:** Gather symptoms, spawn bm-debugger agent, handle checkpoints, spawn continuations.
 
 **Why subagent:** Investigation burns context fast. Fresh 200k context per investigation keeps main context lean for user interaction.
 
@@ -27,8 +27,8 @@ Debug issues using scientific method with subagent isolation.
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd-debug-session-manager — manages debug checkpoint/continuation loop in isolated context
-- gsd-debugger — investigates bugs using scientific method
+- bm-debug-session-manager — manages debug checkpoint/continuation loop in isolated context
+- bm-debugger — investigates bugs using scientific method
 </available_agent_types>
 
 <context>
@@ -58,7 +58,7 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 
 Extract `commit_docs` from init JSON. Resolve debugger model:
 ```bash
-debugger_model=$(bm-sdk query resolve-model gsd-debugger 2>/dev/null | jq -r '.model' 2>/dev/null || true)
+debugger_model=$(bm-sdk query resolve-model bm-debugger 2>/dev/null | jq -r '.model' 2>/dev/null || true)
 ```
 
 Read TDD mode from config:
@@ -154,7 +154,7 @@ goal: find_and_fix
 specialist_dispatch_enabled: true
 </session_params>
 """,
-  subagent_type="bm:gsd-debug-session-manager",
+  subagent_type="bm:bm-debug-session-manager",
   model="{debugger_model}",
   description="Continue debug session {SLUG}"
 )
@@ -211,9 +211,9 @@ Create `.planning/debug/{slug}.md` with initial state using the Write tool (neve
 - symptoms: all gathered values from Step 2
 - Current Focus: next_action = "gather initial evidence"
 
-## 4. Session Management (delegated to gsd-debug-session-manager)
+## 4. Session Management (delegated to bm-debug-session-manager)
 
-After initial context setup, spawn the session manager to handle the full checkpoint/continuation loop. The session manager handles specialist_hint dispatch internally: when gsd-debugger returns ROOT CAUSE FOUND it extracts the specialist_hint field and invokes the matching skill (e.g. typescript-expert, swift-concurrency) before offering fix options.
+After initial context setup, spawn the session manager to handle the full checkpoint/continuation loop. The session manager handles specialist_hint dispatch internally: when bm-debugger returns ROOT CAUSE FOUND it extracts the specialist_hint field and invokes the matching skill (e.g. typescript-expert, swift-concurrency) before offering fix options.
 
 ```
 Task(
@@ -232,7 +232,7 @@ goal: {if diagnose_only: "find_root_cause_only", else: "find_and_fix"}
 specialist_dispatch_enabled: true
 </session_params>
 """,
-  subagent_type="bm:gsd-debug-session-manager",
+  subagent_type="bm:bm-debug-session-manager",
   model="{debugger_model}",
   description="Debug session {slug}"
 )
@@ -251,7 +251,7 @@ If summary shows `ABANDONED`: note session saved at `.planning/debug/{slug}.md` 
 - [ ] Current Focus (hypothesis + next_action) surfaced before session manager spawn
 - [ ] Symptoms gathered (if new session)
 - [ ] Debug session file created with initial state before delegating
-- [ ] gsd-debug-session-manager spawned with security-hardened session_params
+- [ ] bm-debug-session-manager spawned with security-hardened session_params
 - [ ] Session manager handles full checkpoint/continuation loop in isolated context
 - [ ] Compact summary displayed to user after session manager returns
 </success_criteria>

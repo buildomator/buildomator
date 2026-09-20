@@ -130,9 +130,9 @@ describe('initNewProject', () => {
     process.env.GSD_AGENTS_DIR = emptyAgentsDir;
 
     const requiredAgents = [
-      'gsd-project-researcher',
-      'gsd-research-synthesizer',
-      'gsd-roadmapper',
+      'bm-project-researcher',
+      'bm-research-synthesizer',
+      'bm-roadmapper',
     ];
     for (const agent of requiredAgents) {
       await mkdir(join(tmpDir, '.claude', 'skills', agent), { recursive: true });
@@ -142,9 +142,9 @@ describe('initNewProject', () => {
       model_profile: 'balanced',
       commit_docs: false,
       agent_skills: {
-        'gsd-project-researcher': ['.claude/skills/gsd-project-researcher'],
-        'gsd-research-synthesizer': ['.claude/skills/gsd-research-synthesizer'],
-        'gsd-roadmapper': ['.claude/skills/gsd-roadmapper'],
+        'bm-project-researcher': ['.claude/skills/bm-project-researcher'],
+        'bm-research-synthesizer': ['.claude/skills/bm-research-synthesizer'],
+        'bm-roadmapper': ['.claude/skills/bm-roadmapper'],
       },
       workflow: { research: true, plan_check: true, verifier: true, nyquist_validation: true },
     }));

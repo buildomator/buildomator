@@ -280,18 +280,18 @@ export class GSD {
   }
 
   /**
-   * Load the gsd-executor agent definition if available.
+   * Load the bm-executor agent definition if available.
    * Falls back gracefully — returns undefined if not found.
    */
   private async loadAgentDefinition(): Promise<string | undefined> {
     const paths = [
       // Repo-local GSD installation
-      join(this.projectDir, '.claude', 'get-shit-done', 'agents', 'gsd-executor.md'),
+      join(this.projectDir, '.claude', 'get-shit-done', 'agents', 'bm-executor.md'),
       // Repo-local agents directory
-      join(this.projectDir, '.claude', 'agents', 'gsd-executor.md'),
+      join(this.projectDir, '.claude', 'agents', 'bm-executor.md'),
       // Global home directory
-      join(homedir(), '.claude', 'agents', 'gsd-executor.md'),
-      join(this.projectDir, 'agents', 'gsd-executor.md'),
+      join(homedir(), '.claude', 'agents', 'bm-executor.md'),
+      join(this.projectDir, 'agents', 'bm-executor.md'),
     ];
 
     for (const p of paths) {

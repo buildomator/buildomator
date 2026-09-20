@@ -10,6 +10,9 @@ const {
   nextTier,
   formatAgentToModelMapAsTable,
   getAgentToModelMapForProfile,
+  normalizeAgentName,
+  legacyAgentName,
+  lookupByAgentName,
 } = require('./model-catalog.cjs');
 
 module.exports = {
@@ -22,4 +25,7 @@ module.exports = {
   nextTier,
   formatAgentToModelMapAsTable,
   getAgentToModelMapForProfile,
+  normalizeAgentName,
+  legacyAgentName,
+  lookupByAgentName,
 };

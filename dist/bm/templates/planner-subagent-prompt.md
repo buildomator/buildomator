@@ -1,6 +1,6 @@
 # Planner Subagent Prompt Template
 
-Template for spawning gsd-planner agent. The agent contains all planning expertise - this template provides planning context only.
+Template for spawning bm-planner agent. The agent contains all planning expertise - this template provides planning context only.
 
 ---
 
@@ -72,7 +72,7 @@ Before returning PLANNING COMPLETE:
 ```python
 Task(
   prompt=filled_template,
-  subagent_type="gsd-planner",
+  subagent_type="bm-planner",
   description="Plan Phase {phase}"
 )
 ```
@@ -81,7 +81,7 @@ Task(
 ```python
 Task(
   prompt=filled_template,  # with mode: gap_closure
-  subagent_type="gsd-planner",
+  subagent_type="bm-planner",
   description="Plan gaps for Phase {phase}"
 )
 ```
@@ -114,4 +114,4 @@ Continue: {standard | gap_closure}
 
 ---
 
-**Note:** Planning methodology, task breakdown, dependency analysis, wave assignment, TDD detection, and goal-backward derivation are baked into the gsd-planner agent. This template only passes context.
+**Note:** Planning methodology, task breakdown, dependency analysis, wave assignment, TDD detection, and goal-backward derivation are baked into the bm-planner agent. This template only passes context.

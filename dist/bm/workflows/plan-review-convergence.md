@@ -113,7 +113,7 @@ Display: `◆ No plans found — running initial planning inline... (plan-phase 
 Skill(skill="gsd-plan-phase", args="{PHASE} {GSD_WS}")
 ```
 
-Run plan-phase **inline** (do NOT wrap it in Agent()): inline at depth 0 lets it spawn gsd-planner/gsd-plan-checker at depth 1; wrapping in Agent() pushes it to depth 1 where the Agent tool is absent (upstream bug #936). Wait until plan-phase completes and PLAN.md files are committed before continuing.
+Run plan-phase **inline** (do NOT wrap it in Agent()): inline at depth 0 lets it spawn bm-planner/bm-plan-checker at depth 1; wrapping in Agent() pushes it to depth 1 where the Agent tool is absent (upstream bug #936). Wait until plan-phase completes and PLAN.md files are committed before continuing.
 
 After plan-phase completes, verify plans were created:
 ```bash
@@ -306,9 +306,9 @@ After plan-phase completes → go back to **step 5a** (review again).
 
 <success_criteria>
 - [ ] Config gate checked before running — exits with enable instructions if workflow.plan_review_convergence is false
-- [ ] Initial planning via inline Skill("gsd-plan-phase") if no plans exist — NOT wrapped in Agent() (bug #936: a depth-1 Agent has no Agent tool, so wrapped plan-phase cannot spawn gsd-planner/gsd-plan-checker)
+- [ ] Initial planning via inline Skill("gsd-plan-phase") if no plans exist — NOT wrapped in Agent() (bug #936: a depth-1 Agent has no Agent tool, so wrapped plan-phase cannot spawn bm-planner/bm-plan-checker)
 - [ ] Review via Agent → Skill("gsd-review") — isolated Agent is correct here; gsd-review is a Bash leaf with no sub-agent spawns; {GSD_WS} forwarded
-- [ ] Replan via inline Skill("gsd-plan-phase --reviews") — NOT wrapped in Agent(); inline lets plan-phase spawn gsd-planner/gsd-plan-checker at depth 1
+- [ ] Replan via inline Skill("gsd-plan-phase --reviews") — NOT wrapped in Agent(); inline lets plan-phase spawn bm-planner/bm-plan-checker at depth 1
 - [ ] Orchestrator only does: init, config gate, loop control, parse CYCLE_SUMMARY for HIGH count, stall detection, escalation
 - [ ] HIGH count extracted from review agent's CYCLE_SUMMARY return message (not by grepping REVIEWS.md)
 - [ ] Review agent prompt defines CYCLE_SUMMARY: current_high=<N> contract with PARTIALLY/FULLY RESOLVED definitions

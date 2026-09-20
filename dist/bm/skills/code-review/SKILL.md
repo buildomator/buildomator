@@ -13,7 +13,7 @@ allowed-tools:
 <objective>
 Review source files changed during a phase for bugs, security vulnerabilities, and code quality problems.
 
-Spawns the gsd-code-reviewer agent to analyze code at the specified depth level. Produces REVIEW.md artifact in the phase directory with severity-classified findings.
+Spawns the bm-code-reviewer agent to analyze code at the specified depth level. Produces REVIEW.md artifact in the phase directory with severity-classified findings.
 
 Arguments:
 - Phase number (required) — which phase's changes to review (e.g., "2" or "02")
@@ -50,6 +50,6 @@ The workflow (not this command) enforces these gates:
 - Config gate check (workflow.code_review)
 - File scoping (--files override > SUMMARY.md > git diff fallback)
 - Empty scope check (skip if no files)
-- Agent spawning (gsd-code-reviewer)
+- Agent spawning (bm-code-reviewer)
 - Result presentation (inline summary + next steps)
 </process>

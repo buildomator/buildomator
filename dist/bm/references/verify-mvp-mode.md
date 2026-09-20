@@ -1,6 +1,6 @@
 # Verify-Work — MVP Mode UAT Framing
 
-> Loaded by `verify-work` workflow and `gsd-verifier` agent only when the phase under verification has `mode: mvp` in ROADMAP.md. Reframes UAT generation from technical checks to user-flow walk-throughs.
+> Loaded by `verify-work` workflow and `bm-verifier` agent only when the phase under verification has `mode: mvp` in ROADMAP.md. Reframes UAT generation from technical checks to user-flow walk-throughs.
 
 ## Core rule
 
@@ -53,7 +53,7 @@ Verify that the user-story `[outcome]` clause is observably true in the codebase
 - If the outcome is "I can access my dashboard", verify a dashboard route exists and renders for an authenticated user.
 - If the outcome is "I can bulk-import contacts", verify the import path produces persisted records.
 
-Coverage is a goal-backward check: "did this phase deliver what its user story promised?" — sourced from the existing `gsd-verifier` agent's goal-backward methodology, narrowed to the user story.
+Coverage is a goal-backward check: "did this phase deliver what its user story promised?" — sourced from the existing `bm-verifier` agent's goal-backward methodology, narrowed to the user story.
 
 ## Anti-patterns to reject under MVP mode
 
@@ -67,7 +67,7 @@ The "show expected, ask if reality matches" model is preserved: user still types
 
 ## Output: VERIFICATION.md changes under MVP mode
 
-The `gsd-verifier` agent produces `VERIFICATION.md`. Under MVP mode, the report adds a top-level "User Flow Coverage" section that maps each step of the user story to evidence in the codebase:
+The `bm-verifier` agent produces `VERIFICATION.md`. Under MVP mode, the report adds a top-level "User Flow Coverage" section that maps each step of the user story to evidence in the codebase:
 
 ```markdown
 ## User Flow Coverage

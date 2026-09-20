@@ -77,6 +77,21 @@ describe('agentSkills', () => {
     );
   });
 
+  it('answers a bm- query from a gsd-keyed config (normalization)', async () => {
+    await writeSkill(join(tmpDir, '.claude', 'skills'), 'skill-a');
+    await writeConfig(tmpDir, {
+      agent_skills: { 'gsd-planner': ['.claude/skills/skill-a'] },
+    });
+
+    const r = await agentSkills(['bm-planner'], tmpDir);
+    expect(r.data).toBe(
+      '<agent_skills>\n' +
+        'Read these user-configured skills:\n' +
+        '- @.claude/skills/skill-a/SKILL.md\n' +
+        '</agent_skills>',
+    );
+  });
+
   it('accepts a single string skill path (normalizes to array)', async () => {
     await writeSkill(join(tmpDir, '.claude', 'skills'), 'only-one');
     await writeConfig(tmpDir, {

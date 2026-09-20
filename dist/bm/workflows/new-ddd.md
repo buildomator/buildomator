@@ -10,9 +10,9 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names, do not fall back to 'general-purpose'):
-- bm:gsd-project-researcher, Researches project-level technical decisions
-- bm:gsd-research-synthesizer, Synthesizes findings from parallel research agents
-- bm:gsd-roadmapper, Creates phased execution roadmaps (accepts SPEC.md input when `mode: ddd`)
+- bm:bm-project-researcher, Researches project-level technical decisions
+- bm:bm-research-synthesizer, Synthesizes findings from parallel research agents
+- bm:bm-roadmapper, Creates phased execution roadmaps (accepts SPEC.md input when `mode: ddd`)
 </available_agent_types>
 
 <process>
@@ -48,7 +48,7 @@ If the SDK schema does not yet accept `"mode": "ddd"`, write it anyway; downstre
 
 ## 5. Research
 
-**Do exactly as in `workflows/new-project.md` Steps 6 and 7 (parallel research and synthesis).** Spawn `gsd-project-researcher` agents in parallel, then `gsd-research-synthesizer`. No DDD-specific changes.
+**Do exactly as in `workflows/new-project.md` Steps 6 and 7 (parallel research and synthesis).** Spawn `bm-project-researcher` agents in parallel, then `bm-research-synthesizer`. No DDD-specific changes.
 
 Research output at `.planning/research/SUMMARY.md` will inform Step 6 (SPEC.md drafting). In particular, the synthesizer's "Implications for Roadmap" section should be reframed during Step 6 as "Implications for the user-facing surface", what should the docs cover, what should they elide.
 
@@ -104,7 +104,7 @@ Using the context already in scope (questioning answers, research summary), the 
 - Every user-facing capability described above is concrete enough that a competent implementer (Claude in execute-phase) could build it without re-asking the user.
 - Every section header maps cleanly to a buildable scope (no section that's pure prose with no implementable surface).
 - The Quick Start section, if literally followed by a future user, would work after the project is built.
-- No section has the shape of a "GSD maintenance phase" placeholder (see v2.43.12 anti-thin-phase guidance in `gsd-roadmapper`).
+- No section has the shape of a "GSD maintenance phase" placeholder (see v2.43.12 anti-thin-phase guidance in `bm-roadmapper`).
 
 **CRITICAL: Role separation between PROJECT.md and `docs/SPEC.md`**
 
@@ -222,7 +222,7 @@ This is the minimum-viable bridge for downstream workflows. A future release may
 bm-sdk query commit "docs(ddd): derive REQUIREMENTS.md from SPEC.md sections" --files .planning/REQUIREMENTS.md
 ```
 
-## 9. Spawn gsd-roadmapper (DDD mode)
+## 9. Spawn bm-roadmapper (DDD mode)
 
 **Do as in `workflows/new-project.md` Step 8 (roadmapper spawn)**, with these changes:
 
@@ -292,7 +292,7 @@ When implementation diverges, update SPEC.md and re-validate.
 - [ ] SPEC.md presented to user for validation (Approve / Request revision / Edit manually)
 - [ ] SPEC.md committed only after approval
 - [ ] REQUIREMENTS.md generated as a thin traceability shell derived from SPEC.md H2 sections
-- [ ] `gsd-roadmapper` spawned with DDD-mode prompt directing it to derive phases from SPEC.md
+- [ ] `bm-roadmapper` spawned with DDD-mode prompt directing it to derive phases from SPEC.md
 - [ ] ROADMAP.md, STATE.md, REQUIREMENTS.md committed
 - [ ] STATE.md has a `## Mode` section marking the project as DDD
 - [ ] Next Up block emitted with the DOCS-update reminder
@@ -303,7 +303,7 @@ When implementation diverges, update SPEC.md and re-validate.
 **Held for a future release (intentionally NOT in v2.44.0):**
 
 - **Per-phase doc-sync workflow.** A `/bm:docs-sync <phase>` step invoked between `execute-phase` and `verify-work` that detects implementation-vs-SPEC.md drift and updates SPEC.md sections that changed. Currently the user is expected to update SPEC.md manually during execution.
-- **Docs-aware verification.** A `gsd-docs-checker` agent (or extension of `gsd-verifier`) that confirms the implementation actually matches the corresponding SPEC.md section, not just that tests pass.
+- **Docs-aware verification.** A `gsd-docs-checker` agent (or extension of `bm-verifier`) that confirms the implementation actually matches the corresponding SPEC.md section, not just that tests pass.
 - **SPEC.md drift detection in `/bm:next`.** A check that warns if SPEC.md has been edited since the last phase's verification, prompting re-approval.
 - **Auto-decomposition of SPEC.md into fine-grained REQ-IDs.** Currently REQUIREMENTS.md gets one DOC-NN per H2 section. A richer mapping (one REQ-ID per command, endpoint, extension point, etc.) would improve traceability in larger projects.
 - **`gsd-ddd-docs-writer` subagent.** If inline orchestrator drafting becomes context-pressure problematic on large projects, extract SPEC.md generation to a dedicated agent.

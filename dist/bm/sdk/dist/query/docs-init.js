@@ -6,7 +6,7 @@
 import { closeSync, existsSync, openSync, readFileSync, readSync, readdirSync, statSync, } from 'node:fs';
 import { join, relative } from 'node:path';
 import { loadConfig } from '../config.js';
-import { MODEL_PROFILES, resolveModel } from './config-query.js';
+import { MODEL_PROFILES, resolveModel, legacyAgentName } from './config-query.js';
 import { detectRuntime, resolveAgentsDir, toPosixPath } from './helpers.js';
 const GSD_MARKER = '<!-- generated-by: gsd-doc-writer -->';
 const SKIP_DIRS = new Set([
@@ -192,9 +192,11 @@ function checkAgentsInstalled(config) {
     }
     const missing = [];
     for (const agent of expectedAgents) {
-        const agentFile = join(agentsDir, `${agent}.md`);
-        const agentFileCopilot = join(agentsDir, `${agent}.agent.md`);
-        if (!existsSync(agentFile) && !existsSync(agentFileCopilot)) {
+        // Accept the legacy gsd- filename too so a partially-renamed tree and
+        // users' stale gsd-*.md copies still register as installed until v5.0.
+        const legacy = legacyAgentName(agent);
+        const candidates = [`${agent}.md`, `${agent}.agent.md`, `${legacy}.md`, `${legacy}.agent.md`];
+        if (!candidates.some((f) => existsSync(join(agentsDir, f)))) {
             missing.push(agent);
         }
     }
@@ -210,7 +212,7 @@ function checkAgentsInstalled(config) {
 export const docsInit = async (_args, projectDir) => {
     const config = await loadConfig(projectDir);
     const configExists = existsSync(join(projectDir, '.planning', 'config.json'));
-    const docModelResult = await resolveModel(['gsd-doc-writer'], projectDir);
+    const docModelResult = await resolveModel(['bm-doc-writer'], projectDir);
     const docWriterData = docModelResult.data;
     const doc_writer_model = configExists ? (docWriterData?.model || '') : '';
     const agentStatus = checkAgentsInstalled(config);

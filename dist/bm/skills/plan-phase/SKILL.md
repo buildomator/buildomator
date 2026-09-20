@@ -2,7 +2,7 @@
 name: plan-phase
 description: Create detailed phase plan (PLAN.md) with verification loop
 argument-hint: "[phase] [--auto] [--research] [--skip-research] [--gaps] [--skip-verify] [--prd <file>] [--reviews] [--text] [--tdd]"
-agent: gsd-planner
+agent: bm-planner
 allowed-tools:
   - Read
   - Write
@@ -19,7 +19,7 @@ Create executable phase prompts (PLAN.md files) for a roadmap phase with integra
 
 **Default flow:** Research (if needed) → Plan → Verify → Done
 
-**Orchestrator role:** Parse arguments, validate phase, research domain (unless skipped), spawn gsd-planner, verify with gsd-plan-checker, iterate until pass or max iterations, present results.
+**Orchestrator role:** Parse arguments, validate phase, research domain (unless skipped), spawn bm-planner, verify with bm-plan-checker, iterate until pass or max iterations, present results.
 </objective>
 
 <execution_context>

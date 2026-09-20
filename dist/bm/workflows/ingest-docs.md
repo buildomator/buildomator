@@ -151,14 +151,14 @@ Create staging directory:
 mkdir -p .planning/intel/classifications/
 ```
 
-For each discovered doc, spawn `gsd-doc-classifier` in parallel: issue all Task calls in a single message with multiple tool uses so the harness runs them concurrently.
+For each discovered doc, spawn `bm-doc-classifier` in parallel: issue all Task calls in a single message with multiple tool uses so the harness runs them concurrently.
 
 Per-spawn prompt fields:
 - `FILEPATH` — absolute path to the doc
 - `OUTPUT_DIR` — `.planning/intel/classifications/`
 - `MANIFEST_TYPE` — the type from the manifest if present, else omit
 - `MANIFEST_PRECEDENCE` — the precedence integer from the manifest if present, else omit
-- `<required_reading>` — `agents/gsd-doc-classifier.md` (the agent definition itself)
+- `<required_reading>` — `agents/bm-doc-classifier.md` (the agent definition itself)
 
 Collect the one-line confirmations from each classifier. If any classifier errors out, surface the error and abort without touching `.planning/` further.
 
@@ -166,11 +166,11 @@ Collect the one-line confirmations from each classifier. If any classifier error
 
 <step name="synthesize">
 
-Spawn `gsd-doc-synthesizer` once:
+Spawn `bm-doc-synthesizer` once:
 
 ```
 Agent({
-  subagent_type: "gsd-doc-synthesizer",
+  subagent_type: "bm-doc-synthesizer",
   prompt: "
     CLASSIFICATIONS_DIR: .planning/intel/classifications/
     INTEL_DIR: .planning/intel/
@@ -180,7 +180,7 @@ Agent({
     PRECEDENCE: {array from manifest defaults or default ['ADR','SPEC','PRD','DOC']}
 
     <required_reading>
-    - agents/gsd-doc-synthesizer.md
+    - agents/bm-doc-synthesizer.md
     - ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/references/doc-conflict-engine.md
     </required_reading>
   "
@@ -231,13 +231,13 @@ Proceed to routing silently, or optionally display `GSD > No conflicts. Auto-res
 
 **Applies only when MODE=new.**
 
-Audit PROJECT.md field requirements that `gsd-roadmapper` expects. For fields derivable from `.planning/intel/SYNTHESIS.md` (project scope, goals/non-goals, constraints, locked decisions), synthesize from the intel. For fields NOT derivable (project name, developer-facing success metric, target runtime), prompt via `AskUserQuestion` one at a time — minimal question set, no interrogation.
+Audit PROJECT.md field requirements that `bm-roadmapper` expects. For fields derivable from `.planning/intel/SYNTHESIS.md` (project scope, goals/non-goals, constraints, locked decisions), synthesize from the intel. For fields NOT derivable (project name, developer-facing success metric, target runtime), prompt via `AskUserQuestion` one at a time — minimal question set, no interrogation.
 
-Delegate to `gsd-roadmapper`:
+Delegate to `bm-roadmapper`:
 
 ```
 Agent({
-  subagent_type: "gsd-roadmapper",
+  subagent_type: "bm-roadmapper",
   prompt: "
     Mode: new-project-from-ingest
     Intel: .planning/intel/SYNTHESIS.md (entry point)

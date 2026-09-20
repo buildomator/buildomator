@@ -87,7 +87,7 @@ export declare class GSD {
      */
     private filterAndSortPhases;
     /**
-     * Load the gsd-executor agent definition if available.
+     * Load the bm-executor agent definition if available.
      * Falls back gracefully — returns undefined if not found.
      */
     private loadAgentDefinition;

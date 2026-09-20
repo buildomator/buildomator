@@ -6,8 +6,8 @@ User tests, Claude records. One test at a time. Plain text responses.
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- bm:gsd-planner — Creates detailed plans from phase scope
-- bm:gsd-plan-checker — Reviews plan quality before execution
+- bm:bm-planner — Creates detailed plans from phase scope
+- bm:bm-plan-checker — Reviews plan quality before execution
 </available_agent_types>
 
 <philosophy>
@@ -36,8 +36,8 @@ PHASE_ARG=$(echo "$ARGUMENTS" | sed -E 's/--ws[[:space:]]+[^[:space:]]+//g' | xa
 
 INIT=$(bm-sdk query init.verify-work "${PHASE_ARG}" ${GSD_WS})
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_PLANNER=$(bm-sdk query agent-skills gsd-planner)
-AGENT_SKILLS_CHECKER=$(bm-sdk query agent-skills gsd-plan-checker)
+AGENT_SKILLS_PLANNER=$(bm-sdk query agent-skills bm-planner)
+AGENT_SKILLS_CHECKER=$(bm-sdk query agent-skills bm-plan-checker)
 ```
 
 Parse JSON for: `planner_model`, `checker_model`, `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `has_verification`, `uat_path`.
@@ -548,7 +548,7 @@ GSD ► PLANNING FIXES
 ◆ Spawning planner for gap closure...
 ```
 
-Spawn gsd-planner in --gaps mode:
+Spawn bm-planner in --gaps mode:
 
 ```
 Agent(
@@ -573,7 +573,7 @@ Output consumed by /bm:execute-phase
 Plans must be executable prompts.
 </downstream_consumer>
 """,
-  subagent_type="bm:gsd-planner",
+  subagent_type="bm:bm-planner",
   model="{planner_model}",
   description="Plan gap fixes for Phase {phase}"
 )
@@ -598,7 +598,7 @@ GSD ► VERIFYING FIX PLANS
 
 Initialize: `iteration_count = 1`
 
-Spawn gsd-plan-checker:
+Spawn bm-plan-checker:
 
 ```
 Agent(
@@ -622,7 +622,7 @@ Return one of:
 - ## ISSUES FOUND — structured issue list
 </expected_output>
 """,
-  subagent_type="bm:gsd-plan-checker",
+  subagent_type="bm:bm-plan-checker",
   model="{checker_model}",
   description="Verify Phase {phase} fix plans"
 )
@@ -642,7 +642,7 @@ On return:
 
 Display: `Sending back to planner for revision... (iteration {N}/3)`
 
-Spawn gsd-planner with revision context:
+Spawn bm-planner with revision context:
 
 ```
 Agent(
@@ -668,7 +668,7 @@ Read existing PLAN.md files. Make targeted updates to address checker issues.
 Do NOT replan from scratch unless issues are fundamental.
 </instructions>
 """,
-  subagent_type="bm:gsd-planner",
+  subagent_type="bm:bm-planner",
   model="{planner_model}",
   description="Revise Phase {phase} plans"
 )
@@ -763,8 +763,8 @@ Default to **major** if unclear. User can correct if needed.
 - [ ] Batched writes: on issue, every 5 passes, or completion
 - [ ] Committed on completion
 - [ ] If issues: parallel debug agents diagnose root causes
-- [ ] If issues: gsd-planner creates fix plans (gap_closure mode)
-- [ ] If issues: gsd-plan-checker verifies fix plans
+- [ ] If issues: bm-planner creates fix plans (gap_closure mode)
+- [ ] If issues: bm-plan-checker verifies fix plans
 - [ ] If issues: revision loop until plans pass (max 3 iterations)
 - [ ] Ready for `/bm:execute-phase --gaps-only` when complete
 </success_criteria>

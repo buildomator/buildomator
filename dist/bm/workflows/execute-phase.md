@@ -7,7 +7,7 @@ Orchestrator coordinates, not executes. Each subagent loads the full execute-pla
 </core_principle>
 
 <runtime_compatibility>
-`Agent(subagent_type="bm:gsd-executor", ...)` blocks until complete and returns the result.
+`Agent(subagent_type="bm:bm-executor", ...)` blocks until complete and returns the result.
 
 **Fallback rule:** If a spawned agent completes its work (commits visible, SUMMARY.md exists) but the orchestrator never receives the completion signal, treat it as successful based on spot-checks and continue. Never block indefinitely waiting for a signal — always verify via filesystem and git state.
 </runtime_compatibility>
@@ -23,18 +23,18 @@ Read STATE.md before any operation to load project context.
 These are the valid GSD subagent types registered in .claude/agents/ (or equivalent for your runtime).
 Always use the exact name from this list — do not fall back to 'general-purpose' or other built-in types:
 
-- bm:gsd-executor — Executes plan tasks, commits, creates SUMMARY.md
-- bm:gsd-verifier — Verifies phase completion, checks quality gates
-- bm:gsd-planner — Creates detailed plans from phase scope
-- bm:gsd-phase-researcher — Researches technical approaches for a phase
-- bm:gsd-plan-checker — Reviews plan quality before execution
-- bm:gsd-debugger — Diagnoses and fixes issues
-- bm:gsd-codebase-mapper — Maps project structure and dependencies
-- bm:gsd-integration-checker — Checks cross-phase integration
-- bm:gsd-nyquist-auditor — Validates verification coverage
-- bm:gsd-ui-researcher — Researches UI/UX approaches
-- bm:gsd-ui-checker — Reviews UI implementation quality
-- bm:gsd-ui-auditor — Audits UI against design requirements
+- bm:bm-executor — Executes plan tasks, commits, creates SUMMARY.md
+- bm:bm-verifier — Verifies phase completion, checks quality gates
+- bm:bm-planner — Creates detailed plans from phase scope
+- bm:bm-phase-researcher — Researches technical approaches for a phase
+- bm:bm-plan-checker — Reviews plan quality before execution
+- bm:bm-debugger — Diagnoses and fixes issues
+- bm:bm-codebase-mapper — Maps project structure and dependencies
+- bm:bm-integration-checker — Checks cross-phase integration
+- bm:bm-nyquist-auditor — Validates verification coverage
+- bm:bm-ui-researcher — Researches UI/UX approaches
+- bm:bm-ui-checker — Reviews UI implementation quality
+- bm:bm-ui-auditor — Audits UI against design requirements
 </available_agent_types>
 
 <process>
@@ -57,7 +57,7 @@ Load all context in one call:
 ```bash
 INIT=$(bm-sdk query init.execute-phase "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS=$(bm-sdk query agent-skills gsd-executor)
+AGENT_SKILLS=$(bm-sdk query agent-skills bm-executor)
 ```
 
 Parse JSON for: `executor_model`, `verifier_model`, `commit_docs`, `parallelization`, `branching_strategy`, `branch_name`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `plans`, `incomplete_plans`, `plan_count`, `incomplete_count`, `state_exists`, `roadmap_exists`, `phase_req_ids`, `response_language`.
@@ -523,7 +523,7 @@ To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeou
 
    ```text
    Agent(
-     subagent_type="bm:gsd-executor",
+     subagent_type="bm:bm-executor",
      description="Execute plan {plan_number} of phase {phase_number}",
      # Only include model= when executor_model is an explicit model name.
      # When executor_model is "inherit", omit this parameter entirely so
@@ -562,7 +562,7 @@ To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeou
          [ "$(git rev-parse HEAD)" != "{EXPECTED_BASE}" ] && { echo "ERROR: could not correct worktree base"; exit 1; }
        fi
        ```
-       Per-commit HEAD/cwd-drift/path-guard: `agents/gsd-executor.md` steps 0/0a/0b + `references/worktree-path-safety.md` (in <execution_context>).
+       Per-commit HEAD/cwd-drift/path-guard: `agents/bm-executor.md` steps 0/0a/0b + `references/worktree-path-safety.md` (in <execution_context>).
        </worktree_branch_check>
 
        <parallel_execution>
@@ -702,7 +702,7 @@ To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeou
    ```bash
    SKIP_HOOKS=$(bm-sdk query config-get workflow.worktree_skip_hooks 2>/dev/null || echo "false")
    if [ "$SKIP_HOOKS" = "true" ]; then
-     # Stash uncommitted changes under a named ref so we always pop (bare `git stash` strands them on hook/script failure). #3542: `refs/stash` is shared across worktrees, so this helper runs ONLY in the orchestrator's main checkout after all wave worktrees have been merged + removed; executors are forbidden from running any `git stash` subcommand (see `<destructive_git_prohibition>` in `agents/gsd-executor.md`).
+     # Stash uncommitted changes under a named ref so we always pop (bare `git stash` strands them on hook/script failure). #3542: `refs/stash` is shared across worktrees, so this helper runs ONLY in the orchestrator's main checkout after all wave worktrees have been merged + removed; executors are forbidden from running any `git stash` subcommand (see `<destructive_git_prohibition>` in `agents/bm-executor.md`).
      STASHED=false
      if (! git diff --quiet || ! git diff --cached --quiet) && git stash push -u -m "gsd-post-wave-hook-$$" >/dev/null 2>&1; then STASHED=true; fi
      git hook run pre-commit 2>&1 || echo "⚠ Pre-commit hooks failed — review before continuing"
@@ -1425,7 +1425,7 @@ spawn template, and the two `workflow.drift_*` config keys.
 Verify phase achieved its GOAL, not just completed tasks.
 
 ```bash
-VERIFIER_SKILLS=$(bm-sdk query agent-skills gsd-verifier)
+VERIFIER_SKILLS=$(bm-sdk query agent-skills bm-verifier)
 ```
 
 ```
@@ -1451,7 +1451,7 @@ ${CONTEXT_WINDOW >= 500000 ? `- {phase_dir}/*-CONTEXT.md (User decisions — ver
 </files_to_read>
 
 ${VERIFIER_SKILLS}",
-  subagent_type="bm:gsd-verifier",
+  subagent_type="bm:bm-verifier",
   model="{verifier_model}"
 )
 ```

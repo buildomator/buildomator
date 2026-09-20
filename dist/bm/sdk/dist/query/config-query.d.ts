@@ -17,6 +17,7 @@
  */
 import type { QueryHandler } from './utils.js';
 export { MODEL_PROFILES, VALID_PROFILES, getAgentToModelMapForProfile } from '../model-catalog.js';
+export { normalizeAgentName, legacyAgentName, lookupByAgentName } from '../model-catalog.js';
 /**
  * Query handler for config-get command.
  *

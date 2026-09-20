@@ -115,6 +115,25 @@ function getAgentToModelMapForProfile(normalizedProfile) {
   }
   return out;
 }
+function normalizeAgentName(name) {
+  const s3 = String(name);
+  return s3.startsWith("gsd-") ? "bm-" + s3.slice(4) : s3;
+}
+function legacyAgentName(name) {
+  const s3 = normalizeAgentName(name);
+  return s3.startsWith("bm-") ? "gsd-" + s3.slice(3) : s3;
+}
+function lookupByAgentName(map, name) {
+  if (!map)
+    return void 0;
+  const direct = map[name];
+  if (direct !== void 0)
+    return direct;
+  const norm = map[normalizeAgentName(name)];
+  if (norm !== void 0)
+    return norm;
+  return map[legacyAgentName(name)];
+}
 function resolveRuntimeTierDefault(runtime, alias) {
   return catalog.runtimeTierDefaults[runtime]?.[alias] ?? null;
 }
@@ -6304,6 +6323,7 @@ function maskIfSecret(keyPath, value) {
 // dist/query/config-query.js
 init_model_catalog();
 init_model_catalog();
+init_model_catalog();
 var RUNTIMES_WITH_REASONING_EFFORT = runtimesWithReasoningEffort();
 var configGet = async (args, projectDir, workstream) => {
   const defaultIdx = args.indexOf("--default");
@@ -6390,14 +6410,15 @@ var resolveModel = async (args, projectDir, workstream) => {
   }
   const config = await loadConfig(projectDir, workstream);
   const profile = String(config.model_profile || "balanced").toLowerCase();
+  const agentKey = normalizeAgentName(agentType);
   const overrides = config.model_overrides;
-  const override = overrides?.[agentType];
+  const override = lookupByAgentName(overrides, agentType);
   if (override) {
-    const agentModels2 = MODEL_PROFILES[agentType];
+    const agentModels2 = MODEL_PROFILES[agentKey];
     const result = agentModels2 ? { model: override, profile } : { model: override, profile, unknown_agent: true };
     return { data: result };
   }
-  const agentModels = MODEL_PROFILES[agentType];
+  const agentModels = MODEL_PROFILES[agentKey];
   const resolveModelIds = config.resolve_model_ids;
   if (!agentModels) {
     const semanticFallback = profile === "quality" ? "opus" : profile === "budget" ? "haiku" : profile === "inherit" ? "inherit" : "sonnet";
@@ -6407,7 +6428,7 @@ var resolveModel = async (args, projectDir, workstream) => {
     return { data: { model: "inherit", profile } };
   }
   const alias = agentModels[profile] || agentModels["balanced"] || "sonnet";
-  const phaseType = AGENT_TO_PHASE_TYPE[agentType];
+  const phaseType = AGENT_TO_PHASE_TYPE[agentKey];
   const phaseTier = phaseType && typeof config.models === "object" ? config.models[phaseType] : void 0;
   const tier = typeof phaseTier === "string" ? phaseTier : alias;
   const runtimeTier = resolveRuntimeTier(config, tier);
@@ -12587,6 +12608,7 @@ var DECISION_ROUTING_STATIC_CATALOG = [
 init_helpers();
 import { existsSync as existsSync16, realpathSync } from "node:fs";
 import { join as join23, resolve as resolve4, sep } from "node:path";
+init_model_catalog();
 var GLOBAL_SKILL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
 var PLUGIN_SKILL_NAME_RE = /^[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/;
 function resolveWithinBase(target, baseDir) {
@@ -12614,7 +12636,7 @@ var agentSkills = async (args, projectDir) => {
   } catch {
     return { data: "" };
   }
-  const raw = config.agent_skills?.[agentType];
+  const raw = lookupByAgentName(config.agent_skills, agentType);
   if (!raw)
     return { data: "" };
   let skillPaths;
@@ -15025,9 +15047,9 @@ function checkAgentsInstalled(config) {
   }
   const missing = [];
   for (const agent of expectedAgents) {
-    const agentFile = join30(agentsDir, `${agent}.md`);
-    const agentFileCopilot = join30(agentsDir, `${agent}.agent.md`);
-    if (!existsSync23(agentFile) && !existsSync23(agentFileCopilot)) {
+    const legacy = legacyAgentName(agent);
+    const candidates = [`${agent}.md`, `${agent}.agent.md`, `${legacy}.md`, `${legacy}.agent.md`];
+    if (!candidates.some((f) => existsSync23(join30(agentsDir, f)))) {
       missing.push(agent);
     }
   }
@@ -15039,7 +15061,7 @@ function checkAgentsInstalled(config) {
 var docsInit = async (_args, projectDir) => {
   const config = await loadConfig(projectDir);
   const configExists = existsSync23(join30(projectDir, ".planning", "config.json"));
-  const docModelResult = await resolveModel(["gsd-doc-writer"], projectDir);
+  const docModelResult = await resolveModel(["bm-doc-writer"], projectDir);
   const docWriterData = docModelResult.data;
   const doc_writer_model = configExists ? docWriterData?.model || "" : "";
   const agentStatus = checkAgentsInstalled(config);
@@ -19415,9 +19437,9 @@ var validateAgents = async (_args, _projectDir) => {
     };
   }
   for (const agent of expected) {
-    const agentFile = join43(agentsDir, `${agent}.md`);
-    const agentFileCopilot = join43(agentsDir, `${agent}.agent.md`);
-    if (existsSync35(agentFile) || existsSync35(agentFileCopilot)) {
+    const legacy = legacyAgentName(agent);
+    const candidates = [`${agent}.md`, `${agent}.agent.md`, `${legacy}.md`, `${legacy}.agent.md`];
+    if (candidates.some((f) => existsSync35(join43(agentsDir, f)))) {
       installed.push(agent);
     } else {
       missing.push(agent);
@@ -19677,9 +19699,9 @@ function checkAgentsInstalled2(config) {
   }
   const missing = [];
   for (const agent of expectedAgents) {
-    const agentFile = join45(agentsDir, `${agent}.md`);
-    const agentFileCopilot = join45(agentsDir, `${agent}.agent.md`);
-    if (!existsSync36(agentFile) && !existsSync36(agentFileCopilot)) {
+    const legacy = legacyAgentName(agent);
+    const candidates = [`${agent}.md`, `${agent}.agent.md`, `${legacy}.md`, `${legacy}.agent.md`];
+    if (!candidates.some((f) => existsSync36(join45(agentsDir, f)))) {
       missing.push(agent);
     }
   }
@@ -19791,8 +19813,8 @@ var initExecutePhase = async (args, projectDir, workstream) => {
   const phase_req_ids = extractReqIds(roadmapPhase);
   const configExists = existsSync36(join45(planningDir, "config.json"));
   const [executorModel, verifierModel] = configExists ? await Promise.all([
-    getModelAlias("gsd-executor", projectDir),
-    getModelAlias("gsd-verifier", projectDir)
+    getModelAlias("bm-executor", projectDir),
+    getModelAlias("bm-verifier", projectDir)
   ]) : ["", ""];
   const milestone = await getMilestoneInfo(projectDir, workstream);
   const phaseNumber = phaseInfo?.phase_number || null;
@@ -19849,9 +19871,9 @@ var initPlanPhase = async (args, projectDir, workstream) => {
   const phase_req_ids = extractReqIds(roadmapPhase);
   const configExists = existsSync36(join45(planningDir, "config.json"));
   const [researcherModel, plannerModel, checkerModel] = configExists ? await Promise.all([
-    getModelAlias("gsd-phase-researcher", projectDir),
-    getModelAlias("gsd-planner", projectDir),
-    getModelAlias("gsd-plan-checker", projectDir)
+    getModelAlias("bm-phase-researcher", projectDir),
+    getModelAlias("bm-planner", projectDir),
+    getModelAlias("bm-plan-checker", projectDir)
   ]) : ["", "", ""];
   const phaseNumber = phaseInfo?.phase_number || null;
   const phaseName = phaseInfo?.phase_name ?? null;
@@ -19939,9 +19961,9 @@ var initNewMilestone = async (_args, projectDir) => {
   } catch {
   }
   const [researcherModel, synthesizerModel, roadmapperModel] = await Promise.all([
-    getModelAlias("gsd-project-researcher", projectDir),
-    getModelAlias("gsd-research-synthesizer", projectDir),
-    getModelAlias("gsd-roadmapper", projectDir)
+    getModelAlias("bm-project-researcher", projectDir),
+    getModelAlias("bm-research-synthesizer", projectDir),
+    getModelAlias("bm-roadmapper", projectDir)
   ]);
   const result = {
     researcher_model: researcherModel,
@@ -19982,10 +20004,10 @@ var initQuick = async (args, projectDir) => {
   const quickBranchName = config.git.quick_branch_template ? config.git.quick_branch_template.replace("{num}", quickId).replace("{quick}", quickId).replace("{slug}", branchSlug) : null;
   const configExists = existsSync36(join45(planningDir, "config.json"));
   const [plannerModel, executorModel, checkerModel, verifierModel] = configExists ? await Promise.all([
-    getModelAlias("gsd-planner", projectDir),
-    getModelAlias("gsd-executor", projectDir),
-    getModelAlias("gsd-plan-checker", projectDir),
-    getModelAlias("gsd-verifier", projectDir)
+    getModelAlias("bm-planner", projectDir),
+    getModelAlias("bm-executor", projectDir),
+    getModelAlias("bm-plan-checker", projectDir),
+    getModelAlias("bm-verifier", projectDir)
   ]) : ["", "", "", ""];
   const result = {
     planner_model: plannerModel,
@@ -20037,8 +20059,8 @@ var initVerifyWork = async (args, projectDir, workstream) => {
   const { phaseInfo } = await getPhaseInfoForVerifyWork(phase, projectDir, workstream);
   const configExists = existsSync36(join45(projectDir, ".planning", "config.json"));
   const [plannerModel, checkerModel] = configExists ? await Promise.all([
-    getModelAlias("gsd-planner", projectDir),
-    getModelAlias("gsd-plan-checker", projectDir)
+    getModelAlias("bm-planner", projectDir),
+    getModelAlias("bm-plan-checker", projectDir)
   ]) : ["", ""];
   const result = {
     planner_model: plannerModel,
@@ -20304,7 +20326,7 @@ var initMapCodebase = async (_args, projectDir) => {
     existingMaps = readdirSync22(codebaseDir).filter((f) => f.endsWith(".md"));
   } catch {
   }
-  const mapperModel = await getModelAlias("gsd-codebase-mapper", projectDir);
+  const mapperModel = await getModelAlias("bm-codebase-mapper", projectDir);
   const result = {
     mapper_model: mapperModel,
     commit_docs: config.commit_docs,
@@ -20524,9 +20546,9 @@ function gitWorktreeInfo2(base) {
   }
 }
 var NEW_PROJECT_REQUIRED_AGENTS = [
-  "gsd-project-researcher",
-  "gsd-research-synthesizer",
-  "gsd-roadmapper"
+  "bm-project-researcher",
+  "bm-research-synthesizer",
+  "bm-roadmapper"
 ];
 function hasAgentDefinition(agentsDir, agent) {
   return existsSync37(join46(agentsDir, `${agent}.md`)) || existsSync37(join46(agentsDir, `${agent}.agent.md`));
@@ -20645,9 +20667,9 @@ var initNewProject = async (_args, projectDir, workstream) => {
   }
   const hasPackageFile = pathExists2(projectDir, "package.json") || pathExists2(projectDir, "requirements.txt") || pathExists2(projectDir, "Cargo.toml") || pathExists2(projectDir, "go.mod") || pathExists2(projectDir, "Package.swift") || pathExists2(projectDir, "build.gradle") || pathExists2(projectDir, "build.gradle.kts") || pathExists2(projectDir, "pom.xml") || pathExists2(projectDir, "Gemfile") || pathExists2(projectDir, "composer.json") || pathExists2(projectDir, "pubspec.yaml") || pathExists2(projectDir, "CMakeLists.txt") || pathExists2(projectDir, "Makefile") || pathExists2(projectDir, "build.zig") || pathExists2(projectDir, "mix.exs") || pathExists2(projectDir, "project.clj");
   const [researcherModel, synthesizerModel, roadmapperModel] = await Promise.all([
-    getModelAlias2("gsd-project-researcher", projectDir),
-    getModelAlias2("gsd-research-synthesizer", projectDir),
-    getModelAlias2("gsd-roadmapper", projectDir)
+    getModelAlias2("bm-project-researcher", projectDir),
+    getModelAlias2("bm-research-synthesizer", projectDir),
+    getModelAlias2("bm-roadmapper", projectDir)
   ]);
   const runtime = detectRuntime(config);
   const agentsDir = resolveAgentsDir(runtime);
@@ -20792,8 +20814,8 @@ var initProgress = async (_args, projectDir, workstream) => {
   } catch {
   }
   const result = {
-    executor_model: await getModelAlias2("gsd-executor", projectDir),
-    planner_model: await getModelAlias2("gsd-planner", projectDir),
+    executor_model: await getModelAlias2("bm-executor", projectDir),
+    planner_model: await getModelAlias2("bm-planner", projectDir),
     commit_docs: config.commit_docs,
     milestone_version: milestone.version,
     milestone_name: milestone.name,
@@ -37381,10 +37403,10 @@ var PHASE_DEFAULT_TOOLS = {
   [PhaseType.Repair]: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 };
 var PHASE_AGENT_MAP = {
-  [PhaseType.Execute]: "gsd-executor.md",
-  [PhaseType.Research]: "gsd-phase-researcher.md",
-  [PhaseType.Plan]: "gsd-planner.md",
-  [PhaseType.Verify]: "gsd-verifier.md",
+  [PhaseType.Execute]: "bm-executor.md",
+  [PhaseType.Research]: "bm-phase-researcher.md",
+  [PhaseType.Plan]: "bm-planner.md",
+  [PhaseType.Verify]: "bm-verifier.md",
   [PhaseType.Discuss]: null,
   [PhaseType.Repair]: null
 };
@@ -39965,7 +39987,7 @@ var InitRunner = class {
    * Reads the agent definition and research template.
    */
   async buildResearchPrompt(researchType, input) {
-    const agentDef = await this.readAgentFile("gsd-project-researcher.md");
+    const agentDef = await this.readAgentFile("bm-project-researcher.md");
     const template = await this.readGSDFile(`templates/research-project/${researchType}.md`);
     let projectContent = "";
     try {
@@ -40002,7 +40024,7 @@ var InitRunner = class {
    * Reads synthesizer agent def and all 4 research outputs.
    */
   async buildSynthesisPrompt() {
-    const agentDef = await this.readAgentFile("gsd-research-synthesizer.md");
+    const agentDef = await this.readAgentFile("bm-research-synthesizer.md");
     const summaryTemplate = await this.readGSDFile("templates/research-project/SUMMARY.md");
     const researchDir = join50(this.projectDir, ".planning", "research");
     const researchContent = [];
@@ -40084,7 +40106,7 @@ ${content}
    * Reads PROJECT.md + REQUIREMENTS.md + research/SUMMARY.md + config.json.
    */
   async buildRoadmapPrompt() {
-    const agentDef = await this.readAgentFile("gsd-roadmapper.md");
+    const agentDef = await this.readAgentFile("bm-roadmapper.md");
     const roadmapTemplate = await this.readGSDFile("templates/roadmap.md");
     const stateTemplate = await this.readGSDFile("templates/state.md");
     const filesToRead = [
@@ -40438,18 +40460,18 @@ var GSD = class {
     return phases.filter((p) => !p.roadmap_complete).sort((a3, b) => parseFloat(a3.number) - parseFloat(b.number));
   }
   /**
-   * Load the gsd-executor agent definition if available.
+   * Load the bm-executor agent definition if available.
    * Falls back gracefully — returns undefined if not found.
    */
   async loadAgentDefinition() {
     const paths = [
       // Repo-local GSD installation
-      join51(this.projectDir, ".claude", "get-shit-done", "agents", "gsd-executor.md"),
+      join51(this.projectDir, ".claude", "get-shit-done", "agents", "bm-executor.md"),
       // Repo-local agents directory
-      join51(this.projectDir, ".claude", "agents", "gsd-executor.md"),
+      join51(this.projectDir, ".claude", "agents", "bm-executor.md"),
       // Global home directory
-      join51(homedir12(), ".claude", "agents", "gsd-executor.md"),
-      join51(this.projectDir, "agents", "gsd-executor.md")
+      join51(homedir12(), ".claude", "agents", "bm-executor.md"),
+      join51(this.projectDir, "agents", "bm-executor.md")
     ];
     for (const p of paths) {
       try {

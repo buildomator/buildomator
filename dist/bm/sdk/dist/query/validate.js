@@ -17,7 +17,7 @@ import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
-import { MODEL_PROFILES } from './config-query.js';
+import { MODEL_PROFILES, legacyAgentName } from './config-query.js';
 import { GSDError, ErrorClassification } from '../errors.js';
 import { extractFrontmatter, parseMustHavesBlock } from './frontmatter.js';
 import { escapeRegex, normalizePhaseName, planningPaths, resolvePathUnderProject } from './helpers.js';
@@ -856,9 +856,11 @@ export const validateAgents = async (_args, _projectDir) => {
         };
     }
     for (const agent of expected) {
-        const agentFile = join(agentsDir, `${agent}.md`);
-        const agentFileCopilot = join(agentsDir, `${agent}.agent.md`);
-        if (existsSync(agentFile) || existsSync(agentFileCopilot)) {
+        // Accept the legacy gsd- filename too so a partially-renamed tree and
+        // users' stale gsd-*.md copies still register as installed until v5.0.
+        const legacy = legacyAgentName(agent);
+        const candidates = [`${agent}.md`, `${agent}.agent.md`, `${legacy}.md`, `${legacy}.agent.md`];
+        if (candidates.some((f) => existsSync(join(agentsDir, f)))) {
             installed.push(agent);
         }
         else {

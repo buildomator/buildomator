@@ -1,6 +1,6 @@
 # Execute-Phase — MVP+TDD Gate (Runtime Enforcement)
 
-> Loaded by `execute-phase` workflow and `gsd-executor` agent only when **both** `MVP_MODE=true` AND `TDD_MODE=true` for the phase. Defines the runtime gate that blocks behavior-adding tasks until a failing-test commit exists.
+> Loaded by `execute-phase` workflow and `bm-executor` agent only when **both** `MVP_MODE=true` AND `TDD_MODE=true` for the phase. Defines the runtime gate that blocks behavior-adding tasks until a failing-test commit exists.
 
 ## When this gate fires
 

@@ -1,5 +1,5 @@
 <purpose>
-Lightweight codebase assessment. Spawns a single gsd-codebase-mapper agent for one focus area,
+Lightweight codebase assessment. Spawns a single bm-codebase-mapper agent for one focus area,
 producing targeted documents in `.planning/codebase/`.
 </purpose>
 
@@ -9,7 +9,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- bm:gsd-codebase-mapper — Maps project structure and dependencies
+- bm:bm-codebase-mapper — Maps project structure and dependencies
 </available_agent_types>
 
 <process>
@@ -39,7 +39,7 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 
 If the user input contains `--drift`:
 
-- This is a **drift scan**, not a codebase map. Do NOT validate focus, do NOT spawn `gsd-codebase-mapper`, do NOT write to `.planning/codebase/`. Mutually exclusive with `--focus`.
+- This is a **drift scan**, not a codebase map. Do NOT validate focus, do NOT spawn `bm-codebase-mapper`, do NOT write to `.planning/codebase/`. Mutually exclusive with `--focus`.
 - Parse `--top N` (default 20) and `--fail-on-score N` (optional).
 - Build the command: `gsd-tools verify drift --scope . --top {N} --json` (append `--fail-on-score {N}` only when the user supplied it).
 
@@ -128,12 +128,12 @@ mkdir -p .planning/codebase
 
 ## Step 4: Spawn mapper agent
 
-Spawn a single `gsd-codebase-mapper` agent with the selected focus area:
+Spawn a single `bm-codebase-mapper` agent with the selected focus area:
 
 ```
 Agent(
   prompt="Scan this codebase with focus: {focus}. Write results to .planning/codebase/. Produce only: {document_list}",
-  subagent_type="bm:gsd-codebase-mapper",
+  subagent_type="bm:bm-codebase-mapper",
   model="{resolved_model}"
 )
 ```

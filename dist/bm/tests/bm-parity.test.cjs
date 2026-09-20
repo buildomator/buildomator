@@ -93,7 +93,7 @@ function detectViolations(text) {
   if (GSD_FALLBACK_LITERALS.some((lit) => text.includes(lit))) hits.push('cache-fallback');
   // Un-rewritten agent reference. The colon-then-'g' shape never collides with
   // gsd:// (colon-slash) or a gsd-<file> filename (no colon before the dash).
-  if (/gsd:gsd-[a-z0-9-]+/.test(text)) hits.push('agent-ref');
+  if (/gsd:(?:gsd|bm)-[a-z0-9-]+/.test(text)) hits.push('agent-ref');
   // Un-rewritten slash command OR frontmatter name. Requiring a lowercase letter
   // immediately after the colon spares gsd:// (colon-slash), the regex-escaped
   // gsd:\/ in mcp/server.cjs (colon-backslash), and name:'gsd' (no colon after
@@ -132,7 +132,9 @@ check('census positive control: each violation class is flagged against raw text
   assert.ok(detectViolations('PKG_SEGMENT="gsd"').includes('cache-fallback'),
     'cache-fallback (check-plugin-update PKG_SEGMENT) class not flagged');
   assert.ok(detectViolations('subagent_type=gsd:gsd-executor').includes('agent-ref'),
-    'agent-ref class not flagged');
+    'agent-ref class (legacy gsd:gsd-) not flagged');
+  assert.ok(detectViolations('subagent_type=gsd:bm-executor').includes('agent-ref'),
+    'agent-ref class (gsd:bm-) not flagged');
   assert.ok(detectViolations('/gsd:plan-phase').includes('namespace-prefix'),
     'namespace-prefix (slash-command) class not flagged');
   assert.ok(detectViolations('name: gsd:plan-phase').includes('namespace-prefix'),

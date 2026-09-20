@@ -35,7 +35,7 @@ Map to calibration tier:
 
 Resolve advisor model:
 ```bash
-ADVISOR_MODEL=$(bm-sdk query resolve-model gsd-advisor-researcher --raw)
+ADVISOR_MODEL=$(bm-sdk query resolve-model bm-advisor-researcher --raw)
 ```
 
 ## Non-technical owner detection
@@ -89,7 +89,7 @@ research agents.
 
    ```
    Agent(
-     prompt="First, read @~/.claude/agents/gsd-advisor-researcher.md for your role and instructions.
+     prompt="First, read @~/.claude/agents/bm-advisor-researcher.md for your role and instructions.
 
      <gray_area>{area_name}: {area_description from gray area identification}</gray_area>
      <phase_context>{phase_goal and description from ROADMAP.md}</phase_context>

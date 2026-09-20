@@ -8,9 +8,9 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- bm:gsd-project-researcher — Researches project-level technical decisions
-- bm:gsd-research-synthesizer — Synthesizes findings from parallel research agents
-- bm:gsd-roadmapper — Creates phased execution roadmaps
+- bm:bm-project-researcher — Researches project-level technical decisions
+- bm:bm-research-synthesizer — Synthesizes findings from parallel research agents
+- bm:bm-roadmapper — Creates phased execution roadmaps
 </available_agent_types>
 
 <auto_mode>
@@ -59,9 +59,9 @@ The document should describe what you want to build.
 ```bash
 INIT=$(bm-sdk query init.new-project)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_RESEARCHER=$(bm-sdk query agent-skills gsd-project-researcher)
-AGENT_SKILLS_SYNTHESIZER=$(bm-sdk query agent-skills gsd-research-synthesizer)
-AGENT_SKILLS_ROADMAPPER=$(bm-sdk query agent-skills gsd-roadmapper)
+AGENT_SKILLS_RESEARCHER=$(bm-sdk query agent-skills bm-project-researcher)
+AGENT_SKILLS_SYNTHESIZER=$(bm-sdk query agent-skills bm-research-synthesizer)
+AGENT_SKILLS_ROADMAPPER=$(bm-sdk query agent-skills bm-roadmapper)
 ```
 
 Parse JSON for: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `project_exists`, `has_codebase_map`, `planning_exists`, `has_existing_code`, `has_package_file`, `is_brownfield`, `needs_codebase_map`, `has_git`, `git_worktree_root`, `in_nested_subdir`, `project_path`, `agents_installed`, `missing_agents`, `agent_runtime`, `agents_dir`, `required_agents`, `required_agents_installed`, `missing_required_agents`, `agent_skill_payloads_available`, `agent_skill_payload_agents`.
@@ -83,7 +83,7 @@ Agent skill payload agents:
 Skill payloads only provide prompt context. Named subagent spawns still require agent
 definitions to be installed for this runtime.
 
-Subagent spawns (gsd-project-researcher, gsd-research-synthesizer, gsd-roadmapper) will fail
+Subagent spawns (bm-project-researcher, bm-research-synthesizer, bm-roadmapper) will fail
 with "agent type not found" if `required_agents_installed` is false. Run the installer with --global to make agents available:
 
   npx @opengsd/get-shit-done-redux@latest --global
@@ -831,7 +831,7 @@ Display spawning indicator:
   → Pitfalls research
 ```
 
-Spawn 4 parallel gsd-project-researcher agents with path references:
+Spawn 4 parallel bm-project-researcher agents with path references:
 
 ```text
 Agent(prompt="<research_type>
@@ -872,7 +872,7 @@ Your STACK.md feeds into roadmap creation. Be prescriptive:
 Write to: .planning/research/STACK.md
 Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/STACK.md
 </output>
-", subagent_type="bm:gsd-project-researcher", model="{researcher_model}", description="Stack research")
+", subagent_type="bm:bm-project-researcher", model="{researcher_model}", description="Stack research")
 
 Agent(prompt="<research_type>
 Project Research — Features dimension for [domain].
@@ -912,7 +912,7 @@ Your FEATURES.md feeds into requirements definition. Categorize clearly:
 Write to: .planning/research/FEATURES.md
 Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/FEATURES.md
 </output>
-", subagent_type="bm:gsd-project-researcher", model="{researcher_model}", description="Features research")
+", subagent_type="bm:bm-project-researcher", model="{researcher_model}", description="Features research")
 
 Agent(prompt="<research_type>
 Project Research — Architecture dimension for [domain].
@@ -952,7 +952,7 @@ Your ARCHITECTURE.md informs phase structure in roadmap. Include:
 Write to: .planning/research/ARCHITECTURE.md
 Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/ARCHITECTURE.md
 </output>
-", subagent_type="bm:gsd-project-researcher", model="{researcher_model}", description="Architecture research")
+", subagent_type="bm:bm-project-researcher", model="{researcher_model}", description="Architecture research")
 
 Agent(prompt="<research_type>
 Project Research — Pitfalls dimension for [domain].
@@ -992,7 +992,7 @@ Your PITFALLS.md prevents mistakes in roadmap/planning. For each pitfall:
 Write to: .planning/research/PITFALLS.md
 Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/PITFALLS.md
 </output>
-", subagent_type="bm:gsd-project-researcher", model="{researcher_model}", description="Pitfalls research")
+", subagent_type="bm:bm-project-researcher", model="{researcher_model}", description="Pitfalls research")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all 4 researcher Agent() calls above, do NOT read research files or synthesize content independently while the subagents are active. Wait for all 4 researchers to complete before spawning the synthesizer. This prevents duplicate work and wasted context.
@@ -1019,7 +1019,7 @@ Write to: .planning/research/SUMMARY.md
 Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/SUMMARY.md
 Commit after writing.
 </output>
-", subagent_type="bm:gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
+", subagent_type="bm:bm-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
@@ -1224,7 +1224,7 @@ Example MVP-mode emit for Phase 1:
 
 Pass `PROJECT_MODE` to the roadmapper so it applies the correct template.
 
-Spawn gsd-roadmapper agent with path references:
+Spawn bm-roadmapper agent with path references:
 
 ```text
 Agent(prompt="
@@ -1252,7 +1252,7 @@ Create roadmap:
 
 Write files first, then return. This ensures artifacts persist even if context is lost.
 </instructions>
-", subagent_type="bm:gsd-roadmapper", model="{roadmapper_model}", description="Create roadmap")
+", subagent_type="bm:bm-roadmapper", model="{roadmapper_model}", description="Create roadmap")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
@@ -1369,7 +1369,7 @@ Then continue to commit.
   Update the roadmap based on feedback. Edit files in place.
   Return ROADMAP REVISED with changes made.
   </revision>
-  ", subagent_type="bm:gsd-roadmapper", model="{roadmapper_model}", description="Revise roadmap")
+  ", subagent_type="bm:bm-roadmapper", model="{roadmapper_model}", description="Revise roadmap")
   ```
 
   > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
@@ -1505,7 +1505,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 - [ ] Requirements gathered (from research or conversation)
 - [ ] User scoped each category (v1/v2/out of scope)
 - [ ] REQUIREMENTS.md created with REQ-IDs → **committed**
-- [ ] gsd-roadmapper spawned with context
+- [ ] bm-roadmapper spawned with context
 - [ ] Roadmap files written immediately (not draft)
 - [ ] User feedback incorporated (if any)
 - [ ] ROADMAP.md created with phases, requirement mappings, success criteria

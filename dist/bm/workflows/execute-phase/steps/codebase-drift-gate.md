@@ -22,17 +22,17 @@ Print the `message` field verbatim, then continue to `verify_phase_goal`. Do NOT
 **If `action_required` is true AND `directive` is `auto-remap`:**
 
 First load the mapper agent's skill bundle (the executor's `AGENT_SKILLS`
-from step `init_context` is for `gsd-executor`, not the mapper):
+from step `init_context` is for `bm-executor`, not the mapper):
 
 ```bash
-AGENT_SKILLS_MAPPER=$(bm-sdk query agent-skills gsd-codebase-mapper)
+AGENT_SKILLS_MAPPER=$(bm-sdk query agent-skills bm-codebase-mapper)
 ```
 
-Then spawn `gsd-codebase-mapper` agents with the `--paths` hint:
+Then spawn `bm-codebase-mapper` agents with the `--paths` hint:
 
 ```text
 Agent(
-  subagent_type="bm:gsd-codebase-mapper",
+  subagent_type="bm:bm-codebase-mapper",
   description="Incremental codebase remap (drift)",
   prompt="Focus: arch
 Today's date: {date}

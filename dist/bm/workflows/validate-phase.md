@@ -8,7 +8,7 @@ Audit Nyquist validation gaps for a completed phase. Generate missing tests. Upd
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- bm:gsd-nyquist-auditor — Validates verification coverage
+- bm:bm-nyquist-auditor — Validates verification coverage
 </available_agent_types>
 
 <process>
@@ -18,13 +18,13 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ```bash
 INIT=$(bm-sdk query init.phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_AUDITOR=$(bm-sdk query agent-skills gsd-nyquist-auditor)
+AGENT_SKILLS_AUDITOR=$(bm-sdk query agent-skills bm-nyquist-auditor)
 ```
 
 Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`.
 
 ```bash
-AUDITOR_MODEL=$(bm-sdk query resolve-model gsd-nyquist-auditor --raw)
+AUDITOR_MODEL=$(bm-sdk query resolve-model bm-nyquist-auditor --raw)
 NYQUIST_CFG=$(bm-sdk query config-get workflow.nyquist_validation --raw --default true)
 ```
 
@@ -88,21 +88,21 @@ No gaps → skip to Step 6, set `nyquist_compliant: true`.
 Filling these gaps is the whole purpose of `/bm:validate-phase`, so the fix is the
 recommended path (not a neutral menu). Display the gap table, then AskUserQuestion
 in plain language (no GSD internals):
-1. "Fix all gaps (recommended)" — generate the missing tests via gsd-nyquist-auditor → Step 5
+1. "Fix all gaps (recommended)" — generate the missing tests via bm-nyquist-auditor → Step 5
 2. "Mark some manual-only" — for requirements that can't be auto-tested → add to Manual-Only, Step 6
 3. "Cancel" → exit
 
-## 5. Spawn gsd-nyquist-auditor
+## 5. Spawn bm-nyquist-auditor
 
 ```
 Agent(
-  prompt="Read ~/.claude/agents/gsd-nyquist-auditor.md for instructions.\n\n" +
+  prompt="Read ~/.claude/agents/bm-nyquist-auditor.md for instructions.\n\n" +
     "<files_to_read>{PLAN, SUMMARY, impl files, VALIDATION.md}</files_to_read>" +
     "<gaps>{gap list}</gaps>" +
     "<test_infrastructure>{framework, config, commands}</test_infrastructure>" +
     "<constraints>Never modify impl files. Max 3 debug iterations. Escalate impl bugs.</constraints>" +
     "${AGENT_SKILLS_AUDITOR}",
-  subagent_type="bm:gsd-nyquist-auditor",
+  subagent_type="bm:bm-nyquist-auditor",
   model="{AUDITOR_MODEL}",
   description="Fill validation gaps for Phase {N}"
 )

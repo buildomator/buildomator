@@ -23,6 +23,7 @@ import { planningPaths } from './helpers.js';
 import { maskIfSecret } from './secrets.js';
 import type { QueryHandler } from './utils.js';
 export { MODEL_PROFILES, VALID_PROFILES, getAgentToModelMapForProfile } from '../model-catalog.js';
+export { normalizeAgentName, legacyAgentName, lookupByAgentName } from '../model-catalog.js';
 import {
   AGENT_TO_PHASE_TYPE,
   MODEL_PROFILES,
@@ -30,6 +31,8 @@ import {
   getAgentToModelMapForProfile,
   resolveRuntimeTierDefault,
   runtimesWithReasoningEffort,
+  normalizeAgentName,
+  lookupByAgentName,
 } from '../model-catalog.js';
 
 const RUNTIMES_WITH_REASONING_EFFORT = runtimesWithReasoningEffort();
@@ -181,19 +184,21 @@ export const resolveModel: QueryHandler = async (args, projectDir, workstream) =
 
   const config = await loadConfig(projectDir, workstream);
   const profile = String(config.model_profile || 'balanced').toLowerCase();
+  const agentKey = normalizeAgentName(agentType);
 
-  // Check per-agent override first
+  // Check per-agent override first (accept either prefix on the config key
+  // until v5.0).
   const overrides = (config as Record<string, unknown>).model_overrides as Record<string, string> | undefined;
-  const override = overrides?.[agentType];
+  const override = lookupByAgentName(overrides, agentType);
   if (override) {
-    const agentModels = MODEL_PROFILES[agentType];
+    const agentModels = MODEL_PROFILES[agentKey];
     const result = agentModels
       ? { model: override, profile }
       : { model: override, profile, unknown_agent: true };
     return { data: result };
   }
 
-  const agentModels = MODEL_PROFILES[agentType];
+  const agentModels = MODEL_PROFILES[agentKey];
   const resolveModelIds = (config as Record<string, unknown>).resolve_model_ids;
 
   // Fall back to profile lookup
@@ -211,7 +216,7 @@ export const resolveModel: QueryHandler = async (args, projectDir, workstream) =
   }
 
   const alias = agentModels[profile] || agentModels['balanced'] || 'sonnet';
-  const phaseType = AGENT_TO_PHASE_TYPE[agentType];
+  const phaseType = AGENT_TO_PHASE_TYPE[agentKey];
   const phaseTier = phaseType && typeof (config as Record<string, unknown>).models === 'object'
     ? ((config as Record<string, unknown>).models as Record<string, unknown>)[phaseType]
     : undefined;

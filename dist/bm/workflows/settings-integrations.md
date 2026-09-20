@@ -225,9 +225,9 @@ AskUserQuestion([
     header: "Agent Type",
     multiSelect: false,
     options: [
-      { label: "gsd-executor", description: "Skills injected when spawning executor agents" },
-      { label: "gsd-planner", description: "Skills injected when spawning planner agents" },
-      { label: "gsd-verifier", description: "Skills injected when spawning verifier agents" },
+      { label: "bm-executor", description: "Skills injected when spawning executor agents" },
+      { label: "bm-planner", description: "Skills injected when spawning planner agents" },
+      { label: "bm-verifier", description: "Skills injected when spawning verifier agents" },
       { label: "Custom…", description: "Enter a custom agent-type slug" }
     ]
   }

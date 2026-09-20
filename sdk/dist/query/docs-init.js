@@ -212,7 +212,7 @@ function checkAgentsInstalled(config) {
 export const docsInit = async (_args, projectDir) => {
     const config = await loadConfig(projectDir);
     const configExists = existsSync(join(projectDir, '.planning', 'config.json'));
-    const docModelResult = await resolveModel(['gsd-doc-writer'], projectDir);
+    const docModelResult = await resolveModel(['bm-doc-writer'], projectDir);
     const docWriterData = docModelResult.data;
     const doc_writer_model = configExists ? (docWriterData?.model || '') : '';
     const agentStatus = checkAgentsInstalled(config);
