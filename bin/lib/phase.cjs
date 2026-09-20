@@ -12,7 +12,7 @@ const { summaryFileIsComplete, resolveSummaryPath } = require('./plan-scan.cjs')
 const { writeStateMd, readModifyWriteStateMd, stateExtractField, stateReplaceField, stateReplaceFieldWithFallback, updatePerformanceMetricsSection } = require('./state.cjs');
 
 // #2893 — strict canonical filter: `{padded_phase}-{NN}-PLAN.md` or `PLAN.md`.
-// Documented in agents/gsd-planner.md (write_phase_prompt step). The wider
+// Documented in agents/bm-planner.md (write_phase_prompt step). The wider
 // "looks like a plan but isn't canonical" probe below is used to surface a
 // loud warning instead of silently returning zero plans.
 const isCanonicalPlanFile = (f) => f.endsWith('-PLAN.md') || f === 'PLAN.md';
@@ -48,7 +48,7 @@ function describeNonCanonicalPlans(dirFiles, matchedFiles) {
     `naming convention "{padded_phase}-{NN}-PLAN.md" (or bare "PLAN.md") and were skipped: ` +
     offenders.map((f) => `"${f}"`).join(', ') +
     `. Rename to the canonical form (e.g. "01-01-PLAN.md") so the executor can detect them. ` +
-    `See agents/gsd-planner.md write_phase_prompt step for the full contract.`
+    `See agents/bm-planner.md write_phase_prompt step for the full contract.`
   );
 }
 

@@ -8,12 +8,12 @@
 import type { ParsedPlan } from './types.js';
 declare const DEFAULT_ALLOWED_TOOLS: string[];
 /**
- * Extract the tools list from a gsd-executor.md agent definition.
+ * Extract the tools list from a bm-executor.md agent definition.
  * Falls back to DEFAULT_ALLOWED_TOOLS if parsing fails.
  */
 export declare function parseAgentTools(agentDef: string): string[];
 /**
- * Extract the role instructions from a gsd-executor.md agent definition.
+ * Extract the role instructions from a bm-executor.md agent definition.
  * Returns the <role>...</role> block content, or empty string.
  */
 export declare function parseAgentRole(agentDef: string): string;
@@ -21,7 +21,7 @@ export declare function parseAgentRole(agentDef: string): string;
  * Options for buildExecutorPrompt beyond the required plan.
  */
 export interface ExecutorPromptOptions {
-    /** Raw content of gsd-executor.md agent definition. */
+    /** Raw content of bm-executor.md agent definition. */
     agentDef?: string;
     /** Phase directory relative to project root (e.g. `.planning/phases/01-auth`). */
     phaseDir?: string;

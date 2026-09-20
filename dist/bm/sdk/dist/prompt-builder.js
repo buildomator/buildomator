@@ -9,7 +9,7 @@
 const DEFAULT_ALLOWED_TOOLS = ['Read', 'Write', 'Edit', 'Bash', 'Grep', 'Glob'];
 // ─── Agent definition parsing ────────────────────────────────────────────────
 /**
- * Extract the tools list from a gsd-executor.md agent definition.
+ * Extract the tools list from a bm-executor.md agent definition.
  * Falls back to DEFAULT_ALLOWED_TOOLS if parsing fails.
  */
 export function parseAgentTools(agentDef) {
@@ -27,7 +27,7 @@ export function parseAgentTools(agentDef) {
     return tools.length > 0 ? tools : DEFAULT_ALLOWED_TOOLS;
 }
 /**
- * Extract the role instructions from a gsd-executor.md agent definition.
+ * Extract the role instructions from a bm-executor.md agent definition.
  * Returns the <role>...</role> block content, or empty string.
  */
 export function parseAgentRole(agentDef) {

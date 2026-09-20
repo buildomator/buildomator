@@ -129,20 +129,20 @@ describe('PHASE_AGENT_MAP', () => {
     }
   });
 
-  it('execute maps to gsd-executor.md', () => {
-    expect(PHASE_AGENT_MAP[PhaseType.Execute]).toBe('gsd-executor.md');
+  it('execute maps to bm-executor.md', () => {
+    expect(PHASE_AGENT_MAP[PhaseType.Execute]).toBe('bm-executor.md');
   });
 
-  it('research maps to gsd-phase-researcher.md', () => {
-    expect(PHASE_AGENT_MAP[PhaseType.Research]).toBe('gsd-phase-researcher.md');
+  it('research maps to bm-phase-researcher.md', () => {
+    expect(PHASE_AGENT_MAP[PhaseType.Research]).toBe('bm-phase-researcher.md');
   });
 
-  it('plan maps to gsd-planner.md', () => {
-    expect(PHASE_AGENT_MAP[PhaseType.Plan]).toBe('gsd-planner.md');
+  it('plan maps to bm-planner.md', () => {
+    expect(PHASE_AGENT_MAP[PhaseType.Plan]).toBe('bm-planner.md');
   });
 
-  it('verify maps to gsd-verifier.md', () => {
-    expect(PHASE_AGENT_MAP[PhaseType.Verify]).toBe('gsd-verifier.md');
+  it('verify maps to bm-verifier.md', () => {
+    expect(PHASE_AGENT_MAP[PhaseType.Verify]).toBe('bm-verifier.md');
   });
 
   it('discuss maps to null (no dedicated agent)', () => {

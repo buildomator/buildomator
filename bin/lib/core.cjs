@@ -1323,7 +1323,7 @@ function getAgentsDir() {
  * Check which GSD agents are installed on disk.
  * Returns an object with installation status and details.
  *
- * Recognises both standard format (gsd-planner.md) and Copilot format
+ * Recognises both standard format (bm-planner.md) and Copilot format
  * (gsd-planner.agent.md). Copilot renames agent files during install (#1512).
  *
  * @returns {{ agents_installed: boolean, missing_agents: string[], installed_agents: string[], agents_dir: string }}
