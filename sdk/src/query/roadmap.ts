@@ -28,6 +28,7 @@ import {
   normalizePhaseName,
   phaseTokenMatches,
   planningPaths,
+  maskFencedBlocks,
 } from './helpers.js';
 import type { QueryHandler, QueryResult } from './utils.js';
 
@@ -707,14 +708,18 @@ export const roadmapAnalyze: QueryHandler = async (_args, projectDir, workstream
   }
 
   const content = await extractCurrentMilestone(rawContent, projectDir, workstream);
+  // Scan a fence-masked copy so fenced/quoted example headings cannot mint
+  // phantom phases; body slicing below stays on the original `content` because
+  // the mask preserves every character offset.
+  const scanContent = maskFencedBlocks(content);
   const phasesDir = planningPaths(projectDir, workstream).phases;
 
   // IMPORTANT: Create regex INSIDE the function to avoid /g lastIndex persistence
-  const phasePattern = /#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
+  const phasePattern = /^[ \t]{0,3}#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gim;
   const phases: Array<Record<string, unknown>> = [];
   let match: RegExpExecArray | null;
 
-  while ((match = phasePattern.exec(content)) !== null) {
+  while ((match = phasePattern.exec(scanContent)) !== null) {
     const phaseNum = match[1];
     // #1580: skip Phase 0 / Phase 999 sentinels (placeholder/backlog), never real phases
     const majorNum = parseInt(phaseNum, 10);
@@ -812,10 +817,10 @@ export const roadmapAnalyze: QueryHandler = async (_args, projectDir, workstream
   const completedPhases = phases.filter(p => p.disk_status === 'complete').length;
 
   // Detect phases in summary list without detail sections (malformed ROADMAP)
-  const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gi;
+  const checklistPattern = /^[ \t]*-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gim;
   const checklistPhases = new Set<string>();
   let checklistMatch: RegExpExecArray | null;
-  while ((checklistMatch = checklistPattern.exec(content)) !== null) {
+  while ((checklistMatch = checklistPattern.exec(scanContent)) !== null) {
     checklistPhases.add(checklistMatch[1]);
   }
   const detailPhases = new Set(phases.map(p => p.number as string));

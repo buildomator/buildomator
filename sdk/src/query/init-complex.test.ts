@@ -500,6 +500,55 @@ describe('initProgress', () => {
       await rm(tmp, { recursive: true, force: true });
     }
   });
+
+  it('orders phases decimal-aware and reports 7.2 as next_phase', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'gsd-init-complex-decimal-'));
+    const strip = (n: unknown) => String(n).replace(/^0+(?=\d)/, '');
+    try {
+      await mkdir(join(tmp, '.planning', 'phases'), { recursive: true });
+      await writeFile(join(tmp, '.planning', 'config.json'), JSON.stringify({ model_profile: 'balanced' }));
+      await writeFile(join(tmp, '.planning', 'STATE.md'), ['---', 'milestone: v1.0', '---'].join('\n'));
+      await writeFile(join(tmp, '.planning', 'ROADMAP.md'), [
+        '# Roadmap',
+        '',
+        '## Current Milestone',
+        '',
+        '- [x] Phase 7: A',
+        '- [x] Phase 7.1: B',
+        '- [ ] Phase 7.2: C',
+        '- [ ] Phase 7.10: D',
+        '- [ ] Phase 8: E',
+        '',
+        '### Phase 7: A',
+        '**Goal:** a',
+        '### Phase 7.1: B',
+        '**Goal:** b',
+        '### Phase 7.2: C',
+        '**Goal:** c',
+        '### Phase 7.10: D',
+        '**Goal:** d',
+        '### Phase 8: E',
+        '**Goal:** e',
+        '',
+      ].join('\n'));
+      // Only pending phases are scaffolded; 7 and 7.1 are roadmap-only complete.
+      for (const d of ['07.2-c', '07.10-d', '08-e']) {
+        await mkdir(join(tmp, '.planning', 'phases', d), { recursive: true });
+      }
+
+      const result = await initProgress([], tmp);
+      const data = result.data as Record<string, unknown>;
+      const phases = data.phases as Record<string, unknown>[];
+      const order = phases.map(p => strip(p.number));
+
+      expect(order).toEqual(['7', '7.1', '7.2', '7.10', '8']);
+      const nextPhase = data.next_phase as Record<string, unknown> | null;
+      expect(nextPhase).not.toBeNull();
+      expect(strip(nextPhase?.number)).toBe('7.2');
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('initManager', () => {

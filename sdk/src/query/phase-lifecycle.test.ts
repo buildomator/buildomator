@@ -1586,6 +1586,45 @@ describe('phaseComplete', () => {
     // Phase 8's **Plans:** line must NOT be touched
     expect(updated).toContain('**Plans:** 3 plans');
   });
+
+  it('ROADMAP-only fallback advances to the numerically lowest successor', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = [
+      '# Roadmap',
+      '',
+      '## Current Milestone',
+      '',
+      '### Phase 1: First',
+      '### Phase 3: Third',
+      '### Phase 2: Second',
+      '',
+      '### Phase 999.1: Backlog (BACKLOG)',
+      '',
+    ].join('\n');
+    const state = [
+      '---',
+      'gsd_state_version: 1.0',
+      'milestone: test',
+      'status: executing',
+      '---',
+      '',
+      '# Project State',
+      '',
+      '## Current Position',
+      '',
+      'Phase: 1 (First)',
+      '',
+    ].join('\n');
+    await setupTestProject(tmpDir, { roadmap, state, phases: ['01-a'] });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    const result = await phaseComplete(['1'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+
+    expect(String(data.next_phase)).toBe('2');
+  });
 });
 
 // ─── phasesClear ────────────────────────────────────────────────────────────

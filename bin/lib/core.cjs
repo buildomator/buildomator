@@ -866,6 +866,32 @@ function comparePhaseNum(a, b) {
 }
 
 /**
+ * Blank out fenced code blocks so scanners cannot mint phantom matches from
+ * example markdown. Every character inside a fence (and the fence lines
+ * themselves) is replaced with a space, except newlines. The output has the
+ * exact same length and every newline sits at the exact same offset as in the
+ * input, so callers can keep slicing the ORIGINAL content at match indices
+ * discovered on the masked copy.
+ */
+function maskFencedBlocks(content) {
+  const lines = String(content).split('\n');
+  let inFence = false;
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trimStart();
+    const isFence = trimmed.startsWith('```') || trimmed.startsWith('~~~');
+    if (isFence) {
+      lines[i] = ' '.repeat(lines[i].length);
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) {
+      lines[i] = ' '.repeat(lines[i].length);
+    }
+  }
+  return lines.join('\n');
+}
+
+/**
  * Extract the phase token from a directory name.
  * Supports: '01-name', '1009A-name', '999.6-name', 'CK-01-name', 'PROJ-42-name'.
  * Returns the token portion (e.g. '01', '1009A', '999.6', 'PROJ-42') or the full name if no separator.
@@ -2163,6 +2189,7 @@ module.exports = {
   phaseMarkdownRegexSource,
   phaseMarkdownRegexSourceExact,
   comparePhaseNum,
+  maskFencedBlocks,
   searchPhaseInDir,
   extractPhaseToken,
   phaseTokenMatches,
