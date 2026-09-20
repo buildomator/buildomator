@@ -34,8 +34,8 @@ Do not Read mode files unless the corresponding flag/condition is set.
 <downstream_awareness>
 **CONTEXT.md feeds into:**
 
-1. **gsd-phase-researcher** — Reads CONTEXT.md to know WHAT to research
-2. **gsd-planner** — Reads CONTEXT.md to know WHAT decisions are locked
+1. **bm-phase-researcher** — Reads CONTEXT.md to know WHAT to research
+2. **bm-planner** — Reads CONTEXT.md to know WHAT decisions are locked
 
 **Your job:** Capture decisions clearly enough that downstream agents can act on them without asking the user again.
 **Not your job:** Figure out HOW to implement. That's what research and planning do with the decisions you capture.
@@ -107,7 +107,7 @@ Phase number from argument (required).
 ```bash
 INIT=$(bm-sdk query init.phase-op "${PHASE}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_ADVISOR=$(bm-sdk query agent-skills gsd-advisor-researcher)
+AGENT_SKILLS_ADVISOR=$(bm-sdk query agent-skills bm-advisor-researcher)
 ```
 
 Parse JSON for: `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_research`, `has_context`, `has_plans`, `has_verification`, `plan_count`, `roadmap_exists`, `planning_exists`, `response_language`.

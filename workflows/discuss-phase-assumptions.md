@@ -8,14 +8,14 @@ believe based on evidence, and ask the user only to correct what's wrong.
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-assumptions-analyzer — Analyzes codebase to surface implementation assumptions
+- gsd:bm-assumptions-analyzer — Analyzes codebase to surface implementation assumptions
 </available_agent_types>
 
 <downstream_awareness>
 **CONTEXT.md feeds into:**
 
-1. **gsd-phase-researcher** — Reads CONTEXT.md to know WHAT to research
-2. **gsd-planner** — Reads CONTEXT.md to know WHAT decisions are locked
+1. **bm-phase-researcher** — Reads CONTEXT.md to know WHAT to research
+2. **bm-planner** — Reads CONTEXT.md to know WHAT decisions are locked
 
 **Your job:** Capture decisions clearly enough that downstream agents can act on them
 without asking the user again. Output is identical to discuss mode — same CONTEXT.md format.
@@ -66,7 +66,7 @@ Phase number from argument (required).
 ```bash
 INIT=$(bm-sdk query init.phase-op "${PHASE}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_ANALYZER=$(bm-sdk query agent-skills gsd-assumptions-analyzer)
+AGENT_SKILLS_ANALYZER=$(bm-sdk query agent-skills bm-assumptions-analyzer)
 ```
 
 Parse JSON for: `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`,
@@ -197,7 +197,7 @@ cat .planning/METHODOLOGY.md 2>/dev/null || true
 **If METHODOLOGY.md exists:**
 - Parse each named lens: its diagnoses, recommendations, and triggering conditions
 - Store as internal `<active_lenses>` for use in deep_codebase_analysis and present_assumptions
-- When spawning the gsd-assumptions-analyzer, pass the lens list so it can flag which lenses apply
+- When spawning the bm-assumptions-analyzer, pass the lens list so it can flag which lenses apply
 - When presenting assumptions, append a "Methodology" section showing which lenses were applied
   and what they flagged (if anything)
 
@@ -230,7 +230,7 @@ Identify reusable assets, established patterns, integration points, and creative
 </step>
 
 <step name="deep_codebase_analysis">
-Spawn a `gsd-assumptions-analyzer` agent to deeply analyze the codebase for this phase. This
+Spawn a `bm-assumptions-analyzer` agent to deeply analyze the codebase for this phase. This
 keeps raw file contents out of the main context window, protecting token budget.
 
 **Resolve calibration tier (if USER-PROFILE.md exists):**
@@ -254,7 +254,7 @@ If no USER-PROFILE.md: calibration_tier = "standard"
 **Spawn Explore subagent:**
 
 ```
-Agent(subagent_type="gsd:gsd-assumptions-analyzer", prompt="""
+Agent(subagent_type="gsd:bm-assumptions-analyzer", prompt="""
 Analyze the codebase for Phase {PHASE}: {phase_name}.
 
 Phase goal: {roadmap_description}

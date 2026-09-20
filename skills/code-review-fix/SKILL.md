@@ -12,7 +12,7 @@ allowed-tools:
   - Task
 ---
 <objective>
-Auto-fix issues found by code review. Reads REVIEW.md from the specified phase, spawns gsd-code-fixer agent to apply fixes, and produces REVIEW-FIX.md summary.
+Auto-fix issues found by code review. Reads REVIEW.md from the specified phase, spawns bm-code-fixer agent to apply fixes, and produces REVIEW-FIX.md summary.
 
 Arguments:
 - Phase number (required) — which phase's REVIEW.md to fix (e.g., "2" or "02")
@@ -46,7 +46,7 @@ The workflow (not this command) enforces these gates:
 - Config gate check (workflow.code_review)
 - REVIEW.md existence check (error if missing)
 - REVIEW.md status check (skip if clean/skipped)
-- Agent spawning (gsd-code-fixer)
+- Agent spawning (bm-code-fixer)
 - Iteration loop (if --auto, capped at 3 iterations)
 - Result presentation (inline summary + next steps)
 </process>

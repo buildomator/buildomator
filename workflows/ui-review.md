@@ -8,7 +8,7 @@ Retroactive 6-pillar visual audit of implemented frontend code. Standalone comma
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-ui-auditor — Audits UI against design requirements
+- gsd:bm-ui-auditor — Audits UI against design requirements
 </available_agent_types>
 
 <process>
@@ -18,13 +18,13 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ```bash
 INIT=$(bm-sdk query init.phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI_REVIEWER=$(bm-sdk query agent-skills gsd-ui-auditor)
+AGENT_SKILLS_UI_REVIEWER=$(bm-sdk query agent-skills bm-ui-auditor)
 ```
 
 Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `commit_docs`.
 
 ```bash
-UI_AUDITOR_MODEL=$(bm-sdk query resolve-model gsd-ui-auditor --raw)
+UI_AUDITOR_MODEL=$(bm-sdk query resolve-model bm-ui-auditor --raw)
 ```
 
 Display heading: `GSD ► UI AUDIT — PHASE {N}: {name}`
@@ -65,7 +65,7 @@ Build file list for auditor:
 - UI-SPEC.md (if exists — audit baseline)
 - CONTEXT.md (if exists — locked decisions)
 
-## 3. Spawn gsd-ui-auditor
+## 3. Spawn bm-ui-auditor
 
 ```
 ◆ Spawning UI auditor...
@@ -74,7 +74,7 @@ Build file list for auditor:
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/gsd-ui-auditor.md for instructions.
+Read ~/.claude/agents/bm-ui-auditor.md for instructions.
 
 <objective>
 Conduct 6-pillar visual audit of Phase {phase_number}: {phase_name}
@@ -102,7 +102,7 @@ Omit null file paths.
 ```
 Agent(
   prompt=ui_audit_prompt,
-  subagent_type="gsd:gsd-ui-auditor",
+  subagent_type="gsd:bm-ui-auditor",
   model="{UI_AUDITOR_MODEL}",
   description="UI Audit Phase {N}"
 )
@@ -178,7 +178,7 @@ bm-sdk query commit "docs(${padded_phase}): UI audit review" --files "${PHASE_DI
 - [ ] Phase validated
 - [ ] SUMMARY.md files found (execution completed)
 - [ ] Existing review handled (re-audit/view)
-- [ ] gsd-ui-auditor spawned with correct context
+- [ ] bm-ui-auditor spawned with correct context
 - [ ] UI-REVIEW.md created in phase directory
 - [ ] Score summary displayed to user
 - [ ] Next steps presented

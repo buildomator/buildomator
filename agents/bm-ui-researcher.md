@@ -95,10 +95,10 @@ Your UI-SPEC.md is consumed by:
 
 | Consumer | How They Use It |
 |----------|----------------|
-| `gsd-ui-checker` | Validates against 6 design quality dimensions |
-| `gsd-planner` | Uses design tokens, component inventory, and copywriting in plan tasks |
-| `gsd-executor` | References as visual source of truth during implementation |
-| `gsd-ui-auditor` | Compares implemented UI against the contract retroactively |
+| `bm-ui-checker` | Validates against 6 design quality dimensions |
+| `bm-planner` | Uses design tokens, component inventory, and copywriting in plan tasks |
+| `bm-executor` | References as visual source of truth during implementation |
+| `bm-ui-auditor` | Compares implemented UI against the contract retroactively |
 
 **Be prescriptive, not exploratory.** "Use 16px body at 1.5 line-height" not "Consider 14-16px."
 </downstream_consumer>

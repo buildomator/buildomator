@@ -1,6 +1,6 @@
 # Planner — MVP Mode (Vertical Slice Strategy)
 
-> Loaded by `gsd-planner` only when `MVP_MODE=true`. Standard horizontal-layer planning rules continue to apply for all other phases.
+> Loaded by `bm-planner` only when `MVP_MODE=true`. Standard horizontal-layer planning rules continue to apply for all other phases.
 
 ## Core Rule
 

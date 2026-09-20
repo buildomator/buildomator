@@ -807,7 +807,7 @@ Only include this section if deferred items exist (from Step 9b).
 ---
 
 _Verified: {timestamp}_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (bm-verifier)_
 ```
 
 ## Return to Orchestrator

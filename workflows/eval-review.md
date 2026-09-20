@@ -20,7 +20,7 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `commit_docs`.
 
 ```bash
-AUDITOR_MODEL=$(bm-sdk query resolve-model gsd-eval-auditor 2>/dev/null | jq -r '.model' 2>/dev/null || true)
+AUDITOR_MODEL=$(bm-sdk query resolve-model bm-eval-auditor 2>/dev/null | jq -r '.model' 2>/dev/null || true)
 ```
 
 Display banner:
@@ -73,7 +73,7 @@ Build file list for auditor:
 - All SUMMARY.md files in phase dir
 - All PLAN.md files in phase dir
 
-## 3. Spawn gsd-eval-auditor
+## 3. Spawn bm-eval-auditor
 
 ```
 ◆ Spawning eval auditor...
@@ -82,7 +82,7 @@ Build file list for auditor:
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/gsd-eval-auditor.md for instructions.
+Read ~/.claude/agents/bm-eval-auditor.md for instructions.
 
 <objective>
 Conduct evaluation coverage audit of Phase {phase_number}: {phase_name}
@@ -149,7 +149,7 @@ git commit -m "docs({phase_slug}): add EVAL-REVIEW.md — score {overall_score}/
 <success_criteria>
 - [ ] Phase execution state detected correctly
 - [ ] AI-SPEC.md presence handled (with or without)
-- [ ] gsd-eval-auditor spawned with correct context
+- [ ] bm-eval-auditor spawned with correct context
 - [ ] EVAL-REVIEW.md written (by auditor)
 - [ ] Score and verdict displayed to user
 - [ ] Appropriate next steps surfaced based on verdict

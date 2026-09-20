@@ -90,8 +90,8 @@ Goal-backward verification works backwards from outcome:
 Then verify each level against the actual plan files.
 
 **The difference** (same goal-backward methodology, different timing):
-- `gsd-verifier`: Verifies code DID achieve goal (after execution)
-- `gsd-plan-checker`: Verifies plans WILL achieve goal (before execution)
+- `bm-verifier`: Verifies code DID achieve goal (after execution)
+- `bm-plan-checker`: Verifies plans WILL achieve goal (before execution)
 </core_principle>
 
 <verification_dimensions>
@@ -913,7 +913,7 @@ Plans verified. Run `/gsd:execute-phase {phase}` to proceed.
 
 <anti_patterns>
 
-**DO NOT** check code existence — that's gsd-verifier's job. You verify plans, not codebase.
+**DO NOT** check code existence — that's bm-verifier's job. You verify plans, not codebase.
 
 **DO NOT** run the application. Static plan analysis only.
 

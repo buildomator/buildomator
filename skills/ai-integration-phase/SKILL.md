@@ -16,7 +16,7 @@ allowed-tools:
 ---
 <objective>
 Create an AI design contract (AI-SPEC.md) for a phase involving AI system development.
-Orchestrates gsd-framework-selector → gsd-ai-researcher → gsd-domain-researcher → gsd-eval-planner.
+Orchestrates bm-framework-selector → bm-ai-researcher → bm-domain-researcher → bm-eval-planner.
 Flow: Select Framework → Research Docs → Research Domain → Design Eval Strategy → Done
 </objective>
 

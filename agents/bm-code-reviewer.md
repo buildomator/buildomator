@@ -90,7 +90,7 @@ Additional checks:
 
 ## Convention checks (CONVENTION tier — JS/TS rule packs)
 
-Run on every mode. These emit only **CONVENTION**-tier findings (never BLOCKER/WARNING, never block). They are **standalone**: derived at review time, with NO dependency on `gsd-pattern-mapper` having run (optionally read PATTERNS.md's `## Conventions` table as a hint if present).
+Run on every mode. These emit only **CONVENTION**-tier findings (never BLOCKER/WARNING, never block). They are **standalone**: derived at review time, with NO dependency on `bm-pattern-mapper` having run (optionally read PATTERNS.md's `## Conventions` table as a hint if present).
 
 Invoke the SAME shared module the mapper uses, scoped to the changed `files`, via Bash:
 ```bash
@@ -348,7 +348,7 @@ The `files_reviewed_list` field is REQUIRED — it preserves the exact file scop
 ---
 
 _Reviewed: {timestamp}_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (bm-code-reviewer)_
 _Depth: {depth}_
 ```
 

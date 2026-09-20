@@ -8,8 +8,8 @@ Template for `.planning/phases/XX-name/{phase_num}-SPEC.md` — locks requiremen
 
 **Downstream consumers:**
 - `discuss-phase` — reads SPEC.md at startup; treats Requirements, Boundaries, and Acceptance Criteria as locked; skips "what/why" questions
-- `gsd-planner` — reads locked requirements to constrain plan scope
-- `gsd-verifier` — uses acceptance criteria as explicit pass/fail checks
+- `bm-planner` — reads locked requirements to constrain plan scope
+- `bm-verifier` — uses acceptance criteria as explicit pass/fail checks
 
 ---
 

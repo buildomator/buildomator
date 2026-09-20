@@ -12,9 +12,9 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-project-researcher — Researches project-level technical decisions
-- gsd:gsd-research-synthesizer — Synthesizes findings from parallel research agents
-- gsd:gsd-roadmapper — Creates phased execution roadmaps
+- gsd:bm-project-researcher — Researches project-level technical decisions
+- gsd:bm-research-synthesizer — Synthesizes findings from parallel research agents
+- gsd:bm-roadmapper — Creates phased execution roadmaps
 </available_agent_types>
 
 <process>
@@ -213,9 +213,9 @@ bm-sdk query commit "docs: start milestone v[X.Y] [Name]" --files .planning/PROJ
 ```bash
 INIT=$(bm-sdk query init.new-milestone)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_RESEARCHER=$(bm-sdk query agent-skills gsd-project-researcher)
-AGENT_SKILLS_SYNTHESIZER=$(bm-sdk query agent-skills gsd-research-synthesizer)
-AGENT_SKILLS_ROADMAPPER=$(bm-sdk query agent-skills gsd-roadmapper)
+AGENT_SKILLS_RESEARCHER=$(bm-sdk query agent-skills bm-project-researcher)
+AGENT_SKILLS_SYNTHESIZER=$(bm-sdk query agent-skills bm-research-synthesizer)
+AGENT_SKILLS_ROADMAPPER=$(bm-sdk query agent-skills bm-roadmapper)
 ```
 
 Extract from init JSON: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `research_enabled`, `current_milestone`, `project_exists`, `roadmap_exists`, `latest_completed_milestone`, `phase_dir_count`, `phase_archive_path`, `agents_installed`, `missing_agents`.
@@ -225,7 +225,7 @@ Extract from init JSON: `researcher_model`, `synthesizer_model`, `roadmapper_mod
 ⚠ GSD agents not installed. The following agents are missing from your agents directory:
   {missing_agents joined with newline}
 
-Subagent spawns (gsd-project-researcher, gsd-research-synthesizer, gsd-roadmapper) will fail
+Subagent spawns (bm-project-researcher, bm-research-synthesizer, bm-roadmapper) will fail
 with "agent type not found". Run the installer with --global to make agents available:
 
   npx @opengsd/get-shit-done-redux@latest --global
@@ -285,7 +285,7 @@ GSD ► RESEARCHING
 mkdir -p .planning/research
 ```
 
-Spawn 4 parallel gsd-project-researcher agents. Each uses this template with dimension-specific fields:
+Spawn 4 parallel bm-project-researcher agents. Each uses this template with dimension-specific fields:
 
 **Common structure for all 4 researchers:**
 ```text
@@ -314,7 +314,7 @@ ${AGENT_SKILLS_RESEARCHER}
 Write to: .planning/research/{FILE}
 Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/{FILE}
 </output>
-", subagent_type="gsd:gsd-project-researcher", model="{researcher_model}", description="{DIMENSION} research")
+", subagent_type="gsd:bm-project-researcher", model="{researcher_model}", description="{DIMENSION} research")
 ```
 
 **Dimension-specific fields:**
@@ -347,7 +347,7 @@ ${AGENT_SKILLS_SYNTHESIZER}
 Write to: .planning/research/SUMMARY.md
 Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/SUMMARY.md
 Commit after writing.
-", subagent_type="gsd:gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
+", subagent_type="gsd:bm-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
@@ -475,7 +475,7 @@ Create roadmap for milestone v[X.Y]:
 
 Write files first, then return.
 </instructions>
-", subagent_type="gsd:gsd-roadmapper", model="{roadmapper_model}", description="Create roadmap")
+", subagent_type="gsd:bm-roadmapper", model="{roadmapper_model}", description="Create roadmap")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
@@ -604,7 +604,7 @@ Also: `/gsd:plan-phase [N] ${GSD_WS}`, skip discussion, plan directly
 - [ ] Research completed (if selected) — 4 parallel agents, milestone-aware
 - [ ] Requirements gathered and scoped per category
 - [ ] REQUIREMENTS.md created with REQ-IDs
-- [ ] gsd-roadmapper spawned with phase numbering context
+- [ ] bm-roadmapper spawned with phase numbering context
 - [ ] Roadmap files written immediately (not draft)
 - [ ] User feedback incorporated (if any)
 - [ ] Phase numbering mode respected (continued or reset)

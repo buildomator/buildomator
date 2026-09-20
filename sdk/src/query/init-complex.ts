@@ -102,9 +102,9 @@ function gitWorktreeInfo(base: string): { inside: boolean; worktreeRoot: string 
 
 
 const NEW_PROJECT_REQUIRED_AGENTS = [
-  'gsd-project-researcher',
-  'gsd-research-synthesizer',
-  'gsd-roadmapper',
+  'bm-project-researcher',
+  'bm-research-synthesizer',
+  'bm-roadmapper',
 ];
 
 function hasAgentDefinition(agentsDir: string, agent: string): boolean {
@@ -258,9 +258,9 @@ export const initNewProject: QueryHandler = async (_args, projectDir, workstream
     pathExists(projectDir, 'project.clj');
 
   const [researcherModel, synthesizerModel, roadmapperModel] = await Promise.all([
-    getModelAlias('gsd-project-researcher', projectDir),
-    getModelAlias('gsd-research-synthesizer', projectDir),
-    getModelAlias('gsd-roadmapper', projectDir),
+    getModelAlias('bm-project-researcher', projectDir),
+    getModelAlias('bm-research-synthesizer', projectDir),
+    getModelAlias('bm-roadmapper', projectDir),
   ]);
   const runtime = detectRuntime(config as { runtime?: unknown });
   const agentsDir = resolveAgentsDir(runtime);
@@ -467,8 +467,8 @@ export const initProgress: QueryHandler = async (_args, projectDir, workstream) 
   } catch { /* intentionally empty */ }
 
   const result: Record<string, unknown> = {
-    executor_model: await getModelAlias('gsd-executor', projectDir),
-    planner_model: await getModelAlias('gsd-planner', projectDir),
+    executor_model: await getModelAlias('bm-executor', projectDir),
+    planner_model: await getModelAlias('bm-planner', projectDir),
 
     commit_docs: config.commit_docs,
 

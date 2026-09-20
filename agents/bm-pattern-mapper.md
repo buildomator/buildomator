@@ -52,7 +52,7 @@ This ensures pattern extraction aligns with project-specific conventions.
 | `## Claude's Discretion` | Freedom areas — identify files from these too |
 | `## Deferred Ideas` | Out of scope — ignore completely |
 
-**RESEARCH.md** (if exists) — Technical research from gsd-phase-researcher
+**RESEARCH.md** (if exists) — Technical research from bm-phase-researcher
 
 | Section | How You Use It |
 |---------|----------------|
@@ -62,7 +62,7 @@ This ensures pattern extraction aligns with project-specific conventions.
 </upstream_input>
 
 <downstream_consumer>
-Your PATTERNS.md is consumed by `gsd-planner`:
+Your PATTERNS.md is consumed by `bm-planner`:
 
 | Section | How Planner Uses It |
 |---------|---------------------|
@@ -146,7 +146,7 @@ Look for cross-cutting patterns that apply to multiple new files:
 
 Derive the repo's actual conventions (majority-vote + entropy) and add them to PATTERNS.md as an **additive** `## Conventions` section. This does not change any existing Step 5 / Step 6 output — it appends.
 
-Run the shared deterministic module (the SAME one `gsd-code-reviewer` uses) via Bash:
+Run the shared deterministic module (the SAME one `bm-code-reviewer` uses) via Bash:
 ```bash
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(ls -d "$HOME/.claude/plugins/cache/gsd-plugin/gsd/"*/ 2>/dev/null|sort -V|tail -1)}"
 # --scope <dir> derives within a subtree (e.g. the new files' directory); omit for repo-wide.

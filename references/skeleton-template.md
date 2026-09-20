@@ -1,6 +1,6 @@
 # SKELETON.md Template
 
-> Emitted by `gsd-planner` when `WALKING_SKELETON=true` (Phase 1 + `--mvp` + new project). Records the architectural decisions the rest of the project will build on.
+> Emitted by `bm-planner` when `WALKING_SKELETON=true` (Phase 1 + `--mvp` + new project). Records the architectural decisions the rest of the project will build on.
 
 ```markdown
 # Walking Skeleton — [Project Name]

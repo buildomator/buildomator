@@ -8,7 +8,7 @@ Verify threat mitigations for a completed phase. Confirm PLAN.md threat register
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-security-auditor — Verifies threat mitigation coverage
+- gsd:bm-security-auditor — Verifies threat mitigation coverage
 </available_agent_types>
 
 <process>
@@ -18,13 +18,13 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ```bash
 INIT=$(bm-sdk query init.phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_AUDITOR=$(bm-sdk query agent-skills gsd-security-auditor)
+AGENT_SKILLS_AUDITOR=$(bm-sdk query agent-skills bm-security-auditor)
 ```
 
 Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`.
 
 ```bash
-AUDITOR_MODEL=$(bm-sdk query resolve-model gsd-security-auditor --raw)
+AUDITOR_MODEL=$(bm-sdk query resolve-model bm-security-auditor --raw)
 SECURITY_CFG=$(bm-sdk query config-get workflow.security_enforcement --raw 2>/dev/null || echo "true")
 ```
 
@@ -88,7 +88,7 @@ default. Display the threat table, then AskUserQuestion in plain language:
 2. "Accept the risk — document in SECURITY.md accepted risks" (a deliberate security decision) → set all CLOSED, Step 6
 3. "Cancel" → exit
 
-## 5. Spawn gsd-security-auditor
+## 5. Spawn bm-security-auditor
 
 **Auditor constraint — varies by register origin:**
 
@@ -97,13 +97,13 @@ default. Display the threat table, then AskUserQuestion in plain language:
 
 ```
 Agent(
-  prompt="Read ~/.claude/agents/gsd-security-auditor.md for instructions.\n\n" +
+  prompt="Read ~/.claude/agents/bm-security-auditor.md for instructions.\n\n" +
     "<files_to_read>{PLAN, SUMMARY, impl files, SECURITY.md}</files_to_read>" +
     "<threat_register>{threat register}</threat_register>" +
     "<config>asvs_level: {SECURITY_ASVS}, block_on: {SECURITY_BLOCK_ON}</config>" +
     "<constraints>Never modify implementation files. Verify mitigations exist — do not scan for new threats. Escalate implementation gaps.</constraints>" +
     "${AGENT_SKILLS_AUDITOR}",
-  subagent_type="gsd:gsd-security-auditor",
+  subagent_type="gsd:bm-security-auditor",
   model="{AUDITOR_MODEL}",
   description="Verify threat mitigations for Phase {N}"
 )

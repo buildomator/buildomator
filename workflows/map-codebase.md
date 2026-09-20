@@ -4,7 +4,7 @@ Orchestrate parallel codebase mapper agents to analyze the codebase and produce 
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-codebase-mapper — Maps project structure and dependencies
+- gsd:bm-codebase-mapper — Maps project structure and dependencies
 </available_agent_types>
 
 <philosophy>
@@ -36,7 +36,7 @@ post-execute codebase-drift gate in `/gsd:execute-phase` or by a user running
 `/gsd:map-codebase --paths apps/accounting,packages/ui`), the workflow
 operates in **incremental-remap mode**:
 
-- Pass `--paths <p1>,<p2>,...` through to each spawned `gsd-codebase-mapper`
+- Pass `--paths <p1>,<p2>,...` through to each spawned `bm-codebase-mapper`
   agent's prompt. Agents scope their Glob/Grep/Bash exploration to the listed
   repo-relative prefixes only — no whole-repo scan.
 - Reject path values that contain `..`, start with `/`, or include shell
@@ -70,7 +70,7 @@ Load codebase mapping context:
 ```bash
 INIT=$(bm-sdk query init.map-codebase)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_MAPPER=$(bm-sdk query agent-skills gsd-codebase-mapper)
+AGENT_SKILLS_MAPPER=$(bm-sdk query agent-skills bm-codebase-mapper)
 ```
 
 Extract from init JSON: `mapper_model`, `commit_docs`, `codebase_dir`, `existing_maps`, `has_maps`, `codebase_dir_exists`, `subagent_timeout`, `date`.
@@ -125,15 +125,15 @@ Continue to spawn_agents.
 </step>
 
 <step name="spawn_agents">
-Spawn 4 parallel gsd-codebase-mapper agents using the Agent tool with `subagent_type="gsd:gsd-codebase-mapper"`, `model="{mapper_model}"`, and `run_in_background=true`.
+Spawn 4 parallel bm-codebase-mapper agents using the Agent tool with `subagent_type="gsd:bm-codebase-mapper"`, `model="{mapper_model}"`, and `run_in_background=true`.
 
-**CRITICAL:** Use the dedicated `gsd-codebase-mapper` agent, NOT `Explore` or `browser_subagent`. The mapper agent writes documents directly.
+**CRITICAL:** Use the dedicated `bm-codebase-mapper` agent, NOT `Explore` or `browser_subagent`. The mapper agent writes documents directly.
 
 **Agent 1: Tech Focus**
 
 ```text
 Agent(
-  subagent_type="gsd:gsd-codebase-mapper",
+  subagent_type="gsd:bm-codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase tech stack",
@@ -159,7 +159,7 @@ ${AGENT_SKILLS_MAPPER}"
 
 ```text
 Agent(
-  subagent_type="gsd:gsd-codebase-mapper",
+  subagent_type="gsd:bm-codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase architecture",
@@ -185,7 +185,7 @@ ${AGENT_SKILLS_MAPPER}"
 
 ```text
 Agent(
-  subagent_type="gsd:gsd-codebase-mapper",
+  subagent_type="gsd:bm-codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase conventions",
@@ -211,7 +211,7 @@ ${AGENT_SKILLS_MAPPER}"
 
 ```
 Agent(
-  subagent_type="gsd:gsd-codebase-mapper",
+  subagent_type="gsd:bm-codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase concerns",
@@ -385,7 +385,7 @@ End workflow.
 
 <success_criteria>
 - .planning/codebase/ directory created
-- 4 parallel gsd-codebase-mapper agents spawned with run_in_background=true
+- 4 parallel bm-codebase-mapper agents spawned with run_in_background=true
 - All 7 codebase documents exist
 - No empty documents (each should have >20 lines)
 - Clear completion summary with line counts

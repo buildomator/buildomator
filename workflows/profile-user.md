@@ -1,5 +1,5 @@
 <purpose>
-Orchestrate the full developer profiling flow: consent, session analysis (or questionnaire fallback), profile generation, result display, and artifact creation. Heavy lifting is done by `bm-sdk query` handlers (with legacy `gsd-tools.cjs` parity where needed) and the gsd-user-profiler agent; this workflow orchestrates the sequence, handles branching, and provides the UX.
+Orchestrate the full developer profiling flow: consent, session analysis (or questionnaire fallback), profile generation, result display, and artifact creation. Heavy lifting is done by `bm-sdk query` handlers (with legacy `gsd-tools.cjs` parity where needed) and the bm-user-profiler agent; this workflow orchestrates the sequence, handles branching, and provides the UX.
 </purpose>
 
 <required_reading>
@@ -7,7 +7,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 Key references:
 - @${CLAUDE_PLUGIN_ROOT}/references/ui-brand.md (display patterns)
-- @$HOME/.claude/agents/gsd-user-profiler.md (profiler agent definition)
+- @$HOME/.claude/agents/bm-user-profiler.md (profiler agent definition)
 - @${CLAUDE_PLUGIN_ROOT}/references/user-profiling.md (profiling reference doc)
 </required_reading>
 
@@ -154,9 +154,9 @@ Display: "✓ Sampled N messages from M projects"
 
 Display: "◆ Analyzing patterns..."
 
-**Spawn gsd-user-profiler agent using Task tool:**
+**Spawn bm-user-profiler agent using Task tool:**
 
-Use the Task tool to spawn the `gsd-user-profiler` agent. Provide it with:
+Use the Task tool to spawn the `bm-user-profiler` agent. Provide it with:
 - The sampled JSONL file path from profile-sample output
 - The user-profiling reference doc at `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/references/user-profiling.md`
 

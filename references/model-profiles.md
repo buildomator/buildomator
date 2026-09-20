@@ -6,18 +6,20 @@ Model profiles control which Claude model each GSD agent uses, balancing quality
 
 | Agent | `quality` | `balanced` | `budget` | `adaptive` | `inherit` |
 |-------|-----------|------------|----------|------------|-----------|
-| gsd-planner | opus | opus | sonnet | opus | inherit |
-| gsd-roadmapper | opus | sonnet | sonnet | sonnet | inherit |
-| gsd-executor | opus | sonnet | sonnet | sonnet | inherit |
-| gsd-phase-researcher | opus | sonnet | haiku | sonnet | inherit |
-| gsd-project-researcher | opus | sonnet | haiku | sonnet | inherit |
-| gsd-research-synthesizer | sonnet | sonnet | haiku | haiku | inherit |
-| gsd-debugger | opus | sonnet | sonnet | opus | inherit |
-| gsd-codebase-mapper | sonnet | haiku | haiku | haiku | inherit |
-| gsd-verifier | sonnet | sonnet | haiku | sonnet | inherit |
-| gsd-plan-checker | sonnet | sonnet | haiku | haiku | inherit |
-| gsd-integration-checker | sonnet | sonnet | haiku | haiku | inherit |
-| gsd-nyquist-auditor | sonnet | sonnet | haiku | haiku | inherit |
+| bm-planner | opus | opus | sonnet | opus | inherit |
+| bm-roadmapper | opus | sonnet | sonnet | sonnet | inherit |
+| bm-executor | opus | sonnet | sonnet | sonnet | inherit |
+| bm-phase-researcher | opus | sonnet | haiku | sonnet | inherit |
+| bm-project-researcher | opus | sonnet | haiku | sonnet | inherit |
+| bm-research-synthesizer | sonnet | sonnet | haiku | haiku | inherit |
+| bm-debugger | opus | sonnet | sonnet | opus | inherit |
+| bm-codebase-mapper | sonnet | haiku | haiku | haiku | inherit |
+| bm-verifier | sonnet | sonnet | haiku | sonnet | inherit |
+| bm-plan-checker | sonnet | sonnet | haiku | haiku | inherit |
+| bm-integration-checker | sonnet | sonnet | haiku | haiku | inherit |
+| bm-nyquist-auditor | sonnet | sonnet | haiku | haiku | inherit |
+
+Agent keys are `bm-<role>`. The `gsd-<role>` spelling is still accepted in `model_overrides`, `agent_skills`, `resolve-model`, and `agent-skills` through the 4.x line and stops resolving at v5.0.
 
 ## Per-Phase-Type Model Map (#3023)
 
@@ -35,7 +37,7 @@ Model profiles control which Claude model each GSD agent uses, balancing quality
     "completion": "sonnet"
   },
   "model_overrides": {
-    "gsd-codebase-mapper": "haiku"
+    "bm-codebase-mapper": "haiku"
   }
 }
 ```
@@ -44,11 +46,11 @@ Model profiles control which Claude model each GSD agent uses, balancing quality
 
 | Phase type | Agents |
 |---|---|
-| `planning` | gsd-planner, gsd-roadmapper, gsd-pattern-mapper |
+| `planning` | bm-planner, bm-roadmapper, bm-pattern-mapper |
 | `discuss` | (reserved — no subagent today) |
-| `research` | gsd-phase-researcher, gsd-project-researcher, gsd-research-synthesizer, gsd-codebase-mapper, gsd-ui-researcher |
-| `execution` | gsd-executor, gsd-debugger, gsd-doc-writer |
-| `verification` | gsd-verifier, gsd-plan-checker, gsd-integration-checker, gsd-nyquist-auditor, gsd-ui-checker, gsd-ui-auditor, gsd-doc-verifier |
+| `research` | bm-phase-researcher, bm-project-researcher, bm-research-synthesizer, bm-codebase-mapper, bm-ui-researcher |
+| `execution` | bm-executor, bm-debugger, bm-doc-writer |
+| `verification` | bm-verifier, bm-plan-checker, bm-integration-checker, bm-nyquist-auditor, bm-ui-checker, bm-ui-auditor, bm-doc-verifier |
 | `completion` | (reserved — no subagent today) |
 
 ### Resolution precedence (highest to lowest)
@@ -62,7 +64,7 @@ Model profiles control which Claude model each GSD agent uses, balancing quality
 
 - **Profile** is a global tier strategy (everyone runs balanced).
 - **`models`** is coarse phase-level tuning without learning agent names.
-- **`model_overrides`** is per-agent precision (e.g. force `haiku` on `gsd-codebase-mapper` for a fan-out).
+- **`model_overrides`** is per-agent precision (e.g. force `haiku` on `bm-codebase-mapper` for a fan-out).
 
 ## Profile Philosophy
 
@@ -134,9 +136,9 @@ When `dynamic_routing.enabled = true` in `.planning/config.json`, the resolver p
 
 | Tier | Agents | Use case |
 |---|---|---|
-| `light` | gsd-codebase-mapper, gsd-pattern-mapper, gsd-research-synthesizer, gsd-plan-checker, gsd-integration-checker, gsd-nyquist-auditor, gsd-ui-checker, gsd-ui-auditor, gsd-doc-verifier | Cheap/fast — pure mappers, scanners, low-stakes audits |
-| `standard` | gsd-executor, gsd-phase-researcher, gsd-project-researcher, gsd-verifier, gsd-doc-writer, gsd-ui-researcher | Default workhorse — research, writing, primary verification |
-| `heavy` | gsd-planner, gsd-roadmapper, gsd-debugger | Deep reasoning — already at top, can't escalate further |
+| `light` | bm-codebase-mapper, bm-pattern-mapper, bm-research-synthesizer, bm-plan-checker, bm-integration-checker, bm-nyquist-auditor, bm-ui-checker, bm-ui-auditor, bm-doc-verifier | Cheap/fast — pure mappers, scanners, low-stakes audits |
+| `standard` | bm-executor, bm-phase-researcher, bm-project-researcher, bm-verifier, bm-doc-writer, bm-ui-researcher | Default workhorse — research, writing, primary verification |
+| `heavy` | bm-planner, bm-roadmapper, bm-debugger | Deep reasoning — already at top, can't escalate further |
 
 **Escalation flow** (orchestrator-driven):
 
@@ -178,8 +180,8 @@ Override specific agents without changing the entire profile:
 {
   "model_profile": "balanced",
   "model_overrides": {
-    "gsd-executor": "opus",
-    "gsd-planner": "haiku"
+    "bm-executor": "opus",
+    "bm-planner": "haiku"
   }
 }
 ```
@@ -199,16 +201,16 @@ Per-project default: Set in `.planning/config.json`:
 
 ## Design Rationale
 
-**Why Opus for gsd-planner?**
+**Why Opus for bm-planner?**
 Planning involves architecture decisions, goal decomposition, and task design. This is where model quality has the highest impact.
 
-**Why Sonnet for gsd-executor?**
+**Why Sonnet for bm-executor?**
 Executors follow explicit PLAN.md instructions. The plan already contains the reasoning; execution is implementation.
 
 **Why Sonnet (not Haiku) for verifiers in balanced?**
 Verification requires goal-backward reasoning - checking if code *delivers* what the phase promised, not just pattern matching. Sonnet handles this well; Haiku may miss subtle gaps.
 
-**Why Haiku for gsd-codebase-mapper?**
+**Why Haiku for bm-codebase-mapper?**
 Read-only exploration and pattern extraction. No reasoning required, just structured output from file contents.
 
 **Why `inherit` instead of passing `opus` directly?**

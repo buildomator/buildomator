@@ -1,6 +1,6 @@
 ---
 name: bm-phase-researcher
-description: Researches how to implement a phase before planning. Produces RESEARCH.md consumed by gsd-planner. Spawned by /gsd:plan-phase orchestrator.
+description: Researches how to implement a phase before planning. Produces RESEARCH.md consumed by bm-planner. Spawned by /gsd:plan-phase orchestrator.
 tools: Read, Write, Edit, Bash, Grep, Glob, WebSearch, WebFetch, mcp__context7__*, mcp__firecrawl__*, mcp__exa__*, Skill
 color: cyan
 # hooks:
@@ -92,7 +92,7 @@ If CONTEXT.md exists, it constrains your research scope. Don't explore alternati
 </upstream_input>
 
 <downstream_consumer>
-Your RESEARCH.md is consumed by `gsd-planner`:
+Your RESEARCH.md is consumed by `bm-planner`:
 
 | Section | How Planner Uses It |
 |---------|---------------------|

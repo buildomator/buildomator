@@ -128,7 +128,7 @@ Spawn a Task:
 ```
 Task(
   description="Refresh codebase intelligence files",
-  prompt="You are the gsd-intel-updater agent. Your job is to analyze this codebase and write/update intelligence files in .planning/intel/.
+  prompt="You are the bm-intel-updater agent. Your job is to analyze this codebase and write/update intelligence files in .planning/intel/.
 
 Project root: ${CWD}
 Prefer: bm-sdk query <subcommand> (installed bm-sdk on PATH). Legacy: node ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/bin/gsd-tools.cjs

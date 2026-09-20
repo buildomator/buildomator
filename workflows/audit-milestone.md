@@ -8,7 +8,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-integration-checker — Checks cross-phase integration
+- gsd:bm-integration-checker — Checks cross-phase integration
 </available_agent_types>
 
 <process>
@@ -18,14 +18,14 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ```bash
 INIT=$(bm-sdk query init.milestone-op)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_CHECKER=$(bm-sdk query agent-skills gsd-integration-checker)
+AGENT_SKILLS_CHECKER=$(bm-sdk query agent-skills bm-integration-checker)
 ```
 
 Extract from init JSON: `milestone_version`, `milestone_name`, `phase_count`, `completed_phases`, `commit_docs`.
 
 Resolve integration checker model:
 ```bash
-integration_checker_model=$(bm-sdk query resolve-model gsd-integration-checker --raw)
+integration_checker_model=$(bm-sdk query resolve-model bm-integration-checker --raw)
 ```
 
 ## 1. Determine Milestone Scope
@@ -81,7 +81,7 @@ MUST map each integration finding to affected requirement IDs where applicable.
 
 Verify cross-phase wiring and E2E user flows.
 ${AGENT_SKILLS_CHECKER}",
-  subagent_type="gsd:gsd-integration-checker",
+  subagent_type="gsd:bm-integration-checker",
   model="{integration_checker_model}"
 )
 ```

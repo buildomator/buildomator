@@ -29,7 +29,7 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 </role>
 
 <downstream_consumer>
-Your SUMMARY.md is consumed by the gsd-roadmapper agent which uses it to:
+Your SUMMARY.md is consumed by the bm-roadmapper agent which uses it to:
 
 | Section | How Roadmapper Uses It |
 |---------|------------------------|

@@ -1,5 +1,5 @@
 <purpose>
-Generate a UI design contract (UI-SPEC.md) for frontend phases. Orchestrates gsd-ui-researcher and gsd-ui-checker with a revision loop. Inserts between discuss-phase and plan-phase. UI-SPEC.md locks spacing, typography, color, copywriting, and design system decisions before the planner creates tasks, preventing design debt from ad-hoc styling during execution.
+Generate a UI design contract (UI-SPEC.md) for frontend phases. Orchestrates bm-ui-researcher and bm-ui-checker with a revision loop. Inserts between discuss-phase and plan-phase. UI-SPEC.md locks spacing, typography, color, copywriting, and design system decisions before the planner creates tasks, preventing design debt from ad-hoc styling during execution.
 </purpose>
 
 <required_reading>
@@ -8,8 +8,8 @@ Generate a UI design contract (UI-SPEC.md) for frontend phases. Orchestrates gsd
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-ui-researcher — Researches UI/UX approaches
-- gsd:gsd-ui-checker — Reviews UI implementation quality
+- gsd:bm-ui-researcher — Researches UI/UX approaches
+- gsd:bm-ui-checker — Reviews UI implementation quality
 </available_agent_types>
 
 <process>
@@ -19,8 +19,8 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ```bash
 INIT=$(bm-sdk query init.plan-phase "$PHASE")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI=$(bm-sdk query agent-skills gsd-ui-researcher)
-AGENT_SKILLS_UI_CHECKER=$(bm-sdk query agent-skills gsd-ui-checker)
+AGENT_SKILLS_UI=$(bm-sdk query agent-skills bm-ui-researcher)
+AGENT_SKILLS_UI_CHECKER=$(bm-sdk query agent-skills bm-ui-checker)
 ```
 
 Parse JSON for: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_context`, `has_research`, `commit_docs`.
@@ -35,8 +35,8 @@ SKETCH_FINDINGS_PATH=$(ls ./.claude/skills/sketch-findings-*/SKILL.md 2>/dev/nul
 Resolve UI agent models:
 
 ```bash
-UI_RESEARCHER_MODEL=$(bm-sdk query resolve-model gsd-ui-researcher --raw)
-UI_CHECKER_MODEL=$(bm-sdk query resolve-model gsd-ui-checker --raw)
+UI_RESEARCHER_MODEL=$(bm-sdk query resolve-model bm-ui-researcher --raw)
+UI_CHECKER_MODEL=$(bm-sdk query resolve-model bm-ui-checker --raw)
 ```
 
 Check config:
@@ -111,7 +111,7 @@ Path: ${UI_SPEC_FILE}
 
 **If does not exist:** continue to step 5 (spawn researcher to generate).
 
-## 5. Spawn gsd-ui-researcher
+## 5. Spawn bm-ui-researcher
 
 Display:
 ```
@@ -122,7 +122,7 @@ GSD ► UI DESIGN CONTRACT — PHASE {N}
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/gsd-ui-researcher.md for instructions.
+Read ~/.claude/agents/bm-ui-researcher.md for instructions.
 
 <objective>
 Create UI design contract for Phase {phase_number}: {phase_name}
@@ -157,7 +157,7 @@ Omit null file paths from `<files_to_read>`.
 ```
 Agent(
   prompt=ui_research_prompt,
-  subagent_type="gsd:gsd-ui-researcher",
+  subagent_type="gsd:bm-ui-researcher",
   model="{UI_RESEARCHER_MODEL}",
   description="UI Design Contract Phase {N}"
 )
@@ -173,7 +173,7 @@ Display confirmation. Continue to step 7.
 **If `## UI-SPEC BLOCKED`:**
 Display blocker details and options. Exit workflow.
 
-## 7. Spawn gsd-ui-checker
+## 7. Spawn bm-ui-checker
 
 Display:
 ```
@@ -184,7 +184,7 @@ GSD ► VERIFYING UI-SPEC
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/gsd-ui-checker.md for instructions.
+Read ~/.claude/agents/bm-ui-checker.md for instructions.
 
 <objective>
 Validate UI design contract for Phase {phase_number}: {phase_name}
@@ -207,7 +207,7 @@ ui_safety_gate: {ui_safety_gate config value}
 ```
 Agent(
   prompt=ui_checker_prompt,
-  subagent_type="gsd:gsd-ui-checker",
+  subagent_type="gsd:bm-ui-checker",
   model="{UI_CHECKER_MODEL}",
   description="Verify UI-SPEC Phase {N}"
 )
@@ -229,7 +229,7 @@ Track `revision_count` (starts at 0).
 
 **If `revision_count` < 2:**
 - Increment `revision_count`
-- Re-spawn gsd-ui-researcher with revision context:
+- Re-spawn bm-ui-researcher with revision context:
 
 ```markdown
 <revision>
@@ -310,9 +310,9 @@ bm-sdk query state.record-session \
 - [ ] Phase validated against roadmap
 - [ ] Prerequisites checked (CONTEXT.md, RESEARCH.md — non-blocking warnings)
 - [ ] Existing UI-SPEC handled (update/view/skip)
-- [ ] gsd-ui-researcher spawned with correct context and file paths
+- [ ] bm-ui-researcher spawned with correct context and file paths
 - [ ] UI-SPEC.md created in correct location
-- [ ] gsd-ui-checker spawned with UI-SPEC.md
+- [ ] bm-ui-checker spawned with UI-SPEC.md
 - [ ] All 6 dimensions evaluated
 - [ ] Revision loop if BLOCKED (max 2 iterations)
 - [ ] Final status displayed with next steps

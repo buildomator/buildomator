@@ -33,9 +33,9 @@ const absent = (src, n, m) => src.includes(n) ? fail(`${m} (still present: ${n})
 
 // --- Verifier + template emit the signal ---
 {
-  const v = read('agents/gsd-verifier.md');
-  has(v, 'has_blocking_gaps', `gsd-verifier.md: writes has_blocking_gaps`);
-  has(v, 'severity: blocking', `gsd-verifier.md: per-gap severity tagging`);
+  const v = read('agents/bm-verifier.md');
+  has(v, 'has_blocking_gaps', `bm-verifier.md: writes has_blocking_gaps`);
+  has(v, 'severity: blocking', `bm-verifier.md: per-gap severity tagging`);
 
   const t = read('templates/verification-report.md');
   has(t, 'has_blocking_gaps', `verification-report.md: frontmatter has_blocking_gaps`);

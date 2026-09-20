@@ -16,7 +16,7 @@ allowed-tools:
 <objective>
 Import external plan files into the GSD planning system with conflict detection against PROJECT.md decisions.
 
-- **--from**: Import an external plan file, detect conflicts, write as GSD PLAN.md, validate via gsd-plan-checker.
+- **--from**: Import an external plan file, detect conflicts, write as GSD PLAN.md, validate via bm-plan-checker.
 
 Future: `--prd` mode for PRD extraction is planned for a follow-up PR.
 </objective>

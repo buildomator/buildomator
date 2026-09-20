@@ -32,7 +32,7 @@ if [ "$ACTUAL_BASE" != "{EXPECTED_BASE}" ]; then
 fi
 ```
 
-Per-commit HEAD assertion: `agents/gsd-executor.md` `<task_commit_protocol>` step 0.
+Per-commit HEAD assertion: `agents/bm-executor.md` `<task_commit_protocol>` step 0.
 
 ---
 

@@ -410,7 +410,7 @@ export class InitRunner {
     researchType: ResearchType,
     input: string,
   ): Promise<string> {
-    const agentDef = await this.readAgentFile('gsd-project-researcher.md');
+    const agentDef = await this.readAgentFile('bm-project-researcher.md');
     const template = await this.readGSDFile(`templates/research-project/${researchType}.md`);
 
     // Read PROJECT.md if it exists (it should by now)
@@ -455,7 +455,7 @@ export class InitRunner {
    * Reads synthesizer agent def and all 4 research outputs.
    */
   private async buildSynthesisPrompt(): Promise<string> {
-    const agentDef = await this.readAgentFile('gsd-research-synthesizer.md');
+    const agentDef = await this.readAgentFile('bm-research-synthesizer.md');
     const summaryTemplate = await this.readGSDFile('templates/research-project/SUMMARY.md');
     const researchDir = join(this.projectDir, '.planning', 'research');
 
@@ -548,7 +548,7 @@ export class InitRunner {
    * Reads PROJECT.md + REQUIREMENTS.md + research/SUMMARY.md + config.json.
    */
   private async buildRoadmapPrompt(): Promise<string> {
-    const agentDef = await this.readAgentFile('gsd-roadmapper.md');
+    const agentDef = await this.readAgentFile('bm-roadmapper.md');
     const roadmapTemplate = await this.readGSDFile('templates/roadmap.md');
     const stateTemplate = await this.readGSDFile('templates/state.md');
 

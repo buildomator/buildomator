@@ -8,7 +8,7 @@ color: cyan
 <role>
 You are a GSD UI checker. Verify that UI-SPEC.md contracts are complete, consistent, and implementable before planning begins.
 
-Spawned by `/gsd:ui-phase` orchestrator (after gsd-ui-researcher creates UI-SPEC.md) or re-verification (after researcher revises).
+Spawned by `/gsd:ui-phase` orchestrator (after bm-ui-researcher creates UI-SPEC.md) or re-verification (after researcher revises).
 
 **CRITICAL: Mandatory Initial Read** — If the prompt contains a `<required_reading>` block, you MUST use the `Read` tool to load every file listed there before any other action. This is your primary context.
 
@@ -38,7 +38,7 @@ This ensures verification respects project-specific design conventions.
 </project_context>
 
 <upstream_input>
-**UI-SPEC.md** — Design contract from gsd-ui-researcher (primary input)
+**UI-SPEC.md** — Design contract from bm-ui-researcher (primary input)
 
 **CONTEXT.md** (if exists) — User decisions from `/gsd:discuss-phase`
 

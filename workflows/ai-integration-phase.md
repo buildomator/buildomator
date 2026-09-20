@@ -1,5 +1,5 @@
 <purpose>
-Generate an AI design contract (AI-SPEC.md) for phases that involve building AI systems. Orchestrates gsd-framework-selector → gsd-ai-researcher → gsd-domain-researcher → gsd-eval-planner with a validation gate. Inserts between discuss-phase and plan-phase in the GSD lifecycle.
+Generate an AI design contract (AI-SPEC.md) for phases that involve building AI systems. Orchestrates bm-framework-selector → bm-ai-researcher → bm-domain-researcher → bm-eval-planner with a validation gate. Inserts between discuss-phase and plan-phase in the GSD lifecycle.
 
 AI-SPEC.md locks four things before the planner creates tasks:
 1. Framework selection (with rationale and alternatives)
@@ -30,10 +30,10 @@ Parse JSON for: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded
 
 Resolve agent models:
 ```bash
-SELECTOR_MODEL=$(bm-sdk query resolve-model gsd-framework-selector 2>/dev/null | jq -r '.model' 2>/dev/null || true)
-RESEARCHER_MODEL=$(bm-sdk query resolve-model gsd-ai-researcher 2>/dev/null | jq -r '.model' 2>/dev/null || true)
-DOMAIN_MODEL=$(bm-sdk query resolve-model gsd-domain-researcher 2>/dev/null | jq -r '.model' 2>/dev/null || true)
-PLANNER_MODEL=$(bm-sdk query resolve-model gsd-eval-planner 2>/dev/null | jq -r '.model' 2>/dev/null || true)
+SELECTOR_MODEL=$(bm-sdk query resolve-model bm-framework-selector 2>/dev/null | jq -r '.model' 2>/dev/null || true)
+RESEARCHER_MODEL=$(bm-sdk query resolve-model bm-ai-researcher 2>/dev/null | jq -r '.model' 2>/dev/null || true)
+DOMAIN_MODEL=$(bm-sdk query resolve-model bm-domain-researcher 2>/dev/null | jq -r '.model' 2>/dev/null || true)
+PLANNER_MODEL=$(bm-sdk query resolve-model bm-eval-planner 2>/dev/null | jq -r '.model' 2>/dev/null || true)
 ```
 
 Check config:
@@ -93,7 +93,7 @@ Path: ${AI_SPEC_FILE}
 
 **If does not exist:** continue to step 5.
 
-## 5. Spawn gsd-framework-selector
+## 5. Spawn bm-framework-selector
 
 Display:
 ```
@@ -102,9 +102,9 @@ GSD ► AI DESIGN CONTRACT — PHASE {N}: {name}
 ◆ Step 1/4 — Framework Selection...
 ```
 
-Spawn `gsd-framework-selector` with:
+Spawn `bm-framework-selector` with:
 ```markdown
-Read ~/.claude/agents/gsd-framework-selector.md for instructions.
+Read ~/.claude/agents/bm-framework-selector.md for instructions.
 
 <objective>
 Select the right AI framework for Phase {phase_number}: {phase_name}
@@ -139,7 +139,7 @@ Fill in header fields:
 - Selected framework (from selector)
 - Alternative considered (from selector)
 
-## 7. Spawn gsd-ai-researcher
+## 7. Spawn bm-ai-researcher
 
 > **Ordering note (prevents last-writer-wins race):** Steps 7 and 8 MUST run sequentially — wait for Step 7 to complete before spawning Step 8. Both agents use `Edit` exclusively (never `Write`) on AI-SPEC.md; `Write` replaces the whole file and overwrites the sibling's work. See #3096 (confirmed 40%-incidence race on parallel dispatch).
 
@@ -148,9 +148,9 @@ Display:
 ◆ Step 2/4 — Researching {primary_framework} docs + AI systems best practices...
 ```
 
-Spawn `gsd-ai-researcher` with:
+Spawn `bm-ai-researcher` with:
 ```markdown
-Read ~/.claude/agents/gsd-ai-researcher.md for instructions.
+Read ~/.claude/agents/bm-ai-researcher.md for instructions.
 
 **Tool discipline (mandatory):**
 Use the Edit tool exclusively when modifying AI-SPEC.md — NEVER use Write on this file.
@@ -174,7 +174,7 @@ phase_context: Phase {phase_number}: {phase_name} — {phase_goal}
 </input>
 ```
 
-## 8. Spawn gsd-domain-researcher
+## 8. Spawn bm-domain-researcher
 
 > **Wait for Step 7 to complete before spawning this step** (see ordering note in Step 7).
 
@@ -183,9 +183,9 @@ Display:
 ◆ Step 3/4 — Researching domain context and expert evaluation criteria...
 ```
 
-Spawn `gsd-domain-researcher` with:
+Spawn `bm-domain-researcher` with:
 ```markdown
-Read ~/.claude/agents/gsd-domain-researcher.md for instructions.
+Read ~/.claude/agents/bm-domain-researcher.md for instructions.
 
 **Tool discipline (mandatory):**
 Use the Edit tool exclusively when modifying AI-SPEC.md — NEVER use Write on this file.
@@ -209,16 +209,16 @@ ai_spec_path: {ai_spec_path}
 </input>
 ```
 
-## 9. Spawn gsd-eval-planner
+## 9. Spawn bm-eval-planner
 
 Display:
 ```
 ◆ Step 4/4 — Designing evaluation strategy from domain + technical context...
 ```
 
-Spawn `gsd-eval-planner` with:
+Spawn `bm-eval-planner` with:
 ```markdown
-Read ~/.claude/agents/gsd-eval-planner.md for instructions.
+Read ~/.claude/agents/bm-eval-planner.md for instructions.
 
 <objective>
 Design evaluation strategy for Phase {phase_number}: {phase_name}

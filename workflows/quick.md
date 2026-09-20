@@ -1,5 +1,5 @@
 <purpose>
-Execute small, ad-hoc tasks with GSD guarantees (atomic commits, STATE.md tracking). Quick mode spawns gsd-planner (quick mode) + gsd-executor(s), tracks tasks in `.planning/quick/`, and updates STATE.md's "Quick Tasks Completed" table.
+Execute small, ad-hoc tasks with GSD guarantees (atomic commits, STATE.md tracking). Quick mode spawns bm-planner (quick mode) + bm-executor(s), tracks tasks in `.planning/quick/`, and updates STATE.md's "Quick Tasks Completed" table.
 
 With `--full` flag: enables the complete quality pipeline — discussion + research + plan-checking + verification. One flag for everything.
 
@@ -18,12 +18,12 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd:gsd-phase-researcher — Researches technical approaches for a phase
-- gsd:gsd-planner — Creates detailed plans from phase scope
-- gsd:gsd-plan-checker — Reviews plan quality before execution
-- gsd:gsd-executor — Executes plan tasks, commits, creates SUMMARY.md
-- gsd:gsd-verifier — Verifies phase completion, checks quality gates
-- gsd:gsd-code-reviewer — Reviews source files for bugs, security issues, and code quality
+- gsd:bm-phase-researcher — Researches technical approaches for a phase
+- gsd:bm-planner — Creates detailed plans from phase scope
+- gsd:bm-plan-checker — Reviews plan quality before execution
+- gsd:bm-executor — Executes plan tasks, commits, creates SUMMARY.md
+- gsd:bm-verifier — Verifies phase completion, checks quality gates
+- gsd:bm-code-reviewer — Reviews source files for bugs, security issues, and code quality
 </available_agent_types>
 
 <process>
@@ -120,10 +120,10 @@ fi
 ```bash
 INIT=$(bm-sdk query init.quick "$DESCRIPTION")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_PLANNER=$(bm-sdk query agent-skills gsd-planner)
-AGENT_SKILLS_EXECUTOR=$(bm-sdk query agent-skills gsd-executor)
-AGENT_SKILLS_CHECKER=$(bm-sdk query agent-skills gsd-plan-checker)
-AGENT_SKILLS_VERIFIER=$(bm-sdk query agent-skills gsd-verifier)
+AGENT_SKILLS_PLANNER=$(bm-sdk query agent-skills bm-planner)
+AGENT_SKILLS_EXECUTOR=$(bm-sdk query agent-skills bm-executor)
+AGENT_SKILLS_CHECKER=$(bm-sdk query agent-skills bm-plan-checker)
+AGENT_SKILLS_VERIFIER=$(bm-sdk query agent-skills bm-verifier)
 ```
 
 Parse JSON for: `planner_model`, `executor_model`, `checker_model`, `verifier_model`, `commit_docs`, `branch_name`, `quick_id`, `slug`, `date`, `timestamp`, `quick_dir`, `task_dir`, `roadmap_exists`, `planning_exists`.
@@ -394,7 +394,7 @@ Use standard research format but keep it lean — skip sections that don't apply
 Return: ## RESEARCH COMPLETE with file path
 </output>
 ",
-  subagent_type="gsd:gsd-phase-researcher",
+  subagent_type="gsd:bm-phase-researcher",
   model="{planner_model}",
   description="Research: ${DESCRIPTION}"
 )
@@ -452,7 +452,7 @@ Write plan to: ${QUICK_DIR}/${quick_id}-PLAN.md
 Return: ## PLANNING COMPLETE with plan path
 </output>
 ",
-  subagent_type="gsd:gsd-planner",
+  subagent_type="gsd:bm-planner",
   model="{planner_model}",
   description="Quick plan: ${DESCRIPTION}"
 )
@@ -515,7 +515,7 @@ ${DISCUSS_MODE ? '- Context compliance: Does the plan honor locked decisions fro
 ```
 Agent(
   prompt=checker_prompt,
-  subagent_type="gsd:gsd-plan-checker",
+  subagent_type="gsd:bm-plan-checker",
   model="{checker_model}",
   description="Check quick plan: ${DESCRIPTION}"
 )
@@ -562,7 +562,7 @@ Return what changed.
 ```
 Agent(
   prompt=revision_prompt,
-  subagent_type="gsd:gsd-planner",
+  subagent_type="gsd:bm-planner",
   model="{planner_model}",
   description="Revise quick plan: ${DESCRIPTION}"
 )
@@ -624,7 +624,7 @@ if [ "${USE_WORKTREES:-true}" != "false" ]; then
 fi
 ```
 
-Spawn gsd-executor with plan reference:
+Spawn bm-executor with plan reference:
 
 ```
 Agent(
@@ -713,7 +713,7 @@ SUMMARY.md and stop — the user must rerun with worktrees disabled.
 - Do NOT update ROADMAP.md (quick tasks are separate from planned phases)
 </constraints>
 ",
-  subagent_type="gsd:gsd-executor",
+  subagent_type="gsd:bm-executor",
   model="{executor_model}",
   ${USE_WORKTREES !== "false" ? 'isolation="worktree",' : ''}
   description="Execute: ${DESCRIPTION}"
@@ -899,7 +899,7 @@ Agent(
   Files: ${CHANGED_FILES}
   Output: ${QUICK_DIR}/${quick_id}-REVIEW.md
   Depth: quick",
-  subagent_type="gsd:gsd-code-reviewer",
+  subagent_type="gsd:bm-code-reviewer",
   model="{executor_model}"
 )
 ```
@@ -933,7 +933,7 @@ Task goal: ${DESCRIPTION}
 ${AGENT_SKILLS_VERIFIER}
 
 Check must_haves against actual codebase. Create VERIFICATION.md at ${QUICK_DIR}/${quick_id}-VERIFICATION.md.",
-  subagent_type="gsd:gsd-verifier",
+  subagent_type="gsd:bm-verifier",
   model="{verifier_model}",
   description="Verify: ${DESCRIPTION}"
 )

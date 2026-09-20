@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// Guard for the gsd-code-fixer worktree isolation gate. The agent must read
+// Guard for the bm-code-fixer worktree isolation gate. The agent must read
 // workflow.use_worktrees (default true) and, when explicitly false, work
 // directly on the current branch in the main tree instead of forcing a
 // worktree. Asserts the gate in BOTH the source agent and the regenerated
@@ -16,8 +16,8 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const COPIES = {
-  source: path.join(ROOT, 'agents', 'gsd-code-fixer.md'),
-  dist: path.join(ROOT, 'dist', 'bm', 'agents', 'gsd-code-fixer.md'),
+  source: path.join(ROOT, 'agents', 'bm-code-fixer.md'),
+  dist: path.join(ROOT, 'dist', 'bm', 'agents', 'bm-code-fixer.md'),
 };
 
 let failures = 0;

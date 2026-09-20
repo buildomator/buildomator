@@ -13,7 +13,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <objective>
-Generate and update up to 9 documentation files for the current project. Each doc type is written by a gsd-doc-writer subagent that explores the codebase directly — no hallucinated paths, phantom endpoints, or stale signatures.
+Generate and update up to 9 documentation files for the current project. Each doc type is written by a bm-doc-writer subagent that explores the codebase directly — no hallucinated paths, phantom endpoints, or stale signatures.
 
 Flag handling rule:
 - The optional flags documented below are available behaviors, not implied active behaviors
@@ -33,7 +33,7 @@ Arguments: $ARGUMENTS
 
 **Available optional flags (documentation only — not automatically active):**
 - `--force` — Regenerate all docs. Overwrites hand-written and GSD docs alike. No preservation prompts.
-- `--verify-only` — Check existing docs for accuracy against the codebase. No files are written. Reports VERIFY marker count. Full codebase fact-checking requires the gsd-doc-verifier agent (Phase 4).
+- `--verify-only` — Check existing docs for accuracy against the codebase. No files are written. Reports VERIFY marker count. Full codebase fact-checking requires the bm-doc-verifier agent (Phase 4).
 
 **Active flags must be derived from `$ARGUMENTS`:**
 - `--force` is active only if the literal `--force` token is present in `$ARGUMENTS`

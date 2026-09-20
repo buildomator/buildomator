@@ -40,7 +40,7 @@ Parse current values (default to `true` if not present):
 - `workflow.plan_check` — spawn plan checker during plan-phase
 - `workflow.verifier` — spawn verifier during execute-phase
 - `workflow.nyquist_validation` — validation architecture research during plan-phase (default: true if absent)
-- `workflow.pattern_mapper` — run gsd-pattern-mapper between research and planning (default: true if absent)
+- `workflow.pattern_mapper` — run bm-pattern-mapper between research and planning (default: true if absent)
 - `workflow.ui_phase` — generate UI-SPEC.md design contracts for frontend phases (default: true if absent)
 - `workflow.ui_safety_gate` — prompt to run /gsd:ui-phase before planning frontend phases (default: true if absent)
 - `workflow.ai_integration_phase` — framework selection + eval strategy for AI phases (default: true if absent)
@@ -181,7 +181,7 @@ AskUserQuestion([
     header: "Pattern Mapper",
     multiSelect: false,
     options: [
-      { label: "Yes (Recommended)", description: "gsd-pattern-mapper runs between research and plan steps. Surfaces conventions so new code follows house style." },
+      { label: "Yes (Recommended)", description: "bm-pattern-mapper runs between research and plan steps. Surfaces conventions so new code follows house style." },
       { label: "No", description: "Skip pattern mapping. Faster; lose consistency hinting for new files." }
     ]
   },

@@ -122,8 +122,8 @@ function cmdInitExecutePhase(cwd, phase, raw, options = {}) {
 
   const result = {
     // Models
-    executor_model: resolveModelInternal(cwd, 'gsd-executor'),
-    verifier_model: resolveModelInternal(cwd, 'gsd-verifier'),
+    executor_model: resolveModelInternal(cwd, 'bm-executor'),
+    verifier_model: resolveModelInternal(cwd, 'bm-verifier'),
 
     // Config flags
     tdd_mode: options.tdd || config.tdd_mode || false,
@@ -268,9 +268,9 @@ function cmdInitPlanPhase(cwd, phase, raw, options = {}) {
 
   const result = {
     // Models
-    researcher_model: resolveModelInternal(cwd, 'gsd-phase-researcher'),
-    planner_model: resolveModelInternal(cwd, 'gsd-planner'),
-    checker_model: resolveModelInternal(cwd, 'gsd-plan-checker'),
+    researcher_model: resolveModelInternal(cwd, 'bm-phase-researcher'),
+    planner_model: resolveModelInternal(cwd, 'bm-planner'),
+    checker_model: resolveModelInternal(cwd, 'bm-plan-checker'),
 
     // Workflow flags
     tdd_mode: options.tdd || config.tdd_mode || false,
@@ -455,9 +455,9 @@ function cmdInitNewProject(cwd, raw) {
 
   const result = {
     // Models
-    researcher_model: resolveModelInternal(cwd, 'gsd-project-researcher'),
-    synthesizer_model: resolveModelInternal(cwd, 'gsd-research-synthesizer'),
-    roadmapper_model: resolveModelInternal(cwd, 'gsd-roadmapper'),
+    researcher_model: resolveModelInternal(cwd, 'bm-project-researcher'),
+    synthesizer_model: resolveModelInternal(cwd, 'bm-research-synthesizer'),
+    roadmapper_model: resolveModelInternal(cwd, 'bm-roadmapper'),
 
     // Config
     commit_docs: config.commit_docs,
@@ -517,9 +517,9 @@ function cmdInitNewMilestone(cwd, raw) {
 
   const result = {
     // Models
-    researcher_model: resolveModelInternal(cwd, 'gsd-project-researcher'),
-    synthesizer_model: resolveModelInternal(cwd, 'gsd-research-synthesizer'),
-    roadmapper_model: resolveModelInternal(cwd, 'gsd-roadmapper'),
+    researcher_model: resolveModelInternal(cwd, 'bm-project-researcher'),
+    synthesizer_model: resolveModelInternal(cwd, 'bm-research-synthesizer'),
+    roadmapper_model: resolveModelInternal(cwd, 'bm-roadmapper'),
 
     // Config
     commit_docs: config.commit_docs,
@@ -574,10 +574,10 @@ function cmdInitQuick(cwd, description, raw) {
 
   const result = {
     // Models
-    planner_model: resolveModelInternal(cwd, 'gsd-planner'),
-    executor_model: resolveModelInternal(cwd, 'gsd-executor'),
-    checker_model: resolveModelInternal(cwd, 'gsd-plan-checker'),
-    verifier_model: resolveModelInternal(cwd, 'gsd-verifier'),
+    planner_model: resolveModelInternal(cwd, 'bm-planner'),
+    executor_model: resolveModelInternal(cwd, 'bm-executor'),
+    checker_model: resolveModelInternal(cwd, 'bm-plan-checker'),
+    verifier_model: resolveModelInternal(cwd, 'bm-verifier'),
 
     // Config
     commit_docs: config.commit_docs,
@@ -706,8 +706,8 @@ function cmdInitVerifyWork(cwd, phase, raw) {
 
   const result = {
     // Models
-    planner_model: resolveModelInternal(cwd, 'gsd-planner'),
-    checker_model: resolveModelInternal(cwd, 'gsd-plan-checker'),
+    planner_model: resolveModelInternal(cwd, 'bm-planner'),
+    checker_model: resolveModelInternal(cwd, 'bm-plan-checker'),
 
     // Config
     commit_docs: config.commit_docs,
@@ -1040,7 +1040,7 @@ function cmdInitMapCodebase(cwd, raw) {
 
   const result = {
     // Models
-    mapper_model: resolveModelInternal(cwd, 'gsd-codebase-mapper'),
+    mapper_model: resolveModelInternal(cwd, 'bm-codebase-mapper'),
 
     // Config
     commit_docs: config.commit_docs,
@@ -1509,8 +1509,8 @@ function cmdInitProgress(cwd, raw) {
 
   const result = {
     // Models
-    executor_model: resolveModelInternal(cwd, 'gsd-executor'),
-    planner_model: resolveModelInternal(cwd, 'gsd-planner'),
+    executor_model: resolveModelInternal(cwd, 'bm-executor'),
+    planner_model: resolveModelInternal(cwd, 'bm-planner'),
 
     // Config
     commit_docs: config.commit_docs,
@@ -1706,7 +1706,7 @@ function cmdInitRemoveWorkspace(cwd, name, raw) {
  * entry emits a Skill-tool load-by-name directive instead of resolving a path.
  *
  * @param {object} config - Loaded project config
- * @param {string} agentType - The agent type (e.g., 'gsd-executor', 'gsd-planner')
+ * @param {string} agentType - The agent type (e.g., 'bm-executor', 'bm-planner')
  * @param {string} projectRoot - Absolute path to project root (for path validation)
  * @returns {string} Formatted skills block or empty string
  */
@@ -1815,7 +1815,7 @@ function buildAgentSkillsBlock(config, agentType, projectRoot) {
 
 /**
  * Command: output the agent skills block for a given agent type.
- * Used by workflows: SKILLS=$(node "$TOOLS" agent-skills gsd-executor 2>/dev/null)
+ * Used by workflows: SKILLS=$(node "$TOOLS" agent-skills bm-executor 2>/dev/null)
  */
 function cmdAgentSkills(cwd, agentType, raw) {
   if (!agentType) {

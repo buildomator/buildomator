@@ -1,6 +1,6 @@
 # Phase Prompt Template
 
-> **Note:** Planning methodology is in `agents/gsd-planner.md`.
+> **Note:** Planning methodology is in `agents/bm-planner.md`.
 > This template defines the PLAN.md output format that the agent produces.
 
 Template for `.planning/phases/XX-name/{phase}-{plan}-PLAN.md` - executable phase plans optimized for parallel execution.

@@ -379,8 +379,8 @@ export const initExecutePhase: QueryHandler = async (args, projectDir, workstrea
   const configExists = existsSync(join(planningDir, 'config.json'));
   const [executorModel, verifierModel] = configExists
     ? await Promise.all([
-        getModelAlias('gsd-executor', projectDir),
-        getModelAlias('gsd-verifier', projectDir),
+        getModelAlias('bm-executor', projectDir),
+        getModelAlias('bm-verifier', projectDir),
       ])
     : ['', ''];
 
@@ -462,9 +462,9 @@ export const initPlanPhase: QueryHandler = async (args, projectDir, workstream) 
   const configExists = existsSync(join(planningDir, 'config.json'));
   const [researcherModel, plannerModel, checkerModel] = configExists
     ? await Promise.all([
-        getModelAlias('gsd-phase-researcher', projectDir),
-        getModelAlias('gsd-planner', projectDir),
-        getModelAlias('gsd-plan-checker', projectDir),
+        getModelAlias('bm-phase-researcher', projectDir),
+        getModelAlias('bm-planner', projectDir),
+        getModelAlias('bm-plan-checker', projectDir),
       ])
     : ['', '', ''];
 
@@ -577,9 +577,9 @@ export const initNewMilestone: QueryHandler = async (_args, projectDir) => {
   } catch { /* intentionally empty */ }
 
   const [researcherModel, synthesizerModel, roadmapperModel] = await Promise.all([
-    getModelAlias('gsd-project-researcher', projectDir),
-    getModelAlias('gsd-research-synthesizer', projectDir),
-    getModelAlias('gsd-roadmapper', projectDir),
+    getModelAlias('bm-project-researcher', projectDir),
+    getModelAlias('bm-research-synthesizer', projectDir),
+    getModelAlias('bm-roadmapper', projectDir),
   ]);
 
   const result: Record<string, unknown> = {
@@ -640,10 +640,10 @@ export const initQuick: QueryHandler = async (args, projectDir) => {
   const configExists = existsSync(join(planningDir, 'config.json'));
   const [plannerModel, executorModel, checkerModel, verifierModel] = configExists
     ? await Promise.all([
-        getModelAlias('gsd-planner', projectDir),
-        getModelAlias('gsd-executor', projectDir),
-        getModelAlias('gsd-plan-checker', projectDir),
-        getModelAlias('gsd-verifier', projectDir),
+        getModelAlias('bm-planner', projectDir),
+        getModelAlias('bm-executor', projectDir),
+        getModelAlias('bm-plan-checker', projectDir),
+        getModelAlias('bm-verifier', projectDir),
       ])
     : ['', '', '', ''];
 
@@ -717,8 +717,8 @@ export const initVerifyWork: QueryHandler = async (args, projectDir, workstream)
   const configExists = existsSync(join(projectDir, '.planning', 'config.json'));
   const [plannerModel, checkerModel] = configExists
     ? await Promise.all([
-        getModelAlias('gsd-planner', projectDir),
-        getModelAlias('gsd-plan-checker', projectDir),
+        getModelAlias('bm-planner', projectDir),
+        getModelAlias('bm-plan-checker', projectDir),
       ])
     : ['', ''];
 
@@ -1047,7 +1047,7 @@ export const initMapCodebase: QueryHandler = async (_args, projectDir) => {
     existingMaps = readdirSync(codebaseDir).filter(f => f.endsWith('.md'));
   } catch { /* intentionally empty */ }
 
-  const mapperModel = await getModelAlias('gsd-codebase-mapper', projectDir);
+  const mapperModel = await getModelAlias('bm-codebase-mapper', projectDir);
 
   const result: Record<string, unknown> = {
     mapper_model: mapperModel,

@@ -516,7 +516,7 @@ Status values:
 ---
 
 _Fixed: {timestamp}_
-_Fixer: Claude (gsd-code-fixer)_
+_Fixer: Claude (bm-code-fixer)_
 _Iteration: {N}_
 ```
 

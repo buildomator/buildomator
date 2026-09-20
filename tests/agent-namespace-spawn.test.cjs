@@ -1,14 +1,17 @@
 'use strict';
 
-// Regression test for issue #14: workflow subagent spawns must use the
-// plugin-namespaced agent id (gsd:gsd-<name>), not the bare upstream form
-// (gsd-<name>).
+// Regression test: workflow subagent spawns must use the plugin-namespaced
+// agent id (gsd:bm-<name>), not the bare form (bm-<name> / gsd-<name>).
+//
+// bm-<role> is the primary, sole spawnable agent name; the gsd- spelling is
+// the 4.x backwards-compat form for config keys and CLI arguments only, and is
+// resolved by name-normalization on both resolver twins (removed at v5.0).
 //
 // The plugin's plugin.json declares "name": "gsd", so Claude Code registers
-// every agent under the `gsd:` namespace (e.g. gsd:gsd-planner). Workflow
-// bodies inherited from the npx install spawn agents by bare name
-// (subagent_type="gsd-planner"), which fails on a plugin install with
-// "Agent type 'gsd-planner' not found. Available: ... gsd:gsd-planner". The
+// every agent under the `gsd:` namespace (e.g. gsd:bm-planner; the bm plugin
+// renders it bm:bm-planner). Workflow bodies inherited from the npx install
+// spawn agents by bare name, which fails on a plugin install with
+// "Agent type 'bm-planner' not found. Available: ... gsd:bm-planner". The
 // orchestrator usually retries with the prefix, but every spawn eats a failed
 // attempt first and an unattended run can dead-end.
 //
@@ -36,9 +39,9 @@ function walk(dir) {
 
 const files = [...walk(path.join(ROOT, 'workflows')), ...walk(path.join(ROOT, 'skills')), ...walk(path.join(ROOT, 'agents'))];
 
-// ─── 1. No bare subagent_type="gsd-<name>" anywhere ──────────────────────────
-const bareSpawnRe = /subagent_type=["']gsd-[a-z][a-z-]*["']/;            // bare (no gsd: prefix)
-const nsSpawnRe = /subagent_type=["']gsd:gsd-[a-z][a-z-]*["']/;          // namespaced
+// ─── 1. No bare subagent_type="(gsd|bm)-<name>" anywhere ─────────────────────
+const bareSpawnRe = /subagent_type=["'](?:gsd|bm)-[a-z][a-z-]*["']/;     // bare (no gsd: prefix)
+const nsSpawnRe = /subagent_type=["']gsd:bm-[a-z][a-z-]*["']/;           // namespaced (primary)
 const bareSpawnOffenders = [];
 let nsSpawnCount = 0;
 for (const f of files) {
@@ -48,23 +51,38 @@ for (const f of files) {
     if (bareSpawnRe.test(line)) bareSpawnOffenders.push(`${path.relative(ROOT, f)}: ${line.trim().slice(0, 80)}`);
   }
 }
-ok(`no bare subagent_type="gsd-*" (offenders: ${bareSpawnOffenders.length})`, bareSpawnOffenders.length === 0);
+ok(`no bare subagent_type="(gsd|bm)-*" (offenders: ${bareSpawnOffenders.length})`, bareSpawnOffenders.length === 0);
 if (bareSpawnOffenders.length) bareSpawnOffenders.slice(0, 10).forEach((o) => console.log('   ' + o));
 ok('namespaced spawns are present (sanity)', nsSpawnCount > 0);
 
-// ─── 2. <available_agent_types> prose lists use namespaced ids ────────────────
+// ─── 2. No legacy subagent_type="gsd:gsd-<name>" remains ──────────────────────
+const legacySpawnRe = /subagent_type=["']gsd:gsd-[a-z][a-z-]*["']/;
+const legacySpawnOffenders = [];
+for (const f of files) {
+  const txt = fs.readFileSync(f, 'utf-8');
+  for (const line of txt.split('\n')) {
+    if (legacySpawnRe.test(line)) legacySpawnOffenders.push(`${path.relative(ROOT, f)}: ${line.trim().slice(0, 80)}`);
+  }
+}
+ok(`no legacy subagent_type="gsd:gsd-*" (offenders: ${legacySpawnOffenders.length})`, legacySpawnOffenders.length === 0);
+if (legacySpawnOffenders.length) legacySpawnOffenders.slice(0, 10).forEach((o) => console.log('   ' + o));
+
+// ─── 3. <available_agent_types> prose lists use namespaced gsd:bm-* ids ───────
 const bareProseOffenders = [];
+let nsProseCount = 0;
 for (const f of walk(path.join(ROOT, 'workflows'))) {
   const txt = fs.readFileSync(f, 'utf-8');
   let inBlock = false;
   for (const line of txt.split('\n')) {
     if (/<available_agent_types>/.test(line)) inBlock = true;
     else if (/<\/available_agent_types>/.test(line)) inBlock = false;
-    else if (inBlock && /^- gsd-[a-z]/.test(line)) bareProseOffenders.push(`${path.relative(ROOT, f)}: ${line.trim().slice(0, 60)}`);
+    else if (inBlock && /^- (?:gsd|bm)-[a-z]/.test(line)) bareProseOffenders.push(`${path.relative(ROOT, f)}: ${line.trim().slice(0, 60)}`);
+    else if (inBlock && /^- gsd:bm-[a-z]/.test(line)) nsProseCount++;
   }
 }
-ok(`available_agent_types lists use gsd:gsd-* (offenders: ${bareProseOffenders.length})`, bareProseOffenders.length === 0);
+ok(`available_agent_types lists use gsd:bm-* (offenders: ${bareProseOffenders.length})`, bareProseOffenders.length === 0);
 if (bareProseOffenders.length) bareProseOffenders.slice(0, 10).forEach((o) => console.log('   ' + o));
+ok('at least one gsd:bm-* available_agent_types entry exists (sanity)', nsProseCount > 0);
 
 for (const [pass, label] of checks) console.log(`${pass ? 'PASS' : 'FAIL'}  ${label}`);
 const failed = checks.filter(([pass]) => !pass);

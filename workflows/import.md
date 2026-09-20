@@ -2,7 +2,7 @@
 
 External plan ingestion with conflict detection and agent delegation.
 
-- **--from**: Import external plan → conflict detection → write PLAN.md → validate via gsd-plan-checker
+- **--from**: Import external plan → conflict detection → write PLAN.md → validate via bm-plan-checker
 
 Future: `--prd` mode (PRD extraction into PROJECT.md + REQUIREMENTS.md + ROADMAP.md) is planned for a follow-up PR.
 
@@ -186,11 +186,11 @@ Write the PLAN.md file to the target directory.
 
 <step name="plan_validate">
 
-Delegate validation to gsd-plan-checker:
+Delegate validation to bm-plan-checker:
 
 ```
 Agent({
-  subagent_type: "gsd-plan-checker",
+  subagent_type: "bm-plan-checker",
   prompt: "Validate: .planning/phases/{phase}/{plan}-PLAN.md — check frontmatter completeness, task structure, and GSD conventions. Report any issues."
 })
 ```
@@ -233,7 +233,7 @@ Show: plan filename written, phase directory, validation result, next steps.
 Do NOT:
 - Violate the shared conflict-engine contract in `references/doc-conflict-engine.md` (no markdown tables, no new severity labels, no bypass of the BLOCKER gate)
 - Write PLAN.md files as `PLAN-01.md` or `plan-01.md` — always use `{NN}-{MM}-PLAN.md`
-- Use `pbr:plan-checker` or `pbr:planner` — use `gsd-plan-checker` and `gsd-planner`
+- Use `pbr:plan-checker` or `pbr:planner` — use `bm-plan-checker` and `bm-planner`
 - Write `.planning/.active-skill` — this is a PBR pattern with no GSD equivalent
 - Reference `pbr-tools`, `pbr:`, or `PLAN-BUILD-RUN` anywhere
 - Write any PLAN.md file when blockers exist — the safety gate must hold

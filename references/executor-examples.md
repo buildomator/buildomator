@@ -1,6 +1,6 @@
 # Executor Extended Examples
 
-> Reference file for gsd-executor agent. Loaded on-demand via `@` reference (stripped from the agent prompt for sub-200K context windows).
+> Reference file for bm-executor agent. Loaded on-demand via `@` reference (stripped from the agent prompt for sub-200K context windows).
 
 ## Deviation Rule Examples
 
