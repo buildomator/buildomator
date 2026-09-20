@@ -1536,7 +1536,7 @@ function cmdVerifyConventions(cwd, opts, raw) {
  * @returns {string[]}
  */
 function collectConventionCorpus(root, cwd) {
-  const SRC_RE = /\.(c|m)?[jt]sx?$/;
+  const SRC_RE = /\.(c|m)?[jt]sx?$|\.(go|py|rs)$/;
   const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'coverage']);
   const out = [];
   const stack = [root];
