@@ -2,9 +2,12 @@
  * Convention Derivation + Conformance (Phase 10, plan 10-01).
  *
  * The single deterministic source of truth (D-04) for:
- *   - deriveConventions(files, opts)  → 4-axis majority-vote derivation
- *       (file-name casing, identifier casing, export style, import style)
- *       with normalized Shannon entropy + a 0.70 dominance / 8-sample gate.
+ *   - deriveConventions(files, opts)  → majority-vote derivation over the
+ *       language-agnostic and JS/TS axes (file-name casing, identifier casing,
+ *       export style, import style) plus the per-language import-habit axes
+ *       (Python wildcard imports, Python import relativity, Rust glob imports,
+ *       Go import ordering), with normalized Shannon entropy + a 0.70 dominance
+ *       / 8-sample gate applied to each axis independently.
  *   - checkConformance(changedFiles, derived) → per-file advisory findings
  *       (casing deviation, verb-vs-body intent, architectural-split), all at
  *       the never-blocking `CONVENTION` tier (D-03).
@@ -40,8 +43,12 @@ const path = require('node:path');
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-// The four derivation axes (D-01).
-const AXES = Object.freeze(['file-name-casing', 'identifier-casing', 'export-style', 'import-style']);
+// Derivation axes: the language-agnostic and JS/TS axes, then the per-language
+// import-habit axes (each voted and gated independently).
+const AXES = Object.freeze([
+  'file-name-casing', 'identifier-casing', 'export-style', 'import-style',
+  'py-wildcard-import', 'py-import-relativity', 'rust-glob-import', 'go-import-ordering',
+]);
 
 // File extensions the JS/TS idiom rule packs apply to (D-05). Other extensions
 // still participate in the language-agnostic casing axes but skip idiom checks.
@@ -228,6 +235,157 @@ function extractIdentifiers(src) {
   return { fns, consts, classes };
 }
 
+// ─── Per-language import-habit detectors ───────────────────────────────────────
+//
+// Each detector is a pure function (src) => { variant, line } | null, where null
+// means the file abstains (no import of that kind, so it neither votes nor is
+// flagged). blankSpans is JS-tuned and is deliberately NOT used here; these work
+// line-anchored on raw source with a small per-language comment strip. Inputs are
+// already capped at MAX_SCAN_BYTES by deriveConventions.
+
+/**
+ * Remove `/* ... *\/` block-comment spans (replaced with a space) and `//` to
+ * end of line. Used by the Go and Rust detectors. Preserves newlines so line
+ * numbers stay accurate.
+ * @param {string} src
+ * @returns {string}
+ */
+function stripSlashComments(src) {
+  if (typeof src !== 'string') return '';
+  let out = src.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
+  out = out.replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
+  return out;
+}
+
+/**
+ * Python `from x import *` (wildcard) vs `from x import name` (explicit).
+ * Abstains when the file has no from-import at all. Plain `import x` lines do not
+ * count for this axis.
+ */
+function pyWildcardVariant(src) {
+  if (typeof src !== 'string') return null;
+  const lines = src.split('\n');
+  let explicitLine = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\s*#/.test(line)) continue;
+    if (/^\s*from\s+\S+\s+import\s+\*/.test(line)) return { variant: 'wildcard', line: i + 1 };
+    if (explicitLine === -1 && /^\s*from\s+\S+\s+import\s+/.test(line)) explicitLine = i + 1;
+  }
+  return explicitLine === -1 ? null : { variant: 'explicit', line: explicitLine };
+}
+
+/**
+ * Python relative (`from .mod import x`, `from . import x`) vs absolute
+ * (`from pkg import x`, `import pkg`). Abstains when the file has no import line.
+ */
+function pyRelativityVariant(src) {
+  if (typeof src !== 'string') return null;
+  const lines = src.split('\n');
+  let absoluteLine = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\s*#/.test(line)) continue;
+    if (/^\s*from\s+\.+(?:\w|\s+import)/.test(line)) return { variant: 'relative', line: i + 1 };
+    if (absoluteLine === -1 && (/^\s*from\s+[A-Za-z_]/.test(line) || /^\s*import\s+[A-Za-z_]/.test(line))) absoluteLine = i + 1;
+  }
+  return absoluteLine === -1 ? null : { variant: 'absolute', line: absoluteLine };
+}
+
+/**
+ * Rust glob `use a::b::*;` vs explicit `use a::b::C;`. The test-module preamble
+ * (`use super::*;` / `use self::*;`, and everything under a trailing
+ * `#[cfg(test)] mod ...`) is skipped: it neither votes nor is flagged. Abstains
+ * when no counted use statement exists.
+ */
+function rustGlobVariant(src) {
+  if (typeof src !== 'string') return null;
+  let body = stripSlashComments(src);
+  // Test modules sit at the file bottom; drop everything from the attribute on.
+  const cfgTest = body.search(/#\[cfg\(test\)\]\s*mod\s+\w/);
+  if (cfgTest !== -1) body = body.slice(0, cfgTest);
+  const useRe = /^\s*(?:pub(?:\([^)]*\))?\s+)?use\s+([^;]*);/gm;
+  let m;
+  let explicitLine = -1;
+  let globLine = -1;
+  while ((m = useRe.exec(body)) !== null) {
+    const inner = m[1];
+    const trimmed = inner.trim();
+    if (trimmed === 'super::*' || trimmed === 'self::*') continue; // test preamble
+    const line = lineOf(body, m.index);
+    if (/::\*/.test(inner)) {
+      if (globLine === -1) globLine = line;
+    } else if (explicitLine === -1) {
+      explicitLine = line;
+    }
+  }
+  if (globLine !== -1) return { variant: 'glob', line: globLine };
+  return explicitLine === -1 ? null : { variant: 'explicit', line: explicitLine };
+}
+
+/**
+ * Go import ordering: within each blank-line-separated group of an
+ * `import ( ... )` block, gofmt sorts the quoted paths ascending by byte order.
+ * Groups with fewer than 2 paths are skipped. Abstains when no qualifying group
+ * exists (also covers single `import "fmt"` files).
+ */
+function goOrderingVariant(src) {
+  if (typeof src !== 'string') return null;
+  const body = stripSlashComments(src);
+  const blockRe = /\bimport\s*\(([\s\S]*?)\)/g;
+  let block;
+  let qualifying = 0;
+  let unsortedLine = -1;
+  while ((block = blockRe.exec(body)) !== null) {
+    const blockText = block[1];
+    const blockStart = block.index;
+    const groups = blockText.split(/\n\s*\n/);
+    for (const group of groups) {
+      const paths = [...group.matchAll(/"([^"]+)"/g)].map((g) => g[1]);
+      if (paths.length < 2) continue;
+      qualifying++;
+      const sorted = paths.slice().sort();
+      if (paths.join(' ') !== sorted.join(' ') && unsortedLine === -1) {
+        unsortedLine = lineOf(body, blockStart);
+      }
+    }
+  }
+  if (qualifying === 0) return null;
+  return unsortedLine !== -1 ? { variant: 'unsorted', line: unsortedLine } : { variant: 'sorted', line: 1 };
+}
+
+// Extension → [axis, detector] dispatch. A file only votes on its language's axes.
+const LANG_AXES = Object.freeze({
+  '.py': [['py-wildcard-import', pyWildcardVariant], ['py-import-relativity', pyRelativityVariant]],
+  '.rs': [['rust-glob-import', rustGlobVariant]],
+  '.go': [['go-import-ordering', goOrderingVariant]],
+});
+
+// Human fix hint per axis, keyed by the dominant variant.
+const LANG_AXIS_FIX = Object.freeze({
+  'py-wildcard-import': {
+    explicit: 'replace `from x import *` with the names actually used',
+    wildcard: 'use a single star import only if the module is designed for it',
+  },
+  'py-import-relativity': {
+    absolute: 'use absolute imports (from package.module import name)',
+    relative: 'use relative imports (from .module import name)',
+  },
+  'rust-glob-import': {
+    explicit: 'list the imported items explicitly instead of `::*`',
+    glob: "use a glob import for this module's items",
+  },
+  'go-import-ordering': {
+    sorted: 'sort import paths within each block (run gofmt)',
+    unsorted: "match the surrounding files' import order",
+  },
+});
+
+function langAxisFix(axis, dominant) {
+  const table = LANG_AXIS_FIX[axis];
+  return (table && table[dominant]) || `follow the ${dominant} convention for ${axis}`;
+}
+
 // ─── Per-file axis observation ─────────────────────────────────────────────────
 
 /**
@@ -238,7 +396,7 @@ function extractIdentifiers(src) {
 function observeFile(file, src) {
   if (typeof src !== 'string' || !src) return null;
   const blanked = blankSpans(src);
-  const obs = { 'file-name-casing': {}, 'identifier-casing': {}, 'export-style': {}, 'import-style': {} };
+  const obs = Object.fromEntries(AXES.map((a) => [a, {}]));
 
   // file-name casing (basename without extension), language-agnostic
   const base = path.basename(file).replace(/\.[^.]+$/, '');
@@ -252,23 +410,35 @@ function observeFile(file, src) {
     obs['identifier-casing'][label] = (obs['identifier-casing'][label] || 0) + 1;
   }
 
-  // export style (CJS vs ESM), per file → count once each direction present.
-  // NOTE (per-file vote): export/import axes record `= 1` per direction per file
-  // regardless of occurrence count (a file with 30 require() calls still votes
-  // cjs:1). With minSamples=8 these two axes therefore need 8+ FILES in scope to
-  // be named — not 8 occurrences — so a single overwhelming file stays
-  // insufficient-data, and a --check on one changed file never names them. This
-  // deliberately stops one large file from dominating the verdict.
-  const hasCjsExport = /\bmodule\.exports\b/.test(blanked) || /\bexports\.[A-Za-z_$]/.test(blanked);
-  const hasEsmExport = /\bexport\s+(default\s+|const\s+|function\s+|class\s+|\{|\*)/.test(blanked);
-  if (hasCjsExport) obs['export-style'].cjs = 1;
-  if (hasEsmExport) obs['export-style'].esm = 1;
+  const ext = path.extname(file).toLowerCase();
+  const isJsTs = JS_TS_RE.test(file);
 
-  // import style (require vs import)
-  const hasRequire = /\brequire\s*\(/.test(blanked);
-  const hasImport = /\bimport\s+[^;]*\bfrom\b/.test(blanked) || /\bimport\s*\(/.test(blanked);
-  if (hasRequire) obs['import-style'].cjs = 1;
-  if (hasImport) obs['import-style'].esm = 1;
+  // export/import style are JS/TS idioms; other languages vote on their own axes below.
+  if (isJsTs) {
+    // export style (CJS vs ESM), per file → count once each direction present.
+    // NOTE (per-file vote): export/import axes record `= 1` per direction per file
+    // regardless of occurrence count (a file with 30 require() calls still votes
+    // cjs:1). With minSamples=8 these two axes therefore need 8+ FILES in scope to
+    // be named — not 8 occurrences — so a single overwhelming file stays
+    // insufficient-data, and a --check on one changed file never names them. This
+    // deliberately stops one large file from dominating the verdict.
+    const hasCjsExport = /\bmodule\.exports\b/.test(blanked) || /\bexports\.[A-Za-z_$]/.test(blanked);
+    const hasEsmExport = /\bexport\s+(default\s+|const\s+|function\s+|class\s+|\{|\*)/.test(blanked);
+    if (hasCjsExport) obs['export-style'].cjs = 1;
+    if (hasEsmExport) obs['export-style'].esm = 1;
+
+    // import style (require vs import)
+    const hasRequire = /\brequire\s*\(/.test(blanked);
+    const hasImport = /\bimport\s+[^;]*\bfrom\b/.test(blanked) || /\bimport\s*\(/.test(blanked);
+    if (hasRequire) obs['import-style'].cjs = 1;
+    if (hasImport) obs['import-style'].esm = 1;
+  }
+
+  // per-language import-habit axes (dispatched by extension; JS/TS has no entry)
+  for (const [axis, detect] of LANG_AXES[ext] || []) {
+    const r = detect(src);
+    if (r) obs[axis][r.variant] = 1;
+  }
 
   return obs;
 }
@@ -343,7 +513,7 @@ function deriveConventions(files, opts = {}) {
     list = list.filter((p) => !isNonAppPath(p));
     if (list.length === 0) return derivedSkipped('no-app-files');
 
-    const tallies = { 'file-name-casing': {}, 'identifier-casing': {}, 'export-style': {}, 'import-style': {} };
+    const tallies = Object.fromEntries(AXES.map((a) => [a, {}]));
     let observed = 0;
     for (const rel of list) {
       let src;
@@ -536,6 +706,24 @@ function checkConformance(changedFiles, derived) {
         }
       }
 
+      // ── per-language import-habit axes (dispatched by extension) ──
+      // Runs before the JS/TS gate so .py/.rs/.go files are checked. Only NAMED
+      // axes are in `named`, so contested / insufficient-data axes flag nothing.
+      const ext = path.extname(file).toLowerCase();
+      for (const [axis, detect] of LANG_AXES[ext] || []) {
+        const axisInfo = named[axis];
+        if (!axisInfo || !src) continue;
+        const r = detect(src);
+        if (r && r.variant !== axisInfo.dominant) {
+          findings.push(finding(
+            file, r.line,
+            `${axis} is ${r.variant}`,
+            `${axis} should be ${axisInfo.dominant}`,
+            langAxisFix(axis, axisInfo.dominant),
+          ));
+        }
+      }
+
       // ── idiom rule packs: JS/TS only (D-05) ──
       if (!JS_TS_RE.test(file)) continue;
       if (!src) continue;
@@ -625,4 +813,8 @@ module.exports = {
   classifyArchitecture,
   extractIdentifiers,
   blankSpans,
+  pyWildcardVariant,
+  pyRelativityVariant,
+  rustGlobVariant,
+  goOrderingVariant,
 };

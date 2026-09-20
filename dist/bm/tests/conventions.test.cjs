@@ -20,6 +20,8 @@
 const assert = require('node:assert');
 const cp = require('node:child_process');
 const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
 const conventions = require('../bin/lib/conventions.cjs');
 
 let failures = 0;
@@ -34,6 +36,7 @@ check('exports the public functions', () => {
   for (const f of [
     'deriveConventions', 'checkConformance', 'summarizeAxis', 'classifyCasing', 'sanitizePaths',
     'classifyArchitecture', 'extractIdentifiers', 'blankSpans',
+    'pyWildcardVariant', 'pyRelativityVariant', 'rustGlobVariant', 'goOrderingVariant',
   ]) {
     assert.strictEqual(typeof conventions[f], 'function', `missing ${f}`);
   }
@@ -104,12 +107,15 @@ check('CONV-01 summarizeAxis honors custom dominanceThreshold / minSamples', () 
 
 // ─── CONV-01: deriveConventions over a real in-repo corpus ────────────────────
 
-check('CONV-01 deriveConventions derives all four axes over a real directory', () => {
+check('CONV-01 deriveConventions derives all eight axes over a real directory', () => {
   const r = conventions.deriveConventions(['bin/lib/drift.cjs', 'bin/lib/schema-detect.cjs', 'bin/lib/conventions.cjs']);
   assert.strictEqual(r.skipped, false);
   assert.ok(Array.isArray(r.axes));
   const names = r.axes.map((a) => a.name).sort();
-  assert.deepStrictEqual(names, ['export-style', 'file-name-casing', 'identifier-casing', 'import-style']);
+  assert.deepStrictEqual(names, [
+    'export-style', 'file-name-casing', 'go-import-ordering', 'identifier-casing',
+    'import-style', 'py-import-relativity', 'py-wildcard-import', 'rust-glob-import',
+  ]);
   for (const a of r.axes) {
     assert.ok(['named', 'contested', 'insufficient-data'].includes(a.status), `bad status ${a.status} for ${a.name}`);
   }
@@ -388,6 +394,232 @@ check('checkConformance: a non-app file is never flagged; the same source in-app
   // control: identical source at an app path DOES flag (path-based skip, derivation intact)
   const flagged = conventions.checkConformance([{ file: 'src/some_helper.js', src }], derived);
   assert.ok(flagged.findings.length > 0, 'the same source in-app must produce at least one finding');
+});
+
+// ─── per-language import-habit axes ───────────────────────────────────────────
+
+// Build an in-memory corpus of n app files at src/<prefix><NN><ext>, all holding src.
+function langCorpus(prefix, ext, n, src) {
+  const sources = {};
+  const files = [];
+  for (let i = 1; i <= n; i++) {
+    const p = `src/${prefix}${String(i).padStart(2, '0')}${ext}`;
+    sources[p] = src;
+    files.push(p);
+  }
+  return { sources, files };
+}
+
+const GO_SORTED = 'package x\n\nimport (\n\t"fmt"\n\t"os"\n)\n';
+const GO_UNSORTED = 'package x\n\nimport (\n\t"os"\n\t"fmt"\n)\n';
+const RS_EXPLICIT = 'use std::fmt;\nuse crate::a::B;\n';
+const PY_ABSOLUTE = 'import os\nfrom pkg.mod import name\n';
+const PY_RELATIVE = 'from .sibling import x\n';
+const PY_EXPLICIT = 'from pkg.mod import name\n';
+
+function axisOf(derived, name) {
+  return derived.axes.find((a) => a.name === name);
+}
+
+// direct detector unit assertions
+check('detectors: variant/abstain basics', () => {
+  assert.strictEqual(conventions.pyWildcardVariant('from a import *\n').variant, 'wildcard');
+  assert.strictEqual(conventions.pyWildcardVariant('import os\n'), null);
+  assert.strictEqual(conventions.rustGlobVariant('use super::*;\n'), null);
+  assert.strictEqual(conventions.goOrderingVariant('package x\nimport "fmt"\n'), null);
+  assert.strictEqual(conventions.pyRelativityVariant('from . import x\n').variant, 'relative');
+});
+
+check('Test 2 (Go): sorted corpus names go-import-ordering, unsorted block flagged', () => {
+  const { sources, files } = langCorpus('svc', '.go', 8, GO_SORTED);
+  const d = conventions.deriveConventions(files, { sources });
+  const axis = axisOf(d, 'go-import-ordering');
+  assert.strictEqual(axis.status, 'named');
+  assert.strictEqual(axis.dominant, 'sorted');
+  assert.strictEqual(axis.total, 8);
+  // unsorted block flagged once
+  const bad = conventions.checkConformance([{ file: 'src/new.go', src: GO_UNSORTED }], d);
+  const goFindings = bad.findings.filter((f) => f.convention.startsWith('go-import-ordering'));
+  assert.strictEqual(goFindings.length, 1);
+  assert.strictEqual(goFindings[0].tier, 'CONVENTION');
+  assert.strictEqual(goFindings[0].blocking, false);
+  assert.ok(goFindings[0].convention.includes('sorted'));
+  // sorted block not flagged
+  const ok = conventions.checkConformance([{ file: 'src/new.go', src: GO_SORTED }], d);
+  assert.strictEqual(ok.findings.filter((f) => f.convention.startsWith('go-import-ordering')).length, 0);
+  // single import "fmt" abstains
+  const single = conventions.checkConformance([{ file: 'src/new.go', src: 'package x\nimport "fmt"\n' }], d);
+  assert.strictEqual(single.findings.filter((f) => f.convention.startsWith('go-import-ordering')).length, 0);
+  // a second, unsorted group in a file whose first group is sorted still flags
+  const twoGroups = 'package x\n\nimport (\n\t"fmt"\n\t"os"\n\n\t"github.com/x/y"\n\t"github.com/a/b"\n)\n';
+  const two = conventions.checkConformance([{ file: 'src/new.go', src: twoGroups }], d);
+  assert.strictEqual(two.findings.filter((f) => f.convention.startsWith('go-import-ordering')).length, 1);
+});
+
+check('Test 3 (Python relativity): absolute corpus flags a relative file; mirror flags absolute', () => {
+  const absCorpus = langCorpus('mod', '.py', 8, PY_ABSOLUTE);
+  const abs = conventions.deriveConventions(absCorpus.files, { sources: absCorpus.sources });
+  const absAxis = axisOf(abs, 'py-import-relativity');
+  assert.strictEqual(absAxis.status, 'named');
+  assert.strictEqual(absAxis.dominant, 'absolute');
+  const flagged = conventions.checkConformance([{ file: 'src/new.py', src: PY_RELATIVE }], abs);
+  const rel = flagged.findings.filter((f) => f.convention.startsWith('py-import-relativity'));
+  assert.strictEqual(rel.length, 1);
+  assert.ok(rel[0].convention.includes('absolute'));
+  // mirror: mostly-relative corpus names relative, an absolute-only file is flagged
+  const relCorpus = langCorpus('rel', '.py', 8, PY_RELATIVE);
+  const relDerived = conventions.deriveConventions(relCorpus.files, { sources: relCorpus.sources });
+  const relAxis = axisOf(relDerived, 'py-import-relativity');
+  assert.strictEqual(relAxis.dominant, 'relative');
+  const flag2 = conventions.checkConformance([{ file: 'src/new.py', src: PY_ABSOLUTE }], relDerived);
+  assert.strictEqual(flag2.findings.filter((f) => f.convention.startsWith('py-import-relativity')).length, 1);
+});
+
+check('Test 4 (Python wildcard): explicit corpus flags a star file; import-only abstains on wildcard', () => {
+  const { sources, files } = langCorpus('mod', '.py', 8, PY_EXPLICIT);
+  const d = conventions.deriveConventions(files, { sources });
+  const axis = axisOf(d, 'py-wildcard-import');
+  assert.strictEqual(axis.status, 'named');
+  assert.strictEqual(axis.dominant, 'explicit');
+  const star = conventions.checkConformance([{ file: 'src/new.py', src: 'from a import *\n' }], d);
+  assert.strictEqual(star.findings.filter((f) => f.convention.startsWith('py-wildcard-import')).length, 1);
+  // a file with only `import os` abstains on wildcard but still votes absolute on relativity.
+  // Build a relativity-named contract to confirm the abstention is on wildcard only.
+  const relD = conventions.deriveConventions(files, { sources });
+  const onlyImport = conventions.checkConformance([{ file: 'src/new.py', src: 'import os\n' }], relD);
+  assert.strictEqual(onlyImport.findings.filter((f) => f.convention.startsWith('py-wildcard-import')).length, 0);
+  assert.strictEqual(conventions.pyRelativityVariant('import os\n').variant, 'absolute');
+});
+
+check('Test 5 (Rust): glob flagged; super::* preamble neither votes nor flags', () => {
+  const explicit = langCorpus('lib', '.rs', 8, RS_EXPLICIT);
+  // add 5 files whose only use is `use super::*;` (they must abstain, total stays 8)
+  for (let i = 1; i <= 5; i++) {
+    const p = `src/pre${String(i).padStart(2, '0')}.rs`;
+    explicit.sources[p] = 'use super::*;\n';
+    explicit.files.push(p);
+  }
+  const d = conventions.deriveConventions(explicit.files, { sources: explicit.sources });
+  const axis = axisOf(d, 'rust-glob-import');
+  assert.strictEqual(axis.status, 'named');
+  assert.strictEqual(axis.dominant, 'explicit');
+  assert.strictEqual(axis.total, 8);
+  const glob = conventions.checkConformance([{ file: 'src/new.rs', src: 'use crate::foo::*;\n' }], d);
+  assert.strictEqual(glob.findings.filter((f) => f.convention.startsWith('rust-glob-import')).length, 1);
+  // a file whose only use is super::* is not flagged
+  const pre = conventions.checkConformance([{ file: 'src/new.rs', src: 'use super::*;\n' }], d);
+  assert.strictEqual(pre.findings.filter((f) => f.convention.startsWith('rust-glob-import')).length, 0);
+  // explicit uses followed by a #[cfg(test)] mod with globs are not flagged
+  const withTest = 'use crate::a::B;\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n    use crate::x::*;\n}\n';
+  const t = conventions.checkConformance([{ file: 'src/new.rs', src: withTest }], d);
+  assert.strictEqual(t.findings.filter((f) => f.convention.startsWith('rust-glob-import')).length, 0);
+});
+
+check('Test 6 (insufficient-data): 5 .py files leave both py axes insufficient, no findings', () => {
+  const { sources, files } = langCorpus('mod', '.py', 5, PY_EXPLICIT);
+  const d = conventions.deriveConventions(files, { sources });
+  assert.strictEqual(axisOf(d, 'py-wildcard-import').status, 'insufficient-data');
+  assert.strictEqual(axisOf(d, 'py-import-relativity').status, 'insufficient-data');
+  const r = conventions.checkConformance([{ file: 'src/new.py', src: 'from a import *\n' }], d);
+  assert.strictEqual(r.findings.filter((f) => f.convention.startsWith('py-')).length, 0);
+});
+
+check('Test 7 (contested): 5 sorted + 5 unsorted .go is contested, flags nothing', () => {
+  const sources = {};
+  const files = [];
+  for (let i = 1; i <= 5; i++) {
+    const a = `src/sort${String(i).padStart(2, '0')}.go`;
+    const b = `src/uns${String(i).padStart(2, '0')}.go`;
+    sources[a] = GO_SORTED; sources[b] = GO_UNSORTED; files.push(a, b);
+  }
+  const d = conventions.deriveConventions(files, { sources });
+  const axis = axisOf(d, 'go-import-ordering');
+  assert.strictEqual(axis.status, 'contested');
+  assert.strictEqual(axis.dominant, null);
+  const r = conventions.checkConformance([{ file: 'src/new.go', src: GO_UNSORTED }], d);
+  assert.strictEqual(r.findings.filter((f) => f.convention.startsWith('go-import-ordering')).length, 0);
+});
+
+check('Test 8 (non-app exclusion): star import at tests/ is silent, at src/ flags; fixtures do not vote', () => {
+  const { sources, files } = langCorpus('mod', '.py', 8, PY_EXPLICIT);
+  const d = conventions.deriveConventions(files, { sources });
+  const inTest = conventions.checkConformance([{ file: 'tests/helper.py', src: 'from a import *\n' }], d);
+  assert.strictEqual(inTest.findings.length, 0);
+  const inApp = conventions.checkConformance([{ file: 'src/helper.py', src: 'from a import *\n' }], d);
+  assert.strictEqual(inApp.findings.filter((f) => f.convention.startsWith('py-wildcard-import')).length, 1);
+  // a fixtures/x.go unsorted file does not vote in derivation
+  const goCorpus = langCorpus('svc', '.go', 8, GO_SORTED);
+  goCorpus.sources['fixtures/x.go'] = GO_UNSORTED;
+  goCorpus.files.push('fixtures/x.go');
+  const gd = conventions.deriveConventions(goCorpus.files, { sources: goCorpus.sources });
+  assert.strictEqual(axisOf(gd, 'go-import-ordering').total, 8);
+});
+
+check('Test 9 (orthogonality): py/go corpora cast no legacy votes; js casts none on the new axes', () => {
+  const py = langCorpus('mod', '.py', 8, PY_ABSOLUTE);
+  const pd = conventions.deriveConventions(py.files, { sources: py.sources });
+  assert.strictEqual(axisOf(pd, 'import-style').total, 0);
+  assert.strictEqual(axisOf(pd, 'export-style').total, 0);
+  const go = langCorpus('svc', '.go', 8, GO_SORTED);
+  const gd = conventions.deriveConventions(go.files, { sources: go.sources });
+  assert.strictEqual(axisOf(gd, 'import-style').total, 0);
+  assert.strictEqual(axisOf(gd, 'export-style').total, 0);
+  const js = langCorpus('a', '.js', 8, 'const x = require("x");\nmodule.exports = { x };\n');
+  const jd = conventions.deriveConventions(js.files, { sources: js.sources });
+  for (const n of ['py-wildcard-import', 'py-import-relativity', 'rust-glob-import', 'go-import-ordering']) {
+    assert.strictEqual(axisOf(jd, n).total, 0, `js voted on ${n}`);
+  }
+});
+
+check('Test 11 (legacy-axis gate): Go/Python cast no esm vote; JS cjs/esm unchanged on both axes', () => {
+  const goOnly = conventions.deriveConventions(['src/x.go'], { sources: { 'src/x.go': GO_UNSORTED } });
+  const goImport = axisOf(goOnly, 'import-style');
+  assert.strictEqual(goImport.total, 0);
+  assert.ok(!Object.prototype.hasOwnProperty.call(goImport.variants, 'esm'), 'Go import ( block must not add an esm key');
+  const pyOnly = conventions.deriveConventions(['src/x.py'], { sources: { 'src/x.py': 'import os\nfrom pkg import name\n' } });
+  assert.strictEqual(axisOf(pyOnly, 'import-style').total, 0);
+  // mixed corpus: the two js files vote cjs/esm exactly, gate does not regress
+  const sources = {
+    'src/x.go': GO_UNSORTED,
+    'src/x.py': 'import os\nfrom pkg import name\n',
+    'src/c.js': 'const a = require("a");\nmodule.exports = a;\n',
+    'src/e.js': 'import a from "a";\nexport default a;\n',
+  };
+  const d = conventions.deriveConventions(Object.keys(sources), { sources });
+  assert.deepStrictEqual(axisOf(d, 'import-style').variants, { cjs: 1, esm: 1 });
+  assert.strictEqual(axisOf(d, 'import-style').total, 2);
+  assert.deepStrictEqual(axisOf(d, 'export-style').variants, { cjs: 1, esm: 1 });
+  assert.strictEqual(axisOf(d, 'export-style').total, 2);
+});
+
+check('Test 10 (CLI SRC_RE end to end): a temp .py/.rs/.go corpus reaches named status via the CLI', () => {
+  const tool = path.join(__dirname, '..', 'bin', 'gsd-tools.cjs');
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'conv-lang-'));
+  try {
+    fs.mkdirSync(path.join(tmpDir, 'src'));
+    fs.mkdirSync(path.join(tmpDir, '.planning'));
+    for (let i = 1; i <= 8; i++) {
+      const nn = String(i).padStart(2, '0');
+      fs.writeFileSync(path.join(tmpDir, 'src', `m${nn}.py`), PY_ABSOLUTE);
+      fs.writeFileSync(path.join(tmpDir, 'src', `l${nn}.rs`), RS_EXPLICIT);
+      fs.writeFileSync(path.join(tmpDir, 'src', `s${nn}.go`), GO_SORTED);
+    }
+    const out = cp.execSync(
+      `node "${tool}" verify conventions --derive --scope .`,
+      { cwd: tmpDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+    const parsed = JSON.parse(out);
+    assert.strictEqual(parsed.mode, 'derive');
+    assert.strictEqual(parsed.skipped, false);
+    const find = (n) => parsed.axes.find((a) => a.name === n);
+    for (const n of ['py-wildcard-import', 'py-import-relativity', 'rust-glob-import', 'go-import-ordering']) {
+      assert.strictEqual(find(n).status, 'named', `${n} not named in CLI run`);
+      assert.strictEqual(find(n).total, 8, `${n} total was ${find(n).total}`);
+    }
+    assert.strictEqual(find('import-style').total, 0, 'admitted files must cast no legacy import-style vote');
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 });
 
 if (failures) { console.error(`\nconventions: ${failures} failure(s)`); process.exit(1); }
