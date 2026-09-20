@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.9.0] - 2026-09-20  (per-language import-habit drift detection)
+
+Adds a per-language import-habit drift axis to the native convention detection, an idea ported from the VibeDrift second upstream (v0.18.0). First cut covers four regex-reliable dimensions.
+
+### Added
+- **Import-habit drift detection for Python, Rust, and Go.** The convention gate now derives and flags four per-language import habits by majority vote, alongside the existing casing and module-system axes: Python wildcard imports (`from x import *`) and absolute-versus-relative import style, Rust glob imports (`use x::*`), and Go import ordering (gofmt alphabetical within a block). Each dimension is voted and directory-scoped on its own, so a file can be consistent on one and drift on another, and it stays advisory (it never blocks). Test, seed, and script files are excluded, and Rust test-module preambles (`use super::*`) are left alone. The existing JS/TS module-system axis is unchanged and stays orthogonal: a file that admits Go or Python source no longer casts a stray vote on it. Parser-dependent habits (Rust intra-crate path style and use-grouping, Go stdlib/third-party/local grouping) are deferred.
+
 ## [4.8.1] - 2026-09-20  (resume-gap fixes + trusted global skill roots)
 
 Ports two upstream resume-correctness fixes and adds an opt-in security setting. Follows gsd-core through v1.14.
