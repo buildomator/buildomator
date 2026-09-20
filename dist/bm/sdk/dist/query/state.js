@@ -291,7 +291,7 @@ export const stateGet = async (args, projectDir, workstream) => {
     }
     const fieldEscaped = escapeRegex(section);
     // Check for **field:** value (bold format)
-    const boldPattern = new RegExp(`\\*\\*${fieldEscaped}:\\*\\*\\s*(.*)`, 'i');
+    const boldPattern = new RegExp(`^[ \\t]*\\*\\*${fieldEscaped}:\\*\\*[ \\t]*(.*)`, 'im');
     const boldMatch = content.match(boldPattern);
     if (boldMatch) {
         return { data: { [section]: boldMatch[1].trim() } };

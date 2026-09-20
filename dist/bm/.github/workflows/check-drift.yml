@@ -103,12 +103,22 @@ jobs:
         run: node tests/worktree-safety.test.cjs
       - name: Run phase-complete backlog-sentinel guard test
         run: node tests/phase-complete-backlog-sentinel.test.cjs
+      - name: Run phase-complete lowest-successor guard test
+        run: node tests/phase-complete-lowest-successor.test.cjs
       - name: Run code-fixer worktree-gate guard test
         run: node tests/code-fixer-worktree-gate.test.cjs
+      - name: Run decimal phase-order init guard test
+        run: node tests/decimal-phase-order-init.test.cjs
       - name: Run frontmatter BOM-tolerance guard test
         run: node tests/frontmatter-bom.test.cjs
       - name: Run letter-named phase-id guard test
         run: node tests/letter-phase-ids.test.cjs
+      - name: Run roadmap-analyze line-anchor guard test
+        run: node tests/roadmap-analyze-line-anchor.test.cjs
+      - name: Run STATE.md field line-anchor guard test
+        run: node tests/state-field-line-anchor.test.cjs
+      - name: Run state-document generated-freshness guard test
+        run: node tests/state-document-generated-fresh.test.cjs
       - name: Run phase-add milestone-scope guard test
         run: node tests/phase-add-milestone-scope.test.cjs
       - name: Run one-liner summary-heading guard test

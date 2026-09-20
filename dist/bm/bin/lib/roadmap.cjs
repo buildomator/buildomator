@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { escapeRegex, normalizePhaseName, phaseMarkdownRegexSource, phaseMarkdownRegexSourceExact, output, error, findPhaseInternal, stripShippedMilestones, extractCurrentMilestone, replaceInCurrentMilestone, phaseTokenMatches } = require('./core.cjs');
+const { escapeRegex, normalizePhaseName, phaseMarkdownRegexSource, phaseMarkdownRegexSourceExact, output, error, findPhaseInternal, stripShippedMilestones, extractCurrentMilestone, replaceInCurrentMilestone, phaseTokenMatches, maskFencedBlocks } = require('./core.cjs');
 const { platformWriteSync } = require('./shell-command-projection.cjs');
 const { planningPaths, withPlanningLock } = require('./planning-workspace.cjs');
 const scanPhasePlans = require('./plan-scan.cjs');
@@ -201,10 +201,14 @@ function cmdRoadmapAnalyze(cwd, raw) {
 
   const rawContent = fs.readFileSync(roadmapPath, 'utf-8');
   const content = extractCurrentMilestone(rawContent, cwd);
+  // Scan a fence-masked copy so fenced/quoted example headings cannot mint
+  // phantom phases; body slicing below stays on the original `content` because
+  // the mask preserves every character offset.
+  const scanContent = maskFencedBlocks(content);
   const phasesDir = planningPaths(cwd).phases;
 
   // Extract all phase headings: ## Phase N: Name or ### Phase N: Name
-  const phasePattern = /#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
+  const phasePattern = /^[ \t]{0,3}#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gim;
   const phases = [];
   let match;
 
@@ -217,7 +221,7 @@ function cmdRoadmapAnalyze(cwd, raw) {
     } catch { return []; }
   })();
 
-  while ((match = phasePattern.exec(content)) !== null) {
+  while ((match = phasePattern.exec(scanContent)) !== null) {
     const phaseNum = match[1];
     // #1580: skip Phase 0 / Phase 999 sentinels (placeholder/backlog), never real phases
     const major = parseInt(phaseNum, 10);
@@ -321,10 +325,10 @@ function cmdRoadmapAnalyze(cwd, raw) {
   const completedPhases = phases.filter(p => p.disk_status === 'complete').length;
 
   // Detect phases in summary list without detail sections (malformed ROADMAP)
-  const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gi;
+  const checklistPattern = /^[ \t]*-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gim;
   const checklistPhases = new Set();
   let checklistMatch;
-  while ((checklistMatch = checklistPattern.exec(content)) !== null) {
+  while ((checklistMatch = checklistPattern.exec(scanContent)) !== null) {
     checklistPhases.add(checklistMatch[1]);
   }
   const detailPhases = new Set(phases.map(p => p.number));

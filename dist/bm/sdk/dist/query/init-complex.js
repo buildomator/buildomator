@@ -24,7 +24,7 @@ import { join, relative } from 'node:path';
 import { homedir } from 'node:os';
 import { loadConfig } from '../config.js';
 import { resolveModel } from './config-query.js';
-import { detectRuntime, planningPaths, normalizePhaseName, phaseTokenMatches, resolveAgentsDir, toPosixPath, } from './helpers.js';
+import { detectRuntime, planningPaths, normalizePhaseName, phaseTokenMatches, resolveAgentsDir, toPosixPath, comparePhaseNum, } from './helpers.js';
 import { getMilestoneInfo, extractCurrentMilestone, extractNextMilestoneSection, extractPhasesFromSection, } from './roadmap.js';
 import { agentSkills } from './skills.js';
 import { withProjectRoot } from './init.js';
@@ -303,13 +303,7 @@ export const initProgress = async (_args, projectDir, workstream) => {
         const dirs = entries
             .filter(e => e.isDirectory())
             .map(e => e.name)
-            .sort((a, b) => {
-            const pa = a.match(/^(\d+[A-Z]?(?:\.\d+)*)/i);
-            const pb = b.match(/^(\d+[A-Z]?(?:\.\d+)*)/i);
-            if (!pa || !pb)
-                return a.localeCompare(b);
-            return parseInt(pa[1], 10) - parseInt(pb[1], 10);
-        });
+            .sort((a, b) => comparePhaseNum(a, b));
         for (const dir of dirs) {
             const match = dir.match(/^(\d+[A-Z]?(?:\.\d+)*)-?(.*)/i);
             const phaseNumber = match ? match[1] : dir;
@@ -381,7 +375,7 @@ export const initProgress = async (_args, projectDir, workstream) => {
             }
         }
     }
-    phases.sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10));
+    phases.sort((a, b) => comparePhaseNum(String(a.number), String(b.number)));
     // Derive the frontier from roadmap order, not artifact presence. The disk
     // loop above can claim nextPhase from a stray out-of-order artifact dir (a
     // phase-9 evidence dir while roadmap phase 8 is pending and unscaffolded),

@@ -215,7 +215,7 @@ function escapeRegex(str) {
 }
 function stateExtractField(content, fieldName) {
   const escaped = escapeRegex(fieldName);
-  const boldPattern = new RegExp(`\\*\\*${escaped}:\\*\\*[ \\t]*(.+)`, "i");
+  const boldPattern = new RegExp(`^[ \\t]*\\*\\*${escaped}:\\*\\*[ \\t]*(.+)`, "im");
   const boldMatch = content.match(boldPattern);
   if (boldMatch)
     return boldMatch[1].trim();
@@ -225,15 +225,20 @@ function stateExtractField(content, fieldName) {
 }
 function stateReplaceField(content, fieldName, newValue) {
   const escaped = escapeRegex(fieldName);
-  const boldPattern = new RegExp(`(\\*\\*${escaped}:\\*\\*\\s*)(.*)`, "i");
+  const boldPattern = new RegExp(`^([ \\t]*\\*\\*${escaped}:\\*\\*[ \\t]*)(.*)`, "im");
   if (boldPattern.test(content)) {
-    return content.replace(boldPattern, (_match, prefix) => `${prefix}${newValue}`);
+    return content.replace(boldPattern, (_match, prefix) => joinFieldValue(prefix, newValue));
   }
-  const plainPattern = new RegExp(`(^${escaped}:\\s*)(.*)`, "im");
+  const plainPattern = new RegExp(`^(${escaped}:[ \\t]*)(.*)`, "im");
   if (plainPattern.test(content)) {
-    return content.replace(plainPattern, (_match, prefix) => `${prefix}${newValue}`);
+    return content.replace(plainPattern, (_match, prefix) => joinFieldValue(prefix, newValue));
   }
   return null;
+}
+function joinFieldValue(prefix, newValue) {
+  if (newValue.length > 0 && !/[ \t]$/.test(prefix))
+    return `${prefix} ${newValue}`;
+  return `${prefix}${newValue}`;
 }
 function stateReplaceFieldWithFallback(content, primary, fallback, value) {
   let result = stateReplaceField(content, primary, value);
@@ -346,7 +351,8 @@ var init_state_document = __esm({
     KNOWN_TEMPLATE_DEFAULTS = /* @__PURE__ */ new Set([
       "",
       "Ready to execute",
-      "Phase complete \u2014 ready for verification",
+      // Built from a char code so the literal dash stays out of source while still matching legacy template text.
+      `Phase complete ${String.fromCharCode(8212)} ready for verification`,
       "Phase complete - ready for verification",
       // ASCII hyphen variant
       "unknown",
@@ -366,6 +372,7 @@ __export(helpers_exports, {
   extractPhaseToken: () => extractPhaseToken,
   findProjectRoot: () => findProjectRoot,
   getRuntimeConfigDir: () => getRuntimeConfigDir,
+  maskFencedBlocks: () => maskFencedBlocks,
   normalizeMd: () => normalizeMd,
   normalizePhaseName: () => normalizePhaseName,
   phaseTokenMatches: () => phaseTokenMatches,
@@ -538,6 +545,23 @@ function comparePhaseNum(a3, b) {
       return av - bv;
   }
   return 0;
+}
+function maskFencedBlocks(content) {
+  const lines = String(content).split("\n");
+  let inFence = false;
+  for (let i3 = 0; i3 < lines.length; i3++) {
+    const trimmed = lines[i3].trimStart();
+    const isFence = trimmed.startsWith("```") || trimmed.startsWith("~~~");
+    if (isFence) {
+      lines[i3] = " ".repeat(lines[i3].length);
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) {
+      lines[i3] = " ".repeat(lines[i3].length);
+    }
+  }
+  return lines.join("\n");
 }
 function extractPhaseToken(dirName) {
   const codePrefixed = dirName.match(/^([A-Z]{1,6}-\d+[A-Z]?(?:\.\d+)*)(?:-|$)/i);
@@ -6900,11 +6924,12 @@ var roadmapAnalyze = async (_args, projectDir, workstream) => {
     return { data: { error: "ROADMAP.md not found", milestones: [], phases: [], current_phase: null } };
   }
   const content = await extractCurrentMilestone(rawContent, projectDir, workstream);
+  const scanContent = maskFencedBlocks(content);
   const phasesDir = planningPaths(projectDir, workstream).phases;
-  const phasePattern = /#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
+  const phasePattern = /^[ \t]{0,3}#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gim;
   const phases = [];
   let match;
-  while ((match = phasePattern.exec(content)) !== null) {
+  while ((match = phasePattern.exec(scanContent)) !== null) {
     const phaseNum = match[1];
     const majorNum = parseInt(phaseNum, 10);
     if (majorNum === 0 || majorNum === 999)
@@ -6983,10 +7008,10 @@ var roadmapAnalyze = async (_args, projectDir, workstream) => {
   const totalPlans = phases.reduce((sum, p) => sum + p.plan_count, 0);
   const totalSummaries = phases.reduce((sum, p) => sum + p.summary_count, 0);
   const completedPhases = phases.filter((p) => p.disk_status === "complete").length;
-  const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gi;
+  const checklistPattern = /^[ \t]*-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gim;
   const checklistPhases = /* @__PURE__ */ new Set();
   let checklistMatch;
-  while ((checklistMatch = checklistPattern.exec(content)) !== null) {
+  while ((checklistMatch = checklistPattern.exec(scanContent)) !== null) {
     checklistPhases.add(checklistMatch[1]);
   }
   const detailPhases = new Set(phases.map((p) => p.number));
@@ -7277,7 +7302,7 @@ var stateGet = async (args, projectDir, workstream) => {
     return { data: { content } };
   }
   const fieldEscaped = escapeRegex2(section);
-  const boldPattern = new RegExp(`\\*\\*${fieldEscaped}:\\*\\*\\s*(.*)`, "i");
+  const boldPattern = new RegExp(`^[ \\t]*\\*\\*${fieldEscaped}:\\*\\*[ \\t]*(.*)`, "im");
   const boldMatch = content.match(boldPattern);
   if (boldMatch) {
     return { data: { [section]: boldMatch[1].trim() } };
@@ -13751,11 +13776,10 @@ var phaseComplete = async (args, projectDir, workstream) => {
       while ((pm = phasePattern.exec(roadmapForPhases)) !== null) {
         if (/^999(?:\.|$)/.test(pm[1]))
           continue;
-        if (comparePhaseNum(pm[1], phaseNum) > 0) {
+        if (comparePhaseNum(pm[1], phaseNum) > 0 && (nextPhaseNum === null || comparePhaseNum(pm[1], nextPhaseNum) < 0)) {
           nextPhaseNum = pm[1];
           nextPhaseName = pm[2].replace(/\(INSERTED\)/i, "").trim().toLowerCase().replace(/\s+/g, "-");
           isLastPhase = false;
-          break;
         }
       }
     } catch {
@@ -20735,13 +20759,7 @@ var initProgress = async (_args, projectDir, workstream) => {
   }
   try {
     const entries = readdirSync23(paths.phases, { withFileTypes: true });
-    const dirs = entries.filter((e3) => e3.isDirectory()).map((e3) => e3.name).sort((a3, b) => {
-      const pa = a3.match(/^(\d+[A-Z]?(?:\.\d+)*)/i);
-      const pb2 = b.match(/^(\d+[A-Z]?(?:\.\d+)*)/i);
-      if (!pa || !pb2)
-        return a3.localeCompare(b);
-      return parseInt(pa[1], 10) - parseInt(pb2[1], 10);
-    });
+    const dirs = entries.filter((e3) => e3.isDirectory()).map((e3) => e3.name).sort((a3, b) => comparePhaseNum(a3, b));
     for (const dir of dirs) {
       const match = dir.match(/^(\d+[A-Z]?(?:\.\d+)*)-?(.*)/i);
       const phaseNumber = match ? match[1] : dir;
@@ -20801,7 +20819,7 @@ var initProgress = async (_args, projectDir, workstream) => {
       }
     }
   }
-  phases.sort((a3, b) => parseInt(a3.number, 10) - parseInt(b.number, 10));
+  phases.sort((a3, b) => comparePhaseNum(String(a3.number), String(b.number)));
   const frontier = phases.find((p) => p.status === "pending" || p.status === "not_started");
   if (frontier)
     nextPhase = frontier;

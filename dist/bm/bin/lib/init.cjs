@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execGit, platformWriteSync, platformReadSync } = require('./shell-command-projection.cjs');
-const { loadConfig, resolveModelInternal, findPhaseInternal, getRoadmapPhaseInternal, pathExistsInternal, gitWorktreeInfoInternal, generateSlugInternal, getMilestoneInfo, getMilestonePhaseFilter, stripShippedMilestones, extractCurrentMilestone, normalizePhaseName, toPosixPath, output, error, checkAgentsInstalled, phaseTokenMatches } = require('./core.cjs');
+const { loadConfig, resolveModelInternal, findPhaseInternal, getRoadmapPhaseInternal, pathExistsInternal, gitWorktreeInfoInternal, generateSlugInternal, getMilestoneInfo, getMilestonePhaseFilter, stripShippedMilestones, extractCurrentMilestone, normalizePhaseName, toPosixPath, output, error, checkAgentsInstalled, phaseTokenMatches, comparePhaseNum } = require('./core.cjs');
 const { planningPaths, planningDir, planningRoot } = require('./planning-workspace.cjs');
 const { maskIfSecret } = require('./secrets.cjs');
 const scanPhasePlans = require('./plan-scan.cjs');
@@ -1411,12 +1411,7 @@ function cmdInitProgress(cwd, raw) {
     const entries = fs.readdirSync(phasesDir, { withFileTypes: true });
     const dirs = entries.filter(e => e.isDirectory()).map(e => e.name)
       .filter(isDirInMilestone)
-      .sort((a, b) => {
-        const pa = a.match(/^(\d+[A-Z]?(?:\.\d+)*)/i);
-        const pb = b.match(/^(\d+[A-Z]?(?:\.\d+)*)/i);
-        if (!pa || !pb) return a.localeCompare(b);
-        return parseInt(pa[1], 10) - parseInt(pb[1], 10);
-      });
+      .sort((a, b) => comparePhaseNum(a, b));
 
     for (const dir of dirs) {
       const match = dir.match(/^(\d+[A-Z]?(?:\.\d+)*)-?(.*)/i);
@@ -1487,7 +1482,7 @@ function cmdInitProgress(cwd, raw) {
   }
 
   // Re-sort phases by number after adding ROADMAP-only phases
-  phases.sort((a, b) => parseInt(a.number, 10) - parseInt(b.number, 10));
+  phases.sort((a, b) => comparePhaseNum(String(a.number), String(b.number)));
 
   // Derive the frontier from roadmap order, not artifact presence. The disk
   // loop above can claim nextPhase from a stray out-of-order artifact dir (a

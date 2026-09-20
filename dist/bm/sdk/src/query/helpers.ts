@@ -260,6 +260,34 @@ export function comparePhaseNum(a: string, b: string): number {
   return 0;
 }
 
+// ─── maskFencedBlocks ───────────────────────────────────────────────────────
+
+/**
+ * Blank out fenced code blocks so scanners cannot mint phantom matches from
+ * example markdown. Every character inside a fence (and the fence lines
+ * themselves) is replaced with a space, except newlines. The output has the
+ * exact same length and every newline sits at the exact same offset as in the
+ * input, so callers can keep slicing the ORIGINAL content at match indices
+ * discovered on the masked copy.
+ */
+export function maskFencedBlocks(content: string): string {
+  const lines = String(content).split('\n');
+  let inFence = false;
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trimStart();
+    const isFence = trimmed.startsWith('```') || trimmed.startsWith('~~~');
+    if (isFence) {
+      lines[i] = ' '.repeat(lines[i].length);
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) {
+      lines[i] = ' '.repeat(lines[i].length);
+    }
+  }
+  return lines.join('\n');
+}
+
 // ─── extractPhaseToken ──────────────────────────────────────────────────────
 
 /**

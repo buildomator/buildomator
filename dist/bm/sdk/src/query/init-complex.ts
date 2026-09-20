@@ -33,6 +33,7 @@ import {
   phaseTokenMatches,
   resolveAgentsDir,
   toPosixPath,
+  comparePhaseNum,
 } from './helpers.js';
 import {
   getMilestoneInfo,
@@ -358,12 +359,7 @@ export const initProgress: QueryHandler = async (_args, projectDir, workstream) 
     const dirs = entries
       .filter(e => e.isDirectory())
       .map(e => e.name)
-      .sort((a, b) => {
-        const pa = a.match(/^(\d+[A-Z]?(?:\.\d+)*)/i);
-        const pb = b.match(/^(\d+[A-Z]?(?:\.\d+)*)/i);
-        if (!pa || !pb) return a.localeCompare(b);
-        return parseInt(pa[1], 10) - parseInt(pb[1], 10);
-      });
+      .sort((a, b) => comparePhaseNum(a, b));
 
     for (const dir of dirs) {
       const match = dir.match(/^(\d+[A-Z]?(?:\.\d+)*)-?(.*)/i);
@@ -446,7 +442,7 @@ export const initProgress: QueryHandler = async (_args, projectDir, workstream) 
     }
   }
 
-  phases.sort((a, b) => parseInt(a.number as string, 10) - parseInt(b.number as string, 10));
+  phases.sort((a, b) => comparePhaseNum(String(a.number), String(b.number)));
 
   // Derive the frontier from roadmap order, not artifact presence. The disk
   // loop above can claim nextPhase from a stray out-of-order artifact dir (a

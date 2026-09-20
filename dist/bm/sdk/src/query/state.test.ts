@@ -305,6 +305,17 @@ describe('stateGet', () => {
 
     expect(data.error).toBe('Section or field "Nonexistent Field" not found');
   });
+
+  it('reads the real indented row past a prose lookalike', async () => {
+    await writeFile(
+      join(tmpDir, '.planning', 'STATE.md'),
+      'Note that **Status:** in prose.\n  **Status:** Ready to execute\n',
+    );
+    const result = await stateGet(['Status'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data['Status']).toBe('Ready to execute');
+  });
 });
 
 // ─── stateSnapshot ─────────────────────────────────────────────────────────

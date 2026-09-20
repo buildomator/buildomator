@@ -1242,14 +1242,16 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
       // false "Milestone complete". Only this isLastPhase fallback changes.
       const phasePattern = /(?:#{2,4}|-\s*\[[ xX]\])\s*(?:\*\*|__)?\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n*]+)/gi;
       let pm: RegExpExecArray | null;
+      // Pick the numerically lowest successor, regardless of heading order in
+      // the document, so an out-of-order ROADMAP does not skip a phase.
       while ((pm = phasePattern.exec(roadmapForPhases)) !== null) {
         // Skip backlog phases (999.x): parked ideas, not sequential work.
         if (/^999(?:\.|$)/.test(pm[1])) continue;
-        if (comparePhaseNum(pm[1], phaseNum) > 0) {
+        if (comparePhaseNum(pm[1], phaseNum) > 0 &&
+            (nextPhaseNum === null || comparePhaseNum(pm[1], nextPhaseNum) < 0)) {
           nextPhaseNum = pm[1];
           nextPhaseName = pm[2].replace(/\(INSERTED\)/i, '').trim().toLowerCase().replace(/\s+/g, '-');
           isLastPhase = false;
-          break;
         }
       }
     } catch { /* intentionally empty */ }

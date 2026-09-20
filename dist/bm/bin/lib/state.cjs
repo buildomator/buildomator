@@ -98,7 +98,7 @@ function cmdStateGet(cwd, section, raw) {
     const fieldEscaped = escapeRegex(section);
 
     // Check for **field:** value (bold format)
-    const boldPattern = new RegExp(`\\*\\*${fieldEscaped}:\\*\\*\\s*(.*)`, 'i');
+    const boldPattern = new RegExp(`^[ \\t]*\\*\\*${fieldEscaped}:\\*\\*[ \\t]*(.*)`, 'im');
     const boldMatch = content.match(boldPattern);
     if (boldMatch) {
       output({ [section]: boldMatch[1].trim() }, raw, boldMatch[1].trim());

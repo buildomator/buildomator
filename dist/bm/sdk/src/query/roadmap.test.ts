@@ -1160,6 +1160,48 @@ describe('roadmapAnalyze', () => {
     expect(phases.some(p => p.number === '1')).toBe(true);
     expect(phases.some(p => p.number === '3')).toBe(true);
   });
+
+  it('ignores fenced, quoted, and prose Phase headings', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), [
+      '# Roadmap',
+      '',
+      '## Current Milestone',
+      '',
+      '- [ ] **Phase 1: First**',
+      '- [ ] **Phase 2: Second**',
+      '',
+      '### Phase 1: First',
+      '',
+      '**Goal:** do first',
+      '',
+      '```',
+      '### Phase 3: Fake',
+      '- [ ] **Phase 6: Fake**',
+      '```',
+      '',
+      '> ### Phase 4: Quoted',
+      '',
+      'see ### Phase 5: inline mention',
+      '',
+      '### Phase 2: Second',
+      '',
+      '**Goal:** do second',
+      '',
+    ].join('\n'));
+
+    const result = await roadmapAnalyze([], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    const phases = data.phases as Array<Record<string, unknown>>;
+    const ids = phases.map(p => String(p.number)).sort();
+
+    expect(data.phase_count).toBe(2);
+    expect(ids).toEqual(['1', '2']);
+    const byNum = Object.fromEntries(phases.map(p => [String(p.number), p]));
+    expect(byNum['1'].goal).toBe('do first');
+    expect(byNum['2'].goal).toBe('do second');
+    const missing = (data.missing_phase_details as string[] | null) || [];
+    expect(missing).not.toContain('6');
+  });
 });
 
 // ─── extractPhasesFromSection + extractNextMilestoneSection (#2497) ──────

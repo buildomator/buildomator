@@ -7,9 +7,12 @@
 function escapeRegex(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+// Field patterns are line-anchored (multiline ^) and confined to same-line
+// horizontal whitespace ([ \t] only, never \s which spans newlines), so a match
+// can never cross a newline and an empty field can never consume the next line.
 export function stateExtractField(content, fieldName) {
     const escaped = escapeRegex(fieldName);
-    const boldPattern = new RegExp(`\\*\\*${escaped}:\\*\\*[ \\t]*(.+)`, 'i');
+    const boldPattern = new RegExp(`^[ \\t]*\\*\\*${escaped}:\\*\\*[ \\t]*(.+)`, 'im');
     const boldMatch = content.match(boldPattern);
     if (boldMatch)
         return boldMatch[1].trim();
@@ -19,15 +22,23 @@ export function stateExtractField(content, fieldName) {
 }
 export function stateReplaceField(content, fieldName, newValue) {
     const escaped = escapeRegex(fieldName);
-    const boldPattern = new RegExp(`(\\*\\*${escaped}:\\*\\*\\s*)(.*)`, 'i');
+    const boldPattern = new RegExp(`^([ \\t]*\\*\\*${escaped}:\\*\\*[ \\t]*)(.*)`, 'im');
     if (boldPattern.test(content)) {
-        return content.replace(boldPattern, (_match, prefix) => `${prefix}${newValue}`);
+        return content.replace(boldPattern, (_match, prefix) => joinFieldValue(prefix, newValue));
     }
-    const plainPattern = new RegExp(`(^${escaped}:\\s*)(.*)`, 'im');
+    const plainPattern = new RegExp(`^(${escaped}:[ \\t]*)(.*)`, 'im');
     if (plainPattern.test(content)) {
-        return content.replace(plainPattern, (_match, prefix) => `${prefix}${newValue}`);
+        return content.replace(plainPattern, (_match, prefix) => joinFieldValue(prefix, newValue));
     }
     return null;
+}
+// Keep the captured prefix byte-exact when it already ends in horizontal
+// whitespace; otherwise insert a single space before a non-empty value so an
+// empty field row (`**Status:**`) becomes `**Status:** value`.
+function joinFieldValue(prefix, newValue) {
+    if (newValue.length > 0 && !/[ \t]$/.test(prefix))
+        return `${prefix} ${newValue}`;
+    return `${prefix}${newValue}`;
 }
 export function stateReplaceFieldWithFallback(content, primary, fallback, value) {
     let result = stateReplaceField(content, primary, value);
@@ -57,7 +68,8 @@ export function stateReplaceFieldWithFallback(content, primary, fallback, value)
 export const KNOWN_TEMPLATE_DEFAULTS = new Set([
     '',
     'Ready to execute',
-    'Phase complete — ready for verification',
+    // Built from a char code so the literal dash stays out of source while still matching legacy template text.
+    `Phase complete ${String.fromCharCode(0x2014)} ready for verification`,
     'Phase complete - ready for verification', // ASCII hyphen variant
     'unknown',
     'None',

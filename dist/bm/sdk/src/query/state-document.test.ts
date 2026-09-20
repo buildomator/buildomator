@@ -195,3 +195,41 @@ describe('normalizeProgressNumbers', () => {
     expect(result.extra_key).toBe('hello');
   });
 });
+
+describe('line anchoring', () => {
+  it('empty bold field write does not eat the next data line', () => {
+    const c = '**Status:**\n**Progress:** 3/10 total_phases\n';
+    const r = stateReplaceField(c, 'Status', 'Ready');
+    expect(r).not.toBeNull();
+    expect(r as string).toContain('**Progress:** 3/10 total_phases');
+    expect(/^\*\*Status:\*\* Ready$/m.test(r as string)).toBe(true);
+  });
+
+  it('prose lookalike above the real row is not read and not overwritten', () => {
+    const c = 'Note that **Status:** in prose is not a row.\n**Status:** real\n';
+    expect(stateExtractField(c, 'Status')).toBe('real');
+    const r = stateReplaceField(c, 'Status', 'X') as string;
+    expect(r).toContain('Note that **Status:** in prose is not a row.');
+    expect(/^\*\*Status:\*\* X$/m.test(r)).toBe(true);
+  });
+
+  it('only a prose lookalike, no real row, extracts null', () => {
+    expect(stateExtractField('Note that **Status:** in prose.\n', 'Status')).toBeNull();
+  });
+
+  it('indented real row is honored and indentation preserved', () => {
+    expect(stateExtractField('  **Status:** indented\n', 'Status')).toBe('indented');
+    const r = stateReplaceField('  **Status:** indented\n', 'Status', 'new') as string;
+    expect(/^ {2}\*\*Status:\*\* new$/m.test(r)).toBe(true);
+  });
+
+  it('plain empty field write does not eat the next line', () => {
+    const r = stateReplaceField('Status:\nnext: keep\n', 'Status', 'v') as string;
+    expect(r).toContain('next: keep');
+  });
+
+  it('existing bold value replace stays byte-exact', () => {
+    expect(stateReplaceField('**Status:** old value\n', 'Status', 'new value'))
+      .toBe('**Status:** new value\n');
+  });
+});

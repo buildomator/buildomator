@@ -101,6 +101,15 @@ export declare function normalizePhaseName(phase: string): string;
  */
 export declare function comparePhaseNum(a: string, b: string): number;
 /**
+ * Blank out fenced code blocks so scanners cannot mint phantom matches from
+ * example markdown. Every character inside a fence (and the fence lines
+ * themselves) is replaced with a space, except newlines. The output has the
+ * exact same length and every newline sits at the exact same offset as in the
+ * input, so callers can keep slicing the ORIGINAL content at match indices
+ * discovered on the masked copy.
+ */
+export declare function maskFencedBlocks(content: string): string;
+/**
  * Extract the phase token from a directory name.
  *
  * Supports: '01-name', '1009A-name', '999.6-name', 'CK-01-name', 'PROJ-42-name'.

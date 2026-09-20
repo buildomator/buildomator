@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { GSDError, ErrorClassification } from '../errors.js';
 import { resolveGsdToolsPath } from '../sdk-package-compatibility.js';
 import { scanPhasePlans } from './plan-scan.js';
-import { escapeRegex, normalizePhaseName, phaseTokenMatches, planningPaths, } from './helpers.js';
+import { escapeRegex, normalizePhaseName, phaseTokenMatches, planningPaths, maskFencedBlocks, } from './helpers.js';
 // ─── Exported helpers ─────────────────────────────────────────────────────
 /**
  * Strip <details>...</details> blocks from content (shipped milestones).
@@ -590,12 +590,16 @@ export const roadmapAnalyze = async (_args, projectDir, workstream) => {
         return { data: { error: 'ROADMAP.md not found', milestones: [], phases: [], current_phase: null } };
     }
     const content = await extractCurrentMilestone(rawContent, projectDir, workstream);
+    // Scan a fence-masked copy so fenced/quoted example headings cannot mint
+    // phantom phases; body slicing below stays on the original `content` because
+    // the mask preserves every character offset.
+    const scanContent = maskFencedBlocks(content);
     const phasesDir = planningPaths(projectDir, workstream).phases;
     // IMPORTANT: Create regex INSIDE the function to avoid /g lastIndex persistence
-    const phasePattern = /#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
+    const phasePattern = /^[ \t]{0,3}#{2,4}\s*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gim;
     const phases = [];
     let match;
-    while ((match = phasePattern.exec(content)) !== null) {
+    while ((match = phasePattern.exec(scanContent)) !== null) {
         const phaseNum = match[1];
         // #1580: skip Phase 0 / Phase 999 sentinels (placeholder/backlog), never real phases
         const majorNum = parseInt(phaseNum, 10);
@@ -687,10 +691,10 @@ export const roadmapAnalyze = async (_args, projectDir, workstream) => {
     const totalSummaries = phases.reduce((sum, p) => sum + p.summary_count, 0);
     const completedPhases = phases.filter(p => p.disk_status === 'complete').length;
     // Detect phases in summary list without detail sections (malformed ROADMAP)
-    const checklistPattern = /-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gi;
+    const checklistPattern = /^[ \t]*-\s*\[[ x]\]\s*\*\*Phase\s+([A-Za-z]?\d+[A-Z]?(?:\.\d+)*)/gim;
     const checklistPhases = new Set();
     let checklistMatch;
-    while ((checklistMatch = checklistPattern.exec(content)) !== null) {
+    while ((checklistMatch = checklistPattern.exec(scanContent)) !== null) {
         checklistPhases.add(checklistMatch[1]);
     }
     const detailPhases = new Set(phases.map(p => p.number));
