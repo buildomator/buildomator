@@ -316,7 +316,30 @@ Parse JSON for: `phase`, `plans[]` (each with `id`, `wave`, `autonomous`, `objec
 
 **Wave safety check:** If `WAVE_FILTER` is set and there are still incomplete plans in any lower wave that match the current execution mode, STOP and tell the user to finish earlier waves first. Do not let Wave 2+ execute while prerequisite earlier-wave plans remain incomplete.
 
-If all filtered: "No matching incomplete plans" → exit.
+**If every plan is filtered out:**
+
+The status-aware filter above already keeps paused, blocked and partial plans (`complete: false`) in the run set, so an all-filtered state means every plan reads complete or retired, and the only open question is whether the phase tail (verification, roadmap tick) ran.
+
+```bash
+# check.verification-status returns "missing" when no VERIFICATION.md exists.
+# Both probes are read-only (no writes to any planning file).
+VERIFY_STATUS=$(bm-sdk query check.verification-status "${PHASE_NUMBER}" 2>/dev/null \
+  || node "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/sdk/dist/cli.js" query check.verification-status "${PHASE_NUMBER}" \
+  | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const o=JSON.parse(s);console.log((o.data??o).status??"missing")}catch{console.log("missing")}})')
+
+PHASE_MARKED=$( (bm-sdk query roadmap.analyze 2>/dev/null \
+  || node "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/bin/gsd-tools.cjs" roadmap analyze) \
+  | node -e 'let s="";const want=String(process.argv[1]).replace(/^0+(?=\d)/,"");process.stdin.on("data",d=>s+=d).on("end",()=>{try{const o=JSON.parse(s);const ph=((o.data??o).phases||[]).find(p=>String(p.number).replace(/^0+(?=\d)/,"")===want);console.log(ph&&ph.roadmap_complete===true?"true":"false")}catch{console.log("false")}})' "${PHASE_NUMBER}")
+```
+
+Then decide, evaluated in order:
+
+1. A filter is active (`--gaps-only` was passed or `WAVE_FILTER` is set): print `No matching incomplete plans` and exit (unchanged behaviour).
+2. No filter and `VERIFY_STATUS` is `missing`: this is a resume of a run that completed every plan but died before verification (#2868). Print a short notice (`All {N} plans are complete but Phase {X} has no VERIFICATION.md; resuming at the phase tail (#2868).`), then SKIP `cross_ai_delegation`, `execute_waves` and `checkpoint_handling` and continue at `aggregate_results` (its report is built from on-disk SUMMARYs and it runs the security gate; it does not need plans executed in this run). The normal tail follows from there.
+3. No filter, `VERIFY_STATUS` is not `missing`, and `PHASE_MARKED` is not `true`: verification exists but the run died before the roadmap tick (#3684). Print `Phase {X} is verified but not marked complete in ROADMAP.md; resuming at update_roadmap (#3684).` and continue directly at `update_roadmap` (do NOT redo verification or any gate). The steps after `update_roadmap` follow as normal.
+4. No filter, `VERIFY_STATUS` is not `missing`, and `PHASE_MARKED` is `true`: the phase is genuinely done. Print `Phase {X} is already complete (all plans complete, verified, roadmap ticked).` and exit (unchanged behaviour).
+
+An all-filtered state can only reach 2 to 4 because paused/blocked/partial plans are never filtered (there is no separate "stuck on a halt" branch).
 
 Report:
 ```
