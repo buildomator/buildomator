@@ -8,6 +8,19 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.8.0] - 2026-09-20  (bm- agent names + upstream sync ports)
+
+Renames the internal agents from the `gsd-` prefix to `bm-`, and ports four correctness fixes from upstream gsd-core v1.12 through v1.14. The agent rename is additive: `bm-<role>` is the primary name and the legacy `gsd-<role>` keeps resolving in `.planning/config.json` keys and the CLI through the 4.x line, retiring at v5.0 on 2026-10-01.
+
+### Changed
+- **Agents now use the `bm-` name prefix.** All 33 agent definitions are renamed from `gsd-<role>` to `bm-<role>` (for example `gsd-executor` becomes `bm-executor`), and every internal spawn points at the `bm-` name. Existing `agent_skills` and `model_profile_overrides` config keys that use the old `gsd-<role>` spelling keep working: both resolver twins normalize the legacy name to the new one, and the CLI accepts either spelling. This is the agent-name half of the wider `/gsd:` to `/bm:` migration; the `gsd-` spellings retire at v5.0.
+
+### Fixed
+- **STATE.md field read and write are line-anchored, closing a data-loss edge (gsd-core #4010, #4243, #4481).** The bold and plain field grammar used a whitespace class that could span a newline, so replacing an empty field could consume the following line, and a field-shaped string in prose could be matched instead of the real row. Both read and write, for bold and plain fields and the `state get` reader, now anchor to line start and match only same-line whitespace. This is the same class as the v4.7.1 fix, on functions it did not cover. Both twins.
+- **Init phase ordering is decimal-aware (gsd-core #4023).** Init sorted phase ids by integer part, so decimal ids like `7.1`, `7.2`, `7.10` and inserted phases like `72.1` ordered wrong; init now uses the decimal-aware comparator the rest of the tree already uses. Both twins.
+- **Roadmap analyze ignores headings inside code fences (gsd-core #4478).** The phase-heading and checklist scans were not line-anchored and did not skip fenced blocks, so a `## Phase N:` inside a code block could inflate the phase count. Both twins.
+- **The next-phase roadmap fallback picks the lowest successor (gsd-core #3701).** When falling back to roadmap order, it returned the first heading after the current one in document order rather than the numerically lowest, so an out-of-order roadmap could point at the wrong next phase. Both twins.
+
 ## [4.7.3] - 2026-09-19  (agent_skills plugin skills are now invocable)
 
 Completes the #33 fix. The agents that receive `agent_skills` now hold the Skill tool, so the load-by-name directive that shipped in v4.7.2 is actually followable. Patch release, no config migration.
