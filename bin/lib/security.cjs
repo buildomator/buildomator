@@ -17,6 +17,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 // ─── Path Traversal Prevention ──────────────────────────────────────────────
 
@@ -106,6 +107,46 @@ function requireSafePath(filePath, baseDir, label, opts = {}) {
     throw new Error(`${label || 'Path'} validation failed: ${result.error}`);
   }
   return result.resolved;
+}
+
+/**
+ * Read agent_skills_security.trusted_global_roots from a config object and
+ * return the hardened list of directories a symlinked global skill may resolve
+ * into. Each entry is tilde-expanded, must be absolute, is resolved to its real
+ * path, and is dropped when it does not exist, when it is a filesystem/drive/UNC
+ * root, or when it is the user home directory. Duplicates collapse to the first
+ * occurrence. Any non-array config, missing key, or non-string entry yields an
+ * empty list, so the default behaviour is unchanged.
+ *
+ * @param {object} config - Parsed project config
+ * @returns {string[]} Resolved real paths, de-duped, in order of first appearance
+ */
+function loadTrustedGlobalRoots(config) {
+  if (!config || typeof config !== 'object') return [];
+  const section = config.agent_skills_security;
+  if (!section || typeof section !== 'object') return [];
+  const entries = section.trusted_global_roots;
+  if (!Array.isArray(entries)) return [];
+
+  const home = os.homedir();
+  let homeReal;
+  try { homeReal = fs.realpathSync(home); } catch { homeReal = path.resolve(home); }
+
+  const roots = [];
+  for (const entry of entries) {
+    if (typeof entry !== 'string') continue;
+    let expanded = entry;
+    if (entry === '~') expanded = home;
+    else if (entry.startsWith('~/')) expanded = path.join(home, entry.slice(2));
+    if (!path.isAbsolute(expanded)) continue;
+    let real;
+    try { real = fs.realpathSync(expanded); } catch { continue; }
+    const rootOf = path.parse(real).root;
+    if (real === rootOf || real === rootOf.replace(/[\\/]+$/, '')) continue;
+    if (real === homeReal) continue;
+    if (!roots.includes(real)) roots.push(real);
+  }
+  return roots;
 }
 
 // ─── Prompt Injection Detection ─────────────────────────────────────────────
@@ -479,6 +520,7 @@ module.exports = {
   // Path safety
   validatePath,
   requireSafePath,
+  loadTrustedGlobalRoots,
 
   // Prompt injection
   INJECTION_PATTERNS,

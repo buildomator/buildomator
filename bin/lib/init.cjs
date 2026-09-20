@@ -1706,11 +1706,12 @@ function cmdInitRemoveWorkspace(cwd, name, raw) {
  * @returns {string} Formatted skills block or empty string
  */
 function buildAgentSkillsBlock(config, agentType, projectRoot) {
-  const { validatePath } = require('./security.cjs');
+  const { validatePath, loadTrustedGlobalRoots } = require('./security.cjs');
   const os = require('os');
   const { getGlobalSkillDir, getGlobalSkillDisplayPath } = require('./runtime-homes.cjs');
   const runtime = (config && config.runtime) || 'claude';
   const globalSkillsBase = require('./runtime-homes.cjs').getGlobalSkillsBase(runtime);
+  const trustedGlobalRoots = loadTrustedGlobalRoots(config);
   // Namespaced `<plugin>:<skill>` form: each colon-separated segment is letters, digits, "_" or "-".
   const PLUGIN_SKILL_NAME_RE = /^[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/;
 
@@ -1768,10 +1769,17 @@ function buildAgentSkillsBlock(config, agentType, projectRoot) {
         continue;
       }
       // Symlink escape guard: validatePath resolves symlinks and enforces
-      // containment within globalSkillsBase. Prevents a skill directory
+      // containment within globalSkillsBase first, then against each directory
+      // in agent_skills_security.trusted_global_roots. Prevents a skill directory
       // symlinked to an arbitrary location from being injected (#1992).
       const pathCheck = validatePath(globalSkillMd, globalSkillsBase, { allowAbsolute: true });
-      if (!pathCheck.safe) {
+      const trustedRoot = pathCheck.safe
+        ? null
+        : trustedGlobalRoots.find(root => validatePath(globalSkillMd, root, { allowAbsolute: true }).safe);
+      if (trustedRoot) {
+        process.stderr.write(`[agent-skills] NOTE: Global skill "${skillName}" accepted via trusted_global_roots (resolves under ${trustedRoot})\n`);
+      }
+      if (!pathCheck.safe && !trustedRoot) {
         process.stderr.write(`[agent-skills] WARNING: Global skill "${skillName}" failed path check (symlink escape?) — skipping\n`);
         continue;
       }

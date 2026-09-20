@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, writeFile, symlink } from 'node:fs/promises';
 import { execSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
@@ -309,6 +309,129 @@ describe('agentSkills', () => {
     } finally {
       spy.mockRestore();
     }
+  });
+});
+
+describe('trusted_global_roots', () => {
+  let tmpDir: string;
+  let cfgDir: string;
+  let prevConfigDir: string | undefined;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'gsd-trusted-'));
+    cfgDir = join(tmpDir, 'cfg');
+    prevConfigDir = process.env.CLAUDE_CONFIG_DIR;
+    process.env.CLAUDE_CONFIG_DIR = cfgDir;
+  });
+
+  afterEach(async () => {
+    if (prevConfigDir === undefined) delete process.env.CLAUDE_CONFIG_DIR;
+    else process.env.CLAUDE_CONFIG_DIR = prevConfigDir;
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  async function linkExternalSkill() {
+    await writeSkill(join(tmpDir, 'outside'), 'ext-skill');
+    await mkdir(join(cfgDir, 'skills'), { recursive: true });
+    await symlink(
+      join(tmpDir, 'outside', 'ext-skill'),
+      join(cfgDir, 'skills', 'ext-skill'),
+      'dir',
+    );
+  }
+
+  function withStderr(fn: (warnings: string[]) => Promise<void>) {
+    const warnings: string[] = [];
+    const spy = vi.spyOn(process.stderr, 'write').mockImplementation((chunk: string | Uint8Array) => {
+      warnings.push(String(chunk));
+      return true;
+    });
+    return fn(warnings).finally(() => spy.mockRestore());
+  }
+
+  it('rejects a symlinked-out global skill by default with the symlink-escape WARNING', async () => {
+    await linkExternalSkill();
+    await writeConfig(tmpDir, { agent_skills: { 'gsd-executor': ['global:ext-skill'] } });
+    await withStderr(async (warnings) => {
+      const r = await agentSkills(['gsd-executor'], tmpDir);
+      expect(r.data).toBe('');
+      expect(warnings.some((w) => w.includes('failed path check'))).toBe(true);
+      expect(warnings.some((w) => w.includes('NOTE:'))).toBe(false);
+    });
+  });
+
+  it('accepts the same skill with a NOTE when its root is trusted', async () => {
+    await linkExternalSkill();
+    await writeConfig(tmpDir, {
+      agent_skills: { 'gsd-executor': ['global:ext-skill'] },
+      agent_skills_security: { trusted_global_roots: [join(tmpDir, 'outside')] },
+    });
+    await withStderr(async (warnings) => {
+      const r = await agentSkills(['gsd-executor'], tmpDir);
+      expect(r.data).toBe(
+        '<agent_skills>\n' +
+          'Read these user-configured skills:\n' +
+          `- @${join(cfgDir, 'skills', 'ext-skill', 'SKILL.md')}\n` +
+          '</agent_skills>',
+      );
+      expect(warnings.some((w) => w.includes('accepted via trusted_global_roots'))).toBe(true);
+    });
+  });
+
+  it('rejects project-relative, filesystem-root, home, and non-existent trusted roots', async () => {
+    const cases: string[][] = [
+      ['outside'],
+      ['/'],
+      [homedir()],
+      [join(tmpDir, 'does-not-exist')],
+    ];
+    for (const roots of cases) {
+      await rm(join(tmpDir, 'outside'), { recursive: true, force: true });
+      await rm(join(cfgDir, 'skills'), { recursive: true, force: true });
+      await linkExternalSkill();
+      await writeConfig(tmpDir, {
+        agent_skills: { 'gsd-executor': ['global:ext-skill'] },
+        agent_skills_security: { trusted_global_roots: roots },
+      });
+      await withStderr(async (warnings) => {
+        const r = await agentSkills(['gsd-executor'], tmpDir);
+        expect(r.data).toBe('');
+        expect(warnings.some((w) => w.includes('failed path check'))).toBe(true);
+        expect(warnings.some((w) => w.includes('NOTE:'))).toBe(false);
+      });
+    }
+  });
+
+  it('keeps an in-base skill loading with no NOTE when trusted roots are configured', async () => {
+    await writeSkill(join(cfgDir, 'skills'), 'my-notes');
+    await writeConfig(tmpDir, {
+      agent_skills: { 'gsd-executor': ['global:my-notes'] },
+      agent_skills_security: { trusted_global_roots: [join(tmpDir, 'outside')] },
+    });
+    await withStderr(async (warnings) => {
+      const r = await agentSkills(['gsd-executor'], tmpDir);
+      expect(r.data).toBe(
+        '<agent_skills>\n' +
+          'Read these user-configured skills:\n' +
+          `- @${join(cfgDir, 'skills', 'my-notes', 'SKILL.md')}\n` +
+          '</agent_skills>',
+      );
+      expect(warnings.some((w) => w.includes('NOTE:'))).toBe(false);
+    });
+  });
+
+  it('leaves the plugin-form branch untouched with trusted roots configured', async () => {
+    await writeConfig(tmpDir, {
+      agent_skills: { 'gsd-executor': ['global:superpowers:brainstorming'] },
+      agent_skills_security: { trusted_global_roots: [join(tmpDir, 'outside')] },
+    });
+    const r = await agentSkills(['gsd-executor'], tmpDir);
+    expect(r.data).toBe(
+      '<agent_skills>\n' +
+        'Read these user-configured skills:\n' +
+        '- Invoke the Skill tool with skill "superpowers:brainstorming" at agent start (plugin skill, loaded by name, not by path)\n' +
+        '</agent_skills>',
+    );
   });
 });
 
