@@ -244,6 +244,10 @@ check('(i) generated-by: gsd-doc-writer marker intact; zero bm-doc-writer marker
   const tracked = cp.spawnSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' }).stdout.split('\n').filter(Boolean);
   const offenders = [];
   for (const f of tracked) {
+    // Scope the marker-integrity scan to product files. Planning artifacts under
+    // .planning/ legitimately document the marker (including the rebranded form
+    // as the thing to avoid), so they are not policed here.
+    if (f.startsWith('.planning/')) continue;
     const p = path.join(ROOT, f);
     let body;
     try { body = fs.readFileSync(p, 'utf8'); } catch { continue; }
