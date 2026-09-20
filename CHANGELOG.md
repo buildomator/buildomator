@@ -8,6 +8,16 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.8.1] - 2026-09-20  (resume-gap fixes + trusted global skill roots)
+
+Ports two upstream resume-correctness fixes and adds an opt-in security setting. Follows gsd-core through v1.14.
+
+### Fixed
+- **Execute-phase resume no longer strands a phase whose plans are all done but the tail never ran (gsd-core #2868, #3684).** When every plan in a phase was complete, the run exited without checking whether the phase had actually finished. It now makes a status-aware decision: if verification never ran (no VERIFICATION.md) it resumes at the aggregate and verify gates; if verification passed but the run died before the roadmap checkbox was ticked it resumes at the roadmap update; a genuinely finished phase still exits; and a `--gaps-only` or wave-filtered slice that finds nothing still exits as before. Workflow-only change, and the checkbox rewrite stays idempotent.
+
+### Added
+- **`agent_skills_security.trusted_global_roots` (opt-in).** A `global:<name>` skill whose real path resolves outside the runtime global skills directory is rejected by default as a symlink escape. This new config array lets you allow-list additional trusted directories so such a skill loads, with an audit note on stderr when the widened boundary is used. Absolute paths only; the filesystem root and your home directory are refused; the default empty list keeps the current strict behavior unchanged. Both resolver twins.
+
 ## [4.8.0] - 2026-09-20  (bm- agent names + upstream sync ports)
 
 Renames the internal agents from the `gsd-` prefix to `bm-`, and ports four correctness fixes from upstream gsd-core v1.12 through v1.14. The agent rename is additive: `bm-<role>` is the primary name and the legacy `gsd-<role>` keeps resolving in `.planning/config.json` keys and the CLI through the 4.x line, retiring at v5.0 on 2026-10-01.
