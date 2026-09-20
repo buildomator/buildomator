@@ -1,34 +1,42 @@
 'use strict';
 
-/**
- * GENERATED FILE — DO NOT EDIT.
+/*
+ * GENERATED FILE - DO NOT EDIT.
  *
  * Source: sdk/src/query/state-document.ts
  * Regenerate: cd sdk && npm run gen:state-document
  *
- * STATE.md Document Module — pure transforms for STATE.md text.
- * This module does not read the filesystem and does not own persistence or locking.
+ * Pure transforms for STATE.md text (no filesystem, persistence, or locking).
  */
 
-// Internal helpers
+"use strict";
+/**
+ * STATE.md Document Module.
+ *
+ * Pure transforms for STATE.md text. This module does not read the filesystem
+ * and does not own persistence or locking.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.KNOWN_TEMPLATE_DEFAULTS = void 0;
+exports.stateExtractField = stateExtractField;
+exports.stateReplaceField = stateReplaceField;
+exports.stateReplaceFieldWithFallback = stateReplaceFieldWithFallback;
+exports.isStateTemplateDefault = isStateTemplateDefault;
+exports.stateReplaceFieldIfTemplate = stateReplaceFieldIfTemplate;
+exports.stateReplaceFieldIfTemplateWithFallback = stateReplaceFieldIfTemplateWithFallback;
+exports.normalizeStateStatus = normalizeStateStatus;
+exports.computeProgressPercent = computeProgressPercent;
+exports.shouldPreserveExistingProgress = shouldPreserveExistingProgress;
+exports.normalizeProgressNumbers = normalizeProgressNumbers;
 function escapeRegex(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-
-function toFiniteNumber(value) {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : null;
-}
-
-function existingProgressExceedsDerived(existingProgress, derivedProgress, key) {
-    const existing = toFiniteNumber(existingProgress[key]);
-    const derived = toFiniteNumber(derivedProgress[key]);
-    return existing !== null && derived !== null && existing > derived;
-}
-
+// Field patterns are line-anchored (multiline ^) and confined to same-line
+// horizontal whitespace ([ \t] only, never \s which spans newlines), so a match
+// can never cross a newline and an empty field can never consume the next line.
 function stateExtractField(content, fieldName) {
     const escaped = escapeRegex(fieldName);
-    const boldPattern = new RegExp(`\\*\\*${escaped}:\\*\\*[ \\t]*(.+)`, 'i');
+    const boldPattern = new RegExp(`^[ \\t]*\\*\\*${escaped}:\\*\\*[ \\t]*(.+)`, 'im');
     const boldMatch = content.match(boldPattern);
     if (boldMatch)
         return boldMatch[1].trim();
@@ -36,20 +44,26 @@ function stateExtractField(content, fieldName) {
     const plainMatch = content.match(plainPattern);
     return plainMatch ? plainMatch[1].trim() : null;
 }
-
 function stateReplaceField(content, fieldName, newValue) {
     const escaped = escapeRegex(fieldName);
-    const boldPattern = new RegExp(`(\\*\\*${escaped}:\\*\\*\\s*)(.*)`, 'i');
+    const boldPattern = new RegExp(`^([ \\t]*\\*\\*${escaped}:\\*\\*[ \\t]*)(.*)`, 'im');
     if (boldPattern.test(content)) {
-        return content.replace(boldPattern, (_match, prefix) => `${prefix}${newValue}`);
+        return content.replace(boldPattern, (_match, prefix) => joinFieldValue(prefix, newValue));
     }
-    const plainPattern = new RegExp(`(^${escaped}:\\s*)(.*)`, 'im');
+    const plainPattern = new RegExp(`^(${escaped}:[ \\t]*)(.*)`, 'im');
     if (plainPattern.test(content)) {
-        return content.replace(plainPattern, (_match, prefix) => `${prefix}${newValue}`);
+        return content.replace(plainPattern, (_match, prefix) => joinFieldValue(prefix, newValue));
     }
     return null;
 }
-
+// Keep the captured prefix byte-exact when it already ends in horizontal
+// whitespace; otherwise insert a single space before a non-empty value so an
+// empty field row (`**Status:**`) becomes `**Status:** value`.
+function joinFieldValue(prefix, newValue) {
+    if (newValue.length > 0 && !/[ \t]$/.test(prefix))
+        return `${prefix} ${newValue}`;
+    return `${prefix}${newValue}`;
+}
 function stateReplaceFieldWithFallback(content, primary, fallback, value) {
     let result = stateReplaceField(content, primary, value);
     if (result)
@@ -61,7 +75,93 @@ function stateReplaceFieldWithFallback(content, primary, fallback, value) {
     }
     return content;
 }
-
+/**
+ * Known template default values that the SDK state handlers historically write.
+ *
+ * When a state handler is about to overwrite a "soft" field (Status, Last Activity,
+ * Resume File, etc.) it consults this set. If the current value matches a template
+ * default, the handler proceeds (it's overwriting its own past output). If the
+ * current value is NOT a template default, the handler treats it as executor-authored
+ * content and PRESERVES it.
+ *
+ * This preservation contract was added in plugin v2.45.0 (issue #9) after a real
+ * data-loss-shape bug where state.advance-plan / state.record-session unconditionally
+ * overwrote rich executor-authored Status / Last Activity / Resume File content with
+ * template defaults, silently losing the executor's work.
+ */
+exports.KNOWN_TEMPLATE_DEFAULTS = new Set([
+    '',
+    'Ready to execute',
+    // Built from a char code so the literal dash stays out of source while still matching legacy template text.
+    `Phase complete ${String.fromCharCode(0x2014)} ready for verification`,
+    'Phase complete - ready for verification', // ASCII hyphen variant
+    'unknown',
+    'None',
+    'TBD',
+]);
+/**
+ * Returns true if `value` is a known template default (handler-owned) OR a bare
+ * ISO date (which the handlers also write as a default Last Activity value).
+ * Returns false if `value` looks executor-authored.
+ */
+function isStateTemplateDefault(value) {
+    if (value === null || value === undefined)
+        return true;
+    const trimmed = value.trim();
+    if (exports.KNOWN_TEMPLATE_DEFAULTS.has(trimmed))
+        return true;
+    // Bare ISO date "YYYY-MM-DD" (handler-written Last Activity short form)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed))
+        return true;
+    // ISO timestamp "YYYY-MM-DDTHH:MM:SS..." with no descriptive suffix
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/.test(trimmed))
+        return true;
+    return false;
+}
+/**
+ * Replace a field's value ONLY IF the current value is a known template default
+ * (per `isStateTemplateDefault`). Preserves executor-authored content untouched.
+ *
+ * Returns:
+ * - Updated content if the replace happened (current was template-default)
+ * - Original content (unchanged) if the field exists but the current value is
+ *   executor-authored (non-template). Logs a hint via the returned `preserved` flag.
+ * - `null` if the field is not present in the content at all.
+ *
+ * Use this in state handlers that previously called `stateReplaceField` or
+ * `stateReplaceFieldWithFallback` for "soft" fields. Hard fields the handler
+ * legitimately owns (frontmatter `percent`, structural progress lines, the
+ * "Plan: N of M" summary, etc.) can continue using the unconditional helpers.
+ */
+function stateReplaceFieldIfTemplate(content, fieldName, newValue) {
+    const current = stateExtractField(content, fieldName);
+    if (current === null) {
+        return { content, outcome: 'not_found' };
+    }
+    if (!isStateTemplateDefault(current)) {
+        return { content, outcome: 'preserved' };
+    }
+    const replaced = stateReplaceField(content, fieldName, newValue);
+    if (replaced === null) {
+        // Should not happen if extractField succeeded, but defensive.
+        return { content, outcome: 'not_found' };
+    }
+    return { content: replaced, outcome: 'replaced' };
+}
+/**
+ * Like `stateReplaceFieldIfTemplate` but tries a primary field name and a
+ * fallback (e.g., "Last Activity" then "Last activity"). Returns the first
+ * outcome that wasn't `not_found`. If both are not_found, returns not_found.
+ */
+function stateReplaceFieldIfTemplateWithFallback(content, primary, fallback, newValue) {
+    const first = stateReplaceFieldIfTemplate(content, primary, newValue);
+    if (first.outcome !== 'not_found')
+        return first;
+    if (fallback) {
+        return stateReplaceFieldIfTemplate(content, fallback, newValue);
+    }
+    return first;
+}
 function normalizeStateStatus(status, pausedAt) {
     let normalizedStatus = status || 'unknown';
     const statusLower = (status || '').toLowerCase();
@@ -88,7 +188,6 @@ function normalizeStateStatus(status, pausedAt) {
     }
     return normalizedStatus;
 }
-
 function computeProgressPercent(completedPlans, totalPlans, completedPhases, totalPhases) {
     const hasPlanData = totalPlans !== null && totalPlans > 0 && completedPlans !== null;
     const hasPhaseData = totalPhases !== null && totalPhases > 0 && completedPhases !== null;
@@ -98,7 +197,15 @@ function computeProgressPercent(completedPlans, totalPlans, completedPhases, tot
     const phaseFraction = hasPhaseData ? completedPhases / totalPhases : 1;
     return Math.min(100, Math.round(Math.min(planFraction, phaseFraction) * 100));
 }
-
+function toFiniteNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+}
+function existingProgressExceedsDerived(existingProgress, derivedProgress, key) {
+    const existing = toFiniteNumber(existingProgress[key]);
+    const derived = toFiniteNumber(derivedProgress[key]);
+    return existing !== null && derived !== null && existing > derived;
+}
 function shouldPreserveExistingProgress(existingProgress, derivedProgress) {
     if (!existingProgress || typeof existingProgress !== 'object')
         return false;
@@ -111,7 +218,6 @@ function shouldPreserveExistingProgress(existingProgress, derivedProgress) {
         existingProgressExceedsDerived(existing, derived, 'total_plans') ||
         existingProgressExceedsDerived(existing, derived, 'completed_plans'));
 }
-
 function normalizeProgressNumbers(progress) {
     if (!progress || typeof progress !== 'object')
         return progress;
@@ -123,5 +229,3 @@ function normalizeProgressNumbers(progress) {
     }
     return normalized;
 }
-
-module.exports = { stateExtractField, stateReplaceField, stateReplaceFieldWithFallback, normalizeStateStatus, computeProgressPercent, shouldPreserveExistingProgress, normalizeProgressNumbers };

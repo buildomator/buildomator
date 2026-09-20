@@ -9,9 +9,12 @@ function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Field patterns are line-anchored (multiline ^) and confined to same-line
+// horizontal whitespace ([ \t] only, never \s which spans newlines), so a match
+// can never cross a newline and an empty field can never consume the next line.
 export function stateExtractField(content: string, fieldName: string): string | null {
   const escaped = escapeRegex(fieldName);
-  const boldPattern = new RegExp(`\\*\\*${escaped}:\\*\\*[ \\t]*(.+)`, 'i');
+  const boldPattern = new RegExp(`^[ \\t]*\\*\\*${escaped}:\\*\\*[ \\t]*(.+)`, 'im');
   const boldMatch = content.match(boldPattern);
   if (boldMatch) return boldMatch[1].trim();
   const plainPattern = new RegExp(`^${escaped}:[ \\t]*(.+)`, 'im');
@@ -21,15 +24,23 @@ export function stateExtractField(content: string, fieldName: string): string | 
 
 export function stateReplaceField(content: string, fieldName: string, newValue: string): string | null {
   const escaped = escapeRegex(fieldName);
-  const boldPattern = new RegExp(`(\\*\\*${escaped}:\\*\\*\\s*)(.*)`, 'i');
+  const boldPattern = new RegExp(`^([ \\t]*\\*\\*${escaped}:\\*\\*[ \\t]*)(.*)`, 'im');
   if (boldPattern.test(content)) {
-    return content.replace(boldPattern, (_match, prefix: string) => `${prefix}${newValue}`);
+    return content.replace(boldPattern, (_match, prefix: string) => joinFieldValue(prefix, newValue));
   }
-  const plainPattern = new RegExp(`(^${escaped}:\\s*)(.*)`, 'im');
+  const plainPattern = new RegExp(`^(${escaped}:[ \\t]*)(.*)`, 'im');
   if (plainPattern.test(content)) {
-    return content.replace(plainPattern, (_match, prefix: string) => `${prefix}${newValue}`);
+    return content.replace(plainPattern, (_match, prefix: string) => joinFieldValue(prefix, newValue));
   }
   return null;
+}
+
+// Keep the captured prefix byte-exact when it already ends in horizontal
+// whitespace; otherwise insert a single space before a non-empty value so an
+// empty field row (`**Status:**`) becomes `**Status:** value`.
+function joinFieldValue(prefix: string, newValue: string): string {
+  if (newValue.length > 0 && !/[ \t]$/.test(prefix)) return `${prefix} ${newValue}`;
+  return `${prefix}${newValue}`;
 }
 
 export function stateReplaceFieldWithFallback(
@@ -64,7 +75,8 @@ export function stateReplaceFieldWithFallback(
 export const KNOWN_TEMPLATE_DEFAULTS: ReadonlySet<string> = new Set([
   '',
   'Ready to execute',
-  'Phase complete — ready for verification',
+  // Built from a char code so the literal dash stays out of source while still matching legacy template text.
+  `Phase complete ${String.fromCharCode(0x2014)} ready for verification`,
   'Phase complete - ready for verification', // ASCII hyphen variant
   'unknown',
   'None',
