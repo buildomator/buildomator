@@ -86,6 +86,8 @@ export const VALID_CONFIG_KEYS: ReadonlySet<string> = new Set([
   'runtime',
   // #3162 — documented top-level key: controls model ID resolution for non-Claude runtimes
   'resolve_model_ids',
+  // extra directories a symlinked global skill may resolve into (array of absolute paths, default empty)
+  'agent_skills_security.trusted_global_roots',
 ]);
 
 /**

@@ -25,7 +25,8 @@
  * ```
  */
 import { existsSync, realpathSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { homedir } from 'node:os';
+import { isAbsolute, join, parse, resolve, sep } from 'node:path';
 import { detectRuntime, renderGlobalSkillDisplayPath, resolveGlobalSkillDir, resolveGlobalSkillsBase } from './helpers.js';
 import { loadConfig } from '../config.js';
 import { lookupByAgentName } from '../model-catalog.js';
@@ -50,6 +51,60 @@ function resolveWithinBase(target, baseDir) {
     catch {
         return null;
     }
+}
+/**
+ * Read agent_skills_security.trusted_global_roots from a config object and
+ * return the hardened list of directories a symlinked global skill may resolve
+ * into. Each entry is tilde-expanded, must be absolute, is resolved to its real
+ * path, and is dropped when it does not exist, when it is a filesystem/drive/UNC
+ * root, or when it is the user home directory. Duplicates collapse to the first
+ * occurrence. Any non-array config, missing key, or non-string entry yields an
+ * empty list, so the default behaviour is unchanged.
+ */
+function loadTrustedGlobalRoots(config) {
+    if (typeof config !== 'object' || config === null)
+        return [];
+    const section = config.agent_skills_security;
+    if (typeof section !== 'object' || section === null)
+        return [];
+    const entries = section.trusted_global_roots;
+    if (!Array.isArray(entries))
+        return [];
+    const home = homedir();
+    let homeReal;
+    try {
+        homeReal = realpathSync(home);
+    }
+    catch {
+        homeReal = resolve(home);
+    }
+    const roots = [];
+    for (const entry of entries) {
+        if (typeof entry !== 'string')
+            continue;
+        let expanded = entry;
+        if (entry === '~')
+            expanded = home;
+        else if (entry.startsWith('~/'))
+            expanded = join(home, entry.slice(2));
+        if (!isAbsolute(expanded))
+            continue;
+        let real;
+        try {
+            real = realpathSync(expanded);
+        }
+        catch {
+            continue;
+        }
+        const rootOf = parse(real).root;
+        if (real === rootOf || real === rootOf.replace(/[\\/]+$/, ''))
+            continue;
+        if (real === homeReal)
+            continue;
+        if (!roots.includes(real))
+            roots.push(real);
+    }
+    return roots;
 }
 export const agentSkills = async (args, projectDir) => {
     const agentType = (args[0] || '').trim();
@@ -81,6 +136,7 @@ export const agentSkills = async (args, projectDir) => {
         return { data: '' };
     const runtime = detectRuntime(config);
     const globalSkillsBase = resolveGlobalSkillsBase(runtime);
+    const trustedGlobalRoots = loadTrustedGlobalRoots(config);
     const validEntries = [];
     for (const entry of skillPaths) {
         if (typeof entry !== 'string')
@@ -125,7 +181,14 @@ export const agentSkills = async (args, projectDir) => {
                 process.stderr.write(`[agent-skills] WARNING: Global skill not found at "${displayPath}/SKILL.md" — skipping\n`);
                 continue;
             }
-            if (resolveWithinBase(skillMd, globalSkillsBase) === null) {
+            const withinBase = resolveWithinBase(skillMd, globalSkillsBase) !== null;
+            const trustedRoot = withinBase
+                ? null
+                : trustedGlobalRoots.find(root => resolveWithinBase(skillMd, root) !== null);
+            if (trustedRoot) {
+                process.stderr.write(`[agent-skills] NOTE: Global skill "${skillName}" accepted via trusted_global_roots (resolves under ${trustedRoot})\n`);
+            }
+            if (!withinBase && !trustedRoot) {
                 process.stderr.write(`[agent-skills] WARNING: Global skill "${skillName}" failed path check (symlink escape?) — skipping\n`);
                 continue;
             }

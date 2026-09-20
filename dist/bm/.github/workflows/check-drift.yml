@@ -129,6 +129,10 @@ jobs:
         run: node tests/sentinel-validate-guard.test.cjs
       - name: Run skill effort-frontmatter guard test
         run: node tests/effort-frontmatter.test.cjs
+      - name: Run execute-phase resume-gap routing guard test
+        run: node tests/execute-phase-resume-gaps.test.cjs
+      - name: Run trusted global skill roots guard test
+        run: node tests/trusted-global-roots.test.cjs
       - name: Smoke test verify drift JSON output
         run: |
           node bin/gsd-tools.cjs verify drift --scope . --json | node -e \

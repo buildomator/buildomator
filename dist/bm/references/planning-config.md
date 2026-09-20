@@ -336,6 +336,7 @@ Set via `manager.*` namespace (e.g., `"manager": { "flags": { "discuss": "--auto
 | `parallelization` | boolean\|object | `true` | `true`, `false`, `{ "enabled": true }` | Enable parallel wave execution; object form allows additional sub-keys |
 | `model_overrides` | object\|null | `null` | `{ "<agent-type>": "<model-id>" }` | Override model selection per agent type |
 | `agent_skills` | object | `{}` | `{ "<agent-type>": ["<project-relative-skill-dir>", "global:<name>", "global:<plugin>:<skill>"] }` | Skills injected into that agent's prompt; `global:<name>` reads the personal skill under the runtime skills dir, `global:<plugin>:<skill>` asks the agent to load a Claude Code plugin skill by name via the Skill tool |
+| `agent_skills_security.trusted_global_roots` | array | `[]` | Absolute directory paths (`~` expands to the home directory) | Extra directories a `global:<name>` skill is allowed to resolve into through a symlink; entries must be absolute and exist, the filesystem root and the home directory are refused, and with the default an outside-symlinked skill is skipped |
 | `sub_repos` | array | `[]` | Array of relative path strings | Child directories with independent `.git` repos (auto-detected) |
 
 ### Planning Fields

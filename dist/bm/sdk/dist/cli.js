@@ -3248,7 +3248,7 @@ var require_extension = __commonJS({
       if (dest[name] === void 0) dest[name] = [elem];
       else dest[name].push(elem);
     }
-    function parse(header) {
+    function parse2(header) {
       const offers = /* @__PURE__ */ Object.create(null);
       let params = /* @__PURE__ */ Object.create(null);
       let mustUnescape = false;
@@ -3388,7 +3388,7 @@ var require_extension = __commonJS({
         }).join(", ");
       }).join(", ");
     }
-    module.exports = { format, parse };
+    module.exports = { format, parse: parse2 };
   }
 });
 
@@ -3422,7 +3422,7 @@ var require_websocket = __commonJS({
     var {
       EventTarget: { addEventListener, removeEventListener }
     } = require_event_target();
-    var { format, parse } = require_extension();
+    var { format, parse: parse2 } = require_extension();
     var { toBuffer } = require_buffer_util();
     var kAborted = /* @__PURE__ */ Symbol("kAborted");
     var protocolVersions = [8, 13];
@@ -4091,7 +4091,7 @@ var require_websocket = __commonJS({
           }
           let extensions;
           try {
-            extensions = parse(secWebSocketExtensions);
+            extensions = parse2(secWebSocketExtensions);
           } catch (err) {
             const message = "Invalid Sec-WebSocket-Extensions header";
             abortHandshake(websocket, socket, message);
@@ -4381,7 +4381,7 @@ var require_subprotocol = __commonJS({
   "node_modules/ws/lib/subprotocol.js"(exports, module) {
     "use strict";
     var { tokenChars } = require_validation();
-    function parse(header) {
+    function parse2(header) {
       const protocols = /* @__PURE__ */ new Set();
       let start = -1;
       let end = -1;
@@ -4417,7 +4417,7 @@ var require_subprotocol = __commonJS({
       protocols.add(protocol);
       return protocols;
     }
-    module.exports = { parse };
+    module.exports = { parse: parse2 };
   }
 });
 
@@ -4823,7 +4823,7 @@ import { fileURLToPath as fileURLToPath5 } from "node:url";
 // dist/index.js
 import { readFile as readFile37 } from "node:fs/promises";
 import { join as join51, resolve as resolve12 } from "node:path";
-import { homedir as homedir12 } from "node:os";
+import { homedir as homedir13 } from "node:os";
 
 // dist/types.js
 var PhaseType;
@@ -8627,7 +8627,9 @@ var VALID_CONFIG_KEYS = /* @__PURE__ */ new Set([
   // #2517 — runtime-aware model profiles
   "runtime",
   // #3162 — documented top-level key: controls model ID resolution for non-Claude runtimes
-  "resolve_model_ids"
+  "resolve_model_ids",
+  // extra directories a symlinked global skill may resolve into (array of absolute paths, default empty)
+  "agent_skills_security.trusted_global_roots"
 ]);
 var RUNTIME_STATE_KEYS = /* @__PURE__ */ new Set([
   "workflow._auto_chain_active"
@@ -12632,7 +12634,8 @@ var DECISION_ROUTING_STATIC_CATALOG = [
 // dist/query/skills.js
 init_helpers();
 import { existsSync as existsSync16, realpathSync } from "node:fs";
-import { join as join23, resolve as resolve4, sep } from "node:path";
+import { homedir as homedir4 } from "node:os";
+import { isAbsolute as isAbsolute6, join as join23, parse, resolve as resolve4, sep } from "node:path";
 init_model_catalog();
 var GLOBAL_SKILL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
 var PLUGIN_SKILL_NAME_RE = /^[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/;
@@ -12649,6 +12652,49 @@ function resolveWithinBase(target, baseDir) {
   } catch {
     return null;
   }
+}
+function loadTrustedGlobalRoots(config) {
+  if (typeof config !== "object" || config === null)
+    return [];
+  const section = config.agent_skills_security;
+  if (typeof section !== "object" || section === null)
+    return [];
+  const entries = section.trusted_global_roots;
+  if (!Array.isArray(entries))
+    return [];
+  const home = homedir4();
+  let homeReal;
+  try {
+    homeReal = realpathSync(home);
+  } catch {
+    homeReal = resolve4(home);
+  }
+  const roots = [];
+  for (const entry of entries) {
+    if (typeof entry !== "string")
+      continue;
+    let expanded = entry;
+    if (entry === "~")
+      expanded = home;
+    else if (entry.startsWith("~/"))
+      expanded = join23(home, entry.slice(2));
+    if (!isAbsolute6(expanded))
+      continue;
+    let real;
+    try {
+      real = realpathSync(expanded);
+    } catch {
+      continue;
+    }
+    const rootOf = parse(real).root;
+    if (real === rootOf || real === rootOf.replace(/[\\/]+$/, ""))
+      continue;
+    if (real === homeReal)
+      continue;
+    if (!roots.includes(real))
+      roots.push(real);
+  }
+  return roots;
 }
 var agentSkills = async (args, projectDir) => {
   const agentType = (args[0] || "").trim();
@@ -12676,6 +12722,7 @@ var agentSkills = async (args, projectDir) => {
     return { data: "" };
   const runtime = detectRuntime(config);
   const globalSkillsBase = resolveGlobalSkillsBase(runtime);
+  const trustedGlobalRoots = loadTrustedGlobalRoots(config);
   const validEntries = [];
   for (const entry of skillPaths) {
     if (typeof entry !== "string")
@@ -12723,7 +12770,13 @@ var agentSkills = async (args, projectDir) => {
 `);
         continue;
       }
-      if (resolveWithinBase(skillMd2, globalSkillsBase) === null) {
+      const withinBase = resolveWithinBase(skillMd2, globalSkillsBase) !== null;
+      const trustedRoot = withinBase ? null : trustedGlobalRoots.find((root) => resolveWithinBase(skillMd2, root) !== null);
+      if (trustedRoot) {
+        process.stderr.write(`[agent-skills] NOTE: Global skill "${skillName}" accepted via trusted_global_roots (resolves under ${trustedRoot})
+`);
+      }
+      if (!withinBase && !trustedRoot) {
         process.stderr.write(`[agent-skills] WARNING: Global skill "${skillName}" failed path check (symlink escape?) \u2014 skipping
 `);
         continue;
@@ -15156,13 +15209,13 @@ init_helpers();
 init_errors();
 import { existsSync as existsSync25, readdirSync as readdirSync16, readFileSync as readFileSync14, writeFileSync as writeFileSync5, mkdirSync as mkdirSync4, unlinkSync as unlinkSync4 } from "node:fs";
 import { join as join34, basename as basename3, resolve as resolve5 } from "node:path";
-import { homedir as homedir5 } from "node:os";
+import { homedir as homedir6 } from "node:os";
 import { createHash, randomBytes } from "node:crypto";
 
 // dist/query/profile-scan-sessions.js
 import { existsSync as existsSync24, readdirSync as readdirSync13, readFileSync as readFileSync13, statSync as statSync4 } from "node:fs";
 import { basename, join as join31 } from "node:path";
-import { homedir as homedir4 } from "node:os";
+import { homedir as homedir5 } from "node:os";
 function formatBytes(bytes) {
   if (bytes < 1024)
     return `${bytes} B`;
@@ -15215,7 +15268,7 @@ function getProjectName(projectDirName, indexData) {
   return projectDirName;
 }
 function getScanSessionsRoot(overridePath) {
-  const dir = overridePath || join31(homedir4(), ".claude", "projects");
+  const dir = overridePath || join31(homedir5(), ".claude", "projects");
   if (!existsSync24(dir))
     return null;
   return dir;
@@ -15761,7 +15814,7 @@ function generateClaudeInstruction(dimension, rating) {
 }
 
 // dist/query/profile.js
-var STORE_DIR = join34(homedir5(), ".gsd", "knowledge");
+var STORE_DIR = join34(homedir6(), ".gsd", "knowledge");
 function ensureStore() {
   if (!existsSync25(STORE_DIR))
     mkdirSync4(STORE_DIR, { recursive: true });
@@ -16002,7 +16055,7 @@ var profileQuestionnaire = async (args, _projectDir) => {
 // dist/query/skill-manifest.js
 import { existsSync as existsSync26, readdirSync as readdirSync17, readFileSync as readFileSync15, writeFileSync as writeFileSync6 } from "node:fs";
 import { join as join35, resolve as resolve6 } from "node:path";
-import { homedir as homedir6 } from "node:os";
+import { homedir as homedir7 } from "node:os";
 init_helpers();
 function buildSkillManifest(cwd, skillsDir = null) {
   const canonicalRoots = skillsDir ? [{
@@ -16028,7 +16081,7 @@ function buildSkillManifest(cwd, skillsDir = null) {
     },
     {
       root: ".claude/commands/gsd",
-      path: join35(homedir6(), ".claude", "commands", "gsd"),
+      path: join35(homedir7(), ".claude", "commands", "gsd"),
       scope: "legacy-commands",
       kind: "commands",
       deprecated: true
@@ -17490,8 +17543,8 @@ var intelUpdate = async (_args, projectDir, _workstream) => {
 
 // dist/query/profile-output.js
 import { existsSync as existsSync31, mkdirSync as mkdirSync6, readFileSync as readFileSync20, readdirSync as readdirSync21, writeFileSync as writeFileSync8 } from "node:fs";
-import { homedir as homedir7 } from "node:os";
-import { dirname as dirname2, isAbsolute as isAbsolute6, join as join40 } from "node:path";
+import { homedir as homedir8 } from "node:os";
+import { dirname as dirname2, isAbsolute as isAbsolute7, join as join40 } from "node:path";
 init_errors();
 init_helpers();
 var TEMPLATE_DIR = resolveBundledTemplatesDir();
@@ -17789,7 +17842,7 @@ var SENSITIVE_PATTERNS = [
 ];
 function cmdWriteProfileLogic(cwd, options) {
   let analysisPath = options.input;
-  if (!isAbsolute6(analysisPath))
+  if (!isAbsolute7(analysisPath))
     analysisPath = join40(cwd, analysisPath);
   if (!existsSync31(analysisPath)) {
     throw new GSDError(`Analysis file not found: ${analysisPath}`, ErrorClassification.Validation);
@@ -17926,7 +17979,7 @@ function cmdWriteProfileLogic(cwd, options) {
   let outputPath = options.output;
   if (!outputPath) {
     outputPath = resolveLegacyUserProfilePath();
-  } else if (!isAbsolute6(outputPath)) {
+  } else if (!isAbsolute7(outputPath)) {
     outputPath = join40(cwd, outputPath);
   }
   mkdirSync6(dirname2(outputPath), { recursive: true });
@@ -17963,7 +18016,7 @@ var generateDevPreferences = async (args, projectDir) => {
     throw new GSDError("--analysis <path> is required", ErrorClassification.Validation);
   }
   let ap = analysisPath;
-  if (!isAbsolute6(ap))
+  if (!isAbsolute7(ap))
     ap = join40(projectDir, ap);
   if (!existsSync31(ap)) {
     throw new GSDError(`Analysis file not found: ${ap}`, ErrorClassification.Validation);
@@ -18043,7 +18096,7 @@ ${instruction} (${confidence} confidence)
       throw new GSDError(`Runtime "${runtime}" does not use a skills directory; pass --output to choose a path explicitly.`, ErrorClassification.Validation);
     }
     outPath = defaultSkillPath;
-  } else if (!isAbsolute6(outPath)) {
+  } else if (!isAbsolute7(outPath)) {
     outPath = join40(projectDir, outPath);
   }
   mkdirSync6(dirname2(outPath), { recursive: true });
@@ -18067,7 +18120,7 @@ var generateClaudeProfile = async (args, projectDir) => {
     throw new GSDError("--analysis <path> is required", ErrorClassification.Validation);
   }
   let ap = analysisPath;
-  if (!isAbsolute6(ap))
+  if (!isAbsolute7(ap))
     ap = join40(projectDir, ap);
   if (!existsSync31(ap)) {
     throw new GSDError(`Analysis file not found: ${ap}`, ErrorClassification.Validation);
@@ -18135,9 +18188,9 @@ var generateClaudeProfile = async (args, projectDir) => {
   const sectionContent = sectionLines.join("\n");
   let targetPath;
   if (globalFlag) {
-    targetPath = join40(homedir7(), ".claude", "CLAUDE.md");
+    targetPath = join40(homedir8(), ".claude", "CLAUDE.md");
   } else if (outputPathOpt) {
-    targetPath = isAbsolute6(outputPathOpt) ? outputPathOpt : join40(projectDir, outputPathOpt);
+    targetPath = isAbsolute7(outputPathOpt) ? outputPathOpt : join40(projectDir, outputPathOpt);
   } else {
     let configClaudeMdPath = "./CLAUDE.md";
     try {
@@ -18147,7 +18200,7 @@ var generateClaudeProfile = async (args, projectDir) => {
         configClaudeMdPath = p;
     } catch {
     }
-    targetPath = isAbsolute6(configClaudeMdPath) ? configClaudeMdPath : join40(projectDir, configClaudeMdPath);
+    targetPath = isAbsolute7(configClaudeMdPath) ? configClaudeMdPath : join40(projectDir, configClaudeMdPath);
   }
   let action;
   if (existsSync31(targetPath)) {
@@ -18229,8 +18282,8 @@ var generateClaudeMd = async (args, projectDir) => {
       }
     } catch {
     }
-    outputPath = isAbsolute6(configClaudeMdPath) ? configClaudeMdPath : join40(projectDir, configClaudeMdPath);
-  } else if (!isAbsolute6(outputPathOpt)) {
+    outputPath = isAbsolute7(configClaudeMdPath) ? configClaudeMdPath : join40(projectDir, configClaudeMdPath);
+  } else if (!isAbsolute7(outputPathOpt)) {
     outputPath = join40(projectDir, outputPathOpt);
   } else {
     outputPath = outputPathOpt;
@@ -18768,7 +18821,7 @@ var roadmapUpdatePlanProgress = async (args, projectDir, workstream) => {
 import { readFile as readFile29, readdir as readdir14, writeFile as writeFile9 } from "node:fs/promises";
 import { existsSync as existsSync35 } from "node:fs";
 import { join as join43, resolve as resolve9 } from "node:path";
-import { homedir as homedir8 } from "node:os";
+import { homedir as homedir9 } from "node:os";
 init_errors();
 init_helpers();
 function canonicalPlanStem(stem) {
@@ -18992,7 +19045,7 @@ var validateConsistency = async (_args, projectDir, workstream) => {
 var validateHealth = async (args, projectDir, workstream) => {
   const doRepair = args.includes("--repair");
   const resolved = resolve9(projectDir);
-  if (resolved === homedir8()) {
+  if (resolved === homedir9()) {
     return {
       data: {
         status: "error",
@@ -19627,7 +19680,7 @@ var phaseListPlans = async (args, projectDir, workstream) => {
 import { existsSync as existsSync36, readdirSync as readdirSync22, readFileSync as readFileSync21 } from "node:fs";
 import { join as join45, relative as relative13, basename as basename5 } from "node:path";
 import { execSync as execSync2 } from "node:child_process";
-import { homedir as homedir9 } from "node:os";
+import { homedir as homedir10 } from "node:os";
 init_helpers();
 async function getModelAlias(agentType, projectDir) {
   const result = await resolveModel([agentType], projectDir);
@@ -20368,7 +20421,7 @@ var initMapCodebase = async (_args, projectDir) => {
   return { data: withProjectRoot(projectDir, result, config) };
 };
 var initNewWorkspace = async (_args, projectDir) => {
-  const home = process.env.HOME || homedir9();
+  const home = process.env.HOME || homedir10();
   const defaultBase = join45(home, "gsd-workspaces");
   const childRepos = [];
   try {
@@ -20406,7 +20459,7 @@ var initNewWorkspace = async (_args, projectDir) => {
   return { data: withProjectRoot(projectDir, result) };
 };
 var initListWorkspaces = async (_args, _projectDir) => {
-  const home = process.env.HOME || homedir9();
+  const home = process.env.HOME || homedir10();
   const defaultBase = join45(home, "gsd-workspaces");
   const workspaces = [];
   if (existsSync36(defaultBase)) {
@@ -20459,7 +20512,7 @@ var initRemoveWorkspace = async (args, _projectDir) => {
   if (name.includes("/") || name.includes("\\") || name.includes("..")) {
     return { data: { error: `Invalid workspace name: ${name} (path separators not allowed)` } };
   }
-  const home = process.env.HOME || homedir9();
+  const home = process.env.HOME || homedir10();
   const defaultBase = join45(home, "gsd-workspaces");
   const wsPath = join45(defaultBase, name);
   const manifestPath = join45(wsPath, "WORKSPACE.md");
@@ -20532,7 +20585,7 @@ import { existsSync as existsSync37, readdirSync as readdirSync23, statSync as s
 import { execSync as execSync3 } from "node:child_process";
 import { readFile as readFile31 } from "node:fs/promises";
 import { join as join46, relative as relative14 } from "node:path";
-import { homedir as homedir10 } from "node:os";
+import { homedir as homedir11 } from "node:os";
 init_helpers();
 async function getModelAlias2(agentType, projectDir) {
   const result = await resolveModel([agentType], projectDir);
@@ -20619,7 +20672,7 @@ function deriveStatusFromCheckbox(phaseNum, checkboxStates) {
 }
 var initNewProject = async (_args, projectDir, workstream) => {
   const config = await loadConfig(projectDir, workstream);
-  const gsdHome = join46(homedir10(), ".gsd");
+  const gsdHome = join46(homedir11(), ".gsd");
   const hasBraveSearch = !!(process.env.BRAVE_API_KEY || existsSync37(join46(gsdHome, "brave_api_key")));
   const hasFirecrawl = !!(process.env.FIRECRAWL_API_KEY || existsSync37(join46(gsdHome, "firecrawl_api_key")));
   const hasExaSearch = !!(process.env.EXA_API_KEY || existsSync37(join46(gsdHome, "exa_api_key")));
@@ -21566,7 +21619,7 @@ var QueryExecutionPolicy = class {
 
 // dist/query-subprocess-adapter.js
 import { execFile as execFile2 } from "node:child_process";
-import { isAbsolute as isAbsolute7, resolve as resolve10 } from "node:path";
+import { isAbsolute as isAbsolute8, resolve as resolve10 } from "node:path";
 import { readFile as readFile32 } from "node:fs/promises";
 var QuerySubprocessAdapter = class {
   deps;
@@ -21644,7 +21697,7 @@ ${stderrStr}` : ""}`, command, args, typeof error.code === "number" ? error.code
     let jsonStr = trimmed;
     if (jsonStr.startsWith("@file:")) {
       const filePath = jsonStr.slice(6).trim();
-      const resolvedPath = isAbsolute7(filePath) ? filePath : resolve10(this.deps.projectDir, filePath);
+      const resolvedPath = isAbsolute8(filePath) ? filePath : resolve10(this.deps.projectDir, filePath);
       try {
         jsonStr = await readFile32(resolvedPath, "utf-8");
       } catch (err) {
@@ -37925,7 +37978,7 @@ var GSDEventStream = class extends EventEmitter {
 // dist/phase-runner.js
 import { realpathSync as realpathSync3 } from "node:fs";
 import { readdir as readdir16, readFile as readFile33 } from "node:fs/promises";
-import { basename as basename6, dirname as dirname3, isAbsolute as isAbsolute8, join as join47, relative as relative15, resolve as resolve11 } from "node:path";
+import { basename as basename6, dirname as dirname3, isAbsolute as isAbsolute9, join as join47, relative as relative15, resolve as resolve11 } from "node:path";
 
 // dist/research-gate.js
 function checkResearchGate(researchContent) {
@@ -38972,12 +39025,12 @@ var PhaseRunner = class {
     const root = this.realpathForBoundary(resolve11(this.projectDir));
     if (!root)
       return void 0;
-    const absolutePath = isAbsolute8(pathValue) ? resolve11(pathValue) : resolve11(this.projectDir, pathValue);
+    const absolutePath = isAbsolute9(pathValue) ? resolve11(pathValue) : resolve11(this.projectDir, pathValue);
     const canonicalPath = this.realpathForBoundary(absolutePath);
     if (!canonicalPath)
       return void 0;
     const relativePath = relative15(root, canonicalPath);
-    if (relativePath === "" || !relativePath.startsWith("..") && !isAbsolute8(relativePath)) {
+    if (relativePath === "" || !relativePath.startsWith("..") && !isAbsolute9(relativePath)) {
       return canonicalPath;
     }
     return void 0;
@@ -39333,13 +39386,13 @@ import { fileURLToPath as fileURLToPath3 } from "node:url";
 
 // dist/prompt-sanitizer.js
 import { readFileSync as readFileSync23 } from "node:fs";
-import { homedir as homedir11 } from "node:os";
+import { homedir as homedir12 } from "node:os";
 var AT_REFERENCE_PATTERN = /^(\s*)@(~\/[^\s]+|\.planning\/[^\s]+)/gm;
 function resolveAtReferences(input, projectDir) {
   if (!input)
     return input;
   return input.replace(AT_REFERENCE_PATTERN, (_match, indent, refPath) => {
-    const resolvedPath = refPath.startsWith("~/") ? refPath.replace("~/", `${homedir11()}/`) : projectDir ? `${projectDir}/${refPath}` : refPath;
+    const resolvedPath = refPath.startsWith("~/") ? refPath.replace("~/", `${homedir12()}/`) : projectDir ? `${projectDir}/${refPath}` : refPath;
     try {
       const content = readFileSync23(resolvedPath, "utf-8").trim();
       return `${indent}${content}`;
@@ -40488,7 +40541,7 @@ var GSD = class {
       // Repo-local agents directory
       join51(this.projectDir, ".claude", "agents", "bm-executor.md"),
       // Global home directory
-      join51(homedir12(), ".claude", "agents", "bm-executor.md"),
+      join51(homedir13(), ".claude", "agents", "bm-executor.md"),
       join51(this.projectDir, "agents", "bm-executor.md")
     ];
     for (const p of paths) {

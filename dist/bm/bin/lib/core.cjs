@@ -627,6 +627,7 @@ function loadConfig(cwd, options = {}) {
       runtime: parsed.runtime || null,
       model_profile_overrides: parsed.model_profile_overrides || null,
       agent_skills: parsed.agent_skills || {},
+      agent_skills_security: parsed.agent_skills_security || null,
       manager: parsed.manager || {},
       response_language: get('response_language') || null,
       claude_md_path: get('claude_md_path') || null,
