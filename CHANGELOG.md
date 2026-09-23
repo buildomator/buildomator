@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.9.1] - 2026-09-24  (Claude Opus 5.5)
+
+Adopts Claude Opus 5.5 as the top general model tier. No config migration required.
+
+### Changed
+- **Claude Opus 5.5 is now the `opus` tier.** The `opus` tier resolves to `claude-opus-5-5` for the Claude-compatible runtimes (claude, opencode, copilot, hermes); `claude-opus-5` is retired to legacy upstream. Non-Claude runtime aliases are unchanged. The model id was verified against Anthropic's live model documentation. Opus 5.5 is cheaper than Opus 5 ($4 per input MTok and $20 per output MTok, versus $5 and $25), so the executor, code-reviewer, and the other opus-tier agents get the newer model at a lower rate.
+
 ## [4.9.0] - 2026-09-20  (per-language import-habit drift detection)
 
 Adds a per-language import-habit drift axis to the native convention detection, an idea ported from the VibeDrift second upstream (v0.18.0). First cut covers four regex-reliable dimensions.
