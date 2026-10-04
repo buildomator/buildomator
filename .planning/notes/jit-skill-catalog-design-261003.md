@@ -89,6 +89,46 @@ See [[token-lean-sdk-query]] (startup/token cost lever), the
 `feedback_gsd_scope_asymmetry` (addition paths outnumber retirement paths: give
 the catalog a size ceiling and a prune step).
 
+## Licensing gate (added 2026-10-04)
+
+License is a mandatory structural axis of the insertion gate, on the same footing as
+safety. We REFERENCE, never redistribute: Buildomator stores metadata + a pinned
+commit; the user fetches the skill from its source. Caching or vendoring a
+third-party skill into Buildomator's repo is forbidden (it would make us a
+redistributor and inherit the source's obligations).
+
+Per entry: record the SPDX id + a one-line obligation summary, surface both at the
+insert prompt, store in `.planning` for provenance.
+
+Gate policy:
+- Allow: OSI permissive (MIT, Apache-2.0, BSD, ISC).
+- Flag / human-decide: copyleft (GPL/AGPL, since a bundled script copied into the
+  user's tree can create obligations) and source-available.
+- Block by default: no license file (= all rights reserved), unknown, non-commercial,
+  proprietary without reviewed terms. Same posture as unknown-safety.
+
+Bundled tooling carries its own license independent of the skill's (for example
+CodeQL has restrictive terms for some commercial automated use). Check both.
+
+Trademark: label vendor skills factually ("published by Vercel Labs"); never imply a
+vendor endorses Buildomator.
+
+### v1 source licenses (verified 2026-10-04)
+- SEO (coreyhaines31/marketingskills): MIT. Catalog-eligible.
+- DuckDB (duckdb/duckdb-skills): MIT. Catalog-eligible.
+- Docgen (anthropics/skills docx/pdf/pptx/xlsx): BLOCKED. `skills/docx/LICENSE.txt`
+  is "(c) 2025 Anthropic, PBC. All rights reserved." Use is governed by your Anthropic
+  service agreement; users may not extract/retain copies outside the Services,
+  reproduce/copy, create derivative works, or distribute/sublicense to third parties.
+  Not third-party-catalog-eligible. v1 docgen approach: rely on Claude Code's built-in
+  first-party document skills (using them inside Claude Code is authorized Service
+  use), consistent with the Claude-Code-only directive; do not catalog or redistribute
+  them. Fallback if portability is ever needed: author an MIT Buildomator skill over
+  OSS libraries (python-docx / openpyxl / python-pptx / reportlab).
+
+This finding validates the gate: the highest-value gap's default source was caught and
+rejected on license before shipping.
+
 ## Sources
 
 - skills.sh (https://www.skills.sh/) registry + install channel.
