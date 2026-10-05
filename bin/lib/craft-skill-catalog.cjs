@@ -218,24 +218,19 @@ function validateCraftSkillCatalog(raw) {
   return { valid: errors.length === 0, errors };
 }
 
-// Resolve the catalog file across layouts (flat plugin, co-located install,
-// source-repo dev) with an env override in the last slot. An explicit
-// overridePath argument wins over every candidate. Throws a diagnostic listing
-// all candidates when none exist.
+// Resolve the catalog file: an explicit argument wins, then the
+// GSD_CRAFT_SKILL_CATALOG env override, then the layout candidates (flat
+// plugin, co-located install, source-repo dev). Honoring the env override
+// ahead of the auto-detected layout lets a test or deployment deliberately
+// point the reader at a specific file. Throws a diagnostic listing the
+// candidates when none exist.
 function resolveCatalogPath(overridePath) {
-  if (overridePath) {
-    const resolved = path.resolve(overridePath);
-    if (!fs.existsSync(resolved)) {
-      throw new Error(`craft-skill-catalog.json not found at override path: ${resolved}`);
-    }
-    return resolved;
-  }
-
   const candidates = [
+    overridePath ? path.resolve(overridePath) : null,
+    process.env.GSD_CRAFT_SKILL_CATALOG ? path.resolve(process.env.GSD_CRAFT_SKILL_CATALOG) : null,
     path.resolve(__dirname, '..', '..', 'sdk', 'shared', 'craft-skill-catalog.json'),
     path.resolve(__dirname, '..', 'shared', 'craft-skill-catalog.json'),
     path.resolve(__dirname, '..', '..', '..', 'sdk', 'shared', 'craft-skill-catalog.json'),
-    process.env.GSD_CRAFT_SKILL_CATALOG ? path.resolve(process.env.GSD_CRAFT_SKILL_CATALOG) : null,
   ].filter(Boolean);
 
   for (const candidate of candidates) {
