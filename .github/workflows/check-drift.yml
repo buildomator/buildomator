@@ -141,6 +141,8 @@ jobs:
         run: node tests/craft-skill-insertion.test.cjs
       - name: Run craft-skill no-vendoring guard
         run: node tests/craft-skill-no-vendoring.test.cjs
+      - name: Run craft-skill CJS/SDK parity test (drives the committed sdk/dist/cli.js)
+        run: node tests/craft-skill-sdk-parity.test.cjs
       - name: Smoke test verify drift JSON output
         run: |
           node bin/gsd-tools.cjs verify drift --scope . --json | node -e \
