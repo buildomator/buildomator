@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v4.9
 milestone_name: Craft Skill Catalog
-status: executing
-stopped_at: Phase 15 context gathered
-last_updated: "2026-10-05T03:51:29.280Z"
+status: ready_to_plan
+stopped_at: Phase 16 complete (5/5) — ready to discuss Phase 17
+last_updated: 2026-10-05T16:01:30.525Z
 last_activity: 2026-10-05 -- Phase 16 execution started
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 5
-  completed_plans: 5
+  completed_plans: 21
   percent: 33
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** Reduce GSD's per-turn token overhead and agent spawn latency without breaking multi-CLI compatibility
-**Current focus:** Phase 16 — catalog-and-trust-gate-foundation
+**Current focus:** Phase 17 — v1 capability wiring and propose on fit
 
 ## Current Position
 
-Phase: 16 (catalog-and-trust-gate-foundation) — EXECUTING
-Plan: 5 of 5
-Status: Executing Phase 16
-Last activity: 2026-10-05 -- Phase 16 execution started
+Phase: 17
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-05
 
 ## Performance Metrics
 

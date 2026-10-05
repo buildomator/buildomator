@@ -23,10 +23,13 @@ files_reviewed_list:
   - tests/craft-skill-no-vendoring.test.cjs
   - tests/skill-trust-gate.test.cjs
 findings:
-  critical: 1
-  warning: 3
+  critical: 0
+  warning: 2
   info: 1
-  total: 5
+  total: 3
+resolved:
+  - CR-01 (blocker): fixed in 106a803, config reloaded per iteration in releaseCraftSkills
+  - WR-02 (warning): addressed in f9307af, tests/craft-skill-sdk-parity.test.cjs added and wired into CI
 status: issues_found
 ---
 
@@ -35,7 +38,13 @@ status: issues_found
 **Reviewed:** 2026-10-05T03:59:49Z
 **Depth:** standard
 **Files Reviewed:** 18
-**Status:** issues_found
+**Status:** issues_found (CR-01 blocker and WR-02 resolved in gap-closure; WR-01, WR-03, IN-01 remain as advisory)
+
+## Resolution (gap-closure, 2026-10-05)
+
+- CR-01 (blocker, trust-revocation): FIXED in `106a803`. `releaseCraftSkills` now reloads config inside the release loop, matching the SDK twin. The new parity test fails against the pre-fix code, confirming it catches the regression.
+- WR-02 (missing twin parity test): ADDRESSED in `f9307af`. `tests/craft-skill-sdk-parity.test.cjs` compares both twins for list, assess, and the two-skills-one-agent release path, and is wired into `check-drift.yml`.
+- WR-01, WR-03, IN-01 remain open as non-blocking advisory findings (see below).
 
 ## Summary
 

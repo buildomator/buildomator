@@ -35,7 +35,7 @@ license. Ships across the 4.9.x line (not a major bump; 5.0 stays reserved).
   (for example CodeQL) carries its own license; check both. Label vendor skills factually,
   never implying endorsement.
 
-- **CAT-05 Scoped insertion.** (Delivered: Phase 16 Plan 03, CJS twin.) An accepted skill is wired into only the target agent type,
+- **CAT-05 Scoped insertion.** (Delivered: Phase 16 Plans 03 and 04, CJS and SDK twins.) An accepted skill is wired into only the target agent type,
   via the existing `agent_skills` + `trusted_global_roots` path, and recorded in
   `.planning` for reproducibility. Default is ephemeral (removed after the task); sticky
   (persisted in config for that agent type) is an explicit opt-in. It never loads at
