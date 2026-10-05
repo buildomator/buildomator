@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v4.9
 milestone_name: Craft Skill Catalog
-status: Planning phase
-stopped_at: Milestone v4.9 seeded; Phase 16 ready to plan
-last_updated: "2026-10-05T00:00:00.000Z"
-last_activity: 2026-10-05 - Seeded v4.9 Craft Skill Catalog milestone (Phases 16-18); Phase 16 ready to plan
+status: Phase 16 planned
+stopped_at: Phase 16 planned (5 plans, plan-check PASSED); ready to execute
+last_updated: "2026-10-05T12:00:00.000Z"
+last_activity: 2026-10-05 - Planned Phase 16 (5 plans / 4 waves; plan-check PASSED, 0 blockers); ready for /bm:execute-phase 16
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
+  total_plans: 5
   completed_plans: 0
   percent: 0
 ---
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 ## Current Position
 
 Phase: 16 - Catalog and Trust Gate Foundation (v4.9 Craft Skill Catalog)
-Plan: not yet planned
-Status: Planning phase
-Last activity: 2026-10-05 - Seeded v4.9 Craft Skill Catalog milestone (Phases 16-18) from committed exploration; Phase 16 ready to plan.
+Plan: 5 plans created (16-01..16-05), plan-check PASSED (0 blockers, 3 non-blocking warnings)
+Status: Planned; ready to execute
+Last activity: 2026-10-05 - Phase 16 planned and verified; next: /bm:execute-phase 16
 
 ## Performance Metrics
 
