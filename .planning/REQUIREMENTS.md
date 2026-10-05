@@ -23,12 +23,12 @@ license. Ships across the 4.9.x line (not a major bump; 5.0 stays reserved).
   the workflow surfaces the candidate(s) for that domain. The model decides relevance
   only. Nothing is injected until the user accepts.
 
-- **CAT-03 Trust gate: safety.** Insertion is gated structurally plus a one-time human
+- **CAT-03 Trust gate: safety.** (Delivered: Phase 16 Plan 02.) Insertion is gated structurally plus a one-time human
   approve, never by the model reading the skill and vouching for it. Checks: publisher
   allowlist, a review or ban of bundled `scripts/`, and a pinned commit (never floating
   HEAD).
 
-- **CAT-04 Trust gate: license.** Allow OSI-permissive (MIT, Apache-2.0, BSD, ISC); flag
+- **CAT-04 Trust gate: license.** (Delivered: Phase 16 Plan 02.) Allow OSI-permissive (MIT, Apache-2.0, BSD, ISC); flag
   copyleft and source-available for human decision; block no-license / unknown /
   non-commercial / proprietary-without-reviewed-terms. Record SPDX + a one-line
   obligation summary per entry and surface it at the insert prompt. Bundled tooling

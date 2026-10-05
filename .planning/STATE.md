@@ -4,13 +4,13 @@ milestone: v4.9
 milestone_name: Craft Skill Catalog
 status: executing
 stopped_at: Phase 15 context gathered
-last_updated: "2026-10-05T03:02:18.013Z"
+last_updated: "2026-10-05T03:14:43.174Z"
 last_activity: 2026-10-05 -- Phase 16 execution started
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 ## Current Position
 
 Phase: 16 (catalog-and-trust-gate-foundation) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Executing Phase 16
 Last activity: 2026-10-05 -- Phase 16 execution started
 
@@ -52,6 +52,7 @@ Last activity: 2026-10-05 -- Phase 16 execution started
 | Phase 11 P01 | 245s | 3 tasks | 2 files |
 | Phase 11 P03 | 127s | 3 tasks | 2 files |
 | Phase 16 P01 | 10min | 3 tasks | 5 files |
+| Phase 16 P02 | 8min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -63,6 +64,7 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 - [Phase ?]: Used npm view @vibedrift/cli version as the authoritative version source for the second-upstream watch; GitHub release notes are best-effort (guarded || exit 0)
 - [2026-06-29 roadmap]: Phase sequencing — BUILD foundation (Phase 12) before BM plugin (Phase 13) before coexistence testing (Phase 14); BRAND (Phase 15) last since it documents what shipped. Rationale: two-plugin generation must exist before both plugins can be tested together.
 - [Phase ?]: Phase 16 P01: the craft-skill catalog env override GSD_CRAFT_SKILL_CATALOG takes precedence over layout paths in both the CJS and SDK readers — Keeps the two twins consistent and makes the documented env-override fail-closed behavior observable
+- [Phase 16]: Phase 16 P02: the craft-skill trust gate ships in both twins (CJS + SDK), not CJS-only, so workflows and plans 03/04 can call assess/insert through bm-sdk query without an SDK-to-CJS shell-out; a parity test keeps the two identical. Rationale: avoids a runtime shell-out and preserves the twin-parity convention
 
 ### Pending Todos
 
@@ -196,7 +198,7 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 
 ## Session Continuity
 
-Last session: 2026-10-05T03:01:57.584Z
+Last session: 2026-10-05T03:14:32.229Z
 Stopped at: Phase 15 context gathered
 Next action: `/gsd:plan-phase 12` to plan the Two-Plugin Build Foundation phase.
 
