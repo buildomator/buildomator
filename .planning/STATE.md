@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v4.9
 milestone_name: Craft Skill Catalog
-status: Phase 16 planned
-stopped_at: Phase 16 planned (5 plans, plan-check PASSED); ready to execute
-last_updated: "2026-10-05T12:00:00.000Z"
-last_activity: 2026-10-05 - Planned Phase 16 (5 plans / 4 waves; plan-check PASSED, 0 blockers); ready for /bm:execute-phase 16
+status: executing
+stopped_at: Phase 15 context gathered
+last_updated: "2026-10-05T03:02:18.013Z"
+last_activity: 2026-10-05 -- Phase 16 execution started
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 5
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** Reduce GSD's per-turn token overhead and agent spawn latency without breaking multi-CLI compatibility
-**Current focus:** Planning next milestone (v4.1 Buildomator Rebrand shipped and archived 2026-07-14)
+**Current focus:** Phase 16 — catalog-and-trust-gate-foundation
 
 ## Current Position
 
-Phase: 16 - Catalog and Trust Gate Foundation (v4.9 Craft Skill Catalog)
-Plan: 5 plans created (16-01..16-05), plan-check PASSED (0 blockers, 3 non-blocking warnings)
-Status: Planned; ready to execute
-Last activity: 2026-10-05 - Phase 16 planned and verified; next: /bm:execute-phase 16
+Phase: 16 (catalog-and-trust-gate-foundation) — EXECUTING
+Plan: 2 of 5
+Status: Executing Phase 16
+Last activity: 2026-10-05 -- Phase 16 execution started
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Last activity: 2026-10-05 - Phase 16 planned and verified; next: /bm:execute-pha
 | **Total** | **3** | **~26min** | **14** |
 | Phase 11 P01 | 245s | 3 tasks | 2 files |
 | Phase 11 P03 | 127s | 3 tasks | 2 files |
+| Phase 16 P01 | 10min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -61,6 +62,7 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 
 - [Phase ?]: Used npm view @vibedrift/cli version as the authoritative version source for the second-upstream watch; GitHub release notes are best-effort (guarded || exit 0)
 - [2026-06-29 roadmap]: Phase sequencing — BUILD foundation (Phase 12) before BM plugin (Phase 13) before coexistence testing (Phase 14); BRAND (Phase 15) last since it documents what shipped. Rationale: two-plugin generation must exist before both plugins can be tested together.
+- [Phase ?]: Phase 16 P01: the craft-skill catalog env override GSD_CRAFT_SKILL_CATALOG takes precedence over layout paths in both the CJS and SDK readers — Keeps the two twins consistent and makes the documented env-override fail-closed behavior observable
 
 ### Pending Todos
 
@@ -194,7 +196,7 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 
 ## Session Continuity
 
-Last session: 2026-07-12T08:47:26.819Z
+Last session: 2026-10-05T03:01:57.584Z
 Stopped at: Phase 15 context gathered
 Next action: `/gsd:plan-phase 12` to plan the Two-Plugin Build Foundation phase.
 

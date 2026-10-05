@@ -14,7 +14,7 @@ license. Ships across the 4.9.x line (not a major bump; 5.0 stays reserved).
 
 ## Requirements
 
-- **CAT-01 Catalog format.** A curated catalog artifact maps domain/trigger to a pinned
+- **CAT-01 Catalog format.** (Delivered: Phase 16 Plan 01.) A curated catalog artifact maps domain/trigger to a pinned
   external skill with: source URL, pinned commit, SPDX license, trust tier (A/B/C), and
   a bundles-scripts flag. It is a vetted shortlist, not a mirror of the registry. Buildomator
   stores metadata + pins only; it never vendors third-party skill bodies into the repo.
