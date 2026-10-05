@@ -121,6 +121,10 @@ None. The catalog is fully seeded with two live-verified entries; `scripts_revie
 - The catalog contract, license policy tables, and publisher allowlist are in place for plan 02 (the safety + license trust-gate twins), which will read the same JSON.
 - No `dist/bm` regeneration needed here: this plan touches `bin/lib` and `sdk/src` but the build/regeneration gate applies when the generated plugin surface changes; plan 02 or a later plan handles the twin rebuild + `--check` per the phase RESEARCH gotcha.
 
+## Self-Check: PASSED
+
+All five created files exist on disk; all five commits (`d1987da`, `e066134`, `f9f5fae`, `474c84c`, `90f56b8`) are present in git history.
+
 ---
 *Phase: 16-catalog-and-trust-gate-foundation*
 *Completed: 2026-10-05*
