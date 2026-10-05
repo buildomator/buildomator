@@ -16,6 +16,7 @@ import { intelStatus, intelDiff, intelSnapshot, intelValidate, intelQuery, intel
 import { writeProfile, generateClaudeProfile, generateDevPreferences, generateClaudeMd } from './profile-output.js';
 import { phaseMvpMode, taskIsBehaviorAdding, userStoryValidate } from './mvp.js';
 import { worktreeCleanupWave } from './worktree.js';
+import { craftSkillList, craftSkillAssess, craftSkillInsert, craftSkillRelease } from './craft-skill.js';
 export const DOMAIN_STATIC_CATALOG = [
     ['agent-skills', agentSkills],
     ['requirements.mark-complete', requirementsMarkComplete],
@@ -98,6 +99,14 @@ export const DOMAIN_STATIC_CATALOG = [
     ['intel patch-meta', intelPatchMeta],
     ['intel.update', intelUpdate],
     ['intel update', intelUpdate],
+    ['craft-skill.list', craftSkillList],
+    ['craft-skill list', craftSkillList],
+    ['craft-skill.assess', craftSkillAssess],
+    ['craft-skill assess', craftSkillAssess],
+    ['craft-skill.insert', craftSkillInsert],
+    ['craft-skill insert', craftSkillInsert],
+    ['craft-skill.release', craftSkillRelease],
+    ['craft-skill release', craftSkillRelease],
     ['generate-claude-profile', generateClaudeProfile],
     ['generate-dev-preferences', generateDevPreferences],
     ['write-profile', writeProfile],

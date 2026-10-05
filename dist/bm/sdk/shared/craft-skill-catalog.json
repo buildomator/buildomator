@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "licensePolicy": {
+    "allow": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"],
+    "flagCopyleft": [
+      "GPL-2.0-only",
+      "GPL-2.0-or-later",
+      "GPL-3.0-only",
+      "GPL-3.0-or-later",
+      "AGPL-3.0-only",
+      "AGPL-3.0-or-later",
+      "LGPL-2.1-only",
+      "LGPL-2.1-or-later",
+      "LGPL-3.0-only",
+      "LGPL-3.0-or-later",
+      "MPL-2.0",
+      "EPL-2.0",
+      "CDDL-1.0"
+    ],
+    "flagSourceAvailable": [
+      "BUSL-1.1",
+      "SSPL-1.0",
+      "Elastic-2.0",
+      "PolyForm-Small-Business-1.0.0",
+      "PolyForm-Internal-Use-1.0.0",
+      "LicenseRef-Commons-Clause"
+    ],
+    "block": [
+      "NONE",
+      "NOASSERTION",
+      "UNLICENSED",
+      "CC-BY-NC-4.0",
+      "CC-BY-NC-SA-4.0",
+      "CC-BY-NC-ND-4.0",
+      "PolyForm-Noncommercial-1.0.0",
+      "LicenseRef-Proprietary",
+      "LicenseRef-All-Rights-Reserved"
+    ],
+    "obligations": {
+      "MIT": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
+      "Apache-2.0": "Keep the license and NOTICE text with copies; state changes you make; patent grant applies.",
+      "BSD-2-Clause": "Keep the copyright notice and the two-clause disclaimer with any copy; no other conditions.",
+      "BSD-3-Clause": "Keep the copyright notice and disclaimer; do not use the authors' names to endorse derived work.",
+      "ISC": "Keep the copyright and permission notice with any copy; functionally equivalent to MIT.",
+      "GPL-2.0-only": "Copyleft: copying a bundled script into your tree can oblige you to release derived code under GPL-2.0-only; human decision required.",
+      "GPL-2.0-or-later": "Copyleft: copying a bundled script into your tree can oblige you to release derived code under GPL-2.0 or a later version; human decision required.",
+      "GPL-3.0-only": "Copyleft: copying a bundled script into your tree can oblige you to release derived code under GPL-3.0-only; human decision required.",
+      "GPL-3.0-or-later": "Copyleft: copying a bundled script into your tree can oblige you to release derived code under GPL-3.0 or a later version; human decision required.",
+      "AGPL-3.0-only": "Network copyleft: AGPL-3.0-only extends copyleft to users served over a network; copying bundled code obliges source release; human decision required.",
+      "AGPL-3.0-or-later": "Network copyleft: AGPL-3.0 or later extends copyleft to users served over a network; copying bundled code obliges source release; human decision required.",
+      "LGPL-2.1-only": "Weak copyleft: LGPL-2.1-only lets you link the component but modifications to it must be shared back; human decision required.",
+      "LGPL-2.1-or-later": "Weak copyleft: LGPL-2.1 or later lets you link the component but modifications to it must be shared back; human decision required.",
+      "LGPL-3.0-only": "Weak copyleft: LGPL-3.0-only lets you link the component but modifications to it must be shared back; human decision required.",
+      "LGPL-3.0-or-later": "Weak copyleft: LGPL-3.0 or later lets you link the component but modifications to it must be shared back; human decision required.",
+      "MPL-2.0": "File-level copyleft: MPL-2.0 requires sharing changes to covered files; unrelated files stay under your own terms.",
+      "EPL-2.0": "File-level copyleft: EPL-2.0 requires sharing modifications to covered source and carries a patent grant; human decision required.",
+      "CDDL-1.0": "File-level copyleft: CDDL-1.0 requires sharing modifications to covered files under the same license; human decision required.",
+      "BUSL-1.1": "Source-available: production use is restricted until the change date; read the additional-use grant before accepting.",
+      "SSPL-1.0": "Source-available: offering the skill as a service can oblige you to release the whole service stack; read SSPL before accepting.",
+      "Elastic-2.0": "Source-available: you may not provide the skill as a managed service or circumvent license controls; read Elastic-2.0 before accepting.",
+      "PolyForm-Small-Business-1.0.0": "Source-available: free only for small businesses under the stated revenue and headcount caps; larger users need a separate license.",
+      "PolyForm-Internal-Use-1.0.0": "Source-available: internal use only; redistribution or offering to third parties is not granted.",
+      "LicenseRef-Commons-Clause": "Source-available: the Commons Clause removes the right to sell the software; otherwise follows the base license."
+    }
+  },
+  "publishers": {
+    "coreyhaines31": {
+      "name": "Corey Haines",
+      "kind": "individual",
+      "url": "https://github.com/coreyhaines31",
+      "label": "published by Corey Haines (marketingskills)"
+    },
+    "duckdb": {
+      "name": "DuckDB Foundation",
+      "kind": "vendor-official",
+      "url": "https://github.com/duckdb",
+      "label": "published by the DuckDB Foundation"
+    }
+  },
+  "skills": {
+    "seo-audit": {
+      "id": "seo-audit",
+      "domain": "seo",
+      "triggers": ["seo", "search ranking", "meta tags", "core web vitals", "indexing", "sitemap", "technical seo"],
+      "publisher": "coreyhaines31",
+      "source": "https://github.com/coreyhaines31/marketingskills",
+      "skill_path": "skills/seo-audit",
+      "skill_name": "seo-audit",
+      "pinned_commit": "dda3841f0b294e01e93b1541486beefbfab0915e",
+      "license": "MIT",
+      "license_url": "https://github.com/coreyhaines31/marketingskills/blob/dda3841f0b294e01e93b1541486beefbfab0915e/LICENSE",
+      "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
+      "trust_tier": "A",
+      "bundles_scripts": false,
+      "scripts_review": null,
+      "tooling": [],
+      "target_agents": ["bm-executor"],
+      "summary": "SEO audit skill from the marketingskills repo: diagnoses technical and on-page SEO issues from instructions and reference notes; no bundled code.",
+      "verified_at": "2026-10-05"
+    },
+    "duckdb-query": {
+      "id": "duckdb-query",
+      "domain": "data",
+      "triggers": ["duckdb", "sql over files", "parquet", "csv analysis", "query data files", "ad-hoc sql"],
+      "publisher": "duckdb",
+      "source": "https://github.com/duckdb/duckdb-skills",
+      "skill_path": "skills/query",
+      "skill_name": "query",
+      "pinned_commit": "7feda8e01e22bc0886c86123f3884947e36d8c69",
+      "license": "MIT",
+      "license_url": "https://github.com/duckdb/duckdb-skills/blob/7feda8e01e22bc0886c86123f3884947e36d8c69/LICENSE",
+      "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
+      "trust_tier": "B",
+      "bundles_scripts": false,
+      "scripts_review": null,
+      "tooling": [
+        {
+          "name": "duckdb CLI",
+          "license": "MIT",
+          "note": "Installed separately by the user; Buildomator never fetches or runs it. Its license is independent of the skill text."
+        }
+      ],
+      "target_agents": ["bm-executor"],
+      "summary": "DuckDB query skill: runs SQL or natural-language questions against data files and attached databases through the locally installed duckdb CLI.",
+      "verified_at": "2026-10-05"
+    }
+  }
+}

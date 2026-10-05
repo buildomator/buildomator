@@ -3248,7 +3248,7 @@ var require_extension = __commonJS({
       if (dest[name] === void 0) dest[name] = [elem];
       else dest[name].push(elem);
     }
-    function parse2(header) {
+    function parse3(header) {
       const offers = /* @__PURE__ */ Object.create(null);
       let params = /* @__PURE__ */ Object.create(null);
       let mustUnescape = false;
@@ -3388,7 +3388,7 @@ var require_extension = __commonJS({
         }).join(", ");
       }).join(", ");
     }
-    module.exports = { format, parse: parse2 };
+    module.exports = { format, parse: parse3 };
   }
 });
 
@@ -3401,7 +3401,7 @@ var require_websocket = __commonJS({
     var http = __require("http");
     var net = __require("net");
     var tls = __require("tls");
-    var { randomBytes: randomBytes2, createHash: createHash3 } = __require("crypto");
+    var { randomBytes: randomBytes2, createHash: createHash4 } = __require("crypto");
     var { Duplex, Readable } = __require("stream");
     var { URL: URL2 } = __require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -3422,7 +3422,7 @@ var require_websocket = __commonJS({
     var {
       EventTarget: { addEventListener, removeEventListener }
     } = require_event_target();
-    var { format, parse: parse2 } = require_extension();
+    var { format, parse: parse3 } = require_extension();
     var { toBuffer } = require_buffer_util();
     var kAborted = /* @__PURE__ */ Symbol("kAborted");
     var protocolVersions = [8, 13];
@@ -4061,7 +4061,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash3("sha1").update(key + GUID).digest("base64");
+        const digest = createHash4("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -4091,7 +4091,7 @@ var require_websocket = __commonJS({
           }
           let extensions;
           try {
-            extensions = parse2(secWebSocketExtensions);
+            extensions = parse3(secWebSocketExtensions);
           } catch (err) {
             const message = "Invalid Sec-WebSocket-Extensions header";
             abortHandshake(websocket, socket, message);
@@ -4381,7 +4381,7 @@ var require_subprotocol = __commonJS({
   "node_modules/ws/lib/subprotocol.js"(exports, module) {
     "use strict";
     var { tokenChars } = require_validation();
-    function parse2(header) {
+    function parse3(header) {
       const protocols = /* @__PURE__ */ new Set();
       let start = -1;
       let end = -1;
@@ -4417,7 +4417,7 @@ var require_subprotocol = __commonJS({
       protocols.add(protocol);
       return protocols;
     }
-    module.exports = { parse: parse2 };
+    module.exports = { parse: parse3 };
   }
 });
 
@@ -4428,7 +4428,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter2 = __require("events");
     var http = __require("http");
     var { Duplex } = __require("stream");
-    var { createHash: createHash3 } = __require("crypto");
+    var { createHash: createHash4 } = __require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -4729,7 +4729,7 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest = createHash3("sha1").update(key + GUID).digest("base64");
+        const digest = createHash4("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -4817,13 +4817,13 @@ var require_websocket_server = __commonJS({
 // dist/cli.js
 import { parseArgs } from "node:util";
 import { readFile as readFile39 } from "node:fs/promises";
-import { resolve as resolve13 } from "node:path";
-import { fileURLToPath as fileURLToPath5 } from "node:url";
+import { resolve as resolve15 } from "node:path";
+import { fileURLToPath as fileURLToPath6 } from "node:url";
 
 // dist/index.js
 import { readFile as readFile37 } from "node:fs/promises";
-import { join as join51, resolve as resolve12 } from "node:path";
-import { homedir as homedir13 } from "node:os";
+import { join as join52, resolve as resolve14 } from "node:path";
+import { homedir as homedir14 } from "node:os";
 
 // dist/types.js
 var PhaseType;
@@ -7038,9 +7038,9 @@ var roadmapAnnotateDependencies = async (args, projectDir) => {
   if (!phase) {
     return { data: { updated: false, reason: "phase argument required" } };
   }
-  const { spawnSync: spawnSync3 } = await import("node:child_process");
+  const { spawnSync: spawnSync4 } = await import("node:child_process");
   const toolsPath = resolveGsdToolsPath(projectDir);
-  const result = spawnSync3(process.execPath, [toolsPath, "roadmap", "annotate-dependencies", phase], {
+  const result = spawnSync4(process.execPath, [toolsPath, "roadmap", "annotate-dependencies", phase], {
     cwd: projectDir,
     encoding: "utf-8",
     stdio: ["pipe", "pipe", "pipe"],
@@ -18553,6 +18553,834 @@ var worktreeCleanupWave = async (args, projectDir) => {
   };
 };
 
+// dist/query/craft-skill.js
+init_helpers();
+import { existsSync as existsSync34, readFileSync as readFileSync22, mkdirSync as mkdirSync7, writeFileSync as writeFileSync9, renameSync as renameSync2, realpathSync as realpathSync2 } from "node:fs";
+import { homedir as homedir9 } from "node:os";
+import { createHash as createHash3 } from "node:crypto";
+import { spawnSync as spawnSync3 } from "node:child_process";
+import { dirname as dirname3, isAbsolute as isAbsolute8, join as join41, parse as parse2, resolve as resolve10, sep as sep3 } from "node:path";
+init_model_catalog();
+
+// dist/craft-skill-catalog.js
+import { existsSync as existsSync33, readFileSync as readFileSync21 } from "node:fs";
+import { fileURLToPath as fileURLToPath3 } from "node:url";
+import { resolve as resolve9 } from "node:path";
+var ENTRY_KEYS = Object.freeze([
+  "id",
+  "domain",
+  "triggers",
+  "publisher",
+  "source",
+  "skill_path",
+  "skill_name",
+  "pinned_commit",
+  "license",
+  "license_url",
+  "obligations",
+  "trust_tier",
+  "bundles_scripts",
+  "scripts_review",
+  "tooling",
+  "target_agents",
+  "summary",
+  "verified_at"
+]);
+var TRUST_TIERS = Object.freeze(["A", "B", "C"]);
+var PUBLISHER_KINDS = Object.freeze(["vendor-official", "individual", "community"]);
+var PINNED_COMMIT_RE = /^[0-9a-f]{40}$/;
+var MAX_STRING_LENGTH = 400;
+var FORBIDDEN_KEYS = Object.freeze([
+  "body",
+  "content",
+  "instructions",
+  "skill_md",
+  "markdown",
+  "prompt"
+]);
+function isPlainObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function isNonEmptyStringArray(value) {
+  return Array.isArray(value) && value.length > 0 && value.every((item) => typeof item === "string");
+}
+function validateCraftSkillCatalog(raw) {
+  const errors = [];
+  if (!isPlainObject(raw)) {
+    return { valid: false, errors: ["catalog must be an object"] };
+  }
+  if (raw.version !== 1) {
+    errors.push("version must be 1");
+  }
+  const policy = raw.licensePolicy;
+  if (!isPlainObject(policy)) {
+    errors.push("licensePolicy must be an object");
+  } else {
+    for (const field of ["allow", "flagCopyleft", "flagSourceAvailable", "block"]) {
+      const arr = policy[field];
+      if (!Array.isArray(arr) || !arr.every((item) => typeof item === "string")) {
+        errors.push(`licensePolicy.${field} must be an array of strings`);
+      }
+    }
+    if (!isPlainObject(policy.obligations)) {
+      errors.push("licensePolicy.obligations must be an object");
+    } else {
+      const obligations = policy.obligations;
+      const covered = [].concat(Array.isArray(policy.allow) ? policy.allow : []).concat(Array.isArray(policy.flagCopyleft) ? policy.flagCopyleft : []).concat(Array.isArray(policy.flagSourceAvailable) ? policy.flagSourceAvailable : []);
+      for (const id of covered) {
+        if (typeof obligations[id] !== "string" || obligations[id].length === 0) {
+          errors.push(`licensePolicy.obligations is missing a line for ${id}`);
+        }
+      }
+    }
+  }
+  const publishers = raw.publishers;
+  if (!isPlainObject(publishers) || Object.keys(publishers).length === 0) {
+    errors.push("publishers must be a non-empty object");
+  } else {
+    for (const [pid, pub] of Object.entries(publishers)) {
+      if (!isPlainObject(pub)) {
+        errors.push(`publisher ${pid} must be an object`);
+        continue;
+      }
+      if (typeof pub.name !== "string" || pub.name.length === 0) {
+        errors.push(`publisher ${pid} name must be a non-empty string`);
+      }
+      if (!PUBLISHER_KINDS.includes(pub.kind)) {
+        errors.push(`publisher ${pid} kind must be one of ${PUBLISHER_KINDS.join(", ")}`);
+      }
+      if (typeof pub.url !== "string" || pub.url.length === 0) {
+        errors.push(`publisher ${pid} url must be a non-empty string`);
+      }
+      if (typeof pub.label !== "string" || pub.label.length === 0) {
+        errors.push(`publisher ${pid} label must be a non-empty string`);
+      }
+    }
+  }
+  const skills = raw.skills;
+  if (!isPlainObject(skills) || Object.keys(skills).length === 0) {
+    errors.push("skills must be a non-empty object");
+  } else {
+    const allowedPublishers = isPlainObject(publishers) ? new Set(Object.keys(publishers)) : /* @__PURE__ */ new Set();
+    for (const [key, entry] of Object.entries(skills)) {
+      if (!isPlainObject(entry)) {
+        errors.push(`skill ${key} must be an object`);
+        continue;
+      }
+      const entryKeys = Object.keys(entry);
+      for (const forbidden of FORBIDDEN_KEYS) {
+        if (Object.prototype.hasOwnProperty.call(entry, forbidden)) {
+          errors.push(`skill ${key} has forbidden key "${forbidden}" (skill bodies are never stored)`);
+        }
+      }
+      for (const k6 of entryKeys) {
+        if (!ENTRY_KEYS.includes(k6) && !FORBIDDEN_KEYS.includes(k6)) {
+          errors.push(`skill ${key} has unknown key "${k6}"`);
+        }
+      }
+      for (const required of ENTRY_KEYS) {
+        if (!Object.prototype.hasOwnProperty.call(entry, required)) {
+          errors.push(`skill ${key} is missing key "${required}"`);
+        }
+      }
+      for (const [field, value] of Object.entries(entry)) {
+        if (typeof value === "string" && value.length > MAX_STRING_LENGTH) {
+          errors.push(`skill ${key} field "${field}" exceeds the ${MAX_STRING_LENGTH}-char cap (body-smuggling guard)`);
+        }
+      }
+      if (entry.id !== key) {
+        errors.push(`skill ${key} id must equal its map key`);
+      }
+      if (!isNonEmptyStringArray(entry.triggers)) {
+        errors.push(`skill ${key} triggers must be a non-empty array of strings`);
+      }
+      if (!isNonEmptyStringArray(entry.target_agents)) {
+        errors.push(`skill ${key} target_agents must be a non-empty array of strings`);
+      }
+      if (typeof entry.publisher !== "string" || !allowedPublishers.has(entry.publisher)) {
+        errors.push(`skill ${key} publisher "${entry.publisher}" is not in the publishers map`);
+      }
+      if (typeof entry.source !== "string" || !entry.source.startsWith("https://")) {
+        errors.push(`skill ${key} source must start with "https://"`);
+      }
+      if (typeof entry.pinned_commit !== "string" || !PINNED_COMMIT_RE.test(entry.pinned_commit)) {
+        errors.push(`skill ${key} pinned_commit must be a full 40-hex commit sha, not a branch, tag or HEAD`);
+      }
+      if (typeof entry.license !== "string" || entry.license.length === 0) {
+        errors.push(`skill ${key} license must be a non-empty string`);
+      }
+      if (typeof entry.obligations !== "string" || entry.obligations.length === 0) {
+        errors.push(`skill ${key} obligations must be a non-empty string`);
+      }
+      if (!TRUST_TIERS.includes(entry.trust_tier)) {
+        errors.push(`skill ${key} trust_tier must be one of ${TRUST_TIERS.join(", ")}`);
+      }
+      if (typeof entry.bundles_scripts !== "boolean") {
+        errors.push(`skill ${key} bundles_scripts must be a boolean`);
+      }
+      if (entry.scripts_review !== null) {
+        const sr = entry.scripts_review;
+        if (!isPlainObject(sr)) {
+          errors.push(`skill ${key} scripts_review must be null or an object`);
+        } else {
+          if (sr.verdict !== "reviewed" && sr.verdict !== "banned") {
+            errors.push(`skill ${key} scripts_review.verdict must be "reviewed" or "banned"`);
+          }
+          if (typeof sr.commit !== "string" || !PINNED_COMMIT_RE.test(sr.commit)) {
+            errors.push(`skill ${key} scripts_review.commit must be a full 40-hex commit sha`);
+          }
+          if (typeof sr.reviewed_at !== "string") {
+            errors.push(`skill ${key} scripts_review.reviewed_at must be a string`);
+          }
+          if (typeof sr.note !== "string") {
+            errors.push(`skill ${key} scripts_review.note must be a string`);
+          }
+        }
+      }
+      if (!Array.isArray(entry.tooling)) {
+        errors.push(`skill ${key} tooling must be an array`);
+      } else {
+        for (const tool of entry.tooling) {
+          if (!isPlainObject(tool) || typeof tool.name !== "string" || typeof tool.license !== "string") {
+            errors.push(`skill ${key} tooling items must have string name and license`);
+          }
+        }
+      }
+      if (typeof entry.summary !== "string") {
+        errors.push(`skill ${key} summary must be a string`);
+      }
+      if (typeof entry.verified_at !== "string") {
+        errors.push(`skill ${key} verified_at must be a string`);
+      }
+    }
+  }
+  return { valid: errors.length === 0, errors };
+}
+function resolveCatalogPath(overridePath) {
+  const candidates = [
+    overridePath ? resolve9(overridePath) : null,
+    process.env.GSD_CRAFT_SKILL_CATALOG ? resolve9(process.env.GSD_CRAFT_SKILL_CATALOG) : null,
+    fileURLToPath3(new URL("../shared/craft-skill-catalog.json", import.meta.url))
+  ].filter((c) => Boolean(c));
+  for (const candidate of candidates) {
+    if (existsSync33(candidate))
+      return candidate;
+  }
+  throw new Error(`craft-skill-catalog.json not found. Tried:
+${candidates.map((p) => `  ${p}`).join("\n")}`);
+}
+function loadCraftSkillCatalog(overridePath) {
+  const resolved = resolveCatalogPath(overridePath);
+  const parsed = JSON.parse(readFileSync21(resolved, "utf-8"));
+  const { valid, errors } = validateCraftSkillCatalog(parsed);
+  if (!valid) {
+    throw new Error("craft-skill-catalog.json invalid: " + errors.join("; "));
+  }
+  return parsed;
+}
+function deriveCatalogViews(cat) {
+  const CRAFT_SKILLS_BY_ID2 = Object.fromEntries(Object.entries(cat.skills));
+  const triggerToIds = {};
+  for (const [id, entry] of Object.entries(cat.skills)) {
+    for (const trigger of entry.triggers) {
+      const key = String(trigger).toLowerCase();
+      if (!triggerToIds[key])
+        triggerToIds[key] = /* @__PURE__ */ new Set();
+      triggerToIds[key].add(id);
+    }
+  }
+  const CRAFT_SKILL_TRIGGER_INDEX2 = Object.fromEntries(Object.entries(triggerToIds).map(([trigger, ids]) => [trigger, [...ids].sort()]));
+  const PUBLISHER_ALLOWLIST2 = new Set(Object.keys(cat.publishers));
+  return { CRAFT_SKILLS_BY_ID: CRAFT_SKILLS_BY_ID2, CRAFT_SKILL_TRIGGER_INDEX: CRAFT_SKILL_TRIGGER_INDEX2, PUBLISHER_ALLOWLIST: PUBLISHER_ALLOWLIST2 };
+}
+var catalog2 = loadCraftSkillCatalog();
+var _views = deriveCatalogViews(catalog2);
+var CRAFT_SKILLS_BY_ID = _views.CRAFT_SKILLS_BY_ID;
+var CRAFT_SKILL_TRIGGER_INDEX = _views.CRAFT_SKILL_TRIGGER_INDEX;
+var PUBLISHER_ALLOWLIST = _views.PUBLISHER_ALLOWLIST;
+
+// dist/skill-trust-gate.js
+var SAFETY_FINDINGS = Object.freeze({
+  "publisher-not-allowlisted": "the skill's publisher is not on the catalog allowlist; only curated publishers may be inserted",
+  "pin-not-commit": "pinned_commit must be a full 40-hex commit sha; branches, tags and HEAD float and cannot be reproduced",
+  "scripts-unreviewed": "the skill bundles scripts but carries no review record; a human must review or ban them before it can be inserted",
+  "scripts-review-stale": "the scripts review was recorded at a different commit than the pin; re-review at the pinned commit",
+  "tier-c-hold": "trust tier C is held for manual handling and cannot be auto-assessed as safe",
+  "tier-b-undeclared-execution": "trust tier B must declare its execution surface (bundled scripts or external tooling); this entry declares neither",
+  "tooling-license-missing": "a declared tooling dependency has no license recorded; record its license before inserting",
+  "tooling-license-blocked": "a declared tooling dependency carries a blocked license",
+  "source-not-https": "the skill source must be an https URL; other transports are not accepted",
+  "entry-malformed": "the catalog entry is not a well-formed object with a string id"
+});
+function isPlainObject2(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function normalizeSpdx(s3) {
+  if (typeof s3 !== "string")
+    return "";
+  return s3.trim().replace(/\s+/g, " ");
+}
+function makeLicenseVerdict(verdict, spdx, category, obligations, reason) {
+  return { verdict, spdx, category, obligations, reason };
+}
+function findCanonical(list, id) {
+  if (!Array.isArray(list))
+    return null;
+  const low = id.toLowerCase();
+  for (const candidate of list) {
+    if (typeof candidate === "string" && candidate.toLowerCase() === low)
+      return candidate;
+  }
+  return null;
+}
+var NO_LICENSE_IDS = /* @__PURE__ */ new Set(["", "none", "noassertion", "unlicensed"]);
+function classifyOne(spdx, cat) {
+  const policy = cat.licensePolicy;
+  const low = spdx.toLowerCase();
+  if (NO_LICENSE_IDS.has(low)) {
+    return makeLicenseVerdict("block", spdx, "no-license", "", `${spdx || "(empty)"} declares no usable license; blocked`);
+  }
+  let canon = findCanonical(policy.allow, spdx);
+  if (canon) {
+    return makeLicenseVerdict("allow", spdx, "permissive", policy.obligations[canon] || "", `${canon} is an OSI permissive license`);
+  }
+  canon = findCanonical(policy.flagCopyleft, spdx);
+  if (canon) {
+    return makeLicenseVerdict("flag", spdx, "copyleft", policy.obligations[canon] || "", `${canon} is copyleft; a human must decide`);
+  }
+  canon = findCanonical(policy.flagSourceAvailable, spdx);
+  if (canon) {
+    return makeLicenseVerdict("flag", spdx, "source-available", policy.obligations[canon] || "", `${canon} is source-available; a human must decide`);
+  }
+  canon = findCanonical(policy.block, spdx);
+  if (canon) {
+    const category = /nc/i.test(canon) || /noncommercial/i.test(canon) ? "non-commercial" : "proprietary";
+    return makeLicenseVerdict("block", spdx, category, "", `${canon} is ${category}; blocked by policy`);
+  }
+  return makeLicenseVerdict("block", spdx, "unknown", "", `${spdx} is not in the license policy tables; add it deliberately or reject`);
+}
+function splitCompound(expr) {
+  return expr.split(/\s+(?:OR|AND|WITH)\s+/i).map((part) => part.replace(/^\(+|\)+$/g, "").trim()).filter(Boolean);
+}
+function classifyLicense(spdx, cat = catalog2) {
+  const norm = normalizeSpdx(spdx);
+  if (!norm) {
+    return makeLicenseVerdict("block", "", "no-license", "", "(empty) declares no usable license; blocked");
+  }
+  const operands = splitCompound(norm);
+  if (operands.length <= 1) {
+    return classifyOne(norm, cat);
+  }
+  const isOr = /\sOR\s/i.test(norm);
+  const results = operands.map((o3) => classifyOne(o3, cat));
+  const obligations = results.map((r3) => r3.obligations).filter(Boolean).join(" | ");
+  const unknown = results.find((r3) => r3.category === "unknown");
+  if (unknown) {
+    return makeLicenseVerdict("block", norm, "unknown", obligations, `${norm} contains an operand (${unknown.spdx}) not in the license policy tables; blocked`);
+  }
+  const rank = (v3) => v3 === "allow" ? 2 : v3 === "flag" ? 1 : 0;
+  const governing = isOr ? results.reduce((a3, b) => rank(b.verdict) > rank(a3.verdict) ? b : a3) : results.reduce((a3, b) => rank(b.verdict) < rank(a3.verdict) ? b : a3);
+  return makeLicenseVerdict(governing.verdict, norm, governing.category, obligations, `${norm} resolves to ${governing.verdict} (governed by ${governing.spdx})`);
+}
+function finding(code, suffix) {
+  const base = SAFETY_FINDINGS[code];
+  return { code, message: suffix ? `${base}${suffix}` : base };
+}
+function checkSafety(entry, cat = catalog2) {
+  if (!isPlainObject2(entry) || typeof entry.id !== "string") {
+    return { safe: false, findings: [finding("entry-malformed")], scripts_banned: false };
+  }
+  const e3 = entry;
+  const findings = [];
+  let scripts_banned = false;
+  if (!Object.prototype.hasOwnProperty.call(cat.publishers, e3.publisher)) {
+    findings.push(finding("publisher-not-allowlisted"));
+  }
+  if (typeof e3.pinned_commit !== "string" || !PINNED_COMMIT_RE.test(e3.pinned_commit)) {
+    findings.push(finding("pin-not-commit"));
+  }
+  if (typeof e3.source !== "string" || !e3.source.startsWith("https://")) {
+    findings.push(finding("source-not-https"));
+  }
+  if (e3.bundles_scripts === true) {
+    const review = e3.scripts_review;
+    if (!isPlainObject2(review) || review.verdict !== "reviewed" && review.verdict !== "banned") {
+      findings.push(finding("scripts-unreviewed"));
+    } else {
+      if (review.commit !== e3.pinned_commit) {
+        findings.push(finding("scripts-review-stale"));
+      }
+      if (review.verdict === "banned") {
+        scripts_banned = true;
+      }
+    }
+  }
+  if (e3.trust_tier === "C") {
+    findings.push(finding("tier-c-hold"));
+  } else if (e3.trust_tier === "B" && e3.bundles_scripts === false && Array.isArray(e3.tooling) && e3.tooling.length === 0) {
+    findings.push(finding("tier-b-undeclared-execution"));
+  }
+  const tooling = Array.isArray(e3.tooling) ? e3.tooling : [];
+  for (const tool of tooling) {
+    const name = tool && typeof tool.name === "string" ? tool.name : "(unnamed)";
+    if (!tool || typeof tool.license !== "string" || tool.license.length === 0) {
+      findings.push(finding("tooling-license-missing", ` (tool: ${name})`));
+    } else if (classifyLicense(tool.license, cat).verdict === "block") {
+      findings.push(finding("tooling-license-blocked", ` (tool: ${name})`));
+    }
+  }
+  return { safe: findings.length === 0, findings, scripts_banned };
+}
+function scriptsText(entry, scriptsBanned) {
+  if (scriptsBanned)
+    return "BANNED, do not execute";
+  if (!isPlainObject2(entry) || entry.bundles_scripts !== true)
+    return "none";
+  const review = entry.scripts_review;
+  if (isPlainObject2(review) && review.verdict === "reviewed" && review.commit === entry.pinned_commit) {
+    return "reviewed at pin";
+  }
+  return "unreviewed";
+}
+function assessEntry(entry, cat = catalog2) {
+  const e3 = isPlainObject2(entry) ? entry : {};
+  const safety = checkSafety(entry, cat);
+  const license = classifyLicense(e3.license, cat);
+  const toolingList = Array.isArray(e3.tooling) ? e3.tooling : [];
+  const tooling = toolingList.map((tool) => {
+    const name = tool && typeof tool.name === "string" ? tool.name : "(unnamed)";
+    const lic = tool && typeof tool.license === "string" ? tool.license : "";
+    const c = classifyLicense(lic, cat);
+    return { name, license: lic, verdict: c.verdict, category: c.category };
+  });
+  const toolingBlocks = tooling.some((t) => t.verdict === "block");
+  const toolingFlags = tooling.some((t) => t.verdict === "flag");
+  let verdict;
+  if (!safety.safe || license.verdict === "block" || toolingBlocks) {
+    verdict = "block";
+  } else if (license.verdict === "flag" || toolingFlags) {
+    verdict = "flag";
+  } else {
+    verdict = "allow";
+  }
+  const pubEntry = typeof e3.publisher === "string" && isPlainObject2(cat.publishers[e3.publisher]) ? cat.publishers[e3.publisher] : null;
+  const publisher = pubEntry ? { id: e3.publisher, label: pubEntry.label } : null;
+  const prompt = [];
+  prompt.push(`${e3.id}: ${e3.summary}`);
+  prompt.push(pubEntry ? `Publisher: ${pubEntry.label}` : `Publisher: NOT ON ALLOWLIST (${e3.publisher})`);
+  prompt.push(`License: ${license.spdx} (${license.category}, ${license.verdict})`);
+  prompt.push(`Obligations: ${license.obligations}`);
+  for (const t of tooling) {
+    prompt.push(`Tooling: ${t.name} ${t.license} (${t.verdict})`);
+  }
+  prompt.push(`Trust tier: ${e3.trust_tier}; bundled scripts: ${scriptsText(e3, safety.scripts_banned)}`);
+  prompt.push(`Pin: ${e3.source} @ ${e3.pinned_commit} (${e3.skill_path})`);
+  for (const f of safety.findings) {
+    prompt.push(`Finding: ${f.message}`);
+  }
+  prompt.push(`Verdict: ${verdict}`);
+  return {
+    id: e3.id,
+    verdict,
+    safety,
+    license,
+    tooling,
+    scripts_banned: safety.scripts_banned,
+    publisher,
+    pinned_commit: e3.pinned_commit,
+    source: e3.source,
+    skill_path: e3.skill_path,
+    trust_tier: e3.trust_tier,
+    prompt
+  };
+}
+function renderAssessment(assessment) {
+  return assessment.prompt.join("\n");
+}
+
+// dist/query/craft-skill.js
+init_errors();
+var GLOBAL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
+var SHA1_HEAD_RE = /^[0-9a-f]{40}/;
+function resolveWithinBase2(target, baseDir) {
+  try {
+    const resolvedBase = existsSync34(baseDir) ? realpathSync2(baseDir) : resolve10(baseDir);
+    const absTarget = resolve10(baseDir, target);
+    const resolvedTarget = existsSync34(absTarget) ? realpathSync2(absTarget) : absTarget;
+    const baseWithSep = resolvedBase.endsWith(sep3) ? resolvedBase : resolvedBase + sep3;
+    if (resolvedTarget !== resolvedBase && !resolvedTarget.startsWith(baseWithSep)) {
+      return null;
+    }
+    return resolvedTarget;
+  } catch {
+    return null;
+  }
+}
+function loadTrustedGlobalRoots2(config) {
+  if (typeof config !== "object" || config === null)
+    return [];
+  const section = config.agent_skills_security;
+  if (typeof section !== "object" || section === null)
+    return [];
+  const entries = section.trusted_global_roots;
+  if (!Array.isArray(entries))
+    return [];
+  const home = homedir9();
+  let homeReal;
+  try {
+    homeReal = realpathSync2(home);
+  } catch {
+    homeReal = resolve10(home);
+  }
+  const roots = [];
+  for (const entry of entries) {
+    if (typeof entry !== "string")
+      continue;
+    let expanded = entry;
+    if (entry === "~")
+      expanded = home;
+    else if (entry.startsWith("~/"))
+      expanded = join41(home, entry.slice(2));
+    if (!isAbsolute8(expanded))
+      continue;
+    let real;
+    try {
+      real = realpathSync2(expanded);
+    } catch {
+      continue;
+    }
+    const rootOf = parse2(real).root;
+    if (real === rootOf || real === rootOf.replace(/[\\/]+$/, ""))
+      continue;
+    if (real === homeReal)
+      continue;
+    if (!roots.includes(real))
+      roots.push(real);
+  }
+  return roots;
+}
+function pinsFilePath(planningDir) {
+  return join41(planningDir, "craft-skills", "pins.json");
+}
+function readPins(planningDir) {
+  const p = pinsFilePath(planningDir);
+  if (!existsSync34(p))
+    return { version: 1, records: [] };
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync22(p, "utf8"));
+  } catch (err) {
+    throw new GSDError("Failed to read craft-skills/pins.json: " + err.message, ErrorClassification.Execution);
+  }
+  if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.records)) {
+    throw new GSDError("craft-skills/pins.json is malformed: expected { version, records: [] }", ErrorClassification.Execution);
+  }
+  return parsed;
+}
+function writePins(planningDir, pins) {
+  const p = pinsFilePath(planningDir);
+  mkdirSync7(dirname3(p), { recursive: true });
+  const tmp = p + ".tmp";
+  writeFileSync9(tmp, JSON.stringify(pins, null, 2) + "\n");
+  renameSync2(tmp, p);
+}
+function parseFlags(args) {
+  const positional = [];
+  const flags = {};
+  for (let i3 = 0; i3 < args.length; i3++) {
+    const token = args[i3];
+    if (typeof token === "string" && token.startsWith("--")) {
+      const name = token.slice(2);
+      const next = args[i3 + 1];
+      if (next === void 0 || typeof next === "string" && next.startsWith("--")) {
+        flags[name] = true;
+      } else {
+        flags[name] = next;
+        i3++;
+      }
+    } else {
+      positional.push(token);
+    }
+  }
+  return { positional, flags };
+}
+function loadCatalogViews(opts) {
+  const cat = loadCraftSkillCatalog(opts && opts.catalog ? opts.catalog : void 0);
+  const views = deriveCatalogViews(cat);
+  return { cat, views };
+}
+function readFrontmatterName(skillMdPath) {
+  let text;
+  try {
+    text = readFileSync22(skillMdPath, "utf8");
+  } catch {
+    return null;
+  }
+  const lines = text.split(/\r?\n/);
+  if (lines[0] !== "---")
+    return null;
+  for (let i3 = 1; i3 < lines.length; i3++) {
+    if (lines[i3] === "---")
+      break;
+    const m3 = /^name:\s*(.*)$/.exec(lines[i3]);
+    if (m3)
+      return m3[1].trim();
+  }
+  return null;
+}
+function sha256File(p) {
+  return createHash3("sha256").update(readFileSync22(p)).digest("hex");
+}
+function verifyLocalPin(skillDir, pinnedCommit) {
+  const res = spawnSync3("git", ["-C", skillDir, "rev-parse", "HEAD"], { encoding: "utf8", timeout: 5e3 });
+  if (res.status === 0 && typeof res.stdout === "string" && SHA1_HEAD_RE.test(res.stdout.trim())) {
+    const local_head = res.stdout.trim().slice(0, 40);
+    return { git: true, local_head, pin_verified: local_head === pinnedCommit };
+  }
+  return { git: false, local_head: null, pin_verified: false };
+}
+function resolveLocation(projectDir, config, location) {
+  if (typeof location !== "string" || location.length === 0) {
+    return { ok: false, reason: "location is required" };
+  }
+  if (location.startsWith("global:")) {
+    const name = location.slice(7);
+    if (name.includes(":")) {
+      return { ok: false, reason: "plugin-form skills carry no pin; use a project path or global:<name> checkout" };
+    }
+    if (!GLOBAL_NAME_RE.test(name)) {
+      return { ok: false, reason: 'invalid global skill name; expected letters, digits, "_" or "-"' };
+    }
+    const runtime = detectRuntime(config);
+    const base = resolveGlobalSkillsBase(runtime);
+    if (base === null) {
+      return { ok: false, reason: `runtime "${runtime}" does not use a skills directory` };
+    }
+    const skillDir2 = resolveGlobalSkillDir(runtime, name);
+    if (skillDir2 === null) {
+      return { ok: false, reason: `could not resolve global skill directory for "${name}"` };
+    }
+    const skillMd2 = join41(skillDir2, "SKILL.md");
+    if (!existsSync34(skillMd2)) {
+      return { ok: false, reason: `global skill not found at ${skillMd2}` };
+    }
+    const inBase = resolveWithinBase2(skillMd2, base) !== null;
+    const trustedRoots = loadTrustedGlobalRoots2(config);
+    const inTrusted = !inBase && trustedRoots.some((root) => resolveWithinBase2(skillMd2, root) !== null);
+    if (!inBase && !inTrusted) {
+      return { ok: false, reason: "resolves outside the runtime skills dir and outside agent_skills_security.trusted_global_roots" };
+    }
+    return { ok: true, kind: "global", entry: location, skillDir: skillDir2, skillMd: skillMd2 };
+  }
+  if (resolveWithinBase2(location, projectDir) === null) {
+    return { ok: false, reason: `unsafe location "${location}": escapes the project root` };
+  }
+  const skillDir = join41(projectDir, location);
+  const skillMd = join41(skillDir, "SKILL.md");
+  if (!existsSync34(skillMd)) {
+    return { ok: false, reason: `skill not found at ${location}/SKILL.md` };
+  }
+  const entry = location.replace(/\\/g, "/").replace(/^\.\//, "");
+  return { ok: true, kind: "path", entry, skillDir, skillMd };
+}
+function findApproval(pins, id, pinnedCommit) {
+  for (const record of pins.records) {
+    if (record.id === id && record.pinned_commit === pinnedCommit && record.approved_at) {
+      return record;
+    }
+  }
+  return null;
+}
+function toArray(value) {
+  if (value === void 0 || value === null)
+    return [];
+  if (Array.isArray(value))
+    return value.slice();
+  return [value];
+}
+async function insertCraftSkill(projectDir, opts, workstream) {
+  const o3 = opts || {};
+  if (!o3.id || !o3.agent || !o3.location) {
+    throw new GSDError("Usage: craft-skill insert <id> --agent <type> --location <where> [--sticky] [--approved]", ErrorClassification.Validation);
+  }
+  const agent = normalizeAgentName(o3.agent);
+  const { cat, views } = loadCatalogViews(o3);
+  const entry = views.CRAFT_SKILLS_BY_ID[o3.id];
+  if (!entry) {
+    throw new GSDError(`unknown catalog id "${o3.id}"`, ErrorClassification.Validation);
+  }
+  const assessment = assessEntry(entry, cat);
+  if (assessment.verdict === "block") {
+    throw new GSDError("craft-skill insert refused: " + renderAssessment(assessment), ErrorClassification.Validation);
+  }
+  const planningDir = planningPaths(projectDir, workstream).planning;
+  const pins = readPins(planningDir);
+  const prior = findApproval(pins, o3.id, entry.pinned_commit);
+  if (!o3.approved && !prior) {
+    return {
+      inserted: false,
+      needs_approval: true,
+      verdict: assessment.verdict,
+      assessment,
+      prompt: assessment.prompt
+    };
+  }
+  const approved_at = prior ? prior.approved_at : (/* @__PURE__ */ new Date()).toISOString();
+  const config = await loadConfig(projectDir, workstream);
+  const loc = resolveLocation(projectDir, config, o3.location);
+  if (!loc.ok) {
+    throw new GSDError("craft-skill insert refused: " + loc.reason, ErrorClassification.Validation);
+  }
+  const name = readFrontmatterName(loc.skillMd);
+  if (name !== entry.skill_name) {
+    throw new GSDError(`craft-skill insert refused: skill-name-mismatch: SKILL.md declares ${name}, catalog expects ${entry.skill_name}`, ErrorClassification.Validation);
+  }
+  const pin = verifyLocalPin(loc.skillDir, entry.pinned_commit);
+  if (pin.git && !pin.pin_verified) {
+    throw new GSDError(`craft-skill insert refused: pin-mismatch: checkout HEAD ${pin.local_head} differs from pinned commit ${entry.pinned_commit}`, ErrorClassification.Validation);
+  }
+  const skill_md_sha256 = sha256File(loc.skillMd);
+  const mode = o3.sticky ? "sticky" : "ephemeral";
+  const inserted_at = (/* @__PURE__ */ new Date()).toISOString();
+  const record_id = o3.id + "@" + agent + "@" + inserted_at;
+  const record = {
+    record_id,
+    id: o3.id,
+    agent,
+    mode,
+    entry: loc.entry,
+    source: entry.source,
+    skill_path: entry.skill_path,
+    pinned_commit: entry.pinned_commit,
+    pin_verified: pin.pin_verified,
+    local_head: pin.local_head,
+    skill_md_sha256,
+    license: entry.license,
+    obligations: entry.obligations,
+    trust_tier: entry.trust_tier,
+    scripts_banned: assessment.scripts_banned,
+    verdict: assessment.verdict,
+    approved_at,
+    inserted_at,
+    released_at: null
+  };
+  const fresh = readPins(planningDir);
+  fresh.records.push(record);
+  writePins(planningDir, fresh);
+  const current = toArray(lookupByAgentName(config.agent_skills, agent));
+  if (!current.includes(loc.entry)) {
+    await configSet(["agent_skills." + agent, JSON.stringify([...current, loc.entry])], projectDir, workstream);
+  }
+  return {
+    inserted: true,
+    id: o3.id,
+    agent,
+    entry: loc.entry,
+    mode,
+    pinned_commit: entry.pinned_commit,
+    pin_verified: pin.pin_verified,
+    record_id,
+    prompt: assessment.prompt
+  };
+}
+async function releaseCraftSkills(projectDir, opts, workstream) {
+  const o3 = opts || {};
+  if (!o3.agent && !o3.all) {
+    throw new GSDError("Usage: craft-skill release --agent <type> [--id <id>] [--include-sticky] | --all", ErrorClassification.Validation);
+  }
+  const agent = o3.agent ? normalizeAgentName(o3.agent) : null;
+  const planningDir = planningPaths(projectDir, workstream).planning;
+  const pins = readPins(planningDir);
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const released = [];
+  const selected = pins.records.filter((r3) => {
+    if (r3.released_at !== null)
+      return false;
+    if (!o3.all && r3.agent !== agent)
+      return false;
+    if (o3.id && r3.id !== o3.id)
+      return false;
+    if (!o3.includeSticky && r3.mode !== "ephemeral")
+      return false;
+    return true;
+  });
+  if (selected.length > 0) {
+    for (const record of selected) {
+      const config = await loadConfig(projectDir, workstream);
+      const current = toArray(lookupByAgentName(config.agent_skills, record.agent));
+      const next = current.filter((e3) => e3 !== record.entry);
+      await configSet(["agent_skills." + record.agent, JSON.stringify(next)], projectDir, workstream);
+      record.released_at = now;
+      released.push(record.record_id);
+    }
+    writePins(planningDir, pins);
+  }
+  const remaining = pins.records.filter((r3) => r3.released_at === null).length;
+  return { released, remaining };
+}
+function listCraftSkills(opts) {
+  const { views } = loadCatalogViews(opts || {});
+  return Object.values(views.CRAFT_SKILLS_BY_ID).map((e3) => ({
+    id: e3.id,
+    domain: e3.domain,
+    triggers: e3.triggers,
+    publisher: e3.publisher,
+    trust_tier: e3.trust_tier,
+    license: e3.license,
+    pinned_commit: e3.pinned_commit,
+    target_agents: e3.target_agents,
+    summary: e3.summary
+  }));
+}
+function assessCraftSkill(opts) {
+  const o3 = opts || {};
+  const { cat, views } = loadCatalogViews(o3);
+  const entry = o3.id ? views.CRAFT_SKILLS_BY_ID[o3.id] : void 0;
+  if (!entry) {
+    throw new GSDError(`unknown catalog id "${o3.id}"`, ErrorClassification.Validation);
+  }
+  return assessEntry(entry, cat);
+}
+function asString(value) {
+  return typeof value === "string" ? value : void 0;
+}
+var craftSkillList = async (args) => {
+  const { flags } = parseFlags(args);
+  return { data: listCraftSkills({ catalog: asString(flags.catalog) }) };
+};
+var craftSkillAssess = async (args) => {
+  const { positional, flags } = parseFlags(args);
+  const a3 = assessCraftSkill({ id: positional[0], catalog: asString(flags.catalog) });
+  if (flags["raw-text"]) {
+    return { data: renderAssessment(a3), format: "text" };
+  }
+  return { data: a3 };
+};
+var craftSkillInsert = async (args, projectDir, workstream) => {
+  const { positional, flags } = parseFlags(args);
+  return {
+    data: await insertCraftSkill(projectDir, {
+      id: positional[0],
+      agent: asString(flags.agent),
+      location: asString(flags.location),
+      sticky: !!flags.sticky,
+      approved: !!flags.approved,
+      catalog: asString(flags.catalog)
+    }, workstream)
+  };
+};
+var craftSkillRelease = async (args, projectDir, workstream) => {
+  const { flags } = parseFlags(args);
+  return {
+    data: await releaseCraftSkills(projectDir, {
+      agent: asString(flags.agent),
+      id: asString(flags.id),
+      includeSticky: !!flags["include-sticky"],
+      all: !!flags.all
+    }, workstream)
+  };
+};
+
 // dist/query/command-static-catalog-domain.js
 var DOMAIN_STATIC_CATALOG = [
   ["agent-skills", agentSkills],
@@ -18636,6 +19464,14 @@ var DOMAIN_STATIC_CATALOG = [
   ["intel patch-meta", intelPatchMeta],
   ["intel.update", intelUpdate],
   ["intel update", intelUpdate],
+  ["craft-skill.list", craftSkillList],
+  ["craft-skill list", craftSkillList],
+  ["craft-skill.assess", craftSkillAssess],
+  ["craft-skill assess", craftSkillAssess],
+  ["craft-skill.insert", craftSkillInsert],
+  ["craft-skill insert", craftSkillInsert],
+  ["craft-skill.release", craftSkillRelease],
+  ["craft-skill release", craftSkillRelease],
   ["generate-claude-profile", generateClaudeProfile],
   ["generate-dev-preferences", generateDevPreferences],
   ["write-profile", writeProfile],
@@ -18655,22 +19491,22 @@ var DOMAIN_STATIC_CATALOG = [
 // dist/query/state-project-load.js
 init_helpers();
 import { readFile as readFile28 } from "node:fs/promises";
-import { existsSync as existsSync33 } from "node:fs";
-import { join as join41 } from "node:path";
+import { existsSync as existsSync35 } from "node:fs";
+import { join as join42 } from "node:path";
 var PLUGIN_ROOT_FROM_ENV_STATE_LOAD = process.env.CLAUDE_PLUGIN_ROOT;
 var stateProjectLoad = async (_args, projectDir, workstream) => {
   const config = loadLegacyCoreConfig(projectDir);
   const planDir = planningPaths(projectDir, workstream).planning;
   let stateRaw = "";
   try {
-    stateRaw = await readFile28(join41(planDir, "STATE.md"), "utf-8");
+    stateRaw = await readFile28(join42(planDir, "STATE.md"), "utf-8");
   } catch (err) {
     if (err.code !== "ENOENT") {
       throw err;
     }
   }
-  const configExists = existsSync33(join41(planDir, "config.json"));
-  const roadmapExists = existsSync33(join41(planDir, "ROADMAP.md"));
+  const configExists = existsSync35(join42(planDir, "config.json"));
+  const roadmapExists = existsSync35(join42(planDir, "ROADMAP.md"));
   const stateExists = stateRaw.length > 0;
   return {
     data: {
@@ -18711,8 +19547,8 @@ function formatStateLoadRawStdout(data) {
 // dist/query/roadmap-update-plan-progress.js
 init_helpers();
 init_errors();
-import { existsSync as existsSync34 } from "node:fs";
-import { join as join42 } from "node:path";
+import { existsSync as existsSync36 } from "node:fs";
+import { join as join43 } from "node:path";
 function phaseMarkdownRegexSource(phaseNum) {
   const stripped = String(phaseNum).replace(/^[A-Z]{1,6}-(?=\d)/i, "");
   const match = stripped.match(/^0*(\d+)([A-Z])?((?:\.\d+)*)$/i);
@@ -18742,7 +19578,7 @@ var roadmapUpdatePlanProgress = async (args, projectDir, workstream) => {
     throw new GSDError(`Phase ${phaseNum} not found`, ErrorClassification.Validation);
   }
   const planCount = info.plans.length;
-  const phaseAbsDir = join42(projectDir, info.directory);
+  const phaseAbsDir = join43(projectDir, info.directory);
   const summaryCount = countMatchedCompleteSummaries(info.plans, info.summaries, phaseAbsDir);
   if (planCount === 0) {
     return {
@@ -18758,7 +19594,7 @@ var roadmapUpdatePlanProgress = async (args, projectDir, workstream) => {
   const status = isComplete ? "Complete" : summaryCount > 0 ? "In Progress" : "Planned";
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const roadmapPath = planningPaths(projectDir, workstream).roadmap;
-  if (!existsSync34(roadmapPath)) {
+  if (!existsSync36(roadmapPath)) {
     return {
       data: {
         updated: false,
@@ -18819,9 +19655,9 @@ var roadmapUpdatePlanProgress = async (args, projectDir, workstream) => {
 
 // dist/query/validate.js
 import { readFile as readFile29, readdir as readdir14, writeFile as writeFile9 } from "node:fs/promises";
-import { existsSync as existsSync35 } from "node:fs";
-import { join as join43, resolve as resolve9 } from "node:path";
-import { homedir as homedir9 } from "node:os";
+import { existsSync as existsSync37 } from "node:fs";
+import { join as join44, resolve as resolve11 } from "node:path";
+import { homedir as homedir10 } from "node:os";
 init_errors();
 init_helpers();
 function canonicalPlanStem(stem) {
@@ -18990,7 +19826,7 @@ var validateConsistency = async (_args, projectDir, workstream) => {
   for (const dir of diskDirs) {
     let phaseFiles;
     try {
-      phaseFiles = await readdir14(join43(paths.phases, dir));
+      phaseFiles = await readdir14(join44(paths.phases, dir));
     } catch {
       continue;
     }
@@ -19016,14 +19852,14 @@ var validateConsistency = async (_args, projectDir, workstream) => {
   for (const dir of diskDirs) {
     let phaseFiles;
     try {
-      phaseFiles = await readdir14(join43(paths.phases, dir));
+      phaseFiles = await readdir14(join44(paths.phases, dir));
     } catch {
       continue;
     }
     const plans = phaseFiles.filter((f) => f.endsWith("-PLAN.md"));
     for (const plan of plans) {
       try {
-        const content = await readFile29(join43(paths.phases, dir, plan), "utf-8");
+        const content = await readFile29(join44(paths.phases, dir, plan), "utf-8");
         const fm = extractFrontmatter2(content);
         if (!fm.wave) {
           warnings.push(`${dir}/${plan}: missing 'wave' in frontmatter`);
@@ -19044,8 +19880,8 @@ var validateConsistency = async (_args, projectDir, workstream) => {
 };
 var validateHealth = async (args, projectDir, workstream) => {
   const doRepair = args.includes("--repair");
-  const resolved = resolve9(projectDir);
-  if (resolved === homedir9()) {
+  const resolved = resolve11(projectDir);
+  if (resolved === homedir10()) {
     return {
       data: {
         status: "error",
@@ -19062,7 +19898,7 @@ var validateHealth = async (args, projectDir, workstream) => {
   }
   const paths = planningPaths(projectDir, workstream);
   const planBase = paths.planning;
-  const projectPath = join43(planBase, "PROJECT.md");
+  const projectPath = join44(planBase, "PROJECT.md");
   const roadmapPath = paths.roadmap;
   const statePath = paths.state;
   const configPath2 = paths.config;
@@ -19080,7 +19916,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     else
       info.push(issue);
   };
-  if (!existsSync35(planBase)) {
+  if (!existsSync37(planBase)) {
     addIssue("error", "E001", ".planning/ directory not found", "Run /gsd-new-project to initialize");
     return {
       data: {
@@ -19092,7 +19928,7 @@ var validateHealth = async (args, projectDir, workstream) => {
       }
     };
   }
-  if (!existsSync35(projectPath)) {
+  if (!existsSync37(projectPath)) {
     addIssue("error", "E002", "PROJECT.md not found", "Run /gsd-new-project to create");
   } else {
     try {
@@ -19106,10 +19942,10 @@ var validateHealth = async (args, projectDir, workstream) => {
     } catch {
     }
   }
-  if (!existsSync35(roadmapPath)) {
+  if (!existsSync37(roadmapPath)) {
     addIssue("error", "E003", "ROADMAP.md not found", "Run /gsd-new-milestone to create roadmap");
   }
-  if (!existsSync35(statePath)) {
+  if (!existsSync37(statePath)) {
     addIssue("error", "E004", "STATE.md not found", "Run /gsd-health --repair to regenerate", true);
     repairs.push("regenerateState");
   } else {
@@ -19159,7 +19995,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     } catch {
     }
   }
-  if (!existsSync35(configPath2)) {
+  if (!existsSync37(configPath2)) {
     addIssue("warning", "W003", "config.json not found", "Run /gsd-health --repair to create with defaults", true);
     repairs.push("createConfig");
   } else {
@@ -19176,7 +20012,7 @@ var validateHealth = async (args, projectDir, workstream) => {
       repairs.push("resetConfig");
     }
   }
-  if (existsSync35(configPath2)) {
+  if (existsSync37(configPath2)) {
     try {
       const configRaw = await readFile29(configPath2, "utf-8");
       const configParsed = JSON.parse(configRaw);
@@ -19203,7 +20039,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     for (const e3 of entries) {
       if (!e3.isDirectory())
         continue;
-      const phaseFiles = await readdir14(join43(phasesDir, e3.name));
+      const phaseFiles = await readdir14(join44(phasesDir, e3.name));
       const plans = phaseFiles.filter((f) => f.endsWith("-PLAN.md") || f === "PLAN.md");
       const summaries = phaseFiles.filter((f) => f.endsWith("-SUMMARY.md") || f === "SUMMARY.md");
       const summaryBases = /* @__PURE__ */ new Set();
@@ -19227,14 +20063,14 @@ var validateHealth = async (args, projectDir, workstream) => {
     for (const e3 of phaseEntries) {
       if (!e3.isDirectory())
         continue;
-      const phaseFiles = await readdir14(join43(phasesDir, e3.name));
+      const phaseFiles = await readdir14(join44(phasesDir, e3.name));
       const hasResearch = phaseFiles.some((f) => f.endsWith("-RESEARCH.md"));
       const hasValidation = phaseFiles.some((f) => f.endsWith("-VALIDATION.md"));
       if (hasResearch && !hasValidation) {
         const researchFile = phaseFiles.find((f) => f.endsWith("-RESEARCH.md"));
         if (researchFile) {
           try {
-            const researchContent = await readFile29(join43(phasesDir, e3.name, researchFile), "utf-8");
+            const researchContent = await readFile29(join44(phasesDir, e3.name, researchFile), "utf-8");
             if (researchContent.includes("## Validation Architecture")) {
               addIssue("warning", "W009", `Phase ${e3.name}: has Validation Architecture in RESEARCH.md but no VALIDATION.md`, "Re-run /gsd-plan-phase with --research to regenerate");
             }
@@ -19245,7 +20081,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     }
   } catch {
   }
-  if (existsSync35(roadmapPath)) {
+  if (existsSync37(roadmapPath)) {
     try {
       const roadmapContent = await readFile29(roadmapPath, "utf-8");
       const roadmapPhases = /* @__PURE__ */ new Set();
@@ -19294,11 +20130,11 @@ var validateHealth = async (args, projectDir, workstream) => {
       } catch {
       }
       try {
-        const milestoneEntries = await readdir14(join43(planBase, "milestones"), { withFileTypes: true });
+        const milestoneEntries = await readdir14(join44(planBase, "milestones"), { withFileTypes: true });
         for (const milestoneEntry of milestoneEntries) {
           if (!milestoneEntry.isDirectory() || !/-phases$/i.test(milestoneEntry.name))
             continue;
-          const archivedPhaseEntries = await readdir14(join43(planBase, "milestones", milestoneEntry.name), { withFileTypes: true });
+          const archivedPhaseEntries = await readdir14(join44(planBase, "milestones", milestoneEntry.name), { withFileTypes: true });
           for (const archivedPhase of archivedPhaseEntries) {
             if (!archivedPhase.isDirectory())
               continue;
@@ -19332,7 +20168,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     } catch {
     }
   }
-  if (existsSync35(statePath) && existsSync35(roadmapPath)) {
+  if (existsSync37(statePath) && existsSync37(roadmapPath)) {
     try {
       const stateContent = await readFile29(statePath, "utf-8");
       const roadmapContentFull = await readFile29(roadmapPath, "utf-8");
@@ -19351,7 +20187,7 @@ var validateHealth = async (args, projectDir, workstream) => {
     } catch {
     }
   }
-  if (existsSync35(configPath2)) {
+  if (existsSync37(configPath2)) {
     try {
       const configRaw = await readFile29(configPath2, "utf-8");
       const configParsed = JSON.parse(configRaw);
@@ -19446,7 +20282,7 @@ var validateHealth = async (args, projectDir, workstream) => {
             break;
           }
           case "addNyquistKey": {
-            if (existsSync35(configPath2)) {
+            if (existsSync37(configPath2)) {
               try {
                 const configRaw = await readFile29(configPath2, "utf-8");
                 const configParsed = JSON.parse(configRaw);
@@ -19502,7 +20338,7 @@ var validateAgents = async (_args, _projectDir) => {
   const expected = Object.keys(MODEL_PROFILES);
   const installed = [];
   const missing = [];
-  if (!existsSync35(agentsDir)) {
+  if (!existsSync37(agentsDir)) {
     return {
       data: {
         agents_dir: agentsDir,
@@ -19516,7 +20352,7 @@ var validateAgents = async (_args, _projectDir) => {
   for (const agent of expected) {
     const legacy = legacyAgentName(agent);
     const candidates = [`${agent}.md`, `${agent}.agent.md`, `${legacy}.md`, `${legacy}.agent.md`];
-    if (candidates.some((f) => existsSync35(join43(agentsDir, f)))) {
+    if (candidates.some((f) => existsSync37(join44(agentsDir, f)))) {
       installed.push(agent);
     } else {
       missing.push(agent);
@@ -19569,7 +20405,7 @@ var validateContext = async (args, _projectDir) => {
 // dist/query/phase-list-queries.js
 init_errors();
 import { readFile as readFile30, readdir as readdir15 } from "node:fs/promises";
-import { join as join44, relative as relative12 } from "node:path";
+import { join as join45, relative as relative12 } from "node:path";
 init_helpers();
 async function resolvePhaseDir2(phase, projectDir, workstream) {
   const phasesDir = planningPaths(projectDir, workstream).phases;
@@ -19578,7 +20414,7 @@ async function resolvePhaseDir2(phase, projectDir, workstream) {
     const entries = await readdir15(phasesDir, { withFileTypes: true });
     const dirs = entries.filter((e3) => e3.isDirectory()).map((e3) => e3.name).sort((a3, b) => comparePhaseNum(a3, b));
     const match = dirs.find((d) => phaseTokenMatches(d, normalized));
-    return match ? join44(phasesDir, match) : null;
+    return match ? join45(phasesDir, match) : null;
   } catch {
     return null;
   }
@@ -19615,7 +20451,7 @@ var phaseListArtifacts = async (args, projectDir, workstream) => {
     }
     return f.endsWith("-RESEARCH.md") || f === "RESEARCH.md";
   });
-  const artifacts = baseNames.sort().map((f) => toPosixPath2(relative12(projectDir, join44(phaseDir, f))));
+  const artifacts = baseNames.sort().map((f) => toPosixPath2(relative12(projectDir, join45(phaseDir, f))));
   return {
     data: {
       phase: normalizePhaseName(phase),
@@ -19653,7 +20489,7 @@ var phaseListPlans = async (args, projectDir, workstream) => {
   const plans = [];
   for (const planFile of planFiles) {
     const planId = planFile.replace("-PLAN.md", "").replace("PLAN.md", "");
-    const planPath = join44(phaseDir, planFile);
+    const planPath = join45(phaseDir, planFile);
     const content = await readFile30(planPath, "utf-8");
     const fm = extractFrontmatter2(content);
     if (schemaKey && !(schemaKey in fm)) {
@@ -19677,10 +20513,10 @@ var phaseListPlans = async (args, projectDir, workstream) => {
 };
 
 // dist/query/init.js
-import { existsSync as existsSync36, readdirSync as readdirSync22, readFileSync as readFileSync21 } from "node:fs";
-import { join as join45, relative as relative13, basename as basename5 } from "node:path";
+import { existsSync as existsSync38, readdirSync as readdirSync22, readFileSync as readFileSync23 } from "node:fs";
+import { join as join46, relative as relative13, basename as basename5 } from "node:path";
 import { execSync as execSync2 } from "node:child_process";
-import { homedir as homedir10 } from "node:os";
+import { homedir as homedir11 } from "node:os";
 init_helpers();
 async function getModelAlias(agentType, projectDir) {
   const result = await resolveModel([agentType], projectDir);
@@ -19705,7 +20541,7 @@ function extractPhaseArg(args) {
   return first && !first.startsWith("--") ? first : void 0;
 }
 function pathExists(base, relPath) {
-  return existsSync36(join45(base, relPath));
+  return existsSync38(join46(base, relPath));
 }
 function gitWorktreeInfo(base) {
   try {
@@ -19754,11 +20590,11 @@ async function shouldDropArchivedPhaseMatch(phaseInfo, roadmapPhase, projectDir,
   return true;
 }
 function getLatestCompletedMilestone(projectDir) {
-  const milestonesPath = join45(projectDir, ".planning", "MILESTONES.md");
-  if (!existsSync36(milestonesPath))
+  const milestonesPath = join46(projectDir, ".planning", "MILESTONES.md");
+  if (!existsSync38(milestonesPath))
     return null;
   try {
-    const content = readFileSync21(milestonesPath, "utf-8");
+    const content = readFileSync23(milestonesPath, "utf-8");
     const match = content.match(/^##\s+(v[\d.]+)\s+(.+?)\s+\(Shipped:/m);
     if (!match)
       return null;
@@ -19771,14 +20607,14 @@ function checkAgentsInstalled2(config) {
   const runtime = detectRuntime(config);
   const agentsDir = resolveAgentsDir(runtime);
   const expectedAgents = Object.keys(MODEL_PROFILES);
-  if (!existsSync36(agentsDir)) {
+  if (!existsSync38(agentsDir)) {
     return { agents_installed: false, missing_agents: expectedAgents };
   }
   const missing = [];
   for (const agent of expectedAgents) {
     const legacy = legacyAgentName(agent);
     const candidates = [`${agent}.md`, `${agent}.agent.md`, `${legacy}.md`, `${legacy}.agent.md`];
-    if (!candidates.some((f) => existsSync36(join45(agentsDir, f)))) {
+    if (!candidates.some((f) => existsSync38(join46(agentsDir, f)))) {
       missing.push(agent);
     }
   }
@@ -19865,10 +20701,10 @@ function withProjectRoot(projectDir, result, config) {
   if (projectCode) {
     result.project_code = projectCode;
   }
-  const projectMdPath = join45(projectDir, ".planning", "PROJECT.md");
+  const projectMdPath = join46(projectDir, ".planning", "PROJECT.md");
   try {
-    if (existsSync36(projectMdPath)) {
-      const content = readFileSync21(projectMdPath, "utf-8");
+    if (existsSync38(projectMdPath)) {
+      const content = readFileSync23(projectMdPath, "utf-8");
       const h1Match = content.match(/^#\s+(.+)$/m);
       if (h1Match) {
         result.project_title = h1Match[1].trim();
@@ -19888,7 +20724,7 @@ var initExecutePhase = async (args, projectDir, workstream) => {
   const planningDir = paths.planning;
   const { phaseInfo, roadmapPhase } = await getPhaseInfoWithFallback(phase, projectDir, workstream);
   const phase_req_ids = extractReqIds(roadmapPhase);
-  const configExists = existsSync36(join45(planningDir, "config.json"));
+  const configExists = existsSync38(join46(planningDir, "config.json"));
   const [executorModel, verifierModel] = configExists ? await Promise.all([
     getModelAlias("bm-executor", projectDir),
     getModelAlias("bm-verifier", projectDir)
@@ -19927,12 +20763,12 @@ var initExecutePhase = async (args, projectDir, workstream) => {
     milestone_version: milestone.version,
     milestone_name: milestone.name,
     milestone_slug: generateSlugInternal(milestone.name),
-    state_exists: existsSync36(join45(planningDir, "STATE.md")),
-    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
+    state_exists: existsSync38(join46(planningDir, "STATE.md")),
+    roadmap_exists: existsSync38(join46(planningDir, "ROADMAP.md")),
     config_exists: configExists,
-    state_path: toPosixPath2(relative13(projectDir, join45(planningDir, "STATE.md"))),
-    roadmap_path: toPosixPath2(relative13(projectDir, join45(planningDir, "ROADMAP.md"))),
-    config_path: toPosixPath2(relative13(projectDir, join45(planningDir, "config.json")))
+    state_path: toPosixPath2(relative13(projectDir, join46(planningDir, "STATE.md"))),
+    roadmap_path: toPosixPath2(relative13(projectDir, join46(planningDir, "ROADMAP.md"))),
+    config_path: toPosixPath2(relative13(projectDir, join46(planningDir, "config.json")))
   };
   return { data: withProjectRoot(projectDir, result, config) };
 };
@@ -19946,7 +20782,7 @@ var initPlanPhase = async (args, projectDir, workstream) => {
   const planningDir = paths.planning;
   const { phaseInfo, roadmapPhase } = await getPhaseInfoWithFallback(phase, projectDir, workstream);
   const phase_req_ids = extractReqIds(roadmapPhase);
-  const configExists = existsSync36(join45(planningDir, "config.json"));
+  const configExists = existsSync38(join46(planningDir, "config.json"));
   const [researcherModel, plannerModel, checkerModel] = configExists ? await Promise.all([
     getModelAlias("bm-phase-researcher", projectDir),
     getModelAlias("bm-planner", projectDir),
@@ -19957,11 +20793,11 @@ var initPlanPhase = async (args, projectDir, workstream) => {
   const phaseDir = phaseInfo?.directory ?? null;
   const plans = phaseInfo?.plans || [];
   const summaries = phaseInfo?.summaries || [];
-  const phaseStatus = phaseDir ? await determinePhaseStatus(plans.length, summaries.length, join45(projectDir, phaseDir)) : "Pending";
+  const phaseStatus = phaseDir ? await determinePhaseStatus(plans.length, summaries.length, join46(projectDir, phaseDir)) : "Pending";
   const rawProjectCode = config.project_code || "";
   assertSafeProjectCode(rawProjectCode);
   const expectedPhaseDirName = phaseDir ? null : computeExpectedPhaseDirName(phaseNumber, phaseName, rawProjectCode);
-  const expectedPhaseDir = expectedPhaseDirName ? toPosixPath2(relative13(projectDir, join45(paths.phases, expectedPhaseDirName))) : null;
+  const expectedPhaseDir = expectedPhaseDirName ? toPosixPath2(relative13(projectDir, join46(paths.phases, expectedPhaseDirName))) : null;
   const cfg = config;
   const result = {
     researcher_model: researcherModel,
@@ -19990,35 +20826,35 @@ var initPlanPhase = async (args, projectDir, workstream) => {
     has_reviews: phaseInfo?.has_reviews || false,
     has_plans: plans.length > 0,
     plan_count: plans.length,
-    planning_exists: existsSync36(planningDir),
-    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
-    state_path: toPosixPath2(relative13(projectDir, join45(planningDir, "STATE.md"))),
-    roadmap_path: toPosixPath2(relative13(projectDir, join45(planningDir, "ROADMAP.md"))),
-    requirements_path: toPosixPath2(relative13(projectDir, join45(planningDir, "REQUIREMENTS.md"))),
+    planning_exists: existsSync38(planningDir),
+    roadmap_exists: existsSync38(join46(planningDir, "ROADMAP.md")),
+    state_path: toPosixPath2(relative13(projectDir, join46(planningDir, "STATE.md"))),
+    roadmap_path: toPosixPath2(relative13(projectDir, join46(planningDir, "ROADMAP.md"))),
+    requirements_path: toPosixPath2(relative13(projectDir, join46(planningDir, "REQUIREMENTS.md"))),
     patterns_path: null
   };
   if (phaseDir) {
-    const phaseDirFull = join45(projectDir, phaseDir);
+    const phaseDirFull = join46(projectDir, phaseDir);
     try {
       const files = readdirSync22(phaseDirFull);
       const contextFile = files.find((f) => f.endsWith("-CONTEXT.md") || f === "CONTEXT.md");
       if (contextFile)
-        result.context_path = toPosixPath2(join45(phaseDir, contextFile));
+        result.context_path = toPosixPath2(join46(phaseDir, contextFile));
       const researchFile = files.find((f) => f.endsWith("-RESEARCH.md") || f === "RESEARCH.md");
       if (researchFile)
-        result.research_path = toPosixPath2(join45(phaseDir, researchFile));
+        result.research_path = toPosixPath2(join46(phaseDir, researchFile));
       const verificationFile = files.find((f) => f.endsWith("-VERIFICATION.md") || f === "VERIFICATION.md");
       if (verificationFile)
-        result.verification_path = toPosixPath2(join45(phaseDir, verificationFile));
+        result.verification_path = toPosixPath2(join46(phaseDir, verificationFile));
       const uatFile = files.find((f) => f.endsWith("-UAT.md") || f === "UAT.md");
       if (uatFile)
-        result.uat_path = toPosixPath2(join45(phaseDir, uatFile));
+        result.uat_path = toPosixPath2(join46(phaseDir, uatFile));
       const reviewsFile = files.find((f) => f.endsWith("-REVIEWS.md") || f === "REVIEWS.md");
       if (reviewsFile)
-        result.reviews_path = toPosixPath2(join45(phaseDir, reviewsFile));
+        result.reviews_path = toPosixPath2(join46(phaseDir, reviewsFile));
       const patternsFile = files.find((f) => f.endsWith("-PATTERNS.md") || f === "PATTERNS.md");
       if (patternsFile)
-        result.patterns_path = toPosixPath2(join45(phaseDir, patternsFile));
+        result.patterns_path = toPosixPath2(join46(phaseDir, patternsFile));
     } catch {
     }
   }
@@ -20026,13 +20862,13 @@ var initPlanPhase = async (args, projectDir, workstream) => {
 };
 var initNewMilestone = async (_args, projectDir) => {
   const config = await loadConfig(projectDir);
-  const planningDir = join45(projectDir, ".planning");
+  const planningDir = join46(projectDir, ".planning");
   const milestone = await getMilestoneInfo(projectDir);
   const latestCompleted = getLatestCompletedMilestone(projectDir);
-  const phasesDir = join45(planningDir, "phases");
+  const phasesDir = join46(planningDir, "phases");
   let phaseDirCount = 0;
   try {
-    if (existsSync36(phasesDir)) {
+    if (existsSync38(phasesDir)) {
       phaseDirCount = readdirSync22(phasesDir, { withFileTypes: true }).filter((entry) => entry.isDirectory()).length;
     }
   } catch {
@@ -20053,20 +20889,20 @@ var initNewMilestone = async (_args, projectDir) => {
     latest_completed_milestone: latestCompleted?.version || null,
     latest_completed_milestone_name: latestCompleted?.name || null,
     phase_dir_count: phaseDirCount,
-    phase_archive_path: latestCompleted ? toPosixPath2(relative13(projectDir, join45(projectDir, ".planning", "milestones", `${latestCompleted.version}-phases`))) : null,
+    phase_archive_path: latestCompleted ? toPosixPath2(relative13(projectDir, join46(projectDir, ".planning", "milestones", `${latestCompleted.version}-phases`))) : null,
     project_exists: pathExists(projectDir, ".planning/PROJECT.md"),
-    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
-    state_exists: existsSync36(join45(planningDir, "STATE.md")),
+    roadmap_exists: existsSync38(join46(planningDir, "ROADMAP.md")),
+    state_exists: existsSync38(join46(planningDir, "STATE.md")),
     project_path: ".planning/PROJECT.md",
-    roadmap_path: toPosixPath2(relative13(projectDir, join45(planningDir, "ROADMAP.md"))),
-    state_path: toPosixPath2(relative13(projectDir, join45(planningDir, "STATE.md")))
+    roadmap_path: toPosixPath2(relative13(projectDir, join46(planningDir, "ROADMAP.md"))),
+    state_path: toPosixPath2(relative13(projectDir, join46(planningDir, "STATE.md")))
   };
   return { data: withProjectRoot(projectDir, result, config) };
 };
 var initQuick = async (args, projectDir) => {
   const description = args[0] || null;
   const config = await loadConfig(projectDir);
-  const planningDir = join45(projectDir, ".planning");
+  const planningDir = join46(projectDir, ".planning");
   const now = /* @__PURE__ */ new Date();
   const slug = description ? generateSlugInternal(description).substring(0, 40) : null;
   const yy = String(now.getFullYear()).slice(-2);
@@ -20079,7 +20915,7 @@ var initQuick = async (args, projectDir) => {
   const quickId = dateStr + "-" + timeEncoded;
   const branchSlug = slug || "quick";
   const quickBranchName = config.git.quick_branch_template ? config.git.quick_branch_template.replace("{num}", quickId).replace("{quick}", quickId).replace("{slug}", branchSlug) : null;
-  const configExists = existsSync36(join45(planningDir, "config.json"));
+  const configExists = existsSync38(join46(planningDir, "config.json"));
   const [plannerModel, executorModel, checkerModel, verifierModel] = configExists ? await Promise.all([
     getModelAlias("bm-planner", projectDir),
     getModelAlias("bm-executor", projectDir),
@@ -20100,26 +20936,26 @@ var initQuick = async (args, projectDir) => {
     timestamp: now.toISOString(),
     quick_dir: ".planning/quick",
     task_dir: slug ? `.planning/quick/${quickId}-${slug}` : null,
-    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
-    planning_exists: existsSync36(join45(projectDir, ".planning"))
+    roadmap_exists: existsSync38(join46(planningDir, "ROADMAP.md")),
+    planning_exists: existsSync38(join46(projectDir, ".planning"))
   };
   return { data: withProjectRoot(projectDir, result, config) };
 };
 var initResume = async (_args, projectDir) => {
   const config = await loadConfig(projectDir);
-  const planningDir = join45(projectDir, ".planning");
+  const planningDir = join46(projectDir, ".planning");
   let interruptedAgentId = null;
   try {
-    interruptedAgentId = readFileSync21(join45(projectDir, ".planning", "current-agent-id.txt"), "utf-8").trim();
+    interruptedAgentId = readFileSync23(join46(projectDir, ".planning", "current-agent-id.txt"), "utf-8").trim();
   } catch {
   }
   const result = {
-    state_exists: existsSync36(join45(planningDir, "STATE.md")),
-    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
+    state_exists: existsSync38(join46(planningDir, "STATE.md")),
+    roadmap_exists: existsSync38(join46(planningDir, "ROADMAP.md")),
     project_exists: pathExists(projectDir, ".planning/PROJECT.md"),
-    planning_exists: existsSync36(join45(projectDir, ".planning")),
-    state_path: toPosixPath2(relative13(projectDir, join45(planningDir, "STATE.md"))),
-    roadmap_path: toPosixPath2(relative13(projectDir, join45(planningDir, "ROADMAP.md"))),
+    planning_exists: existsSync38(join46(projectDir, ".planning")),
+    state_path: toPosixPath2(relative13(projectDir, join46(planningDir, "STATE.md"))),
+    roadmap_path: toPosixPath2(relative13(projectDir, join46(planningDir, "ROADMAP.md"))),
     project_path: ".planning/PROJECT.md",
     has_interrupted_agent: !!interruptedAgentId,
     interrupted_agent_id: interruptedAgentId,
@@ -20134,7 +20970,7 @@ var initVerifyWork = async (args, projectDir, workstream) => {
   }
   const config = await loadConfig(projectDir, workstream);
   const { phaseInfo } = await getPhaseInfoForVerifyWork(phase, projectDir, workstream);
-  const configExists = existsSync36(join45(projectDir, ".planning", "config.json"));
+  const configExists = existsSync38(join46(projectDir, ".planning", "config.json"));
   const [plannerModel, checkerModel] = configExists ? await Promise.all([
     getModelAlias("bm-planner", projectDir),
     getModelAlias("bm-plan-checker", projectDir)
@@ -20205,7 +21041,7 @@ var initPhaseOp = async (args, projectDir, workstream) => {
   const rawProjectCode = config.project_code || "";
   assertSafeProjectCode(rawProjectCode);
   const expectedPhaseDirName = phaseDir ? null : computeExpectedPhaseDirName(phaseNumber, phaseName, rawProjectCode);
-  const expectedPhaseDir = expectedPhaseDirName ? toPosixPath2(relative13(projectDir, join45(paths.phases, expectedPhaseDirName))) : null;
+  const expectedPhaseDir = expectedPhaseDirName ? toPosixPath2(relative13(projectDir, join46(paths.phases, expectedPhaseDirName))) : null;
   const result = {
     commit_docs: config.commit_docs,
     // #2997: secret config keys (brave_search, firecrawl, exa_search) may be
@@ -20229,31 +21065,31 @@ var initPhaseOp = async (args, projectDir, workstream) => {
     has_verification: phaseInfo?.has_verification || false,
     has_reviews: phaseInfo?.has_reviews || false,
     plan_count: plans.length,
-    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
-    planning_exists: existsSync36(planningDir),
-    state_path: toPosixPath2(relative13(projectDir, join45(planningDir, "STATE.md"))),
-    roadmap_path: toPosixPath2(relative13(projectDir, join45(planningDir, "ROADMAP.md"))),
-    requirements_path: toPosixPath2(relative13(projectDir, join45(planningDir, "REQUIREMENTS.md")))
+    roadmap_exists: existsSync38(join46(planningDir, "ROADMAP.md")),
+    planning_exists: existsSync38(planningDir),
+    state_path: toPosixPath2(relative13(projectDir, join46(planningDir, "STATE.md"))),
+    roadmap_path: toPosixPath2(relative13(projectDir, join46(planningDir, "ROADMAP.md"))),
+    requirements_path: toPosixPath2(relative13(projectDir, join46(planningDir, "REQUIREMENTS.md")))
   };
   if (phaseDir) {
-    const phaseDirFull = join45(projectDir, phaseDir);
+    const phaseDirFull = join46(projectDir, phaseDir);
     try {
       const files = readdirSync22(phaseDirFull);
       const contextFile = files.find((f) => f.endsWith("-CONTEXT.md") || f === "CONTEXT.md");
       if (contextFile)
-        result.context_path = toPosixPath2(join45(phaseDir, contextFile));
+        result.context_path = toPosixPath2(join46(phaseDir, contextFile));
       const researchFile = files.find((f) => f.endsWith("-RESEARCH.md") || f === "RESEARCH.md");
       if (researchFile)
-        result.research_path = toPosixPath2(join45(phaseDir, researchFile));
+        result.research_path = toPosixPath2(join46(phaseDir, researchFile));
       const verificationFile = files.find((f) => f.endsWith("-VERIFICATION.md") || f === "VERIFICATION.md");
       if (verificationFile)
-        result.verification_path = toPosixPath2(join45(phaseDir, verificationFile));
+        result.verification_path = toPosixPath2(join46(phaseDir, verificationFile));
       const uatFile = files.find((f) => f.endsWith("-UAT.md") || f === "UAT.md");
       if (uatFile)
-        result.uat_path = toPosixPath2(join45(phaseDir, uatFile));
+        result.uat_path = toPosixPath2(join46(phaseDir, uatFile));
       const reviewsFile = files.find((f) => f.endsWith("-REVIEWS.md") || f === "REVIEWS.md");
       if (reviewsFile)
-        result.reviews_path = toPosixPath2(join45(phaseDir, reviewsFile));
+        result.reviews_path = toPosixPath2(join46(phaseDir, reviewsFile));
     } catch {
     }
   }
@@ -20262,16 +21098,16 @@ var initPhaseOp = async (args, projectDir, workstream) => {
 var initTodos = async (args, projectDir) => {
   const area = args[0] || null;
   const config = await loadConfig(projectDir);
-  const planningDir = join45(projectDir, ".planning");
+  const planningDir = join46(projectDir, ".planning");
   const now = /* @__PURE__ */ new Date();
-  const pendingDir = join45(planningDir, "todos", "pending");
+  const pendingDir = join46(planningDir, "todos", "pending");
   let count = 0;
   const todos = [];
   try {
     const files = readdirSync22(pendingDir).filter((f) => f.endsWith(".md"));
     for (const file of files) {
       try {
-        const content = readFileSync21(join45(pendingDir, file), "utf-8");
+        const content = readFileSync23(join46(pendingDir, file), "utf-8");
         const createdMatch = content.match(/^created:\s*(.+)$/m);
         const titleMatch = content.match(/^title:\s*(.+)$/m);
         const areaMatch = content.match(/^area:\s*(.+)$/m);
@@ -20284,7 +21120,7 @@ var initTodos = async (args, projectDir) => {
           created: createdMatch ? createdMatch[1].trim() : "unknown",
           title: titleMatch ? titleMatch[1].trim() : "Untitled",
           area: todoArea,
-          path: toPosixPath2(relative13(projectDir, join45(pendingDir, file)))
+          path: toPosixPath2(relative13(projectDir, join46(pendingDir, file)))
         });
       } catch {
       }
@@ -20298,11 +21134,11 @@ var initTodos = async (args, projectDir) => {
     todo_count: count,
     todos,
     area_filter: area,
-    pending_dir: toPosixPath2(relative13(projectDir, join45(planningDir, "todos", "pending"))),
-    completed_dir: toPosixPath2(relative13(projectDir, join45(planningDir, "todos", "completed"))),
-    planning_exists: existsSync36(planningDir),
-    todos_dir_exists: existsSync36(join45(planningDir, "todos")),
-    pending_dir_exists: existsSync36(pendingDir)
+    pending_dir: toPosixPath2(relative13(projectDir, join46(planningDir, "todos", "pending"))),
+    completed_dir: toPosixPath2(relative13(projectDir, join46(planningDir, "todos", "completed"))),
+    planning_exists: existsSync38(planningDir),
+    todos_dir_exists: existsSync38(join46(planningDir, "todos")),
+    pending_dir_exists: existsSync38(pendingDir)
   };
   return { data: withProjectRoot(projectDir, result, config) };
 };
@@ -20311,13 +21147,13 @@ var initMilestoneOp = async (_args, projectDir, workstream) => {
   const paths = planningPaths(projectDir, workstream);
   const planningDir = paths.planning;
   const milestone = await getMilestoneInfo(projectDir, workstream);
-  const phasesDir = join45(planningDir, "phases");
+  const phasesDir = join46(planningDir, "phases");
   let phaseCount = 0;
   let completedPhases = 0;
   let roadmapPhaseNumbers = [];
   try {
     const { readFile: readFile40 } = await import("node:fs/promises");
-    const roadmapRaw = await readFile40(join45(planningDir, "ROADMAP.md"), "utf-8");
+    const roadmapRaw = await readFile40(join46(planningDir, "ROADMAP.md"), "utf-8");
     const currentSection = await extractCurrentMilestone(roadmapRaw, projectDir, workstream);
     roadmapPhaseNumbers = extractPhasesFromSection(currentSection).map((p) => p.number);
   } catch {
@@ -20346,7 +21182,7 @@ var initMilestoneOp = async (_args, projectDir, workstream) => {
       if (!dirName)
         continue;
       try {
-        const phaseFiles = readdirSync22(join45(phasesDir, dirName));
+        const phaseFiles = readdirSync22(join46(phasesDir, dirName));
         const hasSummary = phaseFiles.some((f) => f.endsWith("-SUMMARY.md") || f === "SUMMARY.md");
         if (hasSummary)
           completedPhases++;
@@ -20360,7 +21196,7 @@ var initMilestoneOp = async (_args, projectDir, workstream) => {
       phaseCount = dirs.length;
       for (const dir of dirs) {
         try {
-          const phaseFiles = readdirSync22(join45(phasesDir, dir));
+          const phaseFiles = readdirSync22(join46(phasesDir, dir));
           const hasSummary = phaseFiles.some((f) => f.endsWith("-SUMMARY.md") || f === "SUMMARY.md");
           if (hasSummary)
             completedPhases++;
@@ -20370,7 +21206,7 @@ var initMilestoneOp = async (_args, projectDir, workstream) => {
     } catch {
     }
   }
-  const archiveDir = join45(planningDir, "archive");
+  const archiveDir = join46(planningDir, "archive");
   let archivedMilestones = [];
   try {
     archivedMilestones = readdirSync22(archiveDir, { withFileTypes: true }).filter((e3) => e3.isDirectory()).map((e3) => e3.name);
@@ -20387,17 +21223,17 @@ var initMilestoneOp = async (_args, projectDir, workstream) => {
     archived_milestones: archivedMilestones,
     archive_count: archivedMilestones.length,
     project_exists: pathExists(projectDir, ".planning/PROJECT.md"),
-    roadmap_exists: existsSync36(join45(planningDir, "ROADMAP.md")),
-    state_exists: existsSync36(join45(planningDir, "STATE.md")),
-    archive_exists: existsSync36(archiveDir),
-    phases_dir_exists: existsSync36(phasesDir)
+    roadmap_exists: existsSync38(join46(planningDir, "ROADMAP.md")),
+    state_exists: existsSync38(join46(planningDir, "STATE.md")),
+    archive_exists: existsSync38(archiveDir),
+    phases_dir_exists: existsSync38(phasesDir)
   };
   return { data: withProjectRoot(projectDir, result, config) };
 };
 var initMapCodebase = async (_args, projectDir) => {
   const config = await loadConfig(projectDir);
   const now = /* @__PURE__ */ new Date();
-  const codebaseDir = join45(projectDir, ".planning", "codebase");
+  const codebaseDir = join46(projectDir, ".planning", "codebase");
   let existingMaps = [];
   try {
     existingMaps = readdirSync22(codebaseDir).filter((f) => f.endsWith(".md"));
@@ -20421,16 +21257,16 @@ var initMapCodebase = async (_args, projectDir) => {
   return { data: withProjectRoot(projectDir, result, config) };
 };
 var initNewWorkspace = async (_args, projectDir) => {
-  const home = process.env.HOME || homedir10();
-  const defaultBase = join45(home, "gsd-workspaces");
+  const home = process.env.HOME || homedir11();
+  const defaultBase = join46(home, "gsd-workspaces");
   const childRepos = [];
   try {
     const entries = readdirSync22(projectDir, { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory() || entry.name.startsWith("."))
         continue;
-      const fullPath = join45(projectDir, entry.name);
-      if (existsSync36(join45(fullPath, ".git"))) {
+      const fullPath = join46(projectDir, entry.name);
+      if (existsSync38(join46(fullPath, ".git"))) {
         let hasUncommitted = false;
         try {
           const status = execSync2("git status --porcelain", { cwd: fullPath, encoding: "utf8", timeout: 5e3, stdio: "pipe" });
@@ -20459,10 +21295,10 @@ var initNewWorkspace = async (_args, projectDir) => {
   return { data: withProjectRoot(projectDir, result) };
 };
 var initListWorkspaces = async (_args, _projectDir) => {
-  const home = process.env.HOME || homedir10();
-  const defaultBase = join45(home, "gsd-workspaces");
+  const home = process.env.HOME || homedir11();
+  const defaultBase = join46(home, "gsd-workspaces");
   const workspaces = [];
-  if (existsSync36(defaultBase)) {
+  if (existsSync38(defaultBase)) {
     let entries = [];
     try {
       entries = readdirSync22(defaultBase, { withFileTypes: true });
@@ -20472,14 +21308,14 @@ var initListWorkspaces = async (_args, _projectDir) => {
     for (const entry of entries) {
       if (!entry.isDirectory())
         continue;
-      const wsPath = join45(defaultBase, String(entry.name));
-      const manifestPath = join45(wsPath, "WORKSPACE.md");
-      if (!existsSync36(manifestPath))
+      const wsPath = join46(defaultBase, String(entry.name));
+      const manifestPath = join46(wsPath, "WORKSPACE.md");
+      if (!existsSync38(manifestPath))
         continue;
       let repoCount = 0;
       let strategy = "unknown";
       try {
-        const manifest = readFileSync21(manifestPath, "utf8");
+        const manifest = readFileSync23(manifestPath, "utf8");
         const strategyMatch = manifest.match(/^Strategy:\s*(.+)$/m);
         if (strategyMatch)
           strategy = strategyMatch[1].trim();
@@ -20487,7 +21323,7 @@ var initListWorkspaces = async (_args, _projectDir) => {
         repoCount = tableRows.length;
       } catch {
       }
-      const hasProject = existsSync36(join45(wsPath, ".planning", "PROJECT.md"));
+      const hasProject = existsSync38(join46(wsPath, ".planning", "PROJECT.md"));
       workspaces.push({
         name: entry.name,
         path: wsPath,
@@ -20512,18 +21348,18 @@ var initRemoveWorkspace = async (args, _projectDir) => {
   if (name.includes("/") || name.includes("\\") || name.includes("..")) {
     return { data: { error: `Invalid workspace name: ${name} (path separators not allowed)` } };
   }
-  const home = process.env.HOME || homedir10();
-  const defaultBase = join45(home, "gsd-workspaces");
-  const wsPath = join45(defaultBase, name);
-  const manifestPath = join45(wsPath, "WORKSPACE.md");
-  if (!existsSync36(wsPath)) {
+  const home = process.env.HOME || homedir11();
+  const defaultBase = join46(home, "gsd-workspaces");
+  const wsPath = join46(defaultBase, name);
+  const manifestPath = join46(wsPath, "WORKSPACE.md");
+  if (!existsSync38(wsPath)) {
     return { data: { error: `Workspace not found: ${wsPath}` } };
   }
   const repos = [];
   let strategy = "unknown";
-  if (existsSync36(manifestPath)) {
+  if (existsSync38(manifestPath)) {
     try {
-      const manifest = readFileSync21(manifestPath, "utf8");
+      const manifest = readFileSync23(manifestPath, "utf8");
       const strategyMatch = manifest.match(/^Strategy:\s*(.+)$/m);
       if (strategyMatch)
         strategy = strategyMatch[1].trim();
@@ -20539,8 +21375,8 @@ var initRemoveWorkspace = async (args, _projectDir) => {
   }
   const dirtyRepos = [];
   for (const repo of repos) {
-    const repoPath = join45(wsPath, repo.name);
-    if (!existsSync36(repoPath))
+    const repoPath = join46(wsPath, repo.name);
+    if (!existsSync38(repoPath))
       continue;
     try {
       const status = execSync2("git status --porcelain", { cwd: repoPath, encoding: "utf8", timeout: 5e3, stdio: "pipe" });
@@ -20553,7 +21389,7 @@ var initRemoveWorkspace = async (args, _projectDir) => {
   const result = {
     workspace_name: name,
     workspace_path: wsPath,
-    has_manifest: existsSync36(manifestPath),
+    has_manifest: existsSync38(manifestPath),
     strategy,
     repos,
     repo_count: repos.length,
@@ -20581,11 +21417,11 @@ var initIngestDocs = async (_args, projectDir) => {
 };
 
 // dist/query/init-complex.js
-import { existsSync as existsSync37, readdirSync as readdirSync23, statSync as statSync8 } from "node:fs";
+import { existsSync as existsSync39, readdirSync as readdirSync23, statSync as statSync8 } from "node:fs";
 import { execSync as execSync3 } from "node:child_process";
 import { readFile as readFile31 } from "node:fs/promises";
-import { join as join46, relative as relative14 } from "node:path";
-import { homedir as homedir11 } from "node:os";
+import { join as join47, relative as relative14 } from "node:path";
+import { homedir as homedir12 } from "node:os";
 init_helpers();
 async function getModelAlias2(agentType, projectDir) {
   const result = await resolveModel([agentType], projectDir);
@@ -20593,7 +21429,7 @@ async function getModelAlias2(agentType, projectDir) {
   return typeof data.model === "string" ? data.model : "sonnet";
 }
 function pathExists2(base, relPath) {
-  return existsSync37(join46(base, relPath));
+  return existsSync39(join47(base, relPath));
 }
 function gitWorktreeInfo2(base) {
   try {
@@ -20628,7 +21464,7 @@ var NEW_PROJECT_REQUIRED_AGENTS = [
   "bm-roadmapper"
 ];
 function hasAgentDefinition(agentsDir, agent) {
-  return existsSync37(join46(agentsDir, `${agent}.md`)) || existsSync37(join46(agentsDir, `${agent}.agent.md`));
+  return existsSync39(join47(agentsDir, `${agent}.md`)) || existsSync39(join47(agentsDir, `${agent}.agent.md`));
 }
 async function resolveAgentSkillPayloadAgents(requiredAgents, projectDir) {
   const available = [];
@@ -20672,10 +21508,10 @@ function deriveStatusFromCheckbox(phaseNum, checkboxStates) {
 }
 var initNewProject = async (_args, projectDir, workstream) => {
   const config = await loadConfig(projectDir, workstream);
-  const gsdHome = join46(homedir11(), ".gsd");
-  const hasBraveSearch = !!(process.env.BRAVE_API_KEY || existsSync37(join46(gsdHome, "brave_api_key")));
-  const hasFirecrawl = !!(process.env.FIRECRAWL_API_KEY || existsSync37(join46(gsdHome, "firecrawl_api_key")));
-  const hasExaSearch = !!(process.env.EXA_API_KEY || existsSync37(join46(gsdHome, "exa_api_key")));
+  const gsdHome = join47(homedir12(), ".gsd");
+  const hasBraveSearch = !!(process.env.BRAVE_API_KEY || existsSync39(join47(gsdHome, "brave_api_key")));
+  const hasFirecrawl = !!(process.env.FIRECRAWL_API_KEY || existsSync39(join47(gsdHome, "firecrawl_api_key")));
+  const hasExaSearch = !!(process.env.EXA_API_KEY || existsSync39(join47(gsdHome, "exa_api_key")));
   const codeExtensions = /* @__PURE__ */ new Set([
     ".ts",
     ".js",
@@ -20731,7 +21567,7 @@ var initNewProject = async (_args, projectDir, workstream) => {
         if (codeExtensions.has(ext))
           return true;
       } else if (entry.isDirectory() && !skipDirs.has(entry.name)) {
-        if (findCodeFiles(join46(dir, entry.name), depth + 1))
+        if (findCodeFiles(join47(dir, entry.name), depth + 1))
           return true;
       }
     }
@@ -20818,7 +21654,7 @@ var initProgress = async (_args, projectDir, workstream) => {
       const phaseNumber = match ? match[1] : dir;
       const phaseName = match && match[2] ? match[2] : null;
       seenPhaseNums.add(phaseNumber.replace(/^0+/, "") || "0");
-      const phasePath = join46(paths.phases, dir);
+      const phasePath = join47(paths.phases, dir);
       const phaseFiles = readdirSync23(phasePath);
       const scan = scanPhasePlans(phasePath);
       const planCount = scan.planCount;
@@ -20836,7 +21672,7 @@ var initProgress = async (_args, projectDir, workstream) => {
       const phaseInfo = {
         number: phaseNumber,
         name: phaseName,
-        directory: toPosixPath2(relative14(projectDir, join46(paths.phases, dir))),
+        directory: toPosixPath2(relative14(projectDir, join47(paths.phases, dir))),
         status,
         plan_count: planCount,
         summary_count: summaryCount,
@@ -20899,8 +21735,8 @@ var initProgress = async (_args, projectDir, workstream) => {
     paused_at: pausedAt,
     has_work_in_progress: !!currentPhase,
     project_exists: pathExists2(projectDir, ".planning/PROJECT.md"),
-    roadmap_exists: existsSync37(paths.roadmap),
-    state_exists: existsSync37(paths.state),
+    roadmap_exists: existsSync39(paths.roadmap),
+    state_exists: existsSync39(paths.state),
     state_path: toPosixPath2(relative14(projectDir, paths.state)),
     roadmap_path: toPosixPath2(relative14(projectDir, paths.roadmap)),
     project_path: ".planning/PROJECT.md",
@@ -20951,7 +21787,7 @@ var initManager = async (_args, projectDir, workstream) => {
     try {
       const dirMatch = phaseDirEntries.find((d) => phaseTokenMatches(d, normalized));
       if (dirMatch) {
-        const fullDir = join46(paths.phases, dirMatch);
+        const fullDir = join47(paths.phases, dirMatch);
         const phaseFiles = readdirSync23(fullDir);
         const scan = scanPhasePlans(fullDir);
         planCount = scan.planCount;
@@ -20974,7 +21810,7 @@ var initManager = async (_args, projectDir, workstream) => {
         let newestMtime = 0;
         for (const f of phaseFiles) {
           try {
-            const st = statSync8(join46(fullDir, f));
+            const st = statSync8(join47(fullDir, f));
             if (st.mtimeMs > newestMtime)
               newestMtime = st.mtimeMs;
           } catch {
@@ -21035,10 +21871,10 @@ var initManager = async (_args, projectDir, workstream) => {
   }
   let waitingSignal = null;
   try {
-    const waitingPath = join46(projectDir, ".planning", "WAITING.json");
-    if (existsSync37(waitingPath)) {
-      const { readFileSync: readFileSync24 } = await import("node:fs");
-      waitingSignal = JSON.parse(readFileSync24(waitingPath, "utf-8"));
+    const waitingPath = join47(projectDir, ".planning", "WAITING.json");
+    if (existsSync39(waitingPath)) {
+      const { readFileSync: readFileSync26 } = await import("node:fs");
+      waitingSignal = JSON.parse(readFileSync26(waitingPath, "utf-8"));
     }
   } catch {
   }
@@ -21619,7 +22455,7 @@ var QueryExecutionPolicy = class {
 
 // dist/query-subprocess-adapter.js
 import { execFile as execFile2 } from "node:child_process";
-import { isAbsolute as isAbsolute8, resolve as resolve10 } from "node:path";
+import { isAbsolute as isAbsolute9, resolve as resolve12 } from "node:path";
 import { readFile as readFile32 } from "node:fs/promises";
 var QuerySubprocessAdapter = class {
   deps;
@@ -21628,7 +22464,7 @@ var QuerySubprocessAdapter = class {
   }
   async execJson(command, args) {
     const fullArgs = this.commandArgs(command, args);
-    return new Promise((resolve14, reject) => {
+    return new Promise((resolve16, reject) => {
       const child = execFile2(process.execPath, fullArgs, {
         cwd: this.deps.projectDir,
         maxBuffer: 10 * 1024 * 1024,
@@ -21643,7 +22479,7 @@ var QuerySubprocessAdapter = class {
         const raw = stdout?.toString() ?? "";
         try {
           const parsed = await this.parseOutput(raw);
-          resolve14(parsed);
+          resolve16(parsed);
         } catch (parseErr) {
           reject(this.deps.createFailureError(`Failed to parse gsd-tools output for "${command}": ${parseErr instanceof Error ? parseErr.message : String(parseErr)}
 Raw output: ${raw.slice(0, 500)}`, command, args, 0, stderrStr));
@@ -21656,7 +22492,7 @@ Raw output: ${raw.slice(0, 500)}`, command, args, 0, stderrStr));
   }
   async execRaw(command, args) {
     const fullArgs = [...this.commandArgs(command, args), "--raw"];
-    return new Promise((resolve14, reject) => {
+    return new Promise((resolve16, reject) => {
       const child = execFile2(process.execPath, fullArgs, {
         cwd: this.deps.projectDir,
         maxBuffer: 10 * 1024 * 1024,
@@ -21668,7 +22504,7 @@ Raw output: ${raw.slice(0, 500)}`, command, args, 0, stderrStr));
           reject(this.processExecutionError(command, args, error, stderrStr));
           return;
         }
-        resolve14((stdout?.toString() ?? "").trim());
+        resolve16((stdout?.toString() ?? "").trim());
       });
       child.on("error", (err) => {
         reject(this.processSpawnError(command, args, err));
@@ -21697,7 +22533,7 @@ ${stderrStr}` : ""}`, command, args, typeof error.code === "number" ? error.code
     let jsonStr = trimmed;
     if (jsonStr.startsWith("@file:")) {
       const filePath = jsonStr.slice(6).trim();
-      const resolvedPath = isAbsolute8(filePath) ? filePath : resolve10(this.deps.projectDir, filePath);
+      const resolvedPath = isAbsolute9(filePath) ? filePath : resolve12(this.deps.projectDir, filePath);
       try {
         jsonStr = await readFile32(resolvedPath, "utf-8");
       } catch (err) {
@@ -37976,9 +38812,9 @@ var GSDEventStream = class extends EventEmitter {
 };
 
 // dist/phase-runner.js
-import { realpathSync as realpathSync3 } from "node:fs";
+import { realpathSync as realpathSync4 } from "node:fs";
 import { readdir as readdir16, readFile as readFile33 } from "node:fs/promises";
-import { basename as basename6, dirname as dirname3, isAbsolute as isAbsolute9, join as join47, relative as relative15, resolve as resolve11 } from "node:path";
+import { basename as basename6, dirname as dirname4, isAbsolute as isAbsolute10, join as join48, relative as relative15, resolve as resolve13 } from "node:path";
 
 // dist/research-gate.js
 function checkResearchGate(researchContent) {
@@ -38582,7 +39418,7 @@ var PhaseRunner = class {
     try {
       const phaseOp = await this.tools.initPhaseOp(phaseNumber);
       const planFilename = planId === "PLAN" ? "PLAN.md" : `${planId}-PLAN.md`;
-      const planPath = join47(this.projectDir, phaseOp.phase_dir, planFilename);
+      const planPath = join48(this.projectDir, phaseOp.phase_dir, planFilename);
       const parsedPlan = await parsePlanFile(planPath);
       const phaseType = PhaseType.Execute;
       const contextFiles = await this.contextEngine.resolveContextFiles(phaseType);
@@ -38977,7 +39813,7 @@ var PhaseRunner = class {
     }
     try {
       const entries = await readdir16(absolutePhaseDir, { withFileTypes: true });
-      return entries.filter((entry) => entry.isFile() && (entry.name === "PLAN.md" || entry.name.endsWith("-PLAN.md"))).map((entry) => join47(absolutePhaseDir, entry.name));
+      return entries.filter((entry) => entry.isFile() && (entry.name === "PLAN.md" || entry.name.endsWith("-PLAN.md"))).map((entry) => join48(absolutePhaseDir, entry.name));
     } catch (err) {
       this.logger?.warn(`Could not list phase plans for architectural debt check (${phaseDir}): ${err instanceof Error ? err.message : String(err)}`);
       throw err;
@@ -39022,15 +39858,15 @@ var PhaseRunner = class {
     return /\bDEF-[A-Z0-9-]+\b/i.test(line) || /\b(?:issue|issues|pr|pull request)\s+#?\d+\b/i.test(line) || /(?:^|\s)#\d+\b/.test(line);
   }
   resolveProjectPath(pathValue) {
-    const root = this.realpathForBoundary(resolve11(this.projectDir));
+    const root = this.realpathForBoundary(resolve13(this.projectDir));
     if (!root)
       return void 0;
-    const absolutePath = isAbsolute9(pathValue) ? resolve11(pathValue) : resolve11(this.projectDir, pathValue);
+    const absolutePath = isAbsolute10(pathValue) ? resolve13(pathValue) : resolve13(this.projectDir, pathValue);
     const canonicalPath = this.realpathForBoundary(absolutePath);
     if (!canonicalPath)
       return void 0;
     const relativePath = relative15(root, canonicalPath);
-    if (relativePath === "" || !relativePath.startsWith("..") && !isAbsolute9(relativePath)) {
+    if (relativePath === "" || !relativePath.startsWith("..") && !isAbsolute10(relativePath)) {
       return canonicalPath;
     }
     return void 0;
@@ -39040,12 +39876,12 @@ var PhaseRunner = class {
     let currentPath = pathValue;
     while (true) {
       try {
-        return join47(realpathSync3(currentPath), ...missingSegments.reverse());
+        return join48(realpathSync4(currentPath), ...missingSegments.reverse());
       } catch (err) {
         const code = typeof err === "object" && err !== null && "code" in err ? err.code : void 0;
         if (code !== "ENOENT")
           return void 0;
-        const parent = dirname3(currentPath);
+        const parent = dirname4(currentPath);
         if (parent === currentPath)
           return void 0;
         missingSegments.push(basename6(currentPath));
@@ -39059,7 +39895,7 @@ var PhaseRunner = class {
    */
   async checkResearchGate(phaseOp) {
     try {
-      const researchPath = phaseOp.research_path || join47(phaseOp.phase_dir, `${phaseOp.padded_phase}-RESEARCH.md`);
+      const researchPath = phaseOp.research_path || join48(phaseOp.phase_dir, `${phaseOp.padded_phase}-RESEARCH.md`);
       const content = await readFile33(researchPath, "utf-8");
       return checkResearchGate(content);
     } catch {
@@ -39108,7 +39944,7 @@ var PhaseRunner = class {
 
 // dist/context-engine.js
 import { readFile as readFile34, access } from "node:fs/promises";
-import { join as join48 } from "node:path";
+import { join as join49 } from "node:path";
 import { constants as constants2 } from "node:fs";
 
 // dist/context-truncation.js
@@ -39307,7 +40143,7 @@ var ContextEngine = class {
   logger;
   truncation;
   constructor(projectDir, logger, truncation, workstream) {
-    this.planningDir = join48(projectDir, relPlanningPath(workstream));
+    this.planningDir = join49(projectDir, relPlanningPath(workstream));
     this.logger = logger;
     this.truncation = { ...DEFAULT_TRUNCATION_OPTIONS, ...truncation };
   }
@@ -39323,7 +40159,7 @@ var ContextEngine = class {
     const manifest = PHASE_FILE_MANIFEST[phaseType];
     const result = {};
     for (const spec of manifest) {
-      const filePath = join48(this.planningDir, spec.filename);
+      const filePath = join49(this.planningDir, spec.filename);
       const content = await this.readFileIfExists(filePath);
       if (content !== void 0) {
         result[spec.key] = content;
@@ -39381,20 +40217,20 @@ var ContextEngine = class {
 
 // dist/phase-prompt.js
 import { readFile as readFile35 } from "node:fs/promises";
-import { join as join49 } from "node:path";
-import { fileURLToPath as fileURLToPath3 } from "node:url";
+import { join as join50 } from "node:path";
+import { fileURLToPath as fileURLToPath4 } from "node:url";
 
 // dist/prompt-sanitizer.js
-import { readFileSync as readFileSync23 } from "node:fs";
-import { homedir as homedir12 } from "node:os";
+import { readFileSync as readFileSync25 } from "node:fs";
+import { homedir as homedir13 } from "node:os";
 var AT_REFERENCE_PATTERN = /^(\s*)@(~\/[^\s]+|\.planning\/[^\s]+)/gm;
 function resolveAtReferences(input, projectDir) {
   if (!input)
     return input;
   return input.replace(AT_REFERENCE_PATTERN, (_match, indent, refPath) => {
-    const resolvedPath = refPath.startsWith("~/") ? refPath.replace("~/", `${homedir12()}/`) : projectDir ? `${projectDir}/${refPath}` : refPath;
+    const resolvedPath = refPath.startsWith("~/") ? refPath.replace("~/", `${homedir13()}/`) : projectDir ? `${projectDir}/${refPath}` : refPath;
     try {
-      const content = readFileSync23(resolvedPath, "utf-8").trim();
+      const content = readFileSync25(resolvedPath, "utf-8").trim();
       return `${indent}${content}`;
     } catch {
       return "";
@@ -39467,11 +40303,11 @@ var PromptFactory = class {
   projectDir;
   constructor(options) {
     const gsdInstallDir = options?.gsdInstallDir ?? resolveLegacyInstallDir();
-    this.workflowsDir = join49(gsdInstallDir, "workflows");
-    this.agentsDir = options?.agentsDir ?? join49(gsdInstallDir, "..", "agents");
+    this.workflowsDir = join50(gsdInstallDir, "workflows");
+    this.agentsDir = options?.agentsDir ?? join50(gsdInstallDir, "..", "agents");
     this.projectAgentsDir = options?.projectAgentsDir;
     this.projectDir = options?.projectDir;
-    this.sdkPromptsDir = options?.sdkPromptsDir ?? join49(fileURLToPath3(new URL(".", import.meta.url)), "..", "prompts");
+    this.sdkPromptsDir = options?.sdkPromptsDir ?? join50(fileURLToPath4(new URL(".", import.meta.url)), "..", "prompts");
   }
   /**
    * Build a complete prompt for the given phase type.
@@ -39530,8 +40366,8 @@ ${stepBlocks}`);
   async loadWorkflowFile(phaseType) {
     const filename = PHASE_WORKFLOW_MAP[phaseType];
     const paths = [
-      join49(this.workflowsDir, filename),
-      join49(this.sdkPromptsDir, "workflows", filename)
+      join50(this.workflowsDir, filename),
+      join50(this.sdkPromptsDir, "workflows", filename)
     ];
     for (const p of paths) {
       try {
@@ -39552,12 +40388,12 @@ ${stepBlocks}`);
     if (!agentFilename)
       return void 0;
     const paths = [
-      join49(this.agentsDir, agentFilename)
+      join50(this.agentsDir, agentFilename)
     ];
     if (this.projectAgentsDir) {
-      paths.push(join49(this.projectAgentsDir, agentFilename));
+      paths.push(join50(this.projectAgentsDir, agentFilename));
     }
-    paths.push(join49(this.sdkPromptsDir, "agents", agentFilename));
+    paths.push(join50(this.sdkPromptsDir, "agents", agentFilename));
     for (const p of paths) {
       try {
         return await readFile35(p, "utf-8");
@@ -39710,10 +40546,10 @@ var WSTransport = class {
   async start() {
     if (this.closing)
       return;
-    return new Promise((resolve14, reject) => {
+    return new Promise((resolve16, reject) => {
       try {
         this.server = new import_websocket_server.default({ port: this.port });
-        this.server.on("listening", () => resolve14());
+        this.server.on("listening", () => resolve16());
         this.server.on("error", (err) => reject(err));
       } catch (err) {
         reject(err);
@@ -39767,8 +40603,8 @@ init_workstream_utils();
 
 // dist/init-runner.js
 import { readFile as readFile36, writeFile as writeFile10, mkdir as mkdir4 } from "node:fs/promises";
-import { join as join50 } from "node:path";
-import { fileURLToPath as fileURLToPath4 } from "node:url";
+import { join as join51 } from "node:path";
+import { fileURLToPath as fileURLToPath5 } from "node:url";
 import { execFile as execFile3 } from "node:child_process";
 init_helpers();
 var GSD_TEMPLATES_DIR = resolveLegacyTemplatesDir();
@@ -39810,7 +40646,7 @@ var InitRunner = class {
       orchestratorModel: deps.config?.orchestratorModel
     };
     this.sessionId = `init-${Date.now()}`;
-    this.sdkPromptsDir = deps.sdkPromptsDir ?? join50(fileURLToPath4(new URL(".", import.meta.url)), "..", "prompts");
+    this.sdkPromptsDir = deps.sdkPromptsDir ?? join51(fileURLToPath5(new URL(".", import.meta.url)), "..", "prompts");
   }
   /**
    * Run the full init workflow.
@@ -39844,9 +40680,9 @@ var InitRunner = class {
         if (!projectInfo.has_git) {
           await this.execGit(["init"]);
         }
-        const planningDir = join50(this.projectDir, ".planning");
+        const planningDir = join51(this.projectDir, ".planning");
         await mkdir4(planningDir, { recursive: true });
-        const configPath2 = join50(planningDir, "config.json");
+        const configPath2 = join51(planningDir, "config.json");
         await writeFile10(configPath2, JSON.stringify(AUTO_MODE_CONFIG, null, 2) + "\n", "utf-8");
         artifacts.push(".planning/config.json");
         await this.tools.configSet("workflow.auto_advance", "true");
@@ -40062,7 +40898,7 @@ var InitRunner = class {
     const template = await this.readGSDFile(`templates/research-project/${researchType}.md`);
     let projectContent = "";
     try {
-      projectContent = await readFile36(join50(this.projectDir, ".planning", "PROJECT.md"), "utf-8");
+      projectContent = await readFile36(join51(this.projectDir, ".planning", "PROJECT.md"), "utf-8");
     } catch {
       projectContent = input;
     }
@@ -40097,11 +40933,11 @@ var InitRunner = class {
   async buildSynthesisPrompt() {
     const agentDef = await this.readAgentFile("bm-research-synthesizer.md");
     const summaryTemplate = await this.readGSDFile("templates/research-project/SUMMARY.md");
-    const researchDir = join50(this.projectDir, ".planning", "research");
+    const researchDir = join51(this.projectDir, ".planning", "research");
     const researchContent = [];
     for (const rt of RESEARCH_TYPES) {
       try {
-        const content = await readFile36(join50(researchDir, `${rt}.md`), "utf-8");
+        const content = await readFile36(join51(researchDir, `${rt}.md`), "utf-8");
         researchContent.push(`<research_${rt.toLowerCase()}>
 ${content}
 </research_${rt.toLowerCase()}>`);
@@ -40144,11 +40980,11 @@ ${content}
     let projectContent = "";
     let featuresContent = "";
     try {
-      projectContent = await readFile36(join50(this.projectDir, ".planning", "PROJECT.md"), "utf-8");
+      projectContent = await readFile36(join51(this.projectDir, ".planning", "PROJECT.md"), "utf-8");
     } catch {
     }
     try {
-      featuresContent = await readFile36(join50(this.projectDir, ".planning", "research", "FEATURES.md"), "utf-8");
+      featuresContent = await readFile36(join51(this.projectDir, ".planning", "research", "FEATURES.md"), "utf-8");
     } catch {
     }
     return sanitizePrompt([
@@ -40189,7 +41025,7 @@ ${content}
     const fileContents = [];
     for (const fp of filesToRead) {
       try {
-        const content = await readFile36(join50(this.projectDir, fp), "utf-8");
+        const content = await readFile36(join51(this.projectDir, fp), "utf-8");
         fileContents.push(`<file path="${fp}">
 ${content}
 </file>`);
@@ -40251,12 +41087,12 @@ ${content}
    * falls back to GSD-1 originals (~/.claude/get-shit-done/).
    */
   async readGSDFile(relativePath) {
-    const fullPath = join50(GSD_TEMPLATES_DIR, "..", relativePath);
+    const fullPath = join51(GSD_TEMPLATES_DIR, "..", relativePath);
     try {
       return await readFile36(fullPath, "utf-8");
     } catch {
     }
-    const sdkPath = join50(this.sdkPromptsDir, relativePath);
+    const sdkPath = join51(this.sdkPromptsDir, relativePath);
     try {
       return await readFile36(sdkPath, "utf-8");
     } catch {
@@ -40269,12 +41105,12 @@ ${content}
    * falls back to SDK bundled copies.
    */
   async readAgentFile(filename) {
-    const fullPath = join50(GSD_AGENTS_DIR, filename);
+    const fullPath = join51(GSD_AGENTS_DIR, filename);
     try {
       return await readFile36(fullPath, "utf-8");
     } catch {
     }
-    const sdkPath = join50(this.sdkPromptsDir, "agents", filename);
+    const sdkPath = join51(this.sdkPromptsDir, "agents", filename);
     try {
       return await readFile36(sdkPath, "utf-8");
     } catch {
@@ -40286,13 +41122,13 @@ ${content}
    * Execute a git command in the project directory.
    */
   execGit(args) {
-    return new Promise((resolve14, reject) => {
+    return new Promise((resolve16, reject) => {
       execFile3("git", args, { cwd: this.projectDir }, (error, stdout, stderr) => {
         if (error) {
           reject(new Error(`git ${args.join(" ")} failed: ${stderr || error.message}`));
           return;
         }
-        resolve14(stdout.toString());
+        resolve16(stdout.toString());
       });
     });
   }
@@ -40348,7 +41184,7 @@ var GSD = class {
   allowFallbackToSubprocess;
   eventStream;
   constructor(options) {
-    this.projectDir = resolve12(options.projectDir);
+    this.projectDir = resolve14(options.projectDir);
     this.gsdToolsPath = options.gsdToolsPath ?? resolveGsdToolsPath(this.projectDir);
     this.sessionId = options.sessionId;
     this.defaultModel = options.model;
@@ -40371,7 +41207,7 @@ var GSD = class {
    * @returns PlanResult with cost, duration, success/error status
    */
   async executePlan(planPath, options) {
-    const absolutePlanPath = resolve12(this.projectDir, planPath);
+    const absolutePlanPath = resolve14(this.projectDir, planPath);
     const plan = await parsePlanFile(absolutePlanPath);
     const config = await loadConfig(this.projectDir, this.workstream);
     const agentDef = await this.loadAgentDefinition();
@@ -40537,12 +41373,12 @@ var GSD = class {
   async loadAgentDefinition() {
     const paths = [
       // Repo-local GSD installation
-      join51(this.projectDir, ".claude", "get-shit-done", "agents", "bm-executor.md"),
+      join52(this.projectDir, ".claude", "get-shit-done", "agents", "bm-executor.md"),
       // Repo-local agents directory
-      join51(this.projectDir, ".claude", "agents", "bm-executor.md"),
+      join52(this.projectDir, ".claude", "agents", "bm-executor.md"),
       // Global home directory
-      join51(homedir13(), ".claude", "agents", "bm-executor.md"),
-      join51(this.projectDir, "agents", "bm-executor.md")
+      join52(homedir14(), ".claude", "agents", "bm-executor.md"),
+      join52(this.projectDir, "agents", "bm-executor.md")
     ];
     for (const p of paths) {
       try {
@@ -40610,7 +41446,7 @@ function execBridge(input) {
   const cjsArgv = dottedCommandToCjsArgv(input.normCmd, input.normArgs);
   const wsSuffix = input.ws ? ["--ws", input.ws] : [];
   const fullArgv = [input.gsdToolsPath, ...cjsArgv, ...wsSuffix];
-  return new Promise((resolve14, reject) => {
+  return new Promise((resolve16, reject) => {
     execFile4(process.execPath, fullArgv, { cwd: input.projectDir, maxBuffer: 10 * 1024 * 1024, timeout: 3e4, killSignal: "SIGKILL", env: { ...process.env } }, (err, stdout, stderr) => {
       const stdoutText = stdout?.toString() ?? "";
       const stderrText = stderr?.toString() ?? "";
@@ -40623,7 +41459,7 @@ ${stderrText.trimEnd()}`));
         reject(err);
         return;
       }
-      resolve14({ stdout: stdoutText, stderr: stderrText });
+      resolve16({ stdout: stdoutText, stderr: stderrText });
     });
   });
 }
@@ -41113,7 +41949,7 @@ Options:
 `.trim();
 async function getVersion() {
   try {
-    const pkgPath = resolve13(fileURLToPath5(import.meta.url), "..", "..", "package.json");
+    const pkgPath = resolve15(fileURLToPath6(import.meta.url), "..", "..", "package.json");
     const raw = await readFile39(pkgPath, "utf-8");
     const pkg = JSON.parse(raw);
     return pkg.version ?? "unknown";
@@ -41124,7 +41960,7 @@ async function getVersion() {
 async function resolveInitInput(args) {
   const input = args.initInput;
   if (input && input.startsWith("@")) {
-    const filePath = resolve13(args.projectDir, input.slice(1));
+    const filePath = resolve15(args.projectDir, input.slice(1));
     try {
       return await readFile39(filePath, "utf-8");
     } catch (err) {
@@ -41141,10 +41977,10 @@ async function readStdin() {
   if (stdin.isTTY) {
     throw new Error('No input provided. Usage:\n  bm-sdk init @path/to/prd.md\n  bm-sdk init "build a todo app"\n  cat prd.md | bm-sdk init');
   }
-  return new Promise((resolve14, reject) => {
+  return new Promise((resolve16, reject) => {
     const chunks = [];
     stdin.on("data", (chunk) => chunks.push(chunk));
-    stdin.on("end", () => resolve14(Buffer.concat(chunks).toString("utf-8")));
+    stdin.on("end", () => resolve16(Buffer.concat(chunks).toString("utf-8")));
     stdin.on("error", reject);
   });
 }

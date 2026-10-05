@@ -9,6 +9,7 @@ This document records contracts for the typed query layer consumed by `gsd-sdk q
 - **CLI name differences** (same behavior, different dispatch string):
   - CJS `**summary-extract**` → SDK `**summary.extract**` / `**summary extract**` / `**history-digest**` (see `index.ts`).
   - CJS top-level `**scaffold <type> ...**` → SDK `**phase.scaffold**` / `**phase scaffold**` with the scaffold type as the first argument (no separate `scaffold` alias on the registry).
+- **Registry-only, no manifest row** (like `agent-skills`): `**craft-skill.list**` / `**craft-skill.assess**` / `**craft-skill.insert**` / `**craft-skill.release**` (and the spaced forms `craft-skill list` etc.) are registered directly in the static catalog domain, not expanded from a `command-manifest.*.ts`. The CJS twin is `gsd-tools.cjs craft-skill <sub>`, and both twins write the same pin record at `.planning/craft-skills/pins.json`.
 
 ### Manifest-backed family ownership
 

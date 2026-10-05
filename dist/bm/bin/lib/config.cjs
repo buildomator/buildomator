@@ -674,6 +674,7 @@ function cmdConfigPath(cwd) {
 
 module.exports = {
   VALID_CONFIG_KEYS,
+  setConfigValue,
   cmdConfigEnsureSection,
   cmdConfigSet,
   cmdConfigGet,

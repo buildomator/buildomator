@@ -133,6 +133,14 @@ jobs:
         run: node tests/execute-phase-resume-gaps.test.cjs
       - name: Run trusted global skill roots guard test
         run: node tests/trusted-global-roots.test.cjs
+      - name: Run craft-skill catalog test
+        run: node tests/craft-skill-catalog.test.cjs
+      - name: Run skill trust-gate test
+        run: node tests/skill-trust-gate.test.cjs
+      - name: Run craft-skill insertion test
+        run: node tests/craft-skill-insertion.test.cjs
+      - name: Run craft-skill no-vendoring guard
+        run: node tests/craft-skill-no-vendoring.test.cjs
       - name: Smoke test verify drift JSON output
         run: |
           node bin/gsd-tools.cjs verify drift --scope . --json | node -e \
