@@ -4,14 +4,14 @@ milestone: v4.9
 milestone_name: Craft Skill Catalog
 status: executing
 stopped_at: Phase 15 context gathered
-last_updated: "2026-10-05T03:40:33.395Z"
+last_updated: "2026-10-05T03:51:29.280Z"
 last_activity: 2026-10-05 -- Phase 16 execution started
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 5
-  completed_plans: 3
-  percent: 0
+  completed_plans: 5
+  percent: 33
 ---
 
 # Project State
@@ -55,6 +55,7 @@ Last activity: 2026-10-05 -- Phase 16 execution started
 | Phase 16 P02 | 8min | 3 tasks | 4 files |
 | Phase 16 P03 | 9min | 3 tasks | 3 files |
 | Phase 16 P04 | 6min | 3 tasks | 3 files |
+| Phase 16 P05 | 12min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,7 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 - [Phase ?]: Phase 16 P01: the craft-skill catalog env override GSD_CRAFT_SKILL_CATALOG takes precedence over layout paths in both the CJS and SDK readers — Keeps the two twins consistent and makes the documented env-override fail-closed behavior observable
 - [Phase 16]: Phase 16 P02: the craft-skill trust gate ships in both twins (CJS + SDK), not CJS-only, so workflows and plans 03/04 can call assess/insert through bm-sdk query without an SDK-to-CJS shell-out; a parity test keeps the two identical. Rationale: avoids a runtime shell-out and preserves the twin-parity convention
 - [Phase 16]: SDK craft-skill write side ships as an SDK twin mirroring the CJS 19-key pin-record contract. Phase 17 workflows call bm-sdk query craft-skill.insert without an SDK-to-CJS shell-out; parity test asserts the record key order against the CJS list
+- [Phase 16]: Phase 16 P05: the phase ships as one feat commit (plans 01-04 committed their source atomically); plan 05 commits only the regenerated sdk/dist and dist/bm, the no-vendoring guard, CI wiring and docs. sdk/dist must be git-staged before build-bm regenerates dist/bm because the build enumerates source via git ls-files; the freshly-built query twin was untracked
 
 ### Pending Todos
 

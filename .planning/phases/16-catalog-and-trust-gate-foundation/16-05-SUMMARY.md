@@ -117,6 +117,12 @@ None. This plan introduces no new network endpoint, auth path or schema at a tru
 - Phase 17 can wire `craft-skill` propose-on-fit and release-at-task-end into workflows against the committed `gsd-tools craft-skill` / `bm-sdk query craft-skill.*` contract.
 - Release is cut separately on the 4.9.x line (no version bump here, per the plan).
 
+## Self-Check: PASSED
+
+- `tests/craft-skill-no-vendoring.test.cjs` exists on disk; the SUMMARY exists.
+- Phase commit `173de13` is present in git history with the exact subject `feat(craft-skills): catalog, two-axis trust gate and scoped insertion (CJS + SDK)`.
+- `node bin/build-bm.cjs --check` still PASS after the commit; `git status --porcelain` shows 0 unstaged product changes; `git show --stat HEAD` carries no CHANGELOG or plugin.json delta.
+
 ---
 *Phase: 16-catalog-and-trust-gate-foundation*
 *Completed: 2026-10-05*
