@@ -185,6 +185,7 @@ const template = require('./lib/template.cjs');
 const milestone = require('./lib/milestone.cjs');
 const commands = require('./lib/commands.cjs');
 const init = require('./lib/init.cjs');
+const craftSkill = require('./lib/craft-skill-insert.cjs');
 const frontmatter = require('./lib/frontmatter.cjs');
 const profilePipeline = require('./lib/profile-pipeline.cjs');
 const profileOutput = require('./lib/profile-output.cjs');
@@ -369,7 +370,7 @@ async function main() {
   const TOP_LEVEL_USAGE = 'Usage: gsd-tools <command> [args] [--raw] [--pick <field>] [--cwd <path>] [--ws <name>] [--json-errors]\n' +
     'Commands: agent-skills, audit-open, audit-uat, check-commit, commit, commit-to-subrepo, ' +
     'config-ensure-section, config-get, config-new-project, config-path, config-set, ' +
-    'current-timestamp, detect-custom-files, docs-init, extract-messages, find-phase, ' +
+    'craft-skill, current-timestamp, detect-custom-files, docs-init, extract-messages, find-phase, ' +
     'from-gsd2, frontmatter, gap-analysis, generate-claude-md, generate-claude-profile, ' +
     'generate-dev-preferences, generate-slug, graphify, history-digest, init, intel, ' +
     'learnings, list-todos, milestone, phase, phase-plan-index, phases, profile-questionnaire, ' +
@@ -678,6 +679,11 @@ async function runCommand(command, args, cwd, raw, defaultValue, originalCommand
 
     case 'agent-skills': {
       init.cmdAgentSkills(cwd, args[1], raw);
+      break;
+    }
+
+    case 'craft-skill': {
+      craftSkill.cmdCraftSkill(cwd, args, raw);
       break;
     }
 
