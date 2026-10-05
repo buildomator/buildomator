@@ -167,12 +167,12 @@ exactly one agent context (ephemeral by default), reusing `agent_skills` +
 
 **Requirements:** CAT-01, CAT-03, CAT-04, CAT-05
 
-**Plans:** 2/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
 - [x] 16-01-PLAN.md: catalog JSON + CJS/SDK twin readers + schema/no-vendoring tests (CAT-01)
 - [x] 16-02-PLAN.md: two-axis trust gate (safety + license) in both twins + rejection/flag matrix and parity tests (CAT-03, CAT-04)
-- [ ] 16-03-PLAN.md: CJS scoped insertion (gsd-tools craft-skill insert/release, pin record, ephemeral default, sticky opt-in) + end-to-end scoping test (CAT-05)
+- [x] 16-03-PLAN.md: CJS scoped insertion (gsd-tools craft-skill insert/release, pin record, ephemeral default, sticky opt-in) + end-to-end scoping test (CAT-05)
 - [ ] 16-04-PLAN.md: SDK twin of scoped insertion (bm-sdk query craft-skill.*) + vitest scoping/record-parity spec (CAT-05)
 - [ ] 16-05-PLAN.md: rebuild sdk/dist, regenerate dist/bm, --check PASS, CI wiring, no-vendoring guard, README/handler docs, phase commit
 
