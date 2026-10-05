@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.1
-milestone_name: Buildomator Rebrand
-status: Awaiting next milestone
-stopped_at: Milestone v4.1 shipped and archived
-last_updated: "2026-07-13T22:17:12.801Z"
-last_activity: 2026-07-13 — Milestone v4.1 completed and archived
+milestone: v4.9
+milestone_name: Craft Skill Catalog
+status: Planning phase
+stopped_at: Milestone v4.9 seeded; Phase 16 ready to plan
+last_updated: "2026-10-05T00:00:00.000Z"
+last_activity: 2026-10-05 - Seeded v4.9 Craft Skill Catalog milestone (Phases 16-18); Phase 16 ready to plan
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 16
-  completed_plans: 16
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 
 ## Current Position
 
-Phase: Milestone v4.1 complete
-Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-09-24 - Shipped v4.9.1 (adopted Claude Opus 5.5, claude-opus-5-5, as the opus tier; verified live). opus is cheaper ($4/$20) than Opus 5.
+Phase: 16 - Catalog and Trust Gate Foundation (v4.9 Craft Skill Catalog)
+Plan: not yet planned
+Status: Planning phase
+Last activity: 2026-10-05 - Seeded v4.9 Craft Skill Catalog milestone (Phases 16-18) from committed exploration; Phase 16 ready to plan.
 
 ## Performance Metrics
 
