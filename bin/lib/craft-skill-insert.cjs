@@ -311,8 +311,8 @@ function releaseCraftSkills(cwd, opts) {
   });
 
   if (selected.length > 0) {
-    const config = loadConfig(cwd);
     for (const record of selected) {
+      const config = loadConfig(cwd);
       const current = toArray(lookupByAgentName(config.agent_skills, record.agent));
       const next = current.filter((e) => e !== record.entry);
       setConfigValue(cwd, 'agent_skills.' + record.agent, next);
