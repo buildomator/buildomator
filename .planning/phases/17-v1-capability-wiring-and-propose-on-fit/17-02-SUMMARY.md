@@ -93,6 +93,10 @@ None - no external service configuration required.
 - The shared reference is ready for the workflow-wiring plans (discuss-phase, quick, autonomous) to point at via a lazy `@`-include.
 - A later plan in this phase must regenerate `dist/bm` (and commit the staged `sdk/dist`) so the byte-level drift gate returns to PASS.
 
+## Self-Check: PASSED
+
+All created/modified files present on disk; all task commits (382f9ca, e6c9867) and the metadata commit (e2bb4de) found in git history.
+
 ---
 *Phase: 17-v1-capability-wiring-and-propose-on-fit*
 *Completed: 2026-10-06*

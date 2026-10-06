@@ -217,13 +217,13 @@ domain surfaces the right candidate.
 3. Propose-on-fit surfaces a candidate when a phase/quick-task scope matches a trigger,
    and injects nothing until accepted. Shown end-to-end for at least one domain.
 
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 Plans:
 **Wave 1**
 
 - [x] 17-01-PLAN.md: craft-skill match subcommand in both twins (CJS + SDK) + registry/docs + parity and vitest cases
-- [ ] 17-02-PLAN.md: shared references/craft-skill-propose-on-fit.md + executor doc-routing note + REQUIREMENTS CAT-02 autonomous addendum
+- [x] 17-02-PLAN.md: shared references/craft-skill-propose-on-fit.md + executor doc-routing note + REQUIREMENTS CAT-02 autonomous addendum
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
