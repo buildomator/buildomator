@@ -130,6 +130,10 @@ Each task was committed atomically:
 - CAT-02 wiring is live across the three D-01 surfaces; plan-phase and execute-phase deliberately untouched (D-01).
 - Ready for the remaining Phase 17 plans and for the live UAT check.
 
+## Self-Check: PASSED
+
+All 7 modified files plus 17-03-SUMMARY.md exist on disk; all four commits (0c52893, 36b966b, d1d58ad, 261ad72) are present in git history.
+
 ---
 *Phase: 17-v1-capability-wiring-and-propose-on-fit*
 *Completed: 2026-10-06*

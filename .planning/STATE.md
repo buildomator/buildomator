@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.9
 milestone_name: Craft Skill Catalog
 status: executing
-stopped_at: Phase 17 context gathered
-last_updated: "2026-10-06T20:15:59.221Z"
+stopped_at: Completed 17-03-PLAN.md
+last_updated: "2026-10-06T20:27:30.966Z"
 last_activity: 2026-10-06 -- Phase 17 execution started
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 10
-  completed_plans: 7
+  completed_plans: 8
   percent: 33
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 ## Current Position
 
 Phase: 17 (v1-capability-wiring-and-propose-on-fit) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Executing Phase 17
 Last activity: 2026-10-06 -- Phase 17 execution started
 
@@ -58,6 +58,7 @@ Last activity: 2026-10-06 -- Phase 17 execution started
 | Phase 16 P05 | 12min | 3 tasks | 5 files |
 | Phase 17 P01 | 14min | 3 tasks | 6 files |
 | Phase 17 P02 | 8min | 2 tasks | 3 files |
+| Phase 17 P03 | ~16min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,8 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 - [Phase 16]: Phase 16 P05: the phase ships as one feat commit (plans 01-04 committed their source atomically); plan 05 commits only the regenerated sdk/dist and dist/bm, the no-vendoring guard, CI wiring and docs. sdk/dist must be git-staged before build-bm regenerates dist/bm because the build enumerates source via git ls-files; the freshly-built query twin was untracked
 - [Phase 17]: P01: craft-skill match ships as a read-only trigger pre-filter byte-identically in both twins; scope is data-only (no regex/path/shell/eval) and each candidate carries the full gate inputs (publisher, license, obligations, trust tier, verdict, prompt) so the propose-on-fit surface needs no second assess call
 - [Phase 17]: P02: the propose-on-fit procedure lives in one lazy-loaded reference (references/craft-skill-propose-on-fit.md) that discuss-phase, quick and autonomous point at rather than inlined three times; the autonomous auto-insert gate is written literally as verdict allow since insert only refuses block
+- [Phase ?]: Phase 17 P03: propose-on-fit is wired into all three D-01 surfaces; discuss-phase records acceptances only, quick inserts interactively before the executor and releases after, autonomous auto-inserts only allow-verdict relevant candidates and releases in 3d
+- [Phase ?]: Phase 17 P03: the autonomous gate is written literally as verdict allow since insert only structurally refuses block; the literal sticky flag token is kept out of autonomous.md to satisfy the zero-sticky assertion
 
 ### Pending Todos
 
@@ -207,8 +210,8 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 
 ## Session Continuity
 
-Last session: 2026-10-06T20:15:49.540Z
-Stopped at: Phase 17 context gathered
+Last session: 2026-10-06T20:27:30.911Z
+Stopped at: Completed 17-03-PLAN.md
 Next action: `/gsd:plan-phase 12` to plan the Two-Plugin Build Foundation phase.
 
 ## Operator Next Steps
