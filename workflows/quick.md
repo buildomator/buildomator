@@ -128,6 +128,18 @@ AGENT_SKILLS_VERIFIER=$(bm-sdk query agent-skills bm-verifier)
 
 Parse JSON for: `planner_model`, `executor_model`, `checker_model`, `verifier_model`, `commit_docs`, `branch_name`, `quick_id`, `slug`, `date`, `timestamp`, `quick_dir`, `task_dir`, `roadmap_exists`, `planning_exists`.
 
+**Step 2.1: Propose a catalog skill on fit**
+
+Run the deterministic pre-filter with the task description as one quoted argument (data only, never interpolated elsewhere):
+```bash
+MATCH=$(bm-sdk query craft-skill.match "$DESCRIPTION" 2>/dev/null || echo '{"candidates":[]}')
+```
+If `candidates` is empty, continue to Step 2.5 silently. Otherwise Read `references/craft-skill-propose-on-fit.md` and apply Step 2 and Step 3a. On `inserted:true` set `CRAFT_SKILL_ID=<id>` and `CRAFT_SKILL_MODE`, then re-capture so the Step 6 executor prompt carries the inserted skill (the Step 2 capture predates the insert):
+```bash
+AGENT_SKILLS_EXECUTOR=$(bm-sdk query agent-skills bm-executor)
+```
+Under `--discuss`, the Step 4.5 CONTEXT.md may also carry the `### Craft skills` subsection; do not run match twice.
+
 ```bash
 USE_WORKTREES=$(bm-sdk query config-get workflow.use_worktrees 2>/dev/null || echo "true")
 ```
@@ -856,6 +868,15 @@ After executor returns:
 If summary not found, error: "Executor failed to create ${quick_id}-SUMMARY.md"
 
 Note: For quick tasks producing multiple plans (rare), spawn executors in parallel waves per execute-phase patterns.
+
+---
+
+**Step 6.1: Release the ephemeral catalog skill**
+
+If `CRAFT_SKILL_ID` is set, run the release (a sticky accept is kept by the command's default), print `craft-skill: released <id> (ephemeral)`, then unset the variable:
+```bash
+bm-sdk query craft-skill.release --agent bm-executor --id "$CRAFT_SKILL_ID"
+```
 
 ---
 
