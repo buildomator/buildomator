@@ -217,7 +217,7 @@ domain surfaces the right candidate.
 3. Propose-on-fit surfaces a candidate when a phase/quick-task scope matches a trigger,
    and injects nothing until accepted. Shown end-to-end for at least one domain.
 
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 **Wave 1**
@@ -228,7 +228,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 17-03-PLAN.md: wire propose-on-fit into discuss-phase (record), quick (accept/insert/release) and autonomous (allow-gated auto-insert/release)
-- [ ] 17-04-PLAN.md: match unit cases + SEO end-to-end proof (match, accept, insert, executor sees it, release) in the CJS insertion spec
+- [x] 17-04-PLAN.md: match unit cases + SEO end-to-end proof (match, accept, insert, executor sees it, release) in the CJS insertion spec
 
 **Wave 3** *(blocked on Wave 2 completion)*
 

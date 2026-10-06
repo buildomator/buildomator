@@ -4,13 +4,13 @@ milestone: v4.9
 milestone_name: Craft Skill Catalog
 status: executing
 stopped_at: Completed 17-03-PLAN.md
-last_updated: "2026-10-06T20:27:30.966Z"
+last_updated: "2026-10-06T20:33:34.739Z"
 last_activity: 2026-10-06 -- Phase 17 execution started
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
   percent: 33
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 ## Current Position
 
 Phase: 17 (v1-capability-wiring-and-propose-on-fit) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Executing Phase 17
 Last activity: 2026-10-06 -- Phase 17 execution started
 
