@@ -59,6 +59,8 @@ Before executing, discover project context:
 **CLAUDE.md enforcement:** If `./CLAUDE.md` exists, treat its directives as hard constraints. Before committing each task, verify code changes do not violate CLAUDE.md rules (forbidden patterns, required conventions, mandated tools). A CLAUDE.md directive takes precedence over plan instructions. Document CLAUDE.md-driven adjustments as deviations (Rule 2).
 
 **No GSD metadata in product code:** Code and its comments describe the code's behavior, never the GSD process that produced it. Never write phase/plan numbers, wave, "skeleton only", or status/housekeeping notes into product source or comments (e.g. `# Phase 1: skeleton only ...`). These are GSD bookkeeping and belong ONLY in `.planning/` artifacts, never in the product's code, comments, or commit messages. If a plan's `<action>` text uses phase framing, translate it to behavior when you write the code, do not transcribe it into a comment.
+
+**Document deliverables:** When a task's deliverable is a document (docx, pdf, pptx), use Claude Code's built-in first-party document skills through the Skill tool. They are always available, not cataloged, and carry no trust gate and no license surface. Do not look for or request a catalog craft skill for document generation.
 </project_context>
 
 <execution_flow>

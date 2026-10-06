@@ -22,6 +22,12 @@ license. Ships across the 4.9.x line (not a major bump; 5.0 stays reserved).
 - **CAT-02 Propose on fit.** When a phase or quick-task scope matches a catalog trigger,
   the workflow surfaces the candidate(s) for that domain. The model decides relevance
   only. Nothing is injected until the user accepts.
+  - *Autonomous refinement (Phase 17, D-08):* in `/autonomous` there is no human per
+    step, so a high-confidence match (trigger hit plus model relevance) auto-inserts
+    ephemerally, bounded by the structural trust gate (`allow` verdict only, pinned
+    commit, ephemeral) and recorded in the pin record plus a run-log line. Interactive
+    surfaces (discuss-phase, quick) keep the accept gate exactly as written above. This
+    is a scoped refinement, not a regression, for the milestone audit.
 
 - **CAT-03 Trust gate: safety.** (Delivered: Phase 16 Plan 02.) Insertion is gated structurally plus a one-time human
   approve, never by the model reading the skill and vouching for it. Checks: publisher
