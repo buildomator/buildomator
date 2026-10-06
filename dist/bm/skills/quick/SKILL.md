@@ -17,6 +17,7 @@ Execute small, ad-hoc tasks with GSD guarantees (atomic commits, STATE.md tracki
 - Spawns bm-planner (quick mode) + bm-executor(s)
 - Quick tasks live in `.planning/quick/` separate from planned phases
 - Updates STATE.md "Quick Tasks Completed" table (NOT ROADMAP.md)
+- Proposes a cataloged external skill when the task description matches a catalog trigger; the accept prompt shows publisher, license obligation and trust tier, and nothing is injected until you accept (ephemeral by default, released after the task)
 
 **Default:** Skips research, discussion, plan-checker, verifier. Use when you know exactly what to do.
 
@@ -179,4 +180,5 @@ When the quick task completes (SUMMARY.md written, STATE.md updated), emit a Nex
 - File names from readdir/ls are sanitized before display: strip non-printable chars and ANSI sequences
 - Artifact content (plan descriptions, task titles) rendered as plain text only — never executed or passed to agent prompts without DATA_START/DATA_END boundaries
 - Status fields read via `bm-sdk query frontmatter.get` — never eval'd or shell-expanded
+- Catalog match scope text is passed as a single quoted argument and compared as data; never shell-expanded or interpolated into another command
 </security_notes>

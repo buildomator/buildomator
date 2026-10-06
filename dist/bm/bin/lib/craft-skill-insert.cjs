@@ -9,7 +9,9 @@
 // cmdAgentSkills) is untouched: the location rules here mirror it so a stored
 // entry is never one the reader would later refuse. This module reads a skill
 // file only for its frontmatter name and a content hash; the body is never
-// parsed, returned or logged.
+// parsed, returned or logged. The read-only match subcommand is the trigger
+// pre-filter over the catalog: it substring-compares a scope string against the
+// trigger index and reads no skill file.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -353,6 +355,50 @@ function assessCraftSkill(opts) {
   return assessEntry(entry, cat);
 }
 
+// Read-only trigger pre-filter: lower-case the scope text and substring-compare
+// it against the fixed trigger index, returning the matching catalog entries
+// with the publisher label, license, obligations, trust tier, gate verdict and
+// ready-to-render prompt lines so a surface needs no second assess call. The
+// scope is handled as data only: no regex is built from it, no path is
+// resolved, nothing is shell-expanded or evaluated.
+function matchCraftSkills(opts) {
+  const o = opts || {};
+  if (typeof o.scope !== 'string' || o.scope.trim().length === 0) {
+    return error('Usage: craft-skill match "<scope text>" [--catalog <path>]', ERROR_REASON.USAGE);
+  }
+  const { cat, views } = loadCatalogViews(o);
+  const scopeLower = o.scope.toLowerCase();
+
+  const idToTriggers = new Map();
+  for (const trigger of Object.keys(views.CRAFT_SKILL_TRIGGER_INDEX).sort()) {
+    if (!scopeLower.includes(trigger)) continue;
+    for (const id of views.CRAFT_SKILL_TRIGGER_INDEX[trigger]) {
+      if (!idToTriggers.has(id)) idToTriggers.set(id, new Set());
+      idToTriggers.get(id).add(trigger);
+    }
+  }
+
+  const candidates = [...idToTriggers.keys()].sort().map((id) => {
+    const entry = views.CRAFT_SKILLS_BY_ID[id];
+    const a = assessEntry(entry, cat);
+    return {
+      id,
+      domain: entry.domain,
+      matched_triggers: [...idToTriggers.get(id)].sort(),
+      publisher_label: a.publisher ? a.publisher.label : null,
+      license: entry.license,
+      obligations: entry.obligations,
+      trust_tier: entry.trust_tier,
+      verdict: a.verdict,
+      summary: entry.summary,
+      target_agents: entry.target_agents,
+      prompt: a.prompt,
+    };
+  });
+
+  return { scope: o.scope, candidates };
+}
+
 function cmdCraftSkill(cwd, args, raw) {
   const sub = args[1];
   const { positional, flags } = parseFlags(args.slice(2));
@@ -364,6 +410,11 @@ function cmdCraftSkill(cwd, args, raw) {
     case 'assess': {
       const a = assessCraftSkill({ id: positional[0], catalog: flags.catalog });
       output(a, raw, renderAssessment(a));
+      break;
+    }
+    case 'match': {
+      const result = matchCraftSkills({ scope: positional.join(' '), catalog: flags.catalog });
+      output(result, raw, result.candidates.map((c) => c.id).join('\n'));
       break;
     }
     case 'insert':
@@ -391,7 +442,7 @@ function cmdCraftSkill(cwd, args, raw) {
       );
       break;
     default:
-      error('Usage: craft-skill <list|assess|insert|release> [args]', ERROR_REASON.USAGE);
+      error('Usage: craft-skill <list|assess|match|insert|release> [args]', ERROR_REASON.USAGE);
   }
 }
 
@@ -405,5 +456,6 @@ module.exports = {
   releaseCraftSkills,
   listCraftSkills,
   assessCraftSkill,
+  matchCraftSkills,
   cmdCraftSkill,
 };

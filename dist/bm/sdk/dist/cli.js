@@ -19341,6 +19341,42 @@ function assessCraftSkill(opts) {
   }
   return assessEntry(entry, cat);
 }
+function matchCraftSkills(opts) {
+  const o3 = opts || {};
+  if (typeof o3.scope !== "string" || o3.scope.trim().length === 0) {
+    throw new GSDError('Usage: craft-skill match "<scope text>" [--catalog <path>]', ErrorClassification.Validation);
+  }
+  const { cat, views } = loadCatalogViews(o3);
+  const scopeLower = o3.scope.toLowerCase();
+  const idToTriggers = /* @__PURE__ */ new Map();
+  for (const trigger of Object.keys(views.CRAFT_SKILL_TRIGGER_INDEX).sort()) {
+    if (!scopeLower.includes(trigger))
+      continue;
+    for (const id of views.CRAFT_SKILL_TRIGGER_INDEX[trigger]) {
+      if (!idToTriggers.has(id))
+        idToTriggers.set(id, /* @__PURE__ */ new Set());
+      idToTriggers.get(id).add(trigger);
+    }
+  }
+  const candidates = [...idToTriggers.keys()].sort().map((id) => {
+    const entry = views.CRAFT_SKILLS_BY_ID[id];
+    const a3 = assessEntry(entry, cat);
+    return {
+      id,
+      domain: entry.domain,
+      matched_triggers: [...idToTriggers.get(id)].sort(),
+      publisher_label: a3.publisher ? a3.publisher.label : null,
+      license: entry.license,
+      obligations: entry.obligations,
+      trust_tier: entry.trust_tier,
+      verdict: a3.verdict,
+      summary: entry.summary,
+      target_agents: entry.target_agents,
+      prompt: a3.prompt
+    };
+  });
+  return { scope: o3.scope, candidates };
+}
 function asString(value) {
   return typeof value === "string" ? value : void 0;
 }
@@ -19355,6 +19391,14 @@ var craftSkillAssess = async (args) => {
     return { data: renderAssessment(a3), format: "text" };
   }
   return { data: a3 };
+};
+var craftSkillMatch = async (args) => {
+  const { positional, flags } = parseFlags(args);
+  const result = matchCraftSkills({ scope: positional.join(" "), catalog: asString(flags.catalog) });
+  if (flags["raw-text"]) {
+    return { data: result.candidates.map((c) => c.id).join("\n"), format: "text" };
+  }
+  return { data: result };
 };
 var craftSkillInsert = async (args, projectDir, workstream) => {
   const { positional, flags } = parseFlags(args);
@@ -19468,6 +19512,8 @@ var DOMAIN_STATIC_CATALOG = [
   ["craft-skill list", craftSkillList],
   ["craft-skill.assess", craftSkillAssess],
   ["craft-skill assess", craftSkillAssess],
+  ["craft-skill.match", craftSkillMatch],
+  ["craft-skill match", craftSkillMatch],
   ["craft-skill.insert", craftSkillInsert],
   ["craft-skill insert", craftSkillInsert],
   ["craft-skill.release", craftSkillRelease],

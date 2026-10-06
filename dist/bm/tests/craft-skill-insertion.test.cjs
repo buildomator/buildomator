@@ -1,11 +1,13 @@
 'use strict';
 
 // End-to-end spec for scoped craft-skill insertion through the spawned
-// gsd-tools CLI. Proves the write side writes only an agent_skills.<agent>
-// entry plus a pins.json record, that the untouched reader scopes the skill to
-// its target agent type only, that ephemeral is the default and sticky opts
-// out of release, that approval is remembered per id+pin, that a drifted or
-// escaping checkout is refused, and that nothing loads the catalog at startup.
+// gsd-tools CLI. Proves the read-only match pre-filter surfaces candidates
+// from data-only scope text, that the write side writes only an
+// agent_skills.<agent> entry plus a pins.json record, that the untouched
+// reader scopes the skill to its target agent type only, that ephemeral is the
+// default and sticky opts out of release, that approval is remembered per
+// id+pin, that a drifted or escaping checkout is refused, and that nothing
+// loads the catalog at startup.
 
 const fs = require('fs');
 const os = require('os');
@@ -126,6 +128,84 @@ check('assess returns the allow verdict and a rendered prompt', () => {
     assert(a.verdict === 'allow', `expected allow verdict: ${JSON.stringify(a.verdict)}`);
     const raw = runTool(root, ['craft-skill', 'assess', 'duckdb-query', '--catalog', cat, '--raw']);
     assert(raw.stdout.includes('Verdict: allow'), `rendered assessment should name the verdict: ${raw.stdout}`);
+  });
+});
+
+// --- match (propose-on-fit pre-filter) ---
+
+check('match surfaces the SEO candidate with its triggers, verdict and prompt lines', () => {
+  withProject((root) => {
+    const res = runTool(root, ['craft-skill', 'match', 'Audit my site SEO and fix the sitemap', '--catalog', COMMITTED_CATALOG]);
+    assert(res.status === 0, `match should exit 0: ${res.stderr}`);
+    const m = parseJson(res);
+    assert(m.scope === 'Audit my site SEO and fix the sitemap', `scope should be echoed verbatim: ${JSON.stringify(m.scope)}`);
+    assert(Array.isArray(m.candidates) && m.candidates.length === 1, `expected exactly one candidate: ${JSON.stringify(m.candidates)}`);
+    const c = m.candidates[0];
+    assert(c.id === 'seo-audit', `expected seo-audit: ${JSON.stringify(c.id)}`);
+    assert(JSON.stringify(c.matched_triggers) === JSON.stringify(['seo', 'sitemap']), `matched_triggers mismatch: ${JSON.stringify(c.matched_triggers)}`);
+    assert(c.verdict === 'allow', `expected allow verdict: ${JSON.stringify(c.verdict)}`);
+    assert(c.trust_tier === 'A', `expected trust tier A: ${JSON.stringify(c.trust_tier)}`);
+    assert(c.license === 'MIT', `expected MIT license: ${JSON.stringify(c.license)}`);
+    assert(typeof c.obligations === 'string' && c.obligations.length > 0, `obligations should be a non-empty string: ${JSON.stringify(c.obligations)}`);
+    assert(typeof c.publisher_label === 'string' && c.publisher_label.startsWith('published by'), `publisher_label should start with "published by": ${JSON.stringify(c.publisher_label)}`);
+    assert(Array.isArray(c.prompt), `prompt should be an array: ${JSON.stringify(c.prompt)}`);
+    assert(c.prompt.some((l) => l.startsWith('Publisher:')), `prompt should carry a Publisher line: ${JSON.stringify(c.prompt)}`);
+    assert(c.prompt.some((l) => l.startsWith('Obligations:')), `prompt should carry an Obligations line: ${JSON.stringify(c.prompt)}`);
+    assert(Array.isArray(c.target_agents) && c.target_agents.includes('bm-executor'), `target_agents should include bm-executor: ${JSON.stringify(c.target_agents)}`);
+  });
+});
+
+check('match surfaces the DuckDB candidate for a data scope', () => {
+  withProject((root) => {
+    const m = parseJson(runTool(root, ['craft-skill', 'match', 'ad-hoc SQL over Parquet files with DuckDB', '--catalog', COMMITTED_CATALOG]));
+    assert(m.candidates.length === 1, `expected one candidate: ${JSON.stringify(m.candidates)}`);
+    const c = m.candidates[0];
+    assert(c.id === 'duckdb-query', `expected duckdb-query: ${JSON.stringify(c.id)}`);
+    assert(JSON.stringify(c.matched_triggers) === JSON.stringify(['ad-hoc sql', 'duckdb', 'parquet']), `matched_triggers mismatch: ${JSON.stringify(c.matched_triggers)}`);
+    assert(c.verdict === 'allow', `expected allow verdict: ${JSON.stringify(c.verdict)}`);
+    assert(c.trust_tier === 'B', `expected trust tier B: ${JSON.stringify(c.trust_tier)}`);
+  });
+});
+
+check('match returns no candidates for an unrelated scope', () => {
+  withProject((root) => {
+    const m = parseJson(runTool(root, ['craft-skill', 'match', 'refactor the login form', '--catalog', COMMITTED_CATALOG]));
+    assert(JSON.stringify(m.candidates) === JSON.stringify([]), `expected no candidates: ${JSON.stringify(m.candidates)}`);
+  });
+});
+
+check('match treats the scope as data and echoes it verbatim', () => {
+  withProject((root) => {
+    const scope = '$(echo pwned); rm -rf / ; seo';
+    const m = parseJson(runTool(root, ['craft-skill', 'match', scope, '--catalog', COMMITTED_CATALOG]));
+    assert(m.scope === scope, `scope should be echoed verbatim: ${JSON.stringify(m.scope)}`);
+    assert(m.candidates.length === 1 && m.candidates[0].id === 'seo-audit', `only seo-audit should match: ${JSON.stringify(m.candidates)}`);
+    assert(fs.existsSync(root), 'the project root must still exist (nothing was executed)');
+  });
+});
+
+check('match is case-insensitive', () => {
+  withProject((root) => {
+    const m = parseJson(runTool(root, ['craft-skill', 'match', 'TECHNICAL SEO INDEXING', '--catalog', COMMITTED_CATALOG]));
+    assert(m.candidates.length === 1 && m.candidates[0].id === 'seo-audit', `expected seo-audit: ${JSON.stringify(m.candidates)}`);
+    assert(JSON.stringify(m.candidates[0].matched_triggers) === JSON.stringify(['indexing', 'seo', 'technical seo']), `matched_triggers mismatch: ${JSON.stringify(m.candidates[0].matched_triggers)}`);
+  });
+});
+
+check('match without a scope is a usage error', () => {
+  withProject((root) => {
+    const res = runTool(root, ['craft-skill', 'match']);
+    assert(res.status !== 0, `expected non-zero exit: ${res.stdout}`);
+    assert((res.stdout + res.stderr).includes('craft-skill match'), `expected usage mentioning craft-skill match: ${res.stderr}`);
+  });
+});
+
+check('match reports a flag verdict for a copyleft fixture', () => {
+  withProject((root) => {
+    const cat = copyCatalog(root, (c) => { c.skills['duckdb-query'].license = 'GPL-3.0-only'; });
+    const m = parseJson(runTool(root, ['craft-skill', 'match', 'query parquet with duckdb', '--catalog', cat]));
+    assert(m.candidates.length === 1 && m.candidates[0].id === 'duckdb-query', `expected duckdb-query: ${JSON.stringify(m.candidates)}`);
+    assert(m.candidates[0].verdict === 'flag', `copyleft fixture should report a flag verdict: ${JSON.stringify(m.candidates[0].verdict)}`);
   });
 });
 
@@ -429,6 +509,74 @@ check('the config schema accepts the dynamic key and both schema twins are uncha
   assert(cjs.isValidConfigKey('agent_skills.bm-executor') === true, 'agent_skills.bm-executor should be valid');
   const diff = spawnSync('git', ['-C', REPO_ROOT, 'diff', '--quiet', '--', 'bin/lib/config-schema.cjs', 'sdk/src/query/config-schema.ts']);
   assert(diff.status === 0, 'config-schema twins must be unchanged by this plan');
+});
+
+// --- propose-on-fit end to end (SEO domain) ---
+
+check('propose-on-fit end to end for the SEO domain: match, accept, insert, executor sees it, release clears it', () => {
+  withProject((root) => {
+    const cat = copyCatalog(root);
+    writeSkill(path.join(root, 's1'), 'seo-audit');
+
+    // match surfaces the candidate from the data-only scope text
+    const m = parseJson(runTool(root, ['craft-skill', 'match', 'Audit my site SEO and fix the sitemap', '--catalog', cat]));
+    const ID = m.candidates[0].id;
+    assert(ID === 'seo-audit', `match should surface seo-audit: ${JSON.stringify(m.candidates)}`);
+
+    // nothing is injected until accept: an insert without approval writes nothing
+    const before = parseJson(runTool(root, insertArgs(ID, 'bm-executor', 's1', ['--catalog', cat])));
+    assert(before.needs_approval === true, `expected needs_approval before accept: ${JSON.stringify(before)}`);
+    assert(before.inserted === false, `expected inserted false before accept: ${JSON.stringify(before)}`);
+    const cfgBefore = readConfig(root);
+    assert(cfgBefore === null || !cfgBefore.agent_skills, `no config write before accept: ${JSON.stringify(cfgBefore)}`);
+    assert(readPins(root) === null, 'no pins before accept');
+
+    // accept: the default ephemeral insert lands the config entry and one pin
+    const after = parseJson(runTool(root, insertArgs(ID, 'bm-executor', 's1', ['--approved', '--catalog', cat])));
+    assert(after.inserted === true, `expected inserted after accept: ${JSON.stringify(after)}`);
+    assert(after.mode === 'ephemeral', `expected ephemeral mode: ${JSON.stringify(after.mode)}`);
+    assert(after.agent === 'bm-executor', `expected bm-executor agent: ${JSON.stringify(after.agent)}`);
+    const cfg = readConfig(root);
+    assert(JSON.stringify(cfg.agent_skills['bm-executor']) === JSON.stringify(['s1']), `config entry mismatch: ${JSON.stringify(cfg.agent_skills)}`);
+    const rec = readPins(root).records[0];
+    assert(rec.id === 'seo-audit', `pin id mismatch: ${JSON.stringify(rec.id)}`);
+    assert(rec.verdict === 'allow', `pin verdict mismatch: ${JSON.stringify(rec.verdict)}`);
+    assert(rec.released_at === null, `released_at should be null before release: ${JSON.stringify(rec.released_at)}`);
+
+    // the executor reader sees it; the planner reader does not (scoped to target)
+    const execOut = runTool(root, ['agent-skills', 'bm-executor']).stdout;
+    assert(execOut.includes('s1'), `executor reader should reference s1: ${JSON.stringify(execOut)}`);
+    const plannerOut = runTool(root, ['agent-skills', 'bm-planner']).stdout;
+    assert(!plannerOut.includes('s1'), `planner reader must not reference s1: ${JSON.stringify(plannerOut)}`);
+
+    // release with --id clears the config entry and stamps the pin
+    const rel = parseJson(runTool(root, ['craft-skill', 'release', '--agent', 'bm-executor', '--id', ID]));
+    assert(rel.released.length === 1, `expected one released record: ${JSON.stringify(rel)}`);
+    assert(rel.remaining === 0, `expected no remaining records: ${JSON.stringify(rel)}`);
+    const cfgAfter = readConfig(root);
+    assert(JSON.stringify(cfgAfter.agent_skills['bm-executor']) === JSON.stringify([]), `config should be empty after release: ${JSON.stringify(cfgAfter.agent_skills)}`);
+    const relRec = readPins(root).records[0];
+    assert(typeof relRec.released_at === 'string' && !Number.isNaN(Date.parse(relRec.released_at)), `released_at should be an ISO timestamp: ${JSON.stringify(relRec.released_at)}`);
+    assert(!runTool(root, ['agent-skills', 'bm-executor']).stdout.includes('s1'), 'executor reader should no longer reference s1');
+  });
+});
+
+check('release with --id leaves another agent\'s and another id\'s ephemeral records untouched', () => {
+  withProject((root) => {
+    const cat = copyCatalog(root);
+    writeSkill(path.join(root, 's1'), 'seo-audit');
+    writeSkill(path.join(root, 's2'), 'query');
+    runTool(root, insertArgs('seo-audit', 'bm-executor', 's1', ['--approved', '--catalog', cat]));
+    runTool(root, insertArgs('duckdb-query', 'bm-executor', 's2', ['--approved', '--catalog', cat]));
+
+    const rel = parseJson(runTool(root, ['craft-skill', 'release', '--agent', 'bm-executor', '--id', 'seo-audit']));
+    assert(rel.released.length === 1, `expected one released record: ${JSON.stringify(rel)}`);
+    const cfg = readConfig(root);
+    assert(JSON.stringify(cfg.agent_skills['bm-executor']) === JSON.stringify(['s2']), `only the released entry should be gone: ${JSON.stringify(cfg.agent_skills)}`);
+    const stamped = readPins(root).records.filter((r) => r.released_at !== null);
+    assert(stamped.length === 1, `exactly one record should be stamped: ${JSON.stringify(readPins(root).records)}`);
+    assert(stamped[0].id === 'seo-audit', `the stamped record should be seo-audit: ${JSON.stringify(stamped[0].id)}`);
+  });
 });
 
 // --- report ---

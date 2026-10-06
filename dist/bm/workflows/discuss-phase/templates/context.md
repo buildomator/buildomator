@@ -62,6 +62,10 @@ Downstream agents MUST read `{padded_phase}-SPEC.md` before planning or implemen
 ### Claude's Discretion
 [Areas where user said "you decide" — note that Claude has flexibility here]
 
+### Craft skills
+- **CS-01:** [id] accepted for bm-executor ([ephemeral|sticky]); [publisher label]; [license]: [obligation]; trust tier [tier]; verdict [verdict]; pin [source @ commit]. Insert at execute time with: bm-sdk query craft-skill.insert [id] --agent bm-executor --location <checkout> --approved[ --sticky]
+[If no catalog skill was accepted: omit this subsection entirely.]
+
 ### Folded Todos
 [If any todos were folded into scope from the cross_reference_todos step, list them here.
 Each entry should include the todo title, original problem, and how it fits this phase's scope.
@@ -108,6 +112,8 @@ Every entry needs a full relative path — not just a name.]
 ## Specific Ideas
 
 [Any particular references, examples, or "I want it like X" moments from discussion]
+
+[If the scope is a document deliverable: "Document deliverable: use Claude Code's built-in document skills (docx/pdf/pptx); no catalog skill, no license surface."]
 
 [If none: "No specific requirements — open to standard approaches"]
 

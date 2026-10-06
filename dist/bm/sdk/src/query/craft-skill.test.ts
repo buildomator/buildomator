@@ -15,7 +15,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-import { insertCraftSkill, releaseCraftSkills } from './craft-skill.js';
+import { insertCraftSkill, releaseCraftSkills, matchCraftSkills } from './craft-skill.js';
 import { agentSkills } from './skills.js';
 import { createRegistry } from './index.js';
 
@@ -392,10 +392,77 @@ describe('craft-skill insert / release (SDK)', () => {
   });
 });
 
+describe('craft-skill match (SDK)', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'gsd-craft-match-'));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('matches an SEO scope to the seo-audit candidate with the gate inputs inline', async () => {
+    const catalog = await writeCatalogFixture(tmpDir);
+    const r = matchCraftSkills({ scope: 'Audit my site SEO and fix the sitemap', catalog });
+    expect(r.scope).toBe('Audit my site SEO and fix the sitemap');
+    expect(r.candidates.map((c) => c.id)).toEqual(['seo-audit']);
+    const c = r.candidates[0];
+    expect(c.matched_triggers).toEqual(['seo', 'sitemap']);
+    expect(c.verdict).toBe('allow');
+    expect(c.publisher_label).toMatch(/^published by/);
+    expect(c.obligations.length).toBeGreaterThan(0);
+    expect(c.prompt.some((line) => line.startsWith('Publisher:'))).toBe(true);
+  });
+
+  it('matches a data scope to the duckdb-query candidate', async () => {
+    const catalog = await writeCatalogFixture(tmpDir);
+    const r = matchCraftSkills({ scope: 'ad-hoc SQL over Parquet files with DuckDB', catalog });
+    expect(r.candidates.map((c) => c.id)).toEqual(['duckdb-query']);
+    expect(r.candidates[0].matched_triggers).toEqual(['ad-hoc sql', 'duckdb', 'parquet']);
+  });
+
+  it('returns no candidates and echoes the scope for an unrelated scope', async () => {
+    const catalog = await writeCatalogFixture(tmpDir);
+    const r = matchCraftSkills({ scope: 'refactor the login form', catalog });
+    expect(r.candidates).toEqual([]);
+    expect(r.scope).toBe('refactor the login form');
+  });
+
+  it('treats a scope with shell metacharacters as data and still matches', async () => {
+    const catalog = await writeCatalogFixture(tmpDir);
+    const scope = '$(echo pwned); seo';
+    const r = matchCraftSkills({ scope, catalog });
+    expect(r.scope).toBe(scope);
+    expect(r.candidates.map((c) => c.id)).toEqual(['seo-audit']);
+  });
+
+  it('throws a GSDError for a blank scope', async () => {
+    const catalog = await writeCatalogFixture(tmpDir);
+    expect(() => matchCraftSkills({ scope: '   ', catalog })).toThrow(/craft-skill match/);
+  });
+
+  it('reports verdict flag for a copyleft candidate', async () => {
+    const catalog = await writeCatalogFixture(tmpDir, (cat) => {
+      cat.skills['duckdb-query'].license = 'GPL-3.0-only';
+    });
+    const r = matchCraftSkills({ scope: 'ad-hoc SQL over Parquet files with DuckDB', catalog });
+    expect(r.candidates.map((c) => c.id)).toEqual(['duckdb-query']);
+    expect(r.candidates[0].verdict).toBe('flag');
+  });
+});
+
 describe('craft-skill registry', () => {
   it('registers craft-skill.insert and craft-skill release in createRegistry', () => {
     const commands = createRegistry().commands();
     expect(commands).toContain('craft-skill.insert');
     expect(commands).toContain('craft-skill release');
+  });
+
+  it('registers craft-skill.match and craft-skill match in createRegistry', () => {
+    const commands = createRegistry().commands();
+    expect(commands).toContain('craft-skill.match');
+    expect(commands).toContain('craft-skill match');
   });
 });

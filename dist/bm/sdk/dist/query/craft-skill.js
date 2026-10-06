@@ -9,6 +9,9 @@
 // refuse. A skill file is read only for its frontmatter name and a content
 // hash; the body is never parsed, returned or logged. The record key set and
 // ordering are byte-identical to the CJS twin so a parity test can compare them.
+// The read-only match handler is the trigger pre-filter over the catalog: it
+// substring-compares a scope string against the trigger index and reads no skill
+// file.
 import { existsSync, readFileSync, mkdirSync, writeFileSync, renameSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
@@ -390,6 +393,48 @@ export function assessCraftSkill(opts) {
     }
     return assessEntry(entry, cat);
 }
+// Lower-case the scope text and substring-compare it against the fixed trigger
+// index, returning the matching catalog entries with the publisher label,
+// license, obligations, trust tier, gate verdict and ready-to-render prompt
+// lines so a surface needs no second assess call. The scope is handled as data
+// only: no regex is built from it, no path is resolved, nothing is
+// shell-expanded or evaluated.
+export function matchCraftSkills(opts) {
+    const o = opts || {};
+    if (typeof o.scope !== 'string' || o.scope.trim().length === 0) {
+        throw new GSDError('Usage: craft-skill match "<scope text>" [--catalog <path>]', ErrorClassification.Validation);
+    }
+    const { cat, views } = loadCatalogViews(o);
+    const scopeLower = o.scope.toLowerCase();
+    const idToTriggers = new Map();
+    for (const trigger of Object.keys(views.CRAFT_SKILL_TRIGGER_INDEX).sort()) {
+        if (!scopeLower.includes(trigger))
+            continue;
+        for (const id of views.CRAFT_SKILL_TRIGGER_INDEX[trigger]) {
+            if (!idToTriggers.has(id))
+                idToTriggers.set(id, new Set());
+            idToTriggers.get(id).add(trigger);
+        }
+    }
+    const candidates = [...idToTriggers.keys()].sort().map((id) => {
+        const entry = views.CRAFT_SKILLS_BY_ID[id];
+        const a = assessEntry(entry, cat);
+        return {
+            id,
+            domain: entry.domain,
+            matched_triggers: [...idToTriggers.get(id)].sort(),
+            publisher_label: a.publisher ? a.publisher.label : null,
+            license: entry.license,
+            obligations: entry.obligations,
+            trust_tier: entry.trust_tier,
+            verdict: a.verdict,
+            summary: entry.summary,
+            target_agents: entry.target_agents,
+            prompt: a.prompt,
+        };
+    });
+    return { scope: o.scope, candidates };
+}
 // ─── query handlers ─────────────────────────────────────────────────────────
 function asString(value) {
     return typeof value === 'string' ? value : undefined;
@@ -405,6 +450,14 @@ export const craftSkillAssess = async (args) => {
         return { data: renderAssessment(a), format: 'text' };
     }
     return { data: a };
+};
+export const craftSkillMatch = async (args) => {
+    const { positional, flags } = parseFlags(args);
+    const result = matchCraftSkills({ scope: positional.join(' '), catalog: asString(flags.catalog) });
+    if (flags['raw-text']) {
+        return { data: result.candidates.map((c) => c.id).join('\n'), format: 'text' };
+    }
+    return { data: result };
 };
 export const craftSkillInsert = async (args, projectDir, workstream) => {
     const { positional, flags } = parseFlags(args);

@@ -96,8 +96,30 @@ export declare function assessCraftSkill(opts: {
     id?: string;
     catalog?: string;
 }): EntryAssessment;
+export interface MatchCandidate {
+    id: string;
+    domain: string;
+    matched_triggers: string[];
+    publisher_label: string | null;
+    license: string;
+    obligations: string;
+    trust_tier: string;
+    verdict: LicenseVerdict;
+    summary: string;
+    target_agents: string[];
+    prompt: string[];
+}
+export interface MatchResult {
+    scope: string;
+    candidates: MatchCandidate[];
+}
+export declare function matchCraftSkills(opts: {
+    scope?: string;
+    catalog?: string;
+}): MatchResult;
 export declare const craftSkillList: QueryHandler;
 export declare const craftSkillAssess: QueryHandler;
+export declare const craftSkillMatch: QueryHandler;
 export declare const craftSkillInsert: QueryHandler;
 export declare const craftSkillRelease: QueryHandler;
 //# sourceMappingURL=craft-skill.d.ts.map

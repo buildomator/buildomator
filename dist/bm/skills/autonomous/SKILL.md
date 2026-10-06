@@ -17,6 +17,8 @@ Execute all remaining milestone phases autonomously. For each phase: discuss →
 
 Uses ROADMAP.md phase discovery and Skill() flat invocations for each phase command. After all phases complete: milestone audit → complete → cleanup.
 
+A cataloged external skill whose triggers match the phase scope is auto-inserted for the executor only when the structural trust gate allows it (ephemeral, logged in the run output and the pin record, released after the phase).
+
 **Creates/Updates:**
 - `.planning/STATE.md` — updated after each phase
 - `.planning/ROADMAP.md` — progress updated after each phase
