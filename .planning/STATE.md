@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v4.9
 milestone_name: Craft Skill Catalog
-status: planning
+status: executing
 stopped_at: Phase 17 context gathered
-last_updated: "2026-10-06T19:31:03.076Z"
-last_activity: 2026-10-06 -- Phase 17 planning complete
+last_updated: "2026-10-06T20:10:21.003Z"
+last_activity: 2026-10-06 -- Phase 17 execution started
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 10
-  completed_plans: 5
+  completed_plans: 6
   percent: 33
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** Reduce GSD's per-turn token overhead and agent spawn latency without breaking multi-CLI compatibility
-**Current focus:** Phase 17 — v1 capability wiring and propose on fit
+**Current focus:** Phase 17 — v1-capability-wiring-and-propose-on-fit
 
 ## Current Position
 
-Phase: 17
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-10-06 -- Phase 17 planning complete
+Phase: 17 (v1-capability-wiring-and-propose-on-fit) — EXECUTING
+Plan: 2 of 5
+Status: Executing Phase 17
+Last activity: 2026-10-06 -- Phase 17 execution started
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Last activity: 2026-10-06 -- Phase 17 planning complete
 | Phase 16 P03 | 9min | 3 tasks | 3 files |
 | Phase 16 P04 | 6min | 3 tasks | 3 files |
 | Phase 16 P05 | 12min | 3 tasks | 5 files |
+| Phase 17 P01 | 14min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,7 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 - [Phase 16]: Phase 16 P02: the craft-skill trust gate ships in both twins (CJS + SDK), not CJS-only, so workflows and plans 03/04 can call assess/insert through bm-sdk query without an SDK-to-CJS shell-out; a parity test keeps the two identical. Rationale: avoids a runtime shell-out and preserves the twin-parity convention
 - [Phase 16]: SDK craft-skill write side ships as an SDK twin mirroring the CJS 19-key pin-record contract. Phase 17 workflows call bm-sdk query craft-skill.insert without an SDK-to-CJS shell-out; parity test asserts the record key order against the CJS list
 - [Phase 16]: Phase 16 P05: the phase ships as one feat commit (plans 01-04 committed their source atomically); plan 05 commits only the regenerated sdk/dist and dist/bm, the no-vendoring guard, CI wiring and docs. sdk/dist must be git-staged before build-bm regenerates dist/bm because the build enumerates source via git ls-files; the freshly-built query twin was untracked
+- [Phase 17]: P01: craft-skill match ships as a read-only trigger pre-filter byte-identically in both twins; scope is data-only (no regex/path/shell/eval) and each candidate carries the full gate inputs (publisher, license, obligations, trust tier, verdict, prompt) so the propose-on-fit surface needs no second assess call
 
 ### Pending Todos
 
@@ -203,7 +205,7 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 
 ## Session Continuity
 
-Last session: 2026-10-05T18:03:07.601Z
+Last session: 2026-10-06T20:10:20.978Z
 Stopped at: Phase 17 context gathered
 Next action: `/gsd:plan-phase 12` to plan the Two-Plugin Build Foundation phase.
 

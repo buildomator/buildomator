@@ -105,6 +105,10 @@ None - no external service configuration required.
 - `match` is available to plan 03 (the propose-on-fit workflow) in both twins without re-deriving trigger matching inline.
 - `sdk/dist` is modified on disk by the build but intentionally NOT committed here; plan 05 owns the artifact rebuild, staging order and the `build-bm --check` gate.
 
+## Self-Check: PASSED
+
+All three task commits (`b832c5c`, `893e9c9`, `4b71e7b`) present; SUMMARY.md and all modified source/test files present on disk.
+
 ---
 *Phase: 17-v1-capability-wiring-and-propose-on-fit*
 *Completed: 2026-10-06*
