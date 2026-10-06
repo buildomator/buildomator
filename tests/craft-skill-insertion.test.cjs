@@ -511,6 +511,74 @@ check('the config schema accepts the dynamic key and both schema twins are uncha
   assert(diff.status === 0, 'config-schema twins must be unchanged by this plan');
 });
 
+// --- propose-on-fit end to end (SEO domain) ---
+
+check('propose-on-fit end to end for the SEO domain: match, accept, insert, executor sees it, release clears it', () => {
+  withProject((root) => {
+    const cat = copyCatalog(root);
+    writeSkill(path.join(root, 's1'), 'seo-audit');
+
+    // match surfaces the candidate from the data-only scope text
+    const m = parseJson(runTool(root, ['craft-skill', 'match', 'Audit my site SEO and fix the sitemap', '--catalog', cat]));
+    const ID = m.candidates[0].id;
+    assert(ID === 'seo-audit', `match should surface seo-audit: ${JSON.stringify(m.candidates)}`);
+
+    // nothing is injected until accept: an insert without approval writes nothing
+    const before = parseJson(runTool(root, insertArgs(ID, 'bm-executor', 's1', ['--catalog', cat])));
+    assert(before.needs_approval === true, `expected needs_approval before accept: ${JSON.stringify(before)}`);
+    assert(before.inserted === false, `expected inserted false before accept: ${JSON.stringify(before)}`);
+    const cfgBefore = readConfig(root);
+    assert(cfgBefore === null || !cfgBefore.agent_skills, `no config write before accept: ${JSON.stringify(cfgBefore)}`);
+    assert(readPins(root) === null, 'no pins before accept');
+
+    // accept: the default ephemeral insert lands the config entry and one pin
+    const after = parseJson(runTool(root, insertArgs(ID, 'bm-executor', 's1', ['--approved', '--catalog', cat])));
+    assert(after.inserted === true, `expected inserted after accept: ${JSON.stringify(after)}`);
+    assert(after.mode === 'ephemeral', `expected ephemeral mode: ${JSON.stringify(after.mode)}`);
+    assert(after.agent === 'bm-executor', `expected bm-executor agent: ${JSON.stringify(after.agent)}`);
+    const cfg = readConfig(root);
+    assert(JSON.stringify(cfg.agent_skills['bm-executor']) === JSON.stringify(['s1']), `config entry mismatch: ${JSON.stringify(cfg.agent_skills)}`);
+    const rec = readPins(root).records[0];
+    assert(rec.id === 'seo-audit', `pin id mismatch: ${JSON.stringify(rec.id)}`);
+    assert(rec.verdict === 'allow', `pin verdict mismatch: ${JSON.stringify(rec.verdict)}`);
+    assert(rec.released_at === null, `released_at should be null before release: ${JSON.stringify(rec.released_at)}`);
+
+    // the executor reader sees it; the planner reader does not (scoped to target)
+    const execOut = runTool(root, ['agent-skills', 'bm-executor']).stdout;
+    assert(execOut.includes('s1'), `executor reader should reference s1: ${JSON.stringify(execOut)}`);
+    const plannerOut = runTool(root, ['agent-skills', 'bm-planner']).stdout;
+    assert(!plannerOut.includes('s1'), `planner reader must not reference s1: ${JSON.stringify(plannerOut)}`);
+
+    // release with --id clears the config entry and stamps the pin
+    const rel = parseJson(runTool(root, ['craft-skill', 'release', '--agent', 'bm-executor', '--id', ID]));
+    assert(rel.released.length === 1, `expected one released record: ${JSON.stringify(rel)}`);
+    assert(rel.remaining === 0, `expected no remaining records: ${JSON.stringify(rel)}`);
+    const cfgAfter = readConfig(root);
+    assert(JSON.stringify(cfgAfter.agent_skills['bm-executor']) === JSON.stringify([]), `config should be empty after release: ${JSON.stringify(cfgAfter.agent_skills)}`);
+    const relRec = readPins(root).records[0];
+    assert(typeof relRec.released_at === 'string' && !Number.isNaN(Date.parse(relRec.released_at)), `released_at should be an ISO timestamp: ${JSON.stringify(relRec.released_at)}`);
+    assert(!runTool(root, ['agent-skills', 'bm-executor']).stdout.includes('s1'), 'executor reader should no longer reference s1');
+  });
+});
+
+check('release with --id leaves another agent\'s and another id\'s ephemeral records untouched', () => {
+  withProject((root) => {
+    const cat = copyCatalog(root);
+    writeSkill(path.join(root, 's1'), 'seo-audit');
+    writeSkill(path.join(root, 's2'), 'query');
+    runTool(root, insertArgs('seo-audit', 'bm-executor', 's1', ['--approved', '--catalog', cat]));
+    runTool(root, insertArgs('duckdb-query', 'bm-executor', 's2', ['--approved', '--catalog', cat]));
+
+    const rel = parseJson(runTool(root, ['craft-skill', 'release', '--agent', 'bm-executor', '--id', 'seo-audit']));
+    assert(rel.released.length === 1, `expected one released record: ${JSON.stringify(rel)}`);
+    const cfg = readConfig(root);
+    assert(JSON.stringify(cfg.agent_skills['bm-executor']) === JSON.stringify(['s2']), `only the released entry should be gone: ${JSON.stringify(cfg.agent_skills)}`);
+    const stamped = readPins(root).records.filter((r) => r.released_at !== null);
+    assert(stamped.length === 1, `exactly one record should be stamped: ${JSON.stringify(readPins(root).records)}`);
+    assert(stamped[0].id === 'seo-audit', `the stamped record should be seo-audit: ${JSON.stringify(stamped[0].id)}`);
+  });
+});
+
 // --- report ---
 
 let failed = 0;
