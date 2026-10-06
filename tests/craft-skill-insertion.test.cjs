@@ -1,11 +1,13 @@
 'use strict';
 
 // End-to-end spec for scoped craft-skill insertion through the spawned
-// gsd-tools CLI. Proves the write side writes only an agent_skills.<agent>
-// entry plus a pins.json record, that the untouched reader scopes the skill to
-// its target agent type only, that ephemeral is the default and sticky opts
-// out of release, that approval is remembered per id+pin, that a drifted or
-// escaping checkout is refused, and that nothing loads the catalog at startup.
+// gsd-tools CLI. Proves the read-only match pre-filter surfaces candidates
+// from data-only scope text, that the write side writes only an
+// agent_skills.<agent> entry plus a pins.json record, that the untouched
+// reader scopes the skill to its target agent type only, that ephemeral is the
+// default and sticky opts out of release, that approval is remembered per
+// id+pin, that a drifted or escaping checkout is refused, and that nothing
+// loads the catalog at startup.
 
 const fs = require('fs');
 const os = require('os');
@@ -126,6 +128,84 @@ check('assess returns the allow verdict and a rendered prompt', () => {
     assert(a.verdict === 'allow', `expected allow verdict: ${JSON.stringify(a.verdict)}`);
     const raw = runTool(root, ['craft-skill', 'assess', 'duckdb-query', '--catalog', cat, '--raw']);
     assert(raw.stdout.includes('Verdict: allow'), `rendered assessment should name the verdict: ${raw.stdout}`);
+  });
+});
+
+// --- match (propose-on-fit pre-filter) ---
+
+check('match surfaces the SEO candidate with its triggers, verdict and prompt lines', () => {
+  withProject((root) => {
+    const res = runTool(root, ['craft-skill', 'match', 'Audit my site SEO and fix the sitemap', '--catalog', COMMITTED_CATALOG]);
+    assert(res.status === 0, `match should exit 0: ${res.stderr}`);
+    const m = parseJson(res);
+    assert(m.scope === 'Audit my site SEO and fix the sitemap', `scope should be echoed verbatim: ${JSON.stringify(m.scope)}`);
+    assert(Array.isArray(m.candidates) && m.candidates.length === 1, `expected exactly one candidate: ${JSON.stringify(m.candidates)}`);
+    const c = m.candidates[0];
+    assert(c.id === 'seo-audit', `expected seo-audit: ${JSON.stringify(c.id)}`);
+    assert(JSON.stringify(c.matched_triggers) === JSON.stringify(['seo', 'sitemap']), `matched_triggers mismatch: ${JSON.stringify(c.matched_triggers)}`);
+    assert(c.verdict === 'allow', `expected allow verdict: ${JSON.stringify(c.verdict)}`);
+    assert(c.trust_tier === 'A', `expected trust tier A: ${JSON.stringify(c.trust_tier)}`);
+    assert(c.license === 'MIT', `expected MIT license: ${JSON.stringify(c.license)}`);
+    assert(typeof c.obligations === 'string' && c.obligations.length > 0, `obligations should be a non-empty string: ${JSON.stringify(c.obligations)}`);
+    assert(typeof c.publisher_label === 'string' && c.publisher_label.startsWith('published by'), `publisher_label should start with "published by": ${JSON.stringify(c.publisher_label)}`);
+    assert(Array.isArray(c.prompt), `prompt should be an array: ${JSON.stringify(c.prompt)}`);
+    assert(c.prompt.some((l) => l.startsWith('Publisher:')), `prompt should carry a Publisher line: ${JSON.stringify(c.prompt)}`);
+    assert(c.prompt.some((l) => l.startsWith('Obligations:')), `prompt should carry an Obligations line: ${JSON.stringify(c.prompt)}`);
+    assert(Array.isArray(c.target_agents) && c.target_agents.includes('bm-executor'), `target_agents should include bm-executor: ${JSON.stringify(c.target_agents)}`);
+  });
+});
+
+check('match surfaces the DuckDB candidate for a data scope', () => {
+  withProject((root) => {
+    const m = parseJson(runTool(root, ['craft-skill', 'match', 'ad-hoc SQL over Parquet files with DuckDB', '--catalog', COMMITTED_CATALOG]));
+    assert(m.candidates.length === 1, `expected one candidate: ${JSON.stringify(m.candidates)}`);
+    const c = m.candidates[0];
+    assert(c.id === 'duckdb-query', `expected duckdb-query: ${JSON.stringify(c.id)}`);
+    assert(JSON.stringify(c.matched_triggers) === JSON.stringify(['ad-hoc sql', 'duckdb', 'parquet']), `matched_triggers mismatch: ${JSON.stringify(c.matched_triggers)}`);
+    assert(c.verdict === 'allow', `expected allow verdict: ${JSON.stringify(c.verdict)}`);
+    assert(c.trust_tier === 'B', `expected trust tier B: ${JSON.stringify(c.trust_tier)}`);
+  });
+});
+
+check('match returns no candidates for an unrelated scope', () => {
+  withProject((root) => {
+    const m = parseJson(runTool(root, ['craft-skill', 'match', 'refactor the login form', '--catalog', COMMITTED_CATALOG]));
+    assert(JSON.stringify(m.candidates) === JSON.stringify([]), `expected no candidates: ${JSON.stringify(m.candidates)}`);
+  });
+});
+
+check('match treats the scope as data and echoes it verbatim', () => {
+  withProject((root) => {
+    const scope = '$(echo pwned); rm -rf / ; seo';
+    const m = parseJson(runTool(root, ['craft-skill', 'match', scope, '--catalog', COMMITTED_CATALOG]));
+    assert(m.scope === scope, `scope should be echoed verbatim: ${JSON.stringify(m.scope)}`);
+    assert(m.candidates.length === 1 && m.candidates[0].id === 'seo-audit', `only seo-audit should match: ${JSON.stringify(m.candidates)}`);
+    assert(fs.existsSync(root), 'the project root must still exist (nothing was executed)');
+  });
+});
+
+check('match is case-insensitive', () => {
+  withProject((root) => {
+    const m = parseJson(runTool(root, ['craft-skill', 'match', 'TECHNICAL SEO INDEXING', '--catalog', COMMITTED_CATALOG]));
+    assert(m.candidates.length === 1 && m.candidates[0].id === 'seo-audit', `expected seo-audit: ${JSON.stringify(m.candidates)}`);
+    assert(JSON.stringify(m.candidates[0].matched_triggers) === JSON.stringify(['indexing', 'seo', 'technical seo']), `matched_triggers mismatch: ${JSON.stringify(m.candidates[0].matched_triggers)}`);
+  });
+});
+
+check('match without a scope is a usage error', () => {
+  withProject((root) => {
+    const res = runTool(root, ['craft-skill', 'match']);
+    assert(res.status !== 0, `expected non-zero exit: ${res.stdout}`);
+    assert((res.stdout + res.stderr).includes('craft-skill match'), `expected usage mentioning craft-skill match: ${res.stderr}`);
+  });
+});
+
+check('match reports a flag verdict for a copyleft fixture', () => {
+  withProject((root) => {
+    const cat = copyCatalog(root, (c) => { c.skills['duckdb-query'].license = 'GPL-3.0-only'; });
+    const m = parseJson(runTool(root, ['craft-skill', 'match', 'query parquet with duckdb', '--catalog', cat]));
+    assert(m.candidates.length === 1 && m.candidates[0].id === 'duckdb-query', `expected duckdb-query: ${JSON.stringify(m.candidates)}`);
+    assert(m.candidates[0].verdict === 'flag', `copyleft fixture should report a flag verdict: ${JSON.stringify(m.candidates[0].verdict)}`);
   });
 });
 
