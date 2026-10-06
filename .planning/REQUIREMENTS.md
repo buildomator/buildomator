@@ -19,7 +19,7 @@ license. Ships across the 4.9.x line (not a major bump; 5.0 stays reserved).
   a bundles-scripts flag. It is a vetted shortlist, not a mirror of the registry. Buildomator
   stores metadata + pins only; it never vendors third-party skill bodies into the repo.
 
-- **CAT-02 Propose on fit.** When a phase or quick-task scope matches a catalog trigger,
+- **CAT-02 Propose on fit.** (Delivered: Phase 17, Plans 02 through 05.) When a phase or quick-task scope matches a catalog trigger,
   the workflow surfaces the candidate(s) for that domain. The model decides relevance
   only. Nothing is injected until the user accepts.
   - *Autonomous refinement (Phase 17, D-08):* in `/autonomous` there is no human per
@@ -47,7 +47,7 @@ license. Ships across the 4.9.x line (not a major bump; 5.0 stays reserved).
   (persisted in config for that agent type) is an explicit opt-in. It never loads at
   startup and never enters other agents' contexts.
 
-- **CAT-06 v1 capabilities.** Seed with SEO (coreyhaines31/marketingskills, MIT) and
+- **CAT-06 v1 capabilities.** (Delivered: Phase 17, SEO seed wired propose-on-fit end to end; document deliverables routed to the built-in doc skills.) Seed with SEO (coreyhaines31/marketingskills, MIT) and
   DuckDB (duckdb/duckdb-skills, MIT) as cataloged craft skills. Document generation uses
   Claude Code's built-in first-party doc skills (not cataloged, no license exposure),
   consistent with the Claude-Code-only directive. The Anthropic docgen skills are

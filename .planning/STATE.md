@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v4.9
 milestone_name: Craft Skill Catalog
 status: executing
-stopped_at: Completed 17-03-PLAN.md
-last_updated: "2026-10-06T20:33:34.739Z"
-last_activity: 2026-10-06 -- Phase 17 execution started
+stopped_at: Completed 17-05-PLAN.md
+last_updated: "2026-10-06T20:44:14.644Z"
+last_activity: 2026-10-06 -- Phase 17 all plans complete, ready for verification
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 10
-  completed_plans: 9
-  percent: 33
+  completed_plans: 10
+  percent: 67
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** Reduce GSD's per-turn token overhead and agent spawn latency without breaking multi-CLI compatibility
-**Current focus:** Phase 17 — v1-capability-wiring-and-propose-on-fit
+**Current focus:** Phase 17 (v1-capability-wiring-and-propose-on-fit)
 
 ## Current Position
 
-Phase: 17 (v1-capability-wiring-and-propose-on-fit) — EXECUTING
+Phase: 17 (v1-capability-wiring-and-propose-on-fit), all 5 plans complete
 Plan: 5 of 5
-Status: Executing Phase 17
-Last activity: 2026-10-06 -- Phase 17 execution started
+Status: Phase 17 complete, ready for verification
+Last activity: 2026-10-06 -- Phase 17 all plans complete, ready for verification
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Last activity: 2026-10-06 -- Phase 17 execution started
 | Phase 17 P01 | 14min | 3 tasks | 6 files |
 | Phase 17 P02 | 8min | 2 tasks | 3 files |
 | Phase 17 P03 | ~16min | 3 tasks | 7 files |
+| Phase 17 P05 | ~10min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -69,7 +70,7 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 
 - [Phase ?]: Used npm view @vibedrift/cli version as the authoritative version source for the second-upstream watch; GitHub release notes are best-effort (guarded || exit 0)
 - [2026-06-29 roadmap]: Phase sequencing — BUILD foundation (Phase 12) before BM plugin (Phase 13) before coexistence testing (Phase 14); BRAND (Phase 15) last since it documents what shipped. Rationale: two-plugin generation must exist before both plugins can be tested together.
-- [Phase ?]: Phase 16 P01: the craft-skill catalog env override GSD_CRAFT_SKILL_CATALOG takes precedence over layout paths in both the CJS and SDK readers — Keeps the two twins consistent and makes the documented env-override fail-closed behavior observable
+- [Phase ?]: Phase 16 P01: the craft-skill catalog env override GSD_CRAFT_SKILL_CATALOG takes precedence over layout paths in both the CJS and SDK readers. Keeps the two twins consistent and makes the documented env-override fail-closed behavior observable
 - [Phase 16]: Phase 16 P02: the craft-skill trust gate ships in both twins (CJS + SDK), not CJS-only, so workflows and plans 03/04 can call assess/insert through bm-sdk query without an SDK-to-CJS shell-out; a parity test keeps the two identical. Rationale: avoids a runtime shell-out and preserves the twin-parity convention
 - [Phase 16]: SDK craft-skill write side ships as an SDK twin mirroring the CJS 19-key pin-record contract. Phase 17 workflows call bm-sdk query craft-skill.insert without an SDK-to-CJS shell-out; parity test asserts the record key order against the CJS list
 - [Phase 16]: Phase 16 P05: the phase ships as one feat commit (plans 01-04 committed their source atomically); plan 05 commits only the regenerated sdk/dist and dist/bm, the no-vendoring guard, CI wiring and docs. sdk/dist must be git-staged before build-bm regenerates dist/bm because the build enumerates source via git ls-files; the freshly-built query twin was untracked
@@ -77,6 +78,8 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 - [Phase 17]: P02: the propose-on-fit procedure lives in one lazy-loaded reference (references/craft-skill-propose-on-fit.md) that discuss-phase, quick and autonomous point at rather than inlined three times; the autonomous auto-insert gate is written literally as verdict allow since insert only refuses block
 - [Phase ?]: Phase 17 P03: propose-on-fit is wired into all three D-01 surfaces; discuss-phase records acceptances only, quick inserts interactively before the executor and releases after, autonomous auto-inserts only allow-verdict relevant candidates and releases in 3d
 - [Phase ?]: Phase 17 P03: the autonomous gate is written literally as verdict allow since insert only structurally refuses block; the literal sticky flag token is kept out of autonomous.md to satisfy the zero-sticky assertion
+- [Phase 17]: P05: propose-on-fit wiring is ratcheted by a 16-check static guard run in CI after the parity step; orderings use indexOf/lastIndexOf on fixed tokens, never regexes built from file content
+- [Phase 17]: P05: sdk/dist is git-staged before build-bm regenerates dist/bm (build-bm enumerates tracked files via git ls-files); build-bm --check prints bm drift check PASS on the committed tree
 
 ### Pending Todos
 
@@ -210,7 +213,7 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 
 ## Session Continuity
 
-Last session: 2026-10-06T20:27:30.911Z
+Last session: 2026-10-06T20:44:01.169Z
 Stopped at: Completed 17-03-PLAN.md
 Next action: `/gsd:plan-phase 12` to plan the Two-Plugin Build Foundation phase.
 

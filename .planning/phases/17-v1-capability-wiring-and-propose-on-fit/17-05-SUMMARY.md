@@ -107,6 +107,12 @@ None - plan executed exactly as written.
 - The committed artifacts carry the match command in both the SDK bundle and the generated bm plugin; drift check passes.
 - Out-of-scope working-tree changes (modified `.planning/` PLAN notes from earlier phases, `gsd-bugs-housekeeping.rtf`) were left untouched.
 
+## Self-Check: PASSED
+
+- tests/craft-skill-propose-on-fit-guard.test.cjs: FOUND
+- 17-05-SUMMARY.md: FOUND
+- commits 63a5356, a35961d, 01e46fa, 95d1b88: all FOUND
+
 ---
 *Phase: 17-v1-capability-wiring-and-propose-on-fit*
 *Completed: 2026-10-06*

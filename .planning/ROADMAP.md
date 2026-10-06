@@ -155,7 +155,7 @@ survey + license findings). Requirements: CAT-01..08 (see REQUIREMENTS.md). Ship
 the 4.9.x line; 5.0 stays reserved.
 
 - [x] Phase 16: Catalog and Trust Gate Foundation (completed 2026-10-05)
-- [ ] Phase 17: v1 Capability Wiring and Propose-on-Fit
+- [x] Phase 17: v1 Capability Wiring and Propose-on-Fit (completed 2026-10-06)
 - [ ] Phase 18: Agent Skills Spec Upstream and SKILL.md Conformance Gate
 
 ### Phase 16: Catalog and Trust Gate Foundation
@@ -217,7 +217,7 @@ domain surfaces the right candidate.
 3. Propose-on-fit surfaces a candidate when a phase/quick-task scope matches a trigger,
    and injects nothing until accepted. Shown end-to-end for at least one domain.
 
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 **Wave 1**
@@ -232,7 +232,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 17-05-PLAN.md: propose-on-fit wiring guard + CI step + README row + rebuild sdk/dist, regenerate dist/bm, build-bm --check PASS
+- [x] 17-05-PLAN.md: propose-on-fit wiring guard + CI step + README row + rebuild sdk/dist, regenerate dist/bm, build-bm --check PASS
 
 ### Phase 18: Agent Skills Spec Upstream and SKILL.md Conformance Gate
 
