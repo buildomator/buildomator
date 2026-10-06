@@ -170,6 +170,7 @@ exactly one agent context (ephemeral by default), reusing `agent_skills` +
 **Plans:** 5/5 plans complete
 
 Plans:
+
 - [x] 16-01-PLAN.md: catalog JSON + CJS/SDK twin readers + schema/no-vendoring tests (CAT-01)
 - [x] 16-02-PLAN.md: two-axis trust gate (safety + license) in both twins + rejection/flag matrix and parity tests (CAT-03, CAT-04)
 - [x] 16-03-PLAN.md: CJS scoped insertion (gsd-tools craft-skill insert/release, pin record, ephemeral default, sticky opt-in) + end-to-end scoping test (CAT-05)
@@ -181,14 +182,18 @@ Plans:
 1. A catalog schema exists (domain -> entry: source, pinned commit, SPDX license, trust
    tier, scripts flag) holding metadata + pins only (no skill bodies), with the SEO and
    DuckDB entries present and validated by a test.
+
 2. The trust gate rejects no-license/unknown, proprietary, publisher-not-on-allowlist,
    and unreviewed bundled scripts; and flags copyleft/source-available. Proven by tests.
+
 3. An accepted skill is injected into only its target agent type (ephemeral removed after
    the task; sticky persists), via `agent_skills` + `trusted_global_roots`, recorded in
    `.planning`. A resolver/agent-skills test shows it appears for that agent type only,
    not for others and not at startup.
+
 4. No third-party skill content is vendored into the repo (reference-only); a test or the
    drift gate confirms the catalog holds metadata + pins, not bodies.
+
 5. CJS + SDK twins updated where the `agent_skills` path is twin-covered; `dist/bm`
    regenerated; `node bin/build-bm.cjs --check` PASS.
 
@@ -205,18 +210,28 @@ domain surfaces the right candidate.
 
 1. SEO (coreyhaines31/marketingskills, MIT) and DuckDB (duckdb/duckdb-skills, MIT) are
    cataloged and insertable through the Phase 16 gate.
+
 2. A document-deliverable in scope routes to Claude Code's built-in first-party doc
    skills (not cataloged), with no license exposure.
+
 3. Propose-on-fit surfaces a candidate when a phase/quick-task scope matches a trigger,
    and injects nothing until accepted. Shown end-to-end for at least one domain.
 
 **Plans:** 5 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 17-01-PLAN.md: craft-skill match subcommand in both twins (CJS + SDK) + registry/docs + parity and vitest cases
 - [ ] 17-02-PLAN.md: shared references/craft-skill-propose-on-fit.md + executor doc-routing note + REQUIREMENTS CAT-02 autonomous addendum
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 17-03-PLAN.md: wire propose-on-fit into discuss-phase (record), quick (accept/insert/release) and autonomous (allow-gated auto-insert/release)
 - [ ] 17-04-PLAN.md: match unit cases + SEO end-to-end proof (match, accept, insert, executor sees it, release) in the CJS insertion spec
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 17-05-PLAN.md: propose-on-fit wiring guard + CI step + README row + rebuild sdk/dist, regenerate dist/bm, build-bm --check PASS
 
 ### Phase 18: Agent Skills Spec Upstream and SKILL.md Conformance Gate
@@ -232,9 +247,11 @@ skills with a conformance + ceiling ratchet that also vets catalog candidates.
 
 1. The Agent Skills spec + skills.sh are on the upstream watch (`upstream-deferred.md`),
    VibeDrift-style.
+
 2. A SKILL.md conformance gate validates the 86 skills' frontmatter against the spec and
    enforces a description-length cap + total-count ceiling, wired into pre-commit +
    check-drift.yml as a loud-fail ratchet.
+
 3. `skills-ref validate` (or an equivalent) is adopted to vet a catalog candidate as part
    of the Phase 16 trust gate.
 

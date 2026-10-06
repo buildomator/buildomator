@@ -418,16 +418,19 @@ bm-sdk query craft-skill.release --agent bm-executor   # clears ephemeral record
 | A1 | Claude Code ships built-in first-party document skills (docx/pdf/pptx) that are always available with no license surface. | Doc routing (CAT-06/D-11/D-12) | Low — this is already a locked project decision in CONTEXT.md/REQUIREMENTS.md; the phase only adds a passive note. If the built-ins are named/scoped differently, the note's wording (not a mechanism) is adjusted. `[CITED: .planning/REQUIREMENTS.md CAT-06; .planning/.../17-CONTEXT.md D-11]` |
 | A2 | `tests/workflow-size-budget.test.cjs` enforces the discuss-phase size budget. | Architecture / reference-file recommendation | Low — discuss-phase.md itself cites this test and is at 495 lines with explicit progressive-disclosure; the recommendation to use a lazy-loaded reference holds regardless of whether the test file is currently present. `[ASSUMED]` |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **discuss-phase accept semantics vs. D-06 "insert ephemeral."** discuss-phase writes CONTEXT.md and does not spawn an executor; execution is a later session. D-06 says accept inserts ephemeral into the target agent type, but an ephemeral insert at discuss time won't survive to a separate execute session.
    - What we know: the insert writes `config.agent_skills.bm-executor`; the executor reads it only when spawned (execute-phase.md:60).
-   - Recommendation: in discuss-phase, on accept **record the candidate in CONTEXT.md** (a locked decision/note) and perform the actual ephemeral insert at execute time; perform an immediate ephemeral insert only in chained/autonomous single-session flows. Surface this for a planner/user decision — it is the one genuine behavioral ambiguity.
+   - Recommendation: in discuss-phase, on accept **record the candidate in CONTEXT.md** (a locked decision/note) and perform the actual ephemeral insert at execute time; perform an immediate ephemeral insert only in chained/autonomous single-session flows. Surface this for a planner/user decision, it is the one genuine behavioral ambiguity.
+   - RESOLVED: adopted. Plans 17-02 and 17-03 record the acceptance into CONTEXT.md `### Craft skills` at discuss time and defer the insert; the in-session insert runs only on the explicit chain (chain.md) or autonomous.
 
 2. **How the skill source is checked out before insert.** `insert` requires a local `SKILL.md` at `--location` whose git HEAD matches the pinned commit. Propose-on-fit surfaces metadata only; the body is never vendored.
    - Recommendation: decide the checkout mechanism (fetch/clone at the pinned commit into a scratch/global skills dir, then `--location` that path) or document that the user supplies the checkout. For the end-to-end proof, use a fixture checkout (the parity test's pattern: minimal SKILL.md in a non-git dir, `--approved`, `pin_verified:false`).
+   - RESOLVED: no fetch mechanism is built in v1. Plan 17-02's reference "Checkout contract" states the user/executor supplies the checkout; the e2e proof (17-04) uses a fixture checkout.
 
 3. **Where the autonomous run-log notice (D-10) is written.** A line in the run output is clear; confirm whether it should also append to a durable per-run log or rely solely on the pin record.
+   - RESOLVED: the pin record in `.planning/craft-skills/pins.json` plus the run-log line is the audit trail; no separate log file is added. Specified in plan 17-02's reference and enforced in 17-03.
 
 ## Sources
 
