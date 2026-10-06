@@ -27,6 +27,7 @@ You are a thinking partner, not an interviewer. The user is the visionary — yo
 | in `write_context` step | `workflows/discuss-phase/templates/context.md` |
 | in `git_commit` step | `workflows/discuss-phase/templates/discussion-log.md` |
 | writing checkpoints | `workflows/discuss-phase/templates/checkpoint.json` |
+| `propose_craft_skill` step and `craft-skill.match` returned candidates | `references/craft-skill-propose-on-fit.md` |
 
 Do not Read mode files unless the corresponding flag/condition is set.
 </progressive_disclosure>
@@ -305,6 +306,14 @@ Analyze the phase to identify gray areas. Use both `prior_decisions` and `codeba
 **Advisor mode hand-off:** If `ADVISOR_MODE` is true, follow `workflows/discuss-phase/modes/advisor.md` for the rest of analyze/discuss flow (it adds an `advisor_research` substep and replaces the standard `discuss_areas` with table-first selection). The detection block (USER-PROFILE.md existence + non-technical-owner signals + calibration tier resolution) lives in that file — read it once when ADVISOR_MODE is true and follow its rules.
 </step>
 
+<step name="propose_craft_skill">
+Once the domain boundary is known, run the catalog pre-filter with the boundary sentence (item 1 of `analyze_phase`) as the scope, one quoted argument, data only:
+```bash
+MATCH=$(bm-sdk query craft-skill.match "<domain boundary sentence>" 2>/dev/null || echo '{"candidates":[]}')
+```
+If `candidates` is empty, continue silently. If the scope is a document deliverable (docx, pdf, pptx), set `DOC_DELIVERABLE=true` and skip the catalog (reference "Document deliverables"). Otherwise Read `references/craft-skill-propose-on-fit.md` and apply Step 2 and Step 3a; on accept set `CRAFT_SKILL_ACCEPTED` (id, mode, publisher label, license, obligations, trust tier, verdict, pin line) for `write_context`. Do not insert here; discuss-phase records only.
+</step>
+
 <step name="present_gray_areas">
 Present the domain boundary, prior decisions, and gray areas to the user.
 
@@ -391,7 +400,7 @@ The template documents variable substitutions and conditional sections. Substitu
 - Do NOT duplicate requirements text from SPEC.md into `<decisions>` — agents read SPEC.md directly.
 - The `<decisions>` section contains only implementation decisions from this discussion.
 
-Write the file.
+When `CRAFT_SKILL_ACCEPTED` is set, fill the template's `### Craft skills` subsection; when `DOC_DELIVERABLE` is set, add the built-in document skills line to `<specifics>`; otherwise omit both. Then write the file.
 </step>
 
 <step name="confirm_creation">
