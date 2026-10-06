@@ -342,6 +342,19 @@ Skill(skill="gsd-plan-phase", args="${PHASE_NUM}")
 
 Verify plan produced output — re-run `init phase-op` and check `has_plans`. If false → go to handle_blocker: "Plan phase ${PHASE_NUM} did not produce any plans."
 
+**3b.5. Propose a catalog skill on fit (auto-insert)**
+
+Read the phase scope and run the pre-filter, one quoted argument, data only:
+```bash
+SCOPE_TEXT=$(bm-sdk query roadmap.get-phase ${PHASE_NUM} 2>/dev/null)
+MATCH=$(bm-sdk query craft-skill.match "$SCOPE_TEXT" 2>/dev/null || echo '{"candidates":[]}')
+```
+If `candidates` is empty, continue silently. Otherwise Read `references/craft-skill-propose-on-fit.md` and apply Step 2 (an acceptance recorded in this phase's CONTEXT.md `### Craft skills` counts as relevant) and Step 3b. Insert only when `verdict === 'allow'` AND relevant AND a checkout resolves (ephemeral only; autonomous never uses the sticky flag):
+```bash
+bm-sdk query craft-skill.insert <id> --agent bm-executor --location <checkout> --approved
+```
+On `inserted:true` set `CRAFT_SKILL_ID=<id>` and display `craft-skill: auto-inserted <id> for bm-executor (ephemeral, verdict allow, pin <first 7 of pinned_commit>) record <record_id>`; otherwise display `craft-skill: candidate <id> not inserted (<reason>); review manually` and continue.
+
 **3c. Execute**
 
 **If `INTERACTIVE` is set:** Wait for the plan agent to complete (if not already), verify plans exist, then dispatch execute as a background agent:
@@ -386,6 +399,11 @@ Skill(skill="gsd-code-review", args="${PHASE_NUM} --fix --auto")
 **3d. Post-Execution Routing**
 
 **If `INTERACTIVE` is set:** Wait for the execute agent to complete before reading verification results.
+
+If `CRAFT_SKILL_ID` is set, release the ephemeral record by id (this runs for both the INTERACTIVE background path and the inline path, since both reach 3d), display `craft-skill: released <id> (ephemeral)`, then unset it:
+```bash
+bm-sdk query craft-skill.release --agent bm-executor --id "$CRAFT_SKILL_ID"
+```
 
 After execute-phase returns (or the execute agent completes), read the verification result:
 
@@ -762,6 +780,8 @@ When any phase operation fails or a blocker is detected, present 3 options via A
 - [ ] Frontend phases get UI review audit after successful execution (step 3d.5) if UI-SPEC exists
 - [ ] UI phase and UI review respect workflow.ui_phase and workflow.ui_review config toggles
 - [ ] UI review is advisory (non-blocking) — phase proceeds to iterate regardless of score
+- [ ] A high-confidence catalog match auto-inserts only with the allow verdict, ephemeral, logged with a run-log line
+- [ ] The inserted record is released by id after execute returns
 - [ ] `--only N` restricts execution to exactly one phase
 - [ ] `--only N` skips lifecycle step (audit/complete/cleanup)
 - [ ] `--only N` exits cleanly after single phase completes
