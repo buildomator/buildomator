@@ -210,6 +210,15 @@ domain surfaces the right candidate.
 3. Propose-on-fit surfaces a candidate when a phase/quick-task scope matches a trigger,
    and injects nothing until accepted. Shown end-to-end for at least one domain.
 
+**Plans:** 5 plans
+
+Plans:
+- [ ] 17-01-PLAN.md: craft-skill match subcommand in both twins (CJS + SDK) + registry/docs + parity and vitest cases
+- [ ] 17-02-PLAN.md: shared references/craft-skill-propose-on-fit.md + executor doc-routing note + REQUIREMENTS CAT-02 autonomous addendum
+- [ ] 17-03-PLAN.md: wire propose-on-fit into discuss-phase (record), quick (accept/insert/release) and autonomous (allow-gated auto-insert/release)
+- [ ] 17-04-PLAN.md: match unit cases + SEO end-to-end proof (match, accept, insert, executor sees it, release) in the CJS insertion spec
+- [ ] 17-05-PLAN.md: propose-on-fit wiring guard + CI step + README row + rebuild sdk/dist, regenerate dist/bm, build-bm --check PASS
+
 ### Phase 18: Agent Skills Spec Upstream and SKILL.md Conformance Gate
 
 **Goal:** Track the Agent Skills spec as the 5th idea-only upstream and harden our own 86
