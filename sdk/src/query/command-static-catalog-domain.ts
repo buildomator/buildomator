@@ -17,7 +17,7 @@ import { intelStatus, intelDiff, intelSnapshot, intelValidate, intelQuery, intel
 import { writeProfile, generateClaudeProfile, generateDevPreferences, generateClaudeMd } from './profile-output.js';
 import { phaseMvpMode, taskIsBehaviorAdding, userStoryValidate } from './mvp.js';
 import { worktreeCleanupWave } from './worktree.js';
-import { craftSkillList, craftSkillAssess, craftSkillInsert, craftSkillRelease } from './craft-skill.js';
+import { craftSkillList, craftSkillAssess, craftSkillMatch, craftSkillInsert, craftSkillRelease } from './craft-skill.js';
 
 export const DOMAIN_STATIC_CATALOG: ReadonlyArray<readonly [string, QueryHandler]> = [
   ['agent-skills', agentSkills],
@@ -105,6 +105,8 @@ export const DOMAIN_STATIC_CATALOG: ReadonlyArray<readonly [string, QueryHandler
   ['craft-skill list', craftSkillList],
   ['craft-skill.assess', craftSkillAssess],
   ['craft-skill assess', craftSkillAssess],
+  ['craft-skill.match', craftSkillMatch],
+  ['craft-skill match', craftSkillMatch],
   ['craft-skill.insert', craftSkillInsert],
   ['craft-skill insert', craftSkillInsert],
   ['craft-skill.release', craftSkillRelease],
