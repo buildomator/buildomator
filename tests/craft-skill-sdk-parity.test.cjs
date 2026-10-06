@@ -9,10 +9,10 @@
 // behavior silently depends on which entry point a workflow happens to call.
 //
 // This test spawns BOTH real entry points and compares their observable output
-// and on-disk effect. The third case (release of two ephemeral skills for one
-// agent) is the exact divergence that was fixed: a stale config snapshot in the
-// release loop re-added a just-released skill, so this case fails against the
-// pre-fix CJS code.
+// and on-disk effect for list, assess, match and release. The release case
+// (release of two ephemeral skills for one agent) is the exact divergence that
+// was fixed: a stale config snapshot in the release loop re-added a
+// just-released skill, so this case fails against the pre-fix CJS code.
 //
 // Requires a built SDK at sdk/dist/cli.js (npm --prefix sdk run build).
 //
@@ -113,6 +113,45 @@ for (const id of ['seo-audit', 'duckdb-query']) {
     });
   });
 }
+
+// --- 2b. match: identical candidates across twins ---
+
+const MATCH_CASES = [
+  { scope: 'Audit my site SEO and fix the sitemap', ids: ['seo-audit'], triggers: { 'seo-audit': ['seo', 'sitemap'] } },
+  { scope: 'ad-hoc SQL over Parquet files with DuckDB', ids: ['duckdb-query'], triggers: { 'duckdb-query': ['ad-hoc sql', 'duckdb', 'parquet'] } },
+  { scope: 'refactor the login form', ids: [], triggers: {} },
+];
+
+for (const tc of MATCH_CASES) {
+  check(`craft-skill match "${tc.scope}" is identical across twins`, () => {
+    withProject((root) => {
+      const cjs = parseJson(runTwin('cjs', root, ['craft-skill', 'match', tc.scope, '--catalog', COMMITTED_CATALOG]));
+      const sdk = parseJson(runTwin('sdk', root, ['craft-skill', 'match', tc.scope, '--catalog', COMMITTED_CATALOG]));
+      assert.strictEqual(cjs.scope, tc.scope, 'CJS echoes the scope verbatim');
+      assert.strictEqual(sdk.scope, tc.scope, 'SDK echoes the scope verbatim');
+      assert.deepStrictEqual(cjs.candidates.map((c) => c.id), tc.ids, `CJS candidate ids for "${tc.scope}"`);
+      assert.deepStrictEqual(sdk.candidates.map((c) => c.id), tc.ids, `SDK candidate ids for "${tc.scope}"`);
+      for (const c of cjs.candidates) {
+        assert.deepStrictEqual(c.matched_triggers, tc.triggers[c.id], `CJS matched_triggers for ${c.id}`);
+        assert.strictEqual(c.verdict, 'allow', `CJS verdict for ${c.id}`);
+      }
+      assert.deepStrictEqual(cjs, sdk, `match payload diverges for "${tc.scope}"`);
+    });
+  });
+}
+
+check('craft-skill match treats a shell-metachar scope as data in both twins', () => {
+  withProject((root) => {
+    const scope = '$(echo pwned); seo';
+    const cjs = parseJson(runTwin('cjs', root, ['craft-skill', 'match', scope, '--catalog', COMMITTED_CATALOG]));
+    const sdk = parseJson(runTwin('sdk', root, ['craft-skill', 'match', scope, '--catalog', COMMITTED_CATALOG]));
+    assert.strictEqual(cjs.scope, scope, 'CJS echoes the metachar scope verbatim');
+    assert.strictEqual(sdk.scope, scope, 'SDK echoes the metachar scope verbatim');
+    assert.deepStrictEqual(cjs.candidates.map((c) => c.id), ['seo-audit'], 'CJS still matches seo-audit');
+    assert.deepStrictEqual(sdk.candidates.map((c) => c.id), ['seo-audit'], 'SDK still matches seo-audit');
+    assert.deepStrictEqual(cjs, sdk, 'match payload diverges for the metachar scope');
+  });
+});
 
 // --- 3. release of two ephemeral skills for one agent (the CR-01 case) ---
 
