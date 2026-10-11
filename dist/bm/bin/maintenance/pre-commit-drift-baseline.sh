@@ -142,4 +142,36 @@ if [ -f "$PROSE_SCRIPT" ] && command -v node >/dev/null 2>&1; then
   fi
 fi
 
+# ------------------------------------------------------------------------
+# SKILL.md conformance ratchet (separate detector, NO auto-regen)
+#
+# Like the jargon and prose ratchets, the conformance gate does NOT
+# auto-regen on regression. Auto-regen would defeat the catch: the point
+# is to make the author pause and confirm a longer skill description or a
+# changed SKILL.md frontmatter rule was intentional. The author must run
+#   node bin/maintenance/check-skill-conformance.cjs --write-baseline
+# by hand and commit the new baseline. That author pause is the point.
+# ------------------------------------------------------------------------
+SKILL_CONF_SCRIPT="bin/maintenance/check-skill-conformance.cjs"
+if [ -f "$SKILL_CONF_SCRIPT" ] && command -v node >/dev/null 2>&1; then
+  if ! node "$SKILL_CONF_SCRIPT" >/dev/null 2>&1; then
+    echo "" >&2
+    echo "ERROR: SKILL.md conformance ratchet regressed." >&2
+    echo "" >&2
+    node "$SKILL_CONF_SCRIPT" >&2 || true
+    echo "" >&2
+    echo "Fix the SKILL.md frontmatter, or shorten the description back under the baseline, then re-run the commit." >&2
+    echo "" >&2
+    echo "Only if a longer description is intentional, lock the new ceiling in:" >&2
+    echo "  node bin/maintenance/check-skill-conformance.cjs --write-baseline" >&2
+    echo "  git add tests/drift-baseline.json" >&2
+    echo "  # then re-run the commit" >&2
+    echo "" >&2
+    echo "The skill count ceiling (90) is fixed: remove or merge a skill instead of raising it." >&2
+    echo "" >&2
+    echo "Override entirely: git commit --no-verify" >&2
+    exit 1
+  fi
+fi
+
 exit 0

@@ -48,6 +48,49 @@ function runTwin(twin, root, args) {
   return { status: res.status, stdout: res.stdout || '', stderr: res.stderr || '' };
 }
 
+// Drive either twin with an extra directory prepended to PATH, so a shim binary
+// (an `npx` stand-in) resolves ahead of the real one. Everything else matches
+// runTwin.
+function runTwinWithPath(twin, root, args, pathPrefix) {
+  const argv = twin === 'sdk' ? [SDK_CLI, 'query', ...args] : [GSD_TOOLS, ...args];
+  const res = spawnSync(process.execPath, argv, {
+    cwd: root,
+    env: {
+      ...process.env,
+      CLAUDE_CONFIG_DIR: path.join(root, 'cfg'),
+      PATH: pathPrefix + path.delimiter + process.env.PATH,
+    },
+    encoding: 'utf8',
+  });
+  return { status: res.status, stdout: res.stdout || '', stderr: res.stderr || '' };
+}
+
+// Create a tmp dir holding an executable `npx` script that records the argv it
+// was called with (space-joined, one line per call) to argv.log, optionally
+// prints to stderr, and exits with behavior.status. The dir and log path are
+// handed to fn; the dir is removed afterward. argv.log is only created when the
+// shim actually runs, so its absence proves no spawn happened.
+function withNpxShim(behavior, fn) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-npx-shim-'));
+  const logPath = path.join(dir, 'argv.log');
+  const lines = [
+    '#!/usr/bin/env bash',
+    `printf '%s\\n' "$*" >> ${JSON.stringify(logPath)}`,
+  ];
+  if (behavior.stderr) {
+    lines.push(`printf '%s\\n' ${JSON.stringify(behavior.stderr)} >&2`);
+  }
+  lines.push(`exit ${behavior.status}`, '');
+  fs.writeFileSync(path.join(dir, 'npx'), lines.join('\n'), { mode: 0o755 });
+  try { return fn(dir, logPath); }
+  finally { fs.rmSync(dir, { recursive: true, force: true }); }
+}
+
+function firstCatalogId(root) {
+  const list = parseJson(runTwin('cjs', root, ['craft-skill', 'list', '--catalog', COMMITTED_CATALOG]));
+  return list[0].id;
+}
+
 function parseJson(res) {
   try {
     return JSON.parse(res.stdout);
@@ -203,6 +246,61 @@ check('both twins reach the same config and release result for the two-skill cas
       assert.deepStrictEqual(cjs.after, sdk.after, 'post-release config entry diverges between twins');
       assert.strictEqual(cjs.rel.released.length, sdk.rel.released.length, 'released count diverges between twins');
       assert.strictEqual(cjs.rel.remaining, sdk.rel.remaining, 'remaining count diverges between twins');
+    });
+  });
+});
+
+// --- 4. validate-external opt-in shell-out (row 18-trust-gate-shellout) ---
+
+check('craft-skill assess --validate-external: a failing linter blocks in both twins', () => {
+  withProject((root) => {
+    const id = firstCatalogId(root);
+    const skillDir = path.join(root, 'candidate');
+    writeSkill(skillDir, 'candidate');
+    withNpxShim({ status: 1, stderr: 'Unexpected fields in frontmatter: argument-hint' }, (shimDir, logPath) => {
+      for (const twin of ['cjs', 'sdk']) {
+        const a = parseJson(runTwinWithPath(twin, root, ['craft-skill', 'assess', id, '--catalog', COMMITTED_CATALOG, '--validate-external', skillDir], shimDir));
+        assert.strictEqual(a.verdict, 'block', `${twin} verdict should be block: ${JSON.stringify(a.verdict)}`);
+        assert.ok(a.safety.findings.some((f) => f.code === 'external-validate-failed'), `${twin} should carry external-validate-failed: ${JSON.stringify(a.safety.findings)}`);
+      }
+      const recorded = fs.readFileSync(logPath, 'utf8').trim().split('\n');
+      assert.strictEqual(recorded.length, 2, `expected one argv line per twin: ${JSON.stringify(recorded)}`);
+      for (const line of recorded) {
+        assert.strictEqual(line, `--yes skills-ref@0.1.5 validate ${skillDir}`, `recorded argv: ${line}`);
+      }
+    });
+  });
+});
+
+check('craft-skill assess --validate-external: a clean linter keeps the plain verdict in both twins', () => {
+  withProject((root) => {
+    const id = firstCatalogId(root);
+    const skillDir = path.join(root, 'candidate');
+    writeSkill(skillDir, 'candidate');
+    const plain = {};
+    for (const twin of ['cjs', 'sdk']) {
+      plain[twin] = parseJson(runTwin(twin, root, ['craft-skill', 'assess', id, '--catalog', COMMITTED_CATALOG])).verdict;
+    }
+    withNpxShim({ status: 0, stderr: '' }, (shimDir) => {
+      for (const twin of ['cjs', 'sdk']) {
+        const a = parseJson(runTwinWithPath(twin, root, ['craft-skill', 'assess', id, '--catalog', COMMITTED_CATALOG, '--validate-external', skillDir], shimDir));
+        assert.strictEqual(a.verdict, plain[twin], `${twin} verdict should match the plain assess verdict`);
+        assert.ok(a.prompt.includes('External validate: skills-ref@0.1.5 clean'), `${twin} prompt should record the clean check: ${JSON.stringify(a.prompt)}`);
+      }
+    });
+  });
+});
+
+check('craft-skill assess/list/match never spawn npx without --validate-external (both twins)', () => {
+  withProject((root) => {
+    const id = firstCatalogId(root);
+    withNpxShim({ status: 0, stderr: '' }, (shimDir, logPath) => {
+      for (const twin of ['cjs', 'sdk']) {
+        runTwinWithPath(twin, root, ['craft-skill', 'assess', id, '--catalog', COMMITTED_CATALOG], shimDir);
+        runTwinWithPath(twin, root, ['craft-skill', 'list', '--catalog', COMMITTED_CATALOG], shimDir);
+        runTwinWithPath(twin, root, ['craft-skill', 'match', 'audit my site seo', '--catalog', COMMITTED_CATALOG], shimDir);
+      }
+      assert.ok(!fs.existsSync(logPath), `argv.log should be absent when the flag is not passed: ${fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8') : ''}`);
     });
   });
 });

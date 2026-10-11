@@ -6,7 +6,10 @@
 // function here opens a skill file, reads any path, performs network access, or
 // accepts free text, so there is no input a caller could use to talk a skill
 // past the gate. The verdict shape follows the { safe, error } / { clean,
-// findings[] } precedents in security.cjs.
+// findings[] } precedents in security.cjs. The external-validation merge
+// (applyExternalValidation) is also a pure function over an already-captured run
+// result; the spawn happens in the command handler and only when the caller
+// opts in.
 
 const { PINNED_COMMIT_RE, catalog } = require('./craft-skill-catalog.cjs');
 
@@ -32,7 +35,21 @@ const SAFETY_FINDINGS = Object.freeze({
     'the skill source must be an https URL; other transports are not accepted',
   'entry-malformed':
     'the catalog entry is not a well-formed object with a string id',
+  'external-validate-failed':
+    'the opt-in skills-ref validate run reported errors for the candidate skill directory; fix the SKILL.md or reject the candidate',
+  'external-validate-unavailable':
+    'the opt-in skills-ref validate run could not execute (npx missing, timed out or failed to spawn); the candidate is held until the check can run',
 });
+
+// The exact version pin for the opt-in external linter. Single-sourced so the
+// argv builder and any caller agree on one literal. The --yes token is required
+// because npx refuses to auto-install without a TTY; the pin plus the opt-in
+// flag are the trust controls.
+const SKILLS_REF_PIN = 'skills-ref@0.1.5';
+
+function externalValidateArgv(dir) {
+  return ['--yes', SKILLS_REF_PIN, 'validate', dir];
+}
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -272,8 +289,64 @@ function renderAssessment(assessment) {
   return assessment.prompt.join('\n');
 }
 
+// First non-empty, trimmed line of a text blob, or '' when there is none.
+function firstNonEmptyLine(text) {
+  if (typeof text !== 'string') return '';
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed) return trimmed;
+  }
+  return '';
+}
+
+// Return a copy of the assessment forced to block, with the finding appended to
+// the safety axis and the prompt tail rewritten so the Finding line precedes a
+// fresh Verdict: block. The input is never mutated.
+function blockWithFinding(assessment, f) {
+  const safety = {
+    ...assessment.safety,
+    findings: [...assessment.safety.findings, f],
+    safe: false,
+  };
+  const prompt = assessment.prompt.slice();
+  if (prompt.length > 0 && prompt[prompt.length - 1].startsWith('Verdict:')) {
+    prompt.pop();
+  }
+  prompt.push(`Finding: ${f.message}`);
+  prompt.push('Verdict: block');
+  return { ...assessment, verdict: 'block', safety, prompt };
+}
+
+// Pure merge of an opt-in skills-ref validate run into an assessment. `run` is
+// the captured { status, stdout, stderr, error } of the spawn. Fails closed: a
+// spawn error or a null status yields external-validate-unavailable and a block;
+// a non-zero exit yields external-validate-failed and a block; a clean run (exit
+// 0) records the check in the prompt and leaves the verdict untouched. Never
+// mutates the input assessment.
+function applyExternalValidation(assessment, run) {
+  const r = run || {};
+  if ((typeof r.error === 'string' && r.error.length > 0) || r.status === null || r.status === undefined) {
+    return blockWithFinding(assessment, finding('external-validate-unavailable', ` (${r.error || 'no exit status'})`));
+  }
+  if (r.status !== 0) {
+    const line = firstNonEmptyLine(r.stderr) || firstNonEmptyLine(r.stdout) || `exit ${r.status}`;
+    return blockWithFinding(assessment, finding('external-validate-failed', ` (${line.slice(0, 200)})`));
+  }
+  const prompt = assessment.prompt.slice();
+  const cleanLine = `External validate: ${SKILLS_REF_PIN} clean`;
+  if (prompt.length > 0 && prompt[prompt.length - 1].startsWith('Verdict:')) {
+    prompt.splice(prompt.length - 1, 0, cleanLine);
+  } else {
+    prompt.push(cleanLine);
+  }
+  return { ...assessment, prompt };
+}
+
 module.exports = {
   SAFETY_FINDINGS,
+  SKILLS_REF_PIN,
+  externalValidateArgv,
+  applyExternalValidation,
   normalizeSpdx,
   classifyLicense,
   checkSafety,

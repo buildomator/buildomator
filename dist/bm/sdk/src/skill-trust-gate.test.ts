@@ -122,3 +122,53 @@ describe('skill trust gate twin parity', () => {
     expect(sdkGate.assessEntry('seo-audit').verdict).toBe('block');
   });
 });
+
+describe('external validation merge (applyExternalValidation)', () => {
+  const firstSeedId = Object.keys(catMod.CRAFT_SKILLS_BY_ID)[0];
+  const base = () => sdkGate.assessEntry(catMod.CRAFT_SKILLS_BY_ID[firstSeedId]);
+
+  it('externalValidateArgv builds the pinned argv and SKILLS_REF_PIN is exact', () => {
+    expect(sdkGate.SKILLS_REF_PIN).toBe('skills-ref@0.1.5');
+    expect(sdkGate.externalValidateArgv('/x/skill')).toEqual(['--yes', 'skills-ref@0.1.5', 'validate', '/x/skill']);
+    expect(Object.keys(sdkGate.SAFETY_FINDINGS).length).toBe(12);
+  });
+
+  it('a clean run keeps the verdict and inserts the external validate line', () => {
+    const b = base();
+    const out = sdkGate.applyExternalValidation(b, { status: 0, stdout: '', stderr: '' });
+    expect(out.verdict).toBe(b.verdict);
+    expect(out.prompt[out.prompt.length - 1].startsWith('Verdict:')).toBe(true);
+    expect(out.prompt[out.prompt.length - 2]).toBe('External validate: skills-ref@0.1.5 clean');
+    expect(b.prompt).not.toContain('External validate: skills-ref@0.1.5 clean');
+    expect(sdkGate.applyExternalValidation(b, { status: 0, stdout: '', stderr: '' })).toEqual(
+      cjsGate.applyExternalValidation(b, { status: 0, stdout: '', stderr: '' }),
+    );
+  });
+
+  it('a non-zero exit blocks with external-validate-failed', () => {
+    const out = sdkGate.applyExternalValidation(base(), {
+      status: 1,
+      stdout: '',
+      stderr: 'Unexpected fields in frontmatter: argument-hint',
+    });
+    expect(out.verdict).toBe('block');
+    expect(out.safety.safe).toBe(false);
+    const f = out.safety.findings.find((x) => x.code === 'external-validate-failed');
+    expect(f).toBeDefined();
+    expect(f!.message).toContain('Unexpected fields in frontmatter: argument-hint');
+    expect(out.prompt[out.prompt.length - 1]).toBe('Verdict: block');
+  });
+
+  it('a null status (spawn error) blocks with external-validate-unavailable', () => {
+    const out = sdkGate.applyExternalValidation(base(), {
+      status: null,
+      stdout: '',
+      stderr: '',
+      error: 'spawn npx ENOENT',
+    });
+    expect(out.verdict).toBe('block');
+    const f = out.safety.findings.find((x) => x.code === 'external-validate-unavailable');
+    expect(f).toBeDefined();
+    expect(f!.message).toContain('spawn npx ENOENT');
+  });
+});
