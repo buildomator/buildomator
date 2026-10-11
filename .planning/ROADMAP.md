@@ -243,10 +243,21 @@ skills with a conformance + ceiling ratchet that also vets catalog candidates.
 
 **Requirements:** CAT-07, CAT-08
 
+**Plans:** 5 plans
+
+Plans:
+
+- [ ] 18-01-PLAN.md: SKILL.md conformance gate (CJS, zero-dep) + sandbox discrimination test + skill_conformance baseline (CAT-08)
+- [ ] 18-02-PLAN.md: Agent Skills spec upstream watch script + offline wedge-guard harness + PROJECT.md fifth-upstream register (CAT-07)
+- [ ] 18-03-PLAN.md: CI job + pre-commit no-auto-regen block + check-drift.cjs entry + README docs incl. opt-in skills.sh path (CAT-08, CAT-07)
+- [ ] 18-04-PLAN.md: opt-in pinned skills-ref@0.1.5 --validate-external on craft-skill assess in both twins + parity case (CAT-08, CAT-03 seam)
+- [ ] 18-05-PLAN.md: rebuild sdk/dist, regenerate dist/bm, full verification set, human-verify of skills-ref provenance + first opt-in run
+
 **Success criteria:**
 
-1. The Agent Skills spec + skills.sh are on the upstream watch (`upstream-deferred.md`),
-   VibeDrift-style.
+1. The Agent Skills spec + skills.sh are on the upstream watch, VibeDrift-style: registered
+   as the fifth idea-only upstream in PROJECT.md (the live register; there is no
+   `upstream-deferred.md`) and watched by `bin/check-agentskills-release.sh`.
 
 2. A SKILL.md conformance gate validates the 86 skills' frontmatter against the spec and
    enforces a description-length cap + total-count ceiling, wired into pre-commit +
