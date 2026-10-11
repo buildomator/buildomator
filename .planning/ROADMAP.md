@@ -243,7 +243,7 @@ skills with a conformance + ceiling ratchet that also vets catalog candidates.
 
 **Requirements:** CAT-07, CAT-08
 
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 
@@ -255,7 +255,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 18-03-PLAN.md: CI job + pre-commit no-auto-regen block + check-drift.cjs entry + README docs incl. opt-in skills.sh path (CAT-08, CAT-07)
+- [x] 18-03-PLAN.md: CI job + pre-commit no-auto-regen block + check-drift.cjs entry + README docs incl. opt-in skills.sh path (CAT-08, CAT-07)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 

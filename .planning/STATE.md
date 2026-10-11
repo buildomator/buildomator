@@ -4,7 +4,7 @@ milestone: v4.9
 milestone_name: Craft Skill Catalog
 status: executing
 stopped_at: Completed 18-04-PLAN.md
-last_updated: "2026-10-11T22:18:02.390Z"
+last_updated: "2026-10-11T22:27:07.034Z"
 last_activity: 2026-10-11 -- Completed Phase 18 Plan 01 (SKILL.md conformance gate)
 progress:
   total_phases: 3
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 ## Current Position
 
 Phase: 18 (agent-skills-spec-upstream-and-skill-md-conformance-gate) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Executing Phase 18
 Last activity: 2026-10-11 -- Completed Phase 18 Plan 01 (SKILL.md conformance gate)
 
@@ -63,6 +63,7 @@ Last activity: 2026-10-11 -- Completed Phase 18 Plan 01 (SKILL.md conformance ga
 | Phase 18 P01 | 4min | 2 tasks | 3 files |
 | Phase 18 P02 | ~5min | 3 tasks | 3 files |
 | Phase 18 P04 | ~15min | 2 tasks | 8 files |
+| Phase 18 P03 | 8min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,8 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 - [Phase 18]: P02: npm skills-ref version is the authoritative Agent Skills watch signal (D-06); GitHub commits/main sha is best-effort since the spec repo cuts no releases or tags
 - [Phase 18]: P02: the fifth idea-only upstream is registered in PROJECT.md (the live register) per D-07, never vendored or invoked at runtime
 - [Phase ?]: Phase 18 P04: skills-ref validate adopted as an opt-in version-pinned (skills-ref@0.1.5) npx shell-out on craft-skill assess --validate-external for untrusted external candidates only, fail-closed to block, mirrored across both trust-gate twins with the gate kept pure (D-08)
+- [Phase 18]: P03: the SKILL.md conformance gate joins the check-drift.cjs umbrella (offline and deterministic) while the jargon and prose ratchets stay out as prose ratchets, not drift detectors
+- [Phase 18]: P03: the pre-commit conformance block mirrors the prose block with no auto-regen; --write-baseline appears only inside echoed hint text so a regression always exits 1 with the full gate output
 
 ### Pending Todos
 
@@ -221,7 +224,7 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 
 ## Session Continuity
 
-Last session: 2026-10-11T22:18:02.375Z
+Last session: 2026-10-11T22:26:31.620Z
 Stopped at: Completed 18-04-PLAN.md
 Next action: `/gsd:plan-phase 12` to plan the Two-Plugin Build Foundation phase.
 
