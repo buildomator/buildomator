@@ -243,7 +243,7 @@ skills with a conformance + ceiling ratchet that also vets catalog candidates.
 
 **Requirements:** CAT-07, CAT-08
 
-**Plans:** 2/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
 
@@ -251,7 +251,7 @@ Plans:
 
 - [x] 18-01-PLAN.md: SKILL.md conformance gate (CJS, zero-dep) + sandbox discrimination test + skill_conformance baseline (CAT-08)
 - [x] 18-02-PLAN.md: Agent Skills spec upstream watch script + offline wedge-guard harness + PROJECT.md fifth-upstream register (CAT-07)
-- [ ] 18-04-PLAN.md: opt-in pinned skills-ref@0.1.5 --validate-external on craft-skill assess in both twins + parity case (CAT-08, CAT-03 seam)
+- [x] 18-04-PLAN.md: opt-in pinned skills-ref@0.1.5 --validate-external on craft-skill assess in both twins + parity case (CAT-08, CAT-03 seam)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

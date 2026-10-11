@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.9
 milestone_name: Craft Skill Catalog
 status: executing
-stopped_at: Phase 18 context gathered
-last_updated: "2026-10-11T22:07:13.911Z"
+stopped_at: Completed 18-04-PLAN.md
+last_updated: "2026-10-11T22:18:02.390Z"
 last_activity: 2026-10-11 -- Completed Phase 18 Plan 01 (SKILL.md conformance gate)
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 13
   percent: 67
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 ## Current Position
 
 Phase: 18 (agent-skills-spec-upstream-and-skill-md-conformance-gate) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Executing Phase 18
 Last activity: 2026-10-11 -- Completed Phase 18 Plan 01 (SKILL.md conformance gate)
 
@@ -62,6 +62,7 @@ Last activity: 2026-10-11 -- Completed Phase 18 Plan 01 (SKILL.md conformance ga
 | Phase 17 P05 | ~10min | 3 tasks | 4 files |
 | Phase 18 P01 | 4min | 2 tasks | 3 files |
 | Phase 18 P02 | ~5min | 3 tasks | 3 files |
+| Phase 18 P04 | ~15min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,7 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 - [Phase 18]: P01: the conformance gate is CJS-only with main under require.main===module so the trust gate can require validateSkill without spawning; structural regressions (count ceiling plus hard findings) are checked before the baseline compare, so a missing name fails even with no baseline present
 - [Phase 18]: P02: npm skills-ref version is the authoritative Agent Skills watch signal (D-06); GitHub commits/main sha is best-effort since the spec repo cuts no releases or tags
 - [Phase 18]: P02: the fifth idea-only upstream is registered in PROJECT.md (the live register) per D-07, never vendored or invoked at runtime
+- [Phase ?]: Phase 18 P04: skills-ref validate adopted as an opt-in version-pinned (skills-ref@0.1.5) npx shell-out on craft-skill assess --validate-external for untrusted external candidates only, fail-closed to block, mirrored across both trust-gate twins with the gate kept pure (D-08)
 
 ### Pending Todos
 
@@ -219,8 +221,8 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 
 ## Session Continuity
 
-Last session: 2026-10-11T22:06:33.554Z
-Stopped at: Phase 18 context gathered
+Last session: 2026-10-11T22:18:02.375Z
+Stopped at: Completed 18-04-PLAN.md
 Next action: `/gsd:plan-phase 12` to plan the Two-Plugin Build Foundation phase.
 
 ## Operator Next Steps
