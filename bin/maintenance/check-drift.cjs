@@ -7,6 +7,7 @@
  *   2. bin/maintenance/check-handoff-schema.cjs    (HANDOFF.json schema validation)
  *   3. bin/maintenance/rewrite-command-namespace.cjs --dry  (/gsd-<skill> → /gsd:<skill> drift)
  *   4. bin/maintenance/check-version-alignment.cjs (internal milestone vs product version)
+ *   5. bin/maintenance/check-skill-conformance.cjs (SKILL.md frontmatter + count/description ratchet)
  *
  * Aggregates exit codes and reports a consolidated PASS/FAIL. Intended for local
  * dev loops and post-upstream-sync verification. NOT added to CI — CI runs each
@@ -71,6 +72,15 @@ const detectors = [
     cmd: 'node',
     args: ['bin/maintenance/check-version-alignment.cjs'],
     parser: null,  // exit code is the whole story (0 pass/skip, 1 divergence)
+  },
+  {
+    // Offline and deterministic (the umbrella's admission rule), so it joins
+    // the drift detectors. The jargon and prose gates stay out because they
+    // are prose ratchets, not drift detectors.
+    name: 'SKILL.md conformance ratchet',
+    cmd: 'node',
+    args: ['bin/maintenance/check-skill-conformance.cjs'],
+    parser: null,  // exit code is the whole story (0 pass or warn, 1 regression)
   },
 ];
 

@@ -187,6 +187,21 @@ jobs:
       - name: Run user-docs prose discrimination test
         run: node tests/user-docs-prose.test.cjs
 
+  skill-conformance:
+    name: SKILL.md conformance + ceiling ratchet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run SKILL.md conformance gate
+        run: node bin/maintenance/check-skill-conformance.cjs
+      - name: Run SKILL.md conformance discrimination test
+        run: node tests/skill-conformance.test.cjs
+      - name: Run Agent Skills watch wedge-guard harness
+        run: node tests/agentskills-watch.test.cjs
+
   bm-build-drift:
     name: bm package regenerate-and-diff (BUILD-01/BUILD-02)
     # checkout@v4 provides git, which the drift test's integration cases
