@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.9
 milestone_name: Craft Skill Catalog
-status: planning
-stopped_at: Phase 18 context gathered
-last_updated: "2026-10-11T16:22:30.324Z"
-last_activity: 2026-10-11 -- Phase 18 planning complete
+status: executing
+stopped_at: Completed 18-01-PLAN.md
+last_updated: "2026-10-11T21:58:51.292Z"
+last_activity: 2026-10-11 -- Completed Phase 18 Plan 01 (SKILL.md conformance gate)
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 15
-  completed_plans: 10
-  percent: 67
+  completed_plans: 11
+  percent: 73
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** Reduce GSD's per-turn token overhead and agent spawn latency without breaking multi-CLI compatibility
-**Current focus:** Phase 18 — agent skills spec upstream and skill.md conformance gate
+**Current focus:** Phase 18 — agent-skills-spec-upstream-and-skill-md-conformance-gate
 
 ## Current Position
 
-Phase: 18
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-10-11 -- Phase 18 planning complete
+Phase: 18 (agent-skills-spec-upstream-and-skill-md-conformance-gate) — EXECUTING
+Plan: 2 of 5
+Status: Executing Phase 18
+Last activity: 2026-10-11 -- Completed Phase 18 Plan 01 (SKILL.md conformance gate)
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Last activity: 2026-10-11 -- Phase 18 planning complete
 | Phase 17 P02 | 8min | 2 tasks | 3 files |
 | Phase 17 P03 | ~16min | 3 tasks | 7 files |
 | Phase 17 P05 | ~10min | 3 tasks | 4 files |
+| Phase 18 P01 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ See: milestones/v1.0-ROADMAP.md for full v1.0 decision history.
 - [Phase ?]: Phase 17 P03: the autonomous gate is written literally as verdict allow since insert only structurally refuses block; the literal sticky flag token is kept out of autonomous.md to satisfy the zero-sticky assertion
 - [Phase 17]: P05: propose-on-fit wiring is ratcheted by a 16-check static guard run in CI after the parity step; orderings use indexOf/lastIndexOf on fixed tokens, never regexes built from file content
 - [Phase 17]: P05: sdk/dist is git-staged before build-bm regenerates dist/bm (build-bm enumerates tracked files via git ls-files); build-bm --check prints bm drift check PASS on the committed tree
+- [Phase 18]: P01: SKILL.md conformance gate warn band fixed at 88 with hard ceiling 90 (count of skills/*/SKILL.md, bundled/ excluded); allowed-tools accepts all three in-repo shapes (YAML list, empty inline array, comma string); name-vs-directory and optional spec fields are advisory only
+- [Phase 18]: P01: the conformance gate is CJS-only with main under require.main===module so the trust gate can require validateSkill without spawning; structural regressions (count ceiling plus hard findings) are checked before the baseline compare, so a missing name fails even with no baseline present
 
 ### Pending Todos
 
