@@ -247,10 +247,18 @@ skills with a conformance + ceiling ratchet that also vets catalog candidates.
 
 Plans:
 
+**Wave 1**
+
 - [ ] 18-01-PLAN.md: SKILL.md conformance gate (CJS, zero-dep) + sandbox discrimination test + skill_conformance baseline (CAT-08)
 - [ ] 18-02-PLAN.md: Agent Skills spec upstream watch script + offline wedge-guard harness + PROJECT.md fifth-upstream register (CAT-07)
-- [ ] 18-03-PLAN.md: CI job + pre-commit no-auto-regen block + check-drift.cjs entry + README docs incl. opt-in skills.sh path (CAT-08, CAT-07)
 - [ ] 18-04-PLAN.md: opt-in pinned skills-ref@0.1.5 --validate-external on craft-skill assess in both twins + parity case (CAT-08, CAT-03 seam)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 18-03-PLAN.md: CI job + pre-commit no-auto-regen block + check-drift.cjs entry + README docs incl. opt-in skills.sh path (CAT-08, CAT-07)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 18-05-PLAN.md: rebuild sdk/dist, regenerate dist/bm, full verification set, human-verify of skills-ref provenance + first opt-in run
 
 **Success criteria:**
