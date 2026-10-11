@@ -12,5 +12,14 @@
     "cliche_openers": 0,
     "generated_at": "2026-09-15",
     "note": "Prose-slop ratchet over README.md + CHANGELOG.md. Fenced code blocks are stripped before scanning. The em_en_dash count includes historical CHANGELOG entries that are frozen in place rather than rewritten; the ratchet only fails on GROWTH. Regenerate with --write-baseline only after a deliberate cleanup lowers a count."
+  },
+  "skill_conformance": {
+    "skill_count": 86,
+    "max_description_length": 380,
+    "max_description_file": "skills/discuss-phase/SKILL.md",
+    "ceiling": 90,
+    "warn_at": 88,
+    "generated_at": "2026-10-11",
+    "note": "SKILL.md conformance ratchet. The total-skill-count ceiling is fixed at 90 with a warn band from 88; the description length is a grow-fail ratchet off max_description_length. Regenerate only by hand with --write-baseline, never in CI. Removing or merging a skill is preferred over raising the ceiling."
   }
 }
