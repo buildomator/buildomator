@@ -24,7 +24,7 @@ const { validatePath, loadTrustedGlobalRoots } = require('./security.cjs');
 const { getGlobalSkillsBase, getGlobalSkillDir } = require('./runtime-homes.cjs');
 const { normalizeAgentName, lookupByAgentName } = require('./model-profiles.cjs');
 const { loadCraftSkillCatalog, deriveCatalogViews } = require('./craft-skill-catalog.cjs');
-const { assessEntry, renderAssessment } = require('./skill-trust-gate.cjs');
+const { assessEntry, renderAssessment, externalValidateArgv, applyExternalValidation } = require('./skill-trust-gate.cjs');
 
 const PINS_RELATIVE_PATH = path.join('craft-skills', 'pins.json');
 const GLOBAL_NAME_RE = /^[a-zA-Z0-9_-]+$/;
@@ -352,7 +352,33 @@ function assessCraftSkill(opts) {
   if (!entry) {
     return error(`unknown catalog id "${o.id}"`, ERROR_REASON.USAGE);
   }
-  return assessEntry(entry, cat);
+  const base = assessEntry(entry, cat);
+  if (o.validateExternal === undefined) {
+    return base;
+  }
+  // The opt-in external linter: run only when the caller passes a real skill
+  // directory. The path is checked before any spawn; the argv is an array (no
+  // shell, so the directory is never expanded). A spawn error, timeout or
+  // non-zero exit fails closed to a block through applyExternalValidation.
+  if (typeof o.validateExternal !== 'string' || o.validateExternal.length === 0) {
+    return error('--validate-external requires an existing skill directory', ERROR_REASON.USAGE);
+  }
+  const resolved = path.resolve(o.validateExternal);
+  if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
+    return error('--validate-external requires an existing skill directory', ERROR_REASON.USAGE);
+  }
+  const res = spawnSync('npx', externalValidateArgv(resolved), {
+    encoding: 'utf8',
+    timeout: 120000,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  const run = {
+    status: res.status,
+    stdout: res.stdout || '',
+    stderr: res.stderr || '',
+    error: res.error ? res.error.message : undefined,
+  };
+  return applyExternalValidation(base, run);
 }
 
 // Read-only trigger pre-filter: lower-case the scope text and substring-compare
@@ -408,7 +434,7 @@ function cmdCraftSkill(cwd, args, raw) {
       output(listCraftSkills({ catalog: flags.catalog }), raw);
       break;
     case 'assess': {
-      const a = assessCraftSkill({ id: positional[0], catalog: flags.catalog });
+      const a = assessCraftSkill({ id: positional[0], catalog: flags.catalog, validateExternal: flags['validate-external'] });
       output(a, raw, renderAssessment(a));
       break;
     }

@@ -13,7 +13,7 @@
 // substring-compares a scope string against the trigger index and reads no skill
 // file.
 
-import { existsSync, readFileSync, mkdirSync, writeFileSync, renameSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, mkdirSync, writeFileSync, renameSync, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -27,8 +27,8 @@ import { configSet } from './config-mutation.js';
 import { normalizeAgentName, lookupByAgentName } from '../model-catalog.js';
 import { loadCraftSkillCatalog, deriveCatalogViews } from '../craft-skill-catalog.js';
 import type { CraftSkillCatalog, CraftSkillEntry } from '../craft-skill-catalog.js';
-import { assessEntry, renderAssessment } from '../skill-trust-gate.js';
-import type { EntryAssessment, LicenseVerdict } from '../skill-trust-gate.js';
+import { assessEntry, renderAssessment, externalValidateArgv, applyExternalValidation } from '../skill-trust-gate.js';
+import type { EntryAssessment, LicenseVerdict, ExternalValidateRun } from '../skill-trust-gate.js';
 import { GSDError, ErrorClassification } from '../errors.js';
 
 export const PINS_RELATIVE_PATH = 'craft-skills/pins.json';
@@ -508,14 +508,40 @@ export function listCraftSkills(opts: { catalog?: string }): Array<Record<string
   }));
 }
 
-export function assessCraftSkill(opts: { id?: string; catalog?: string }): EntryAssessment {
+export function assessCraftSkill(opts: { id?: string; catalog?: string; validateExternal?: string }): EntryAssessment {
   const o = opts || {};
   const { cat, views } = loadCatalogViews(o);
   const entry = o.id ? views.CRAFT_SKILLS_BY_ID[o.id] : undefined;
   if (!entry) {
     throw new GSDError(`unknown catalog id "${o.id}"`, ErrorClassification.Validation);
   }
-  return assessEntry(entry, cat);
+  const base = assessEntry(entry, cat);
+  if (o.validateExternal === undefined) {
+    return base;
+  }
+  // The opt-in external linter: run only when the caller passes a real skill
+  // directory. The path is checked before any spawn; the argv is an array (no
+  // shell, so the directory is never expanded). A spawn error, timeout or
+  // non-zero exit fails closed to a block through applyExternalValidation.
+  if (typeof o.validateExternal !== 'string' || o.validateExternal.length === 0) {
+    throw new GSDError('--validate-external requires an existing skill directory', ErrorClassification.Validation);
+  }
+  const resolved = resolve(o.validateExternal);
+  if (!existsSync(resolved) || !statSync(resolved).isDirectory()) {
+    throw new GSDError('--validate-external requires an existing skill directory', ErrorClassification.Validation);
+  }
+  const res = spawnSync('npx', externalValidateArgv(resolved), {
+    encoding: 'utf8',
+    timeout: 120000,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  const run: ExternalValidateRun = {
+    status: res.status,
+    stdout: res.stdout || '',
+    stderr: res.stderr || '',
+    error: res.error ? res.error.message : undefined,
+  };
+  return applyExternalValidation(base, run);
 }
 
 // ─── match (read-only trigger pre-filter) ───────────────────────────────────
@@ -599,7 +625,7 @@ export const craftSkillList: QueryHandler = async (args) => {
 
 export const craftSkillAssess: QueryHandler = async (args) => {
   const { positional, flags } = parseFlags(args);
-  const a = assessCraftSkill({ id: positional[0], catalog: asString(flags.catalog) });
+  const a = assessCraftSkill({ id: positional[0], catalog: asString(flags.catalog), validateExternal: asString(flags['validate-external']) });
   if (flags['raw-text']) {
     return { data: renderAssessment(a), format: 'text' };
   }

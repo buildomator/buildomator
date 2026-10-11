@@ -18555,7 +18555,7 @@ var worktreeCleanupWave = async (args, projectDir) => {
 
 // dist/query/craft-skill.js
 init_helpers();
-import { existsSync as existsSync34, readFileSync as readFileSync22, mkdirSync as mkdirSync7, writeFileSync as writeFileSync9, renameSync as renameSync2, realpathSync as realpathSync2 } from "node:fs";
+import { existsSync as existsSync34, readFileSync as readFileSync22, mkdirSync as mkdirSync7, writeFileSync as writeFileSync9, renameSync as renameSync2, realpathSync as realpathSync2, statSync as statSync8 } from "node:fs";
 import { homedir as homedir9 } from "node:os";
 import { createHash as createHash3 } from "node:crypto";
 import { spawnSync as spawnSync3 } from "node:child_process";
@@ -18810,8 +18810,14 @@ var SAFETY_FINDINGS = Object.freeze({
   "tooling-license-missing": "a declared tooling dependency has no license recorded; record its license before inserting",
   "tooling-license-blocked": "a declared tooling dependency carries a blocked license",
   "source-not-https": "the skill source must be an https URL; other transports are not accepted",
-  "entry-malformed": "the catalog entry is not a well-formed object with a string id"
+  "entry-malformed": "the catalog entry is not a well-formed object with a string id",
+  "external-validate-failed": "the opt-in skills-ref validate run reported errors for the candidate skill directory; fix the SKILL.md or reject the candidate",
+  "external-validate-unavailable": "the opt-in skills-ref validate run could not execute (npx missing, timed out or failed to spawn); the candidate is held until the check can run"
 });
+var SKILLS_REF_PIN = "skills-ref@0.1.5";
+function externalValidateArgv(dir) {
+  return ["--yes", SKILLS_REF_PIN, "validate", dir];
+}
 function isPlainObject2(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -18996,6 +19002,48 @@ function assessEntry(entry, cat = catalog2) {
 }
 function renderAssessment(assessment) {
   return assessment.prompt.join("\n");
+}
+function firstNonEmptyLine(text) {
+  if (typeof text !== "string")
+    return "";
+  for (const line of text.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed)
+      return trimmed;
+  }
+  return "";
+}
+function blockWithFinding(assessment, f) {
+  const safety = {
+    ...assessment.safety,
+    findings: [...assessment.safety.findings, f],
+    safe: false
+  };
+  const prompt = assessment.prompt.slice();
+  if (prompt.length > 0 && prompt[prompt.length - 1].startsWith("Verdict:")) {
+    prompt.pop();
+  }
+  prompt.push(`Finding: ${f.message}`);
+  prompt.push("Verdict: block");
+  return { ...assessment, verdict: "block", safety, prompt };
+}
+function applyExternalValidation(assessment, run) {
+  const r3 = run || {};
+  if (typeof r3.error === "string" && r3.error.length > 0 || r3.status === null || r3.status === void 0) {
+    return blockWithFinding(assessment, finding("external-validate-unavailable", ` (${r3.error || "no exit status"})`));
+  }
+  if (r3.status !== 0) {
+    const line = firstNonEmptyLine(r3.stderr) || firstNonEmptyLine(r3.stdout) || `exit ${r3.status}`;
+    return blockWithFinding(assessment, finding("external-validate-failed", ` (${line.slice(0, 200)})`));
+  }
+  const prompt = assessment.prompt.slice();
+  const cleanLine = `External validate: ${SKILLS_REF_PIN} clean`;
+  if (prompt.length > 0 && prompt[prompt.length - 1].startsWith("Verdict:")) {
+    prompt.splice(prompt.length - 1, 0, cleanLine);
+  } else {
+    prompt.push(cleanLine);
+  }
+  return { ...assessment, prompt };
 }
 
 // dist/query/craft-skill.js
@@ -19339,7 +19387,29 @@ function assessCraftSkill(opts) {
   if (!entry) {
     throw new GSDError(`unknown catalog id "${o3.id}"`, ErrorClassification.Validation);
   }
-  return assessEntry(entry, cat);
+  const base = assessEntry(entry, cat);
+  if (o3.validateExternal === void 0) {
+    return base;
+  }
+  if (typeof o3.validateExternal !== "string" || o3.validateExternal.length === 0) {
+    throw new GSDError("--validate-external requires an existing skill directory", ErrorClassification.Validation);
+  }
+  const resolved = resolve10(o3.validateExternal);
+  if (!existsSync34(resolved) || !statSync8(resolved).isDirectory()) {
+    throw new GSDError("--validate-external requires an existing skill directory", ErrorClassification.Validation);
+  }
+  const res = spawnSync3("npx", externalValidateArgv(resolved), {
+    encoding: "utf8",
+    timeout: 12e4,
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  const run = {
+    status: res.status,
+    stdout: res.stdout || "",
+    stderr: res.stderr || "",
+    error: res.error ? res.error.message : void 0
+  };
+  return applyExternalValidation(base, run);
 }
 function matchCraftSkills(opts) {
   const o3 = opts || {};
@@ -19386,7 +19456,7 @@ var craftSkillList = async (args) => {
 };
 var craftSkillAssess = async (args) => {
   const { positional, flags } = parseFlags(args);
-  const a3 = assessCraftSkill({ id: positional[0], catalog: asString(flags.catalog) });
+  const a3 = assessCraftSkill({ id: positional[0], catalog: asString(flags.catalog), validateExternal: asString(flags["validate-external"]) });
   if (flags["raw-text"]) {
     return { data: renderAssessment(a3), format: "text" };
   }
@@ -21463,7 +21533,7 @@ var initIngestDocs = async (_args, projectDir) => {
 };
 
 // dist/query/init-complex.js
-import { existsSync as existsSync39, readdirSync as readdirSync23, statSync as statSync8 } from "node:fs";
+import { existsSync as existsSync39, readdirSync as readdirSync23, statSync as statSync9 } from "node:fs";
 import { execSync as execSync3 } from "node:child_process";
 import { readFile as readFile31 } from "node:fs/promises";
 import { join as join47, relative as relative14 } from "node:path";
@@ -21856,7 +21926,7 @@ var initManager = async (_args, projectDir, workstream) => {
         let newestMtime = 0;
         for (const f of phaseFiles) {
           try {
-            const st = statSync8(join47(fullDir, f));
+            const st = statSync9(join47(fullDir, f));
             if (st.mtimeMs > newestMtime)
               newestMtime = st.mtimeMs;
           } catch {

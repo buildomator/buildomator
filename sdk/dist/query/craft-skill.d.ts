@@ -95,6 +95,7 @@ export declare function listCraftSkills(opts: {
 export declare function assessCraftSkill(opts: {
     id?: string;
     catalog?: string;
+    validateExternal?: string;
 }): EntryAssessment;
 export interface MatchCandidate {
     id: string;

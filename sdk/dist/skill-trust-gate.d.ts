@@ -8,7 +8,7 @@ export interface LicenseAssessment {
     obligations: string;
     reason: string;
 }
-export type SafetyFindingCode = 'publisher-not-allowlisted' | 'pin-not-commit' | 'scripts-unreviewed' | 'scripts-review-stale' | 'tier-c-hold' | 'tier-b-undeclared-execution' | 'tooling-license-missing' | 'tooling-license-blocked' | 'source-not-https' | 'entry-malformed';
+export type SafetyFindingCode = 'publisher-not-allowlisted' | 'pin-not-commit' | 'scripts-unreviewed' | 'scripts-review-stale' | 'tier-c-hold' | 'tier-b-undeclared-execution' | 'tooling-license-missing' | 'tooling-license-blocked' | 'source-not-https' | 'entry-malformed' | 'external-validate-failed' | 'external-validate-unavailable';
 export interface SafetyFinding {
     code: SafetyFindingCode;
     message: string;
@@ -42,9 +42,18 @@ export interface EntryAssessment {
     prompt: string[];
 }
 export declare const SAFETY_FINDINGS: Record<SafetyFindingCode, string>;
+export declare const SKILLS_REF_PIN = "skills-ref@0.1.5";
+export declare function externalValidateArgv(dir: string): string[];
+export interface ExternalValidateRun {
+    status: number | null;
+    stdout: string;
+    stderr: string;
+    error?: string;
+}
 export declare function normalizeSpdx(s: unknown): string;
 export declare function classifyLicense(spdx: unknown, cat?: CraftSkillCatalog): LicenseAssessment;
 export declare function checkSafety(entry: unknown, cat?: CraftSkillCatalog): SafetyAssessment;
 export declare function assessEntry(entry: unknown, cat?: CraftSkillCatalog): EntryAssessment;
 export declare function renderAssessment(assessment: EntryAssessment): string;
+export declare function applyExternalValidation(assessment: EntryAssessment, run: ExternalValidateRun): EntryAssessment;
 //# sourceMappingURL=skill-trust-gate.d.ts.map
