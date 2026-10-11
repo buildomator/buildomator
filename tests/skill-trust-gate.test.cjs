@@ -243,6 +243,50 @@ check('renderAssessment surfaces facts and no endorsement words', () => {
   assert(!/recommended|endorsed|trusted by/i.test(text), 'endorsement wording present');
 });
 
+// --- external validation merge ---------------------------------------------
+
+const firstSeed = () => gate.assessEntry(CRAFT_SKILLS_BY_ID[Object.keys(CRAFT_SKILLS_BY_ID)[0]], catalog);
+
+check('external validation: externalValidateArgv builds the pinned argv and the table has 12 codes', () => {
+  assert(gate.SKILLS_REF_PIN === 'skills-ref@0.1.5', `pin ${gate.SKILLS_REF_PIN}`);
+  assert(gate.externalValidateArgv('/x/skill').join(' ') === '--yes skills-ref@0.1.5 validate /x/skill', 'argv mismatch');
+  assert(Object.keys(gate.SAFETY_FINDINGS).length === 12, `finding count ${Object.keys(gate.SAFETY_FINDINGS).length}`);
+});
+
+check('external validation: clean run keeps the verdict and inserts the clean line before Verdict', () => {
+  const base = firstSeed();
+  const out = gate.applyExternalValidation(base, { status: 0, stdout: '', stderr: '' });
+  assert(out.verdict === base.verdict, `verdict changed to ${out.verdict}`);
+  assert(JSON.stringify(out.safety) === JSON.stringify(base.safety), 'safety changed');
+  const last = out.prompt[out.prompt.length - 1];
+  const prev = out.prompt[out.prompt.length - 2];
+  assert(last.startsWith('Verdict:'), `last line ${last}`);
+  assert(prev === 'External validate: skills-ref@0.1.5 clean', `prev line ${prev}`);
+  assert(base.prompt[base.prompt.length - 1].startsWith('Verdict:'), 'input prompt mutated');
+  assert(!base.prompt.includes('External validate: skills-ref@0.1.5 clean'), 'input prompt gained the clean line');
+});
+
+check('external validation: a non-zero exit blocks with external-validate-failed', () => {
+  const base = firstSeed();
+  const out = gate.applyExternalValidation(base, { status: 1, stdout: '', stderr: 'Unexpected fields in frontmatter: argument-hint' });
+  assert(out.verdict === 'block', `verdict ${out.verdict}`);
+  assert(out.safety.safe === false, 'safety.safe should be false');
+  const f = out.safety.findings.find((x) => x.code === 'external-validate-failed');
+  assert(f, 'no external-validate-failed finding');
+  assert(f.message.includes('Unexpected fields in frontmatter: argument-hint'), `message ${f.message}`);
+  assert(out.prompt[out.prompt.length - 1] === 'Verdict: block', `last ${out.prompt[out.prompt.length - 1]}`);
+  assert(out.prompt[out.prompt.length - 2].startsWith('Finding: '), `prev ${out.prompt[out.prompt.length - 2]}`);
+});
+
+check('external validation: a null status (spawn error) blocks with external-validate-unavailable', () => {
+  const base = firstSeed();
+  const out = gate.applyExternalValidation(base, { status: null, stdout: '', stderr: '', error: 'spawn npx ENOENT' });
+  assert(out.verdict === 'block', `verdict ${out.verdict}`);
+  const f = out.safety.findings.find((x) => x.code === 'external-validate-unavailable');
+  assert(f, 'no external-validate-unavailable finding');
+  assert(f.message.includes('spawn npx ENOENT'), `message ${f.message}`);
+});
+
 // --- never throws ----------------------------------------------------------
 
 check('classifyLicense(null) returns an object', () => {
