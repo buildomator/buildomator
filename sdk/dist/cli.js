@@ -19456,7 +19456,11 @@ var craftSkillList = async (args) => {
 };
 var craftSkillAssess = async (args) => {
   const { positional, flags } = parseFlags(args);
-  const a3 = assessCraftSkill({ id: positional[0], catalog: asString(flags.catalog), validateExternal: asString(flags["validate-external"]) });
+  const ve = flags["validate-external"];
+  if (ve === true) {
+    throw new GSDError("--validate-external requires an existing skill directory", ErrorClassification.Validation);
+  }
+  const a3 = assessCraftSkill({ id: positional[0], catalog: asString(flags.catalog), validateExternal: asString(ve) });
   if (flags["raw-text"]) {
     return { data: renderAssessment(a3), format: "text" };
   }

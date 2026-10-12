@@ -471,7 +471,15 @@ export const craftSkillList = async (args) => {
 };
 export const craftSkillAssess = async (args) => {
     const { positional, flags } = parseFlags(args);
-    const a = assessCraftSkill({ id: positional[0], catalog: asString(flags.catalog), validateExternal: asString(flags['validate-external']) });
+    // A bare `--validate-external` (no directory, or followed by another flag)
+    // parses to boolean true. asString() would collapse that to undefined, which
+    // the assess early-return reads as "validation not requested" and fails open.
+    // Match the CJS twin: reject it loudly before asString sees it.
+    const ve = flags['validate-external'];
+    if (ve === true) {
+        throw new GSDError('--validate-external requires an existing skill directory', ErrorClassification.Validation);
+    }
+    const a = assessCraftSkill({ id: positional[0], catalog: asString(flags.catalog), validateExternal: asString(ve) });
     if (flags['raw-text']) {
         return { data: renderAssessment(a), format: 'text' };
     }
