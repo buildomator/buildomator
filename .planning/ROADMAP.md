@@ -156,7 +156,7 @@ the 4.9.x line; 5.0 stays reserved.
 
 - [x] Phase 16: Catalog and Trust Gate Foundation (completed 2026-10-05)
 - [x] Phase 17: v1 Capability Wiring and Propose-on-Fit (completed 2026-10-06)
-- [ ] Phase 18: Agent Skills Spec Upstream and SKILL.md Conformance Gate
+- [x] Phase 18: Agent Skills Spec Upstream and SKILL.md Conformance Gate (completed 2026-10-12)
 
 ### Phase 16: Catalog and Trust Gate Foundation
 
@@ -243,7 +243,7 @@ skills with a conformance + ceiling ratchet that also vets catalog candidates.
 
 **Requirements:** CAT-07, CAT-08
 
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 
@@ -259,7 +259,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 18-05-PLAN.md: rebuild sdk/dist, regenerate dist/bm, full verification set, human-verify of skills-ref provenance + first opt-in run
+- [x] 18-05-PLAN.md: rebuild sdk/dist, regenerate dist/bm, full verification set, human-verify of skills-ref provenance + first opt-in run
 
 **Success criteria:**
 

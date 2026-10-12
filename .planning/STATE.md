@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.9
 milestone_name: Craft Skill Catalog
-status: executing
-stopped_at: Completed 18-04-PLAN.md
-last_updated: "2026-10-11T22:27:07.034Z"
-last_activity: 2026-10-11 -- Completed Phase 18 Plan 01 (SKILL.md conformance gate)
+status: ready_for_verification
+stopped_at: Completed 18-05-PLAN.md
+last_updated: "2026-10-12T18:05:50.544Z"
+last_activity: 2026-10-12 -- Completed Phase 18 Plan 05 (phase close: dist/bm regen, full verification, skills-ref provenance)
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 15
-  completed_plans: 13
-  percent: 67
+  completed_plans: 15
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 
 ## Current Position
 
-Phase: 18 (agent-skills-spec-upstream-and-skill-md-conformance-gate) — EXECUTING
-Plan: 5 of 5
-Status: Executing Phase 18
-Last activity: 2026-10-11 -- Completed Phase 18 Plan 01 (SKILL.md conformance gate)
+Phase: 18 (agent-skills-spec-upstream-and-skill-md-conformance-gate) -- READY FOR VERIFICATION
+Plan: 5 of 5 (all plans complete)
+Status: Phase 18 complete, ready for verification
+Last activity: 2026-10-12 -- Completed Phase 18 Plan 05 (phase close: dist/bm regen, full verification, skills-ref provenance)
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Last activity: 2026-10-11 -- Completed Phase 18 Plan 01 (SKILL.md conformance ga
 | Phase 18 P02 | ~5min | 3 tasks | 3 files |
 | Phase 18 P04 | ~15min | 2 tasks | 8 files |
 | Phase 18 P03 | 8min | 2 tasks | 4 files |
+| Phase 18 P05 | ~12min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -224,9 +225,9 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 
 ## Session Continuity
 
-Last session: 2026-10-11T22:26:31.620Z
-Stopped at: Completed 18-04-PLAN.md
-Next action: `/gsd:plan-phase 12` to plan the Two-Plugin Build Foundation phase.
+Last session: 2026-10-12T18:05:50.506Z
+Stopped at: Completed 18-05-PLAN.md
+Next action: `/gsd:verify-work 18` to validate Phase 18, then `/gsd:complete-milestone` for v4.9 (after the separate namespace-rewrite working-tree changes are resolved so the drift gate passes on a clean tree).
 
 ## Operator Next Steps
 
