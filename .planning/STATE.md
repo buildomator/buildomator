@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v4.9
 milestone_name: Craft Skill Catalog
-status: ready_for_verification
-stopped_at: Completed 18-05-PLAN.md
-last_updated: "2026-10-12T18:05:50.544Z"
+status: milestone_complete
+stopped_at: Milestone complete (Phase 18 was final phase)
+last_updated: 2026-10-12T18:20:14.812Z
 last_activity: 2026-10-12 -- Completed Phase 18 Plan 05 (phase close: dist/bm regen, full verification, skills-ref provenance)
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 15
-  completed_plans: 15
+  completed_plans: 31
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** Reduce GSD's per-turn token overhead and agent spawn latency without breaking multi-CLI compatibility
-**Current focus:** Phase 18 — agent-skills-spec-upstream-and-skill-md-conformance-gate
+**Current focus:** Milestone complete
 
 ## Current Position
 
-Phase: 18 (agent-skills-spec-upstream-and-skill-md-conformance-gate) -- READY FOR VERIFICATION
-Plan: 5 of 5 (all plans complete)
-Status: Phase 18 complete, ready for verification
-Last activity: 2026-10-12 -- Completed Phase 18 Plan 05 (phase close: dist/bm regen, full verification, skills-ref provenance)
+Phase: 18
+Plan: Not started
+Status: Milestone complete
+Last activity: 2026-10-12
 
 ## Performance Metrics
 
