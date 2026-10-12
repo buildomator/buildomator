@@ -2,8 +2,10 @@
 
 Read-only scan of VibeDrift (github VibeDrift/VibeDrift) releases against our
 native drift port. VibeDrift is a SECOND upstream: we never install or run it,
-we port drift/integrity heuristics natively. Native port pinned to the v0.14.0
-idea baseline. Watch pin at v0.14.0; VibeDrift now at v0.20.0 (2026-08-19).
+we port drift/integrity heuristics natively. Native port advanced to the v0.20.0
+idea baseline for the rows dispositioned below (see the 260902 update); future
+scans start after v0.20.0. Watch pin at v0.14.0; VibeDrift now at v0.20.0
+(2026-08-19).
 
 ## Summary
 
@@ -65,6 +67,40 @@ idea baseline. Watch pin at v0.14.0; VibeDrift now at v0.20.0 (2026-08-19).
 - Locale-independent ordering (v0.20.0): minor. `drift.cjs` sorts output with
   `localeCompare`, but we do not diff scores across machines, so no false delta.
   `semantic-dup.cjs` already uses plain string compare.
+
+## 260902 update
+
+Native port advanced from the v0.14.0 idea baseline to v0.20.0 for the rows
+below, via quick task 260902-0o5. Per-candidate ledger:
+
+- Candidate 1 (v0.20.0, exclude tests/seeds/scripts/scratch from convention
+  judgement): PORTED. `bin/lib/conventions.cjs` grew an `isNonAppPath` helper
+  (frozen segment + `.test.`/`.spec.` basename patterns) wired into the
+  `deriveConventions` vote filter and the `checkConformance` per-file skip.
+  Regressions: a snake-named test-file majority no longer flips the file-name
+  casing axis (kebab survives), a non-app file yields zero findings while the
+  same source in-app still flags, plus an accept/reject path table.
+- Candidate 2 (v0.20.0, drop constructor + callback-arg phantoms from the dup
+  index): PORTED, confirmed live first. A `detect()` probe over a two-file
+  corpus (callback wrapper + DI constructor) produced two phantom pairs at
+  similarity 1.0 (`test` and `constructor`). `extractFunctions` in
+  `bin/lib/semantic-dup.cjs` now skips `methodLike` matches named `constructor`
+  or whose argument segment is call-shaped (carries a quote or `function`).
+  Regression: the phantom corpus now yields zero pairs; control: identical real
+  class methods across two files still pair.
+- Candidate 3 (v0.18.0, import-habit drift as a per-language axis): DEFERRED.
+  Scoped from the v0.18.0 release notes: independently-voted, directory-scoped
+  per-language sub-signals (Go grouping/gofmt ordering, Python
+  absolute-vs-relative + wildcard, Rust glob/intra-crate path/use-grouping;
+  JS/TS module system unchanged). Phase-sized (new rule packs + per-dimension
+  vote wiring + language dispatch), not a quick-task add. Captured in
+  `.planning/todos/pending/2026-09-02-import-habit-drift-axis-per-language.md`.
+- Candidate 4 (v0.20.0, keep data-path chain members literal in
+  `normalizeTokens`): NOT TAKEN this pass. Borderline and partly at odds with
+  our deliberate rename-insensitive (Type-2/3) design intent; left on the table
+  for a future precision review, not scheduled.
+
+New idea baseline: v0.20.0 for the rows above. Future scans start after v0.20.0.
 
 ## Watch pin recommendation
 

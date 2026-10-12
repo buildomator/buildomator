@@ -339,5 +339,3 @@ No missing dependencies. `sips` (used only to measure logo dimensions during res
 
 **Research date:** 2026-07-12
 **Valid until:** stable (repo-internal; valid until `bin/build-bm.cjs`, the exclude sets, or the edited files change materially)
-</content>
-</invoke>

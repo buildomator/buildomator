@@ -231,4 +231,4 @@ Next action: `/gsd:verify-work 18` to validate Phase 18, then `/gsd:complete-mil
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start the next milestone with /gsd:new-milestone

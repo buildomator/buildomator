@@ -87,4 +87,3 @@ All phase behaviors have automated verification. (Optional post-release spot che
 - [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** approved 2026-07-06; gap-closure map refreshed for 13-03/13-04 on 2026-07-09
-</content>
