@@ -291,6 +291,23 @@ check('craft-skill assess --validate-external: a clean linter keeps the plain ve
   });
 });
 
+check('craft-skill assess --validate-external with no directory fails loud (and never spawns npx) in both twins', () => {
+  withProject((root) => {
+    const id = firstCatalogId(root);
+    withNpxShim({ status: 0, stderr: '' }, (shimDir, logPath) => {
+      for (const twin of ['cjs', 'sdk']) {
+        const res = runTwinWithPath(twin, root, ['craft-skill', 'assess', id, '--catalog', COMMITTED_CATALOG, '--validate-external'], shimDir);
+        assert.notStrictEqual(res.status, 0, `${twin} should exit non-zero on a bare --validate-external: ${JSON.stringify(res)}`);
+        assert.ok(
+          /--validate-external requires an existing skill directory/.test(res.stdout + res.stderr),
+          `${twin} should report the usage error: ${JSON.stringify({ stdout: res.stdout, stderr: res.stderr })}`,
+        );
+      }
+      assert.ok(!fs.existsSync(logPath), `argv.log should be absent: a bare flag must fail before any npx spawn: ${fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8') : ''}`);
+    });
+  });
+});
+
 check('craft-skill assess/list/match never spawn npx without --validate-external (both twins)', () => {
   withProject((root) => {
     const id = firstCatalogId(root);

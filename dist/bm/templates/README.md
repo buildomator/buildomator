@@ -17,7 +17,7 @@ These files live directly at `.planning/` — not inside phase subdirectories.
 | `STATE.md` | `state.md` | `/bm:new-project`, `/bm:health --repair` | Current session state, active phase, last activity |
 | `REQUIREMENTS.md` | `requirements.md` | `/bm:new-milestone` | Functional requirements with traceability |
 | `MILESTONES.md` | `milestone.md` | `/bm:complete-milestone` | Log of completed milestones with accomplishments |
-| `BACKLOG.md` | *(inline)* | `/gsd-add-backlog` | Pending ideas and deferred work |
+| `BACKLOG.md` | *(inline)* | `/bm:add-backlog` | Pending ideas and deferred work |
 | `LEARNINGS.md` | *(inline)* | `/bm:extract-learnings`, `/bm:execute-phase` | Phase retrospective learnings for future plans |
 | `THREADS.md` | *(inline)* | `/bm:thread` | Persistent discussion threads |
 | `config.json` | `config.json` | `/bm:new-project`, `/bm:health --repair` | Project-specific GSD configuration |

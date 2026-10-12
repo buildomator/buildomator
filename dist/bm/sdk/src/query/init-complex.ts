@@ -512,7 +512,7 @@ export const initManager: QueryHandler = async (_args, projectDir, workstream) =
   try {
     rawContent = await readFile(paths.roadmap, 'utf-8');
   } catch {
-    return { data: { error: 'No ROADMAP.md found. Run /gsd-new-milestone first.' } };
+    return { data: { error: 'No ROADMAP.md found. Run /bm:new-milestone first.' } };
   }
 
   const content = await extractCurrentMilestone(rawContent, projectDir, workstream);
@@ -697,7 +697,7 @@ export const initManager: QueryHandler = async (_args, projectDir, workstream) =
         phase_name: phase.name,
         action: 'execute',
         reason: `${phase.plan_count} plans ready, dependencies met`,
-        command: `/gsd-execute-phase ${phase.number}`,
+        command: `/bm:execute-phase ${phase.number}`,
       };
       const isAllowed = activeExecuting.length === 0 ||
         activeExecuting.every(a => !reaches(phase.number as string, a.number as string) && !reaches(a.number as string, phase.number as string));
@@ -708,7 +708,7 @@ export const initManager: QueryHandler = async (_args, projectDir, workstream) =
         phase_name: phase.name,
         action: 'plan',
         reason: 'Context gathered, ready for planning',
-        command: `/gsd-plan-phase ${phase.number}`,
+        command: `/bm:plan-phase ${phase.number}`,
       };
       const isAllowed = activePlanning.length === 0 ||
         activePlanning.every(a => !reaches(phase.number as string, a.number as string) && !reaches(a.number as string, phase.number as string));
@@ -719,7 +719,7 @@ export const initManager: QueryHandler = async (_args, projectDir, workstream) =
         phase_name: phase.name,
         action: 'discuss',
         reason: 'Unblocked, ready to gather context',
-        command: `/gsd-discuss-phase ${phase.number}`,
+        command: `/bm:discuss-phase ${phase.number}`,
       });
     }
   }
@@ -728,7 +728,7 @@ export const initManager: QueryHandler = async (_args, projectDir, workstream) =
 
   // ── Next-milestone surface (issue #2497) ───────────────────────────────
   // Populate queued_phases + metadata with the milestone immediately after
-  // the active one, so the /gsd-manager dashboard can preview what's coming
+  // the active one, so the /bm:manager dashboard can preview what's coming
   // next without mixing it into the active phases grid. Empty/null when the
   // active milestone is the last one in ROADMAP.
   let queuedPhases: Record<string, unknown>[] = [];
