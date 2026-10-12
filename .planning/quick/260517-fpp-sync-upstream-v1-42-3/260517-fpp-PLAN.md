@@ -613,7 +613,7 @@ EOF
     Interpretation:
       - Each pre-existing exclusion is a legitimate non-skill reference: `bin/gsd-*` binaries, related-project (gsd-2) cross-refs, the gsd-* hook script filenames, gsd-resume-at, gsd-shadowing-sdk-detector (v2.43.1 plugin-owned hook), gsd-review-stderr.log temp paths, /tmp/gsd-* paths, etc.
       - Surviving hits in /tmp/namespace-hits.txt are LIVE /gsd-<skill-name> references that upstream's commands/ historically used but the plugin's workflows/ should normalize to `/gsd:<skill-name>` (per project decision from 260420-cns).
-      - Expected outcome this cycle: VERY LIKELY ZERO hits, because the prior sync (v2.43.0) did the comprehensive normalization across all 90 workflows files, and v1.42.3 is a small 4-file workflow refresh that already uses /gsd: syntax upstream (per the v1.42.3 commit `0d336e81 fix(3541): use /gsd:update colon syntax in comment (retired /gsd-update form)`).
+      - Expected outcome this cycle: VERY LIKELY ZERO hits, because the prior sync (v2.43.0) did the comprehensive normalization across all 90 workflows files, and v1.42.3 is a small 4-file workflow refresh that already uses /gsd: syntax upstream (per the v1.42.3 commit `0d336e81 fix(3541): use /gsd:update colon syntax in comment (retired /gsd:update form)`).
 
     If /tmp/namespace-hits.txt is EMPTY (0 lines): SKIP this task. Record "Task 5 SKIPPED — /tmp/namespace-hits.txt has 0 lines, no /gsd-X references found in workflows/" as a deviation note in the SUMMARY produced later. Do NOT create an empty commit. The /tmp/namespace-hits.txt artifact (size 0) is the positive proof the skip was deliberate, not forgotten.
 

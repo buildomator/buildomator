@@ -72,8 +72,8 @@ I re-ran the raw detection (`grep -rEn '/gsd-[a-z][a-z0-9_-]*' workflows/`) and 
 
 | File:Line | Pattern | Context | Classification |
 | --------- | ------- | ------- | -------------- |
-| workflows/plan-phase.md:103 | `/gsd-research-phase` | "Replaces the **deleted** `/gsd-research-phase` command." | Historical reference to a removed command. MUST PRESERVE (rewriting to `/gsd:research-phase` would invent a nonexistent colon-namespaced command). |
-| workflows/plan-phase.md:427 | `/gsd-research-phase` | "Mirrors the **deleted** `/gsd-research-phase` standalone's existing-artifact menu (#3042 parity)." | Same as above. MUST PRESERVE. |
+| workflows/plan-phase.md:103 | `/gsd:research-phase` | "Replaces the **deleted** `/gsd:research-phase` command." | Historical reference to a removed command. MUST PRESERVE (rewriting to `/gsd:research-phase` would invent a nonexistent colon-namespaced command). |
+| workflows/plan-phase.md:427 | `/gsd:research-phase` | "Mirrors the **deleted** `/gsd:research-phase` standalone's existing-artifact menu (#3042 parity)." | Same as above. MUST PRESERVE. |
 | workflows/execute-phase.md:1742 | `/gsd-transition` | "**IMPORTANT: There is NO `/gsd-transition` command. Never suggest it.**" | Explicit negative reference telling the agent the command does not exist. MUST PRESERVE (rewriting would contradict the warning). |
 
 All 3 are intentional preservation cases. Combined with the executor's 29 (after plan's narrower regex allow-list): 18 Class P (agent .md path refs) + 10 Class T (tempfiles) + 1 Class U (URL fragment in update.md:614 GitHub link) + 0 actual command invocations. **No /gsd-X command-style invocations exist in the synced workflows/ tree that need rewriting to /gsd:X.** Executor's SKIP decision is correct; no commit required.
