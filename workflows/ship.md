@@ -47,18 +47,29 @@ Verify the work is ready to ship:
    ```
    If uncommitted changes exist: ask user to commit or stash first.
 
+2b. **Verification still current?**
+   ```bash
+   REPORT=$(ls ${PHASE_DIR}/*-VERIFICATION.md 2>/dev/null | head -1)
+   VERIFIED_AT=$(git log -1 --format=%H -- "$REPORT")
+   HEAD_NOW=$(git rev-parse HEAD)
+   if [ -n "$VERIFIED_AT" ] && [ "$VERIFIED_AT" != "$HEAD_NOW" ]; then
+     AHEAD=$(git rev-list --count "$VERIFIED_AT"..HEAD 2>/dev/null)
+   fi
+   ```
+   If `VERIFIED_AT` is non-empty and not equal to `HEAD_NOW`: warn that HEAD has moved `$AHEAD` commit(s) since the verification report was recorded, so the passing verification may not reflect the revision about to ship. Point the user at `git log --oneline $VERIFIED_AT..HEAD` to inspect what changed. This is a warning only; shipping may proceed and verification is not re-run.
+
 3. **On correct branch?**
    ```bash
    CURRENT_BRANCH=$(git branch --show-current)
    ```
-   If on `${BASE_BRANCH}`: warn — should be on a feature branch.
+   If on `${BASE_BRANCH}`: warn, should be on a feature branch.
    If branching_strategy is `none`: offer to create a branch now.
 
 4. **Remote configured?**
    ```bash
    git remote -v | head -2
    ```
-   Detect `origin` remote. If no remote: error — can't create PR.
+   Detect `origin` remote. If no remote: error, cannot create PR.
 
 5. **`gh` CLI available?**
    ```bash
@@ -101,7 +112,7 @@ Read ROADMAP.md for phase goal. Read VERIFICATION.md for verification status.
 **Goal:** {goal from ROADMAP.md}
 **Status:** Verified ✓
 
-{One paragraph synthesized from SUMMARY.md files — what was built}
+{One paragraph synthesized from SUMMARY.md files: what was built}
 ```
 
 **3. Changes section:**
@@ -275,7 +286,7 @@ AskUserQuestion:
   question: "PR created. Run a code review before merge?"
   options:
     - label: "Skip review"
-      description: "PR is ready — merge when CI passes"
+      description: "PR is ready, merge when CI passes"
     - label: "Self-review"
       description: "I'll review the diff in the PR myself"
     - label: "Request review"
@@ -296,18 +307,18 @@ Update STATE.md to reflect the shipping action:
 
 ```bash
 bm-sdk query state.update "Last Activity" "$(date +%Y-%m-%d)"
-bm-sdk query state.update "Status" "Phase ${PHASE_NUMBER} shipped — PR #${PR_NUMBER}"
+bm-sdk query state.update "Status" "Phase ${PHASE_NUMBER} shipped, PR #${PR_NUMBER}"
 ```
 
 If `commit_docs` is true:
 ```bash
-bm-sdk query commit "docs(${padded_phase}): ship phase ${PHASE_NUMBER} — PR #${PR_NUMBER}" --files .planning/STATE.md
+bm-sdk query commit "docs(${padded_phase}): ship phase ${PHASE_NUMBER}, PR #${PR_NUMBER}" --files .planning/STATE.md
 ```
 </step>
 
 <step name="report">
 ```
-## ✓ Phase {X}: {Name} — Shipped
+## ✓ Phase {X}: {Name}: Shipped
 
 PR: #{number} ({url})
 Branch: {branch} → ${BASE_BRANCH}
@@ -334,7 +345,7 @@ After shipping:
 </offer_next>
 
 <success_criteria>
-- [ ] Preflight checks passed (verification, clean tree, branch, remote, gh)
+- [ ] Preflight checks passed (verification, verification freshness, clean tree, branch, remote, gh)
 - [ ] Branch pushed to remote
 - [ ] PR created with rich auto-generated body
 - [ ] STATE.md updated with shipping status
