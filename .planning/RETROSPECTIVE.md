@@ -111,6 +111,40 @@ Renamed the project to Buildomator and added a `/bm:` command surface as a secon
 
 ---
 
+## Milestone: v4.9 — Craft Skill Catalog
+
+**Shipped:** 2026-10-13 (archived; the catalog is on master, pending a 4.9.2 release)
+**Phases:** 3 (16-18) | **Plans:** 15 | **Tasks:** 37
+
+### What Was Built
+A just-in-time external craft-skill catalog: metadata and pinned commits only (SEO, DuckDB), with CJS and SDK twin readers over a closed schema and a no-vendoring guard (Phase 16). A two-axis trust gate (a safety axis of publisher allowlist, full-sha pin, https source, and bundled-scripts review-or-ban, plus an SPDX license classifier) in both twins, gating insertion structurally with a one-time human approve, never by the model vouching (Phase 16). Scoped insertion into exactly one agent type via `agent_skills` + `trusted_global_roots` with a `.planning` pin record, ephemeral by default and sticky by opt-in (Phase 16). Propose-on-fit wired into discuss-phase, quick, and autonomous, with document deliverables routed to the built-in doc skills (Phase 17). A loud-fail SKILL.md conformance gate over the plugin's own 86 skills, the Agent Skills spec tracked as a fifth idea-only upstream, and an opt-in pinned `skills-ref validate` for untrusted external candidates (Phase 18).
+
+### What Worked
+- The twin-parity convention held throughout: every capability shipped in both CJS and SDK with a cross-twin parity test, so there was no SDK-to-CJS shell-out and no resolver drift.
+- The trust gate as pure structural checks plus a one-time human approve (never model-vouched) kept the security story honest and testable rather than a judgment call.
+- "Catalog holds metadata and pins only, never bodies" plus a repo-wide no-vendoring guard kept third-party license exposure out of the repo entirely.
+
+### What Was Inefficient
+- The milestone landed in commits across the 4.9.x line without its own release cut, so at close the whole catalog sits on master unreleased; the version bump is an extra deferred step.
+- The `build-bm` "source via `git ls-files`" gotcha bit repeatedly: a new CJS or SDK file had to be git-staged before regenerating `dist/bm` or the drift gate false-failed post-merge.
+- The `milestone.complete` CLI reintroduced a dash-form `/gsd-new-milestone` and em-dashes into STATE.md at close, both hand-corrected during this archival. The state-writer templates still inject them.
+
+### Patterns Established
+- Just-in-time capability injection: reach an external domain skill per task, trust-gated, scoped to one agent, ephemeral by default, never at startup, never vendored.
+- A loud-fail conformance ratchet over the plugin's own skills (count ceiling + description cap), a sibling to the jargon and prose ratchets.
+- A fifth idea-only upstream (the Agent Skills spec) watched but never run, with an opt-in pinned external linter used only where third-party code is being vetted.
+
+### Key Lessons
+- A trust feature's security must be structural and human-approved, never "the model read it and it looks fine". That is the whole point of the gate.
+- Decide the release cut at milestone planning, not at close: a feature that lands across a patch line can finish "done" yet unreleased, which is easy to miss.
+- The state-writer templates still emit dashes and a legacy command form; until both twins' templates are fixed, every milestone close needs a hand-correction pass.
+
+### Cost Observations
+- Model mix: orchestrator on opus, executors and verifiers on sonnet.
+- Notable: the close bundled a namespace sweep, a code-review fix (WR-01), and this archival. A verification-integrity milestone (issue #34 plus SEED-001) surfaced as the strongest next candidate.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -119,6 +153,7 @@ Renamed the project to Buildomator and added a `/bm:` command surface as a secon
 |-----------|----------|--------|------------|
 | v1.0 | ~8 | 3 | First milestone — research-first, coarse phases, plugin packaging |
 | v4.1 | ~several | 4 | Generated sibling package (dist/bm) in lockstep via byte-level drift gate; additive rebrand, breaking retirement deferred to v5.0 |
+| v4.9 | ~several | 3 | Just-in-time, trust-gated external craft-skill catalog scoped to one agent; twin-parity enforced per capability; shipped across the patch line (unreleased at close) |
 
 ### Top Lessons (Verified Across Milestones)
 

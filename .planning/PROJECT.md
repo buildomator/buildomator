@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A performance-optimized plugin packaging of GSD (Get Shit Done) for Claude Code, now branded **Buildomator**. Reduces per-turn token overhead by ~92%, exposes project state via MCP tools, and bundles everything into a single-install plugin with cross-session memory. As of v4.1.0 it ships two command surfaces from one source: `/bm:` (Buildomator, the primary prefix) and `/gsd:` (retained through the 4.x line, retires at v5.0).
+A performance-optimized plugin packaging of GSD (Get Shit Done) for Claude Code, now branded **Buildomator**. Reduces per-turn token overhead by ~92%, exposes project state via MCP tools, and bundles everything into a single-install plugin with cross-session memory. As of v4.1.0 it ships two command surfaces from one source: `/bm:` (Buildomator, the primary prefix) and `/gsd:` (retained through the 4.x line, retires at v5.0). v4.9 adds a just-in-time external craft-skill catalog: domain skills proposed and trust-gated per task, injected into one agent context, never loaded at startup.
 
 ## Core Value
 
@@ -54,9 +54,15 @@ Reduce GSD's per-turn token overhead and agent spawn latency without breaking mu
 - ✓ `/gsd:*` unaffected; both plugins coexist without hook double-fire or state corruption; on-use `/bm:`+v5.0 deprecation nudge (COMPAT-01..04) — v4.1.0 (Phase 14)
 - ✓ Buildomator identity across README/manifests/marketplace, buildomator.com wired, CHANGELOG migration + v5.0 (2026-10-01) retirement story (BRAND-01..03) — v4.1.0 (Phase 15)
 
+- ✓ Just-in-time craft-skill catalog (metadata + pins only; SEO + DuckDB seeds), CJS/SDK twin readers, closed 18-key schema + no-vendoring tests (CAT-01), v4.9 (Phase 16)
+- ✓ Two-axis trust gate: safety (publisher allowlist, full-sha pin, https, bundled-scripts review-or-ban) plus an SPDX license classifier, both twins, parity-tested, one-time human approve, never model-vouched (CAT-03, CAT-04), v4.9 (Phase 16)
+- ✓ Scoped insertion into one agent type via agent_skills + trusted_global_roots with a .planning pin record, ephemeral by default and sticky by opt-in, never at startup (CAT-05), v4.9 (Phase 16)
+- ✓ Propose-on-fit wired into discuss-phase (record), quick (interactive accept/insert/release) and autonomous (allow-gated auto-insert); document deliverables route to Claude Code built-in doc skills (CAT-02, CAT-06), v4.9 (Phase 17)
+- ✓ SKILL.md conformance gate over the plugin's own 86 skills (count ceiling + description ratchet, loud-fail) in pre-commit + CI (CAT-08), v4.9 (Phase 18)
+
 ### Active
 
-No active milestone. v4.1 shipped and archived; next milestone is defined via `/gsd:new-milestone`.
+No active milestone. v4.9 Craft Skill Catalog shipped and archived (Phases 16-18 on master, pending a 4.9.2 release); next milestone is defined via `/bm:new-milestone`.
 
 Deferred (carried to ROADMAP `## Backlog`): LIFE-02, LIFE-03, BEHAVIOR-01, UPST-03/04, COMPAT-06 (SessionStart first-event TOCTOU). Also deferred: `allowed-tools` on verification skills, tool restriction profiles, empirical token measurement. (COMPAT-05 resolved 2026-07-14 via quick 260714-coq.)
 
@@ -71,6 +77,8 @@ Deferred (carried to ROADMAP `## Backlog`): LIFE-02, LIFE-03, BEHAVIOR-01, UPST-
 
 ## Current State
 
+**Shipped (on master, not yet released):** v4.9 Craft Skill Catalog (Phases 16-18). Buildomator can now reach external domain-craft skills just in time: a curated catalog holds metadata and pinned commits only (SEO, DuckDB), a two-axis trust gate (safety plus SPDX license) and a one-time human approve gate insertion, and an accepted skill is scoped into exactly one agent type via `agent_skills` + `trusted_global_roots` (ephemeral by default, sticky opt-in), never loaded at startup and never vendored (Phase 16). Propose-on-fit surfaces a candidate when a phase or quick-task scope matches a trigger, wired into discuss-phase, quick, and autonomous; document deliverables route to the built-in doc skills (Phase 17). The plugin's own 86 skills are held to a SKILL.md conformance gate (count ceiling plus description ratchet) in pre-commit and CI, the Agent Skills spec is tracked as a fifth idea-only upstream, and `skills-ref validate` is an opt-in pinned check for untrusted external candidates (Phase 18). CAT-01 through CAT-08 delivered. The work landed additively after the v4.9.1 tag, so `plugin.json` is still 4.9.1 and a 4.9.2 release carrying the catalog is pending. Full v4.9 details: [milestones/v4.9-ROADMAP.md](milestones/v4.9-ROADMAP.md).
+
 **Shipped:** v4.1 Buildomator Rebrand, released as plugin **v4.1.0** (2026-07-14, GitHub release marked latest). The project is now Buildomator with a `/bm:` command surface added additively: one `bin/build-bm.cjs` step generates the committed `dist/bm` package from the tracked gsd source under a byte-level drift gate (Phase 12), `/bm:` has full command/agent/hook/MCP parity (Phase 13), the two plugins coexist without hook double-fire or state corruption and `/gsd:*` is untouched with an on-use v5.0 nudge (Phase 14), and Buildomator identity plus buildomator.com and the 2026-10-01 `/gsd:` retirement story are wired across README, manifests, marketplace, and CHANGELOG (Phase 15). BUILD/BM/COMPAT/BRAND requirements validated; two minor non-blocking coexistence gaps parked (COMPAT-05, COMPAT-06). Also folded in the PR #23 argument-hint YAML quoting fix (thejesh23). Full v4.1 details: [milestones/v4.1-ROADMAP.md](milestones/v4.1-ROADMAP.md).
 
 **Shipped:** v1.3 Consistency & Code-Integrity Safeguards, released as plugin **v4.0.0** (2026-06-27). Phase 10 delivered the convention conformance gate (`bin/lib/conventions.cjs` + `verify conventions` + pattern-mapper/code-review wiring, CONV-01..04). Phase 11 delivered native drift detection (`semantic-dup` + `phantom-scaffolding` + `drift-allowlist` composed via `verify drift`), `/gsd:scan --drift`, the opt-in warn-first audit-milestone integrity gate, and VibeDrift adopted as a second upstream (heuristics ported natively, never invoked at runtime). DRIFT-01..05 validated; both phases nyquist-compliant. v4.0.0 also moved the plugin to its own version line (decoupled from the gsd-core `+2` scheme). Full v1.3 details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md).
@@ -81,7 +89,9 @@ Deferred (carried to ROADMAP `## Backlog`): LIFE-02, LIFE-03, BEHAVIOR-01, UPST-
 
 ## Next Milestone
 
-None defined yet. Start with `/gsd:new-milestone` (questioning → research → requirements → roadmap).
+None defined yet. Start with `/bm:new-milestone` (questioning → research → requirements → roadmap).
+
+**Candidate theme for the next milestone: verification integrity.** GitHub issue #34 reports that a passing VERIFICATION.md is not bound to the revision it evaluated, so `/bm:ship` can ship a stale pass on a clean tree. It pairs with SEED-001 (evidence-based verification) and the open Phase 13/14 verification gaps. A scoped source-tree fingerprint at verify time with explicit PASS_FRESH / STALE / PASS_UNBOUND states, checked at ship time, is the shape of the fix.
 
 **Standing context for whatever comes next:**
 - Repo + cache id stay `gsd-plugin` → no `CLAUDE_PLUGIN_ROOT`/hook-path breakage. Full repo/cache rename still deferred (high-risk lever).
@@ -101,8 +111,9 @@ Shipped v1.0 with 3 phases, 10 plans, 27 tasks over 7 days (2026-04-01 → 2026-
 Shipped v1.1 with 2 phases, 5 plans, plus 4 structurally related quick tasks over 9 days (2026-04-11 → 2026-04-20).
 Shipped v1.2 with 3 phases, 3 plans, 14 tasks, plus 3 structurally related quick tasks over 5 days (2026-04-20 → 2026-04-24).
 Shipped v4.1 with 4 phases, 16 plans, 26 tasks (2026-07-04 → 2026-07-14); released as plugin v4.1.0. Added the generated `dist/bm` Buildomator package alongside the gsd source.
+Shipped v4.9 with 3 phases, 15 plans, 37 tasks (2026-10-05 to 2026-10-12): the just-in-time craft-skill catalog, the two-axis trust gate, propose-on-fit, and the SKILL.md conformance gate. Landed on master; not yet in a published release (plugin.json still 4.9.1).
 Tech stack: Node.js CJS (bin/lib), MCP server (stdio JSON-RPC), Claude Code plugin system.
-~14k LOC in bin/*.cjs, ~573 LOC MCP server, 81 self-contained skill files (~21k LOC).
+~14k LOC in bin/*.cjs, ~573 LOC MCP server, 86 self-contained skill files (~21k LOC).
 Published as [buildomator/buildomator](https://github.com/buildomator/buildomator) on GitHub.
 Based on the [GSD](https://github.com/open-gsd/gsd-core) base tree by TÂCHES (Lex Christopherson), now community-maintained at open-gsd; selectively cherry-picked from the gsd-core 1.x line. As of v4.0.0 the plugin tracks its own version line.
 
@@ -131,6 +142,7 @@ Based on the [GSD](https://github.com/open-gsd/gsd-core) base tree by TÂCHES (L
 | Plugin on its own version line (v4.0.0) | A second upstream plus features with no upstream equivalent make a gsd-core-coupled major misleading | ✓ Good — major now signals plugin milestones; gsd-core line noted per release for provenance |
 | Single version line: milestones track the plugin v4.x version (2026-06-29) | The parallel "internal v1.x" milestone line vs the real 4.x plugin version forced tracking two numbers; nothing in GSD code required it (milestone version is free-form `vX.Y`) | ✓ Good — milestone number = plugin minor (this one = v4.1 → 4.1.0); v1.0–v1.3 archives unchanged |
 | Additive rebrand via a second generated plugin (v4.1) | Claude Code gives one plugin exactly one command prefix with no aliasing, so keeping `/gsd:*` alive while adding `/bm:` required shipping `bm` as a second plugin generated from the same source; retiring `/gsd:` is deferred to the v5.0 breaking major | ✓ Good — zero-disruption for existing users; `dist/bm` stays in lockstep via `bin/build-bm.cjs` + byte-level drift gate |
+| Just-in-time external craft-skill catalog, metadata and pins only, trust-gated per task (v4.9) | Reach real domain expertise (SEO, DuckDB) with no startup token tax, no vendoring of third-party bodies, and no model self-vouching; a structural safety-plus-license gate and a one-time human approve decide insertion | ✓ Good: CAT-01 through CAT-06; injected into one agent context, ephemeral by default, never at startup |
 
 ## Evolution
 
@@ -162,4 +174,4 @@ This document evolves at phase transitions and milestone boundaries.
 9. **Run `UPSTREAM_VERSION=v1.x.y node bin/maintenance/check-upstream-schema.cjs`** (use the just-synced version) — must exit 0 before declaring the sync complete. If upstream added fields, decide whether to absorb them into `schema/handoff-v1.json` as optional or bump to a `handoff-v2.json` alongside
 
 ---
-*Last updated: 2026-07-14 after the v4.1 Buildomator Rebrand milestone shipped as plugin v4.1.0 (Phases 12-15: two-plugin build foundation, the `/bm:` plugin, backward-compat coexistence, and Buildomator identity; BUILD/BM/COMPAT/BRAND validated, COMPAT-05/06 parked). Prior: 2026-07-04 — Phase 12 complete. Prior: 2026-06-29 — started milestone v4.1; adopted a single version line so milestones track the plugin v4.x version. Prior: 2026-06-27 after the v1.3 milestone shipped as plugin v4.0.0 (Phase 10 convention conformance gate + Phase 11 native drift detection, VibeDrift second upstream; plugin moved to its own version line). Prior: 2026-05-11 synced upstream GSD 1.41.2 (plugin v2.42.4). Bundled SDK v1.50.0-canary.0.*
+*Last updated: 2026-10-13 after the v4.9 Craft Skill Catalog milestone was archived (Phases 16-18: the just-in-time craft-skill catalog, two-axis trust gate, propose-on-fit, and the SKILL.md conformance gate; CAT-01 through CAT-08 delivered; the catalog is on master and pending a 4.9.2 release). Prior: 2026-07-14 after the v4.1 Buildomator Rebrand milestone shipped as plugin v4.1.0 (Phases 12-15: two-plugin build foundation, the `/bm:` plugin, backward-compat coexistence, and Buildomator identity; BUILD/BM/COMPAT/BRAND validated, COMPAT-05/06 parked). Prior: 2026-07-04 — Phase 12 complete. Prior: 2026-06-29 — started milestone v4.1; adopted a single version line so milestones track the plugin v4.x version. Prior: 2026-06-27 after the v1.3 milestone shipped as plugin v4.0.0 (Phase 10 convention conformance gate + Phase 11 native drift detection, VibeDrift second upstream; plugin moved to its own version line). Prior: 2026-05-11 synced upstream GSD 1.41.2 (plugin v2.42.4). Bundled SDK v1.50.0-canary.0.*

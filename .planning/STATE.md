@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v4.9
 milestone_name: Craft Skill Catalog
-status: milestone_complete
-stopped_at: Milestone complete (Phase 18 was final phase)
-last_updated: 2026-10-12T21:45:00.000Z
-last_activity: 2026-10-12 -- Completed quick task 261012-wpa (namespace sweep + stash disposition + WR-01 fail-closed fix)
+status: Awaiting next milestone
+stopped_at: Completed 18-05-PLAN.md
+last_updated: "2026-10-13T14:17:21.866Z"
+last_activity: 2026-10-13 -- milestone v4.9 completed and archived
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 15
-  completed_plans: 31
+  completed_plans: 15
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** Reduce GSD's per-turn token overhead and agent spawn latency without breaking multi-CLI compatibility
-**Current focus:** Milestone complete
+**Current focus:** Awaiting next milestone
 
 ## Current Position
 
-Phase: 18
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-10-12 -- Completed quick task 261012-wpa (namespace sweep + stash disposition + WR-01 fail-closed fix)
+Phase: Milestone v4.9 complete
+Plan: none
+Status: Awaiting next milestone
+Last activity: 2026-10-13 -- milestone v4.9 completed and archived
 
 ## Performance Metrics
 
@@ -119,6 +119,17 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 | quick_tasks | 35 historical quick tasks without SUMMARY (earlier milestones) | deferred (carry-over) |
 | todos | 5 pending todos | deferred to next milestone |
 | seeds | 001-evidence-based-verification | deferred (forward-looking seed) |
+
+Items acknowledged and deferred at milestone v4.9 close on 2026-10-13 (12 open artifacts from `audit-open`, all carry-over, none introduced by v4.9):
+
+| Category | Item | Status |
+|----------|------|--------|
+| verification | Phase 13 (human_needed) and Phase 14 (gaps_found) VERIFICATION.md | carry-over from v4.1; candidates for a verification-integrity milestone |
+| quick_tasks | 260411-12i, 260529-geq, 260609-kb0, 260919-fqh (no SUMMARY.md on disk) | bookkeeping only; 260411-12i and 260919-fqh are recorded complete in Quick Tasks Completed below |
+| todos | 5 of 10 pending todos (June 2026) | deferred to next milestone |
+| seeds | SEED-001 evidence-based verification | forward-looking; its trigger fires on a verification/reliability milestone |
+
+GitHub issue #34 (ship preflight does not bind a verification to the evaluated revision) pairs with SEED-001 and the Phase 13/14 verification gaps as the anchor for a possible next "verification integrity" milestone.
 
 ### Quick Tasks Completed
 
@@ -228,8 +239,8 @@ Items acknowledged and deferred at milestone v4.1 close on 2026-07-14:
 
 Last session: 2026-10-12T18:05:50.506Z
 Stopped at: Completed 18-05-PLAN.md
-Next action: `/gsd:verify-work 18` to validate Phase 18, then `/gsd:complete-milestone` for v4.9 (after the separate namespace-rewrite working-tree changes are resolved so the drift gate passes on a clean tree).
+Next action: milestone v4.9 is complete and archived. Start the next milestone with `/bm:new-milestone`.
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd:new-milestone
+- Start the next milestone with `/bm:new-milestone`

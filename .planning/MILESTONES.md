@@ -1,5 +1,31 @@
 # Milestones
 
+## v4.9 Craft Skill Catalog (Shipped: 2026-10-13)
+
+**Phases completed:** 3 phases, 15 plans, 37 tasks
+
+**Key accomplishments:**
+
+- Curated craft-skill catalog JSON (SEO + DuckDB, metadata and pins only) with CJS and SDK twin readers that validate a closed 18-key schema, reject floating refs and smuggled bodies, and agree on every fixture.
+- Two-axis trust gate built as pure structural checks over catalog metadata: a license classifier (single and compound SPDX against the policy tables) and a safety axis (publisher allowlist, full-sha pin, https source, bundled-scripts review-or-ban, trust tier, tooling licenses), shipped in both the CJS and SDK twins and proven identical by a cross-twin parity test.
+- A `gsd-tools craft-skill` command family (list, assess, insert, release) that assesses a catalog entry through the trust gate, requires a recorded human approval, verifies the local checkout against the pin, then writes one `agent_skills.<agent>` entry through the existing locked config path plus a reproducibility record under `.planning/craft-skills/pins.json`: ephemeral by default, sticky by opt-in, with the reader left byte-for-byte untouched and scoping proven by running it.
+- The phase-close plan: rebuilt the committed `sdk/dist` and regenerated `dist/bm` so `node bin/build-bm.cjs --check` reports PASS on the committed tree, proved both twins' CLIs return the same two seed ids and identical assessment prompts, added a repo-wide no-vendoring guard, wired the four new CJS tests into CI, and documented the catalog, the trust gate and the `craft-skill` command family in the README feature table and the SDK handler notes, with no version bump and no CHANGELOG entry.
+- Deterministic `craft-skill match "<scope>"` trigger pre-filter shipped byte-identically in the CJS and SDK twins, each candidate carrying the publisher label, SPDX license, obligation, trust tier, gate verdict and ready-to-render prompt lines so a surface needs no second assess call.
+- One lazy-loaded reference specifies the full propose-on-fit procedure (pre-filter, relevance, interactive accept, autonomous auto-insert at verdict === 'allow', release, checkout contract, doc routing) for discuss-phase, quick and autonomous, plus a passive executor note routing document deliverables to Claude Code's built-in doc skills.
+- Threaded craft-skill propose-on-fit into discuss-phase, quick, and autonomous: each calls craft-skill.match at the per-task scope point, lazy-loads the shared reference only when candidates exist, and routes accept/insert/release per surface (record-only, interactive-insert, allow-gated auto-insert).
+- match pre-filter unit cases plus a full SEO propose-on-fit chain (match, accept, ephemeral insert, executor-scoped read, id-scoped release) proven through the spawned CJS CLI
+- Static wiring guard (16 checks) that ratchets the propose-on-fit surfaces, a CI step running it, a README feature row, and regenerated sdk/dist + dist/bm with `bm drift check: PASS`.
+- Zero-dep CJS loud-fail gate over the plugin's 86 own skills: a fixed count ceiling of 90 with a warn band from 88, a 380-char description ratchet, and a narrow name/description/allowed-tools hard-fail subset, test-driven by a 24-case sandbox discrimination test.
+- The SKILL.md conformance gate now runs as its own CI job, blocks regressing commits locally with no auto-regen, and sits in the check-drift.cjs umbrella; README documents the gate, the fifth idea-only upstream, the opt-in pinned external validate and the opt-in skills.sh consumption path.
+- Opt-in, version-pinned `npx skills-ref@0.1.5 validate` added to the trust gate's assess path in both twins, failing closed to a block, with the pure gate kept pure and twin parity proven by a shim that records the exact argv
+- dist/bm regenerated to mirror every phase-18 change, the full CAT-07/CAT-08 verification set run green, and the [SUS] skills-ref@0.1.5 provenance accepted by a human for the opt-in, pinned, fail-closed external-validate path.
+
+**Release status:** NOT yet in a published plugin release. The catalog phases (16-18) landed additively on master after the v4.9.1 tag (2026-09-24, Opus 5.5 tier); `plugin.json` is still 4.9.1. A 4.9.2 release carrying the catalog is pending a separate decision (version bump + marketplace.json + tag + GitHub release).
+
+**Known deferred items at close:** 12 (see STATE.md Deferred Items). All carry-over, none introduced by v4.9: Phase 13/14 verification gaps (from v4.1), 4 quick tasks without a SUMMARY.md on disk (2 recorded complete), 5 June todos, and SEED-001. GitHub issue #34 (ship verification not revision-bound) pairs with SEED-001 as a next-milestone candidate.
+
+---
+
 ## v4.1 Buildomator Rebrand (Shipped: 2026-07-13)
 
 **Phases completed:** 4 phases, 16 plans, 26 tasks

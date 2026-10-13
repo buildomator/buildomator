@@ -7,7 +7,7 @@
 - [x] **v1.2 Upstream Resilience** — Phases 7-9 (shipped 2026-04-24 — 3 phases, 3 plans, 14 tasks, ~26min executor time)
 - [x] **v1.3 Consistency & Code-Integrity Safeguards** — Phases 10-11 (shipped 2026-06-27, released as plugin v4.0.0)
 - [x] **v4.1 Buildomator Rebrand** — Phases 12-15 (shipped 2026-07-14, released as plugin v4.1.0)
-- [ ] **v4.9 Craft Skill Catalog** — Phases 16-18 (active; ships across the 4.9.x line)
+- [x] **v4.9 Craft Skill Catalog** (Phases 16-18, shipped 2026-10-13; catalog on master, not yet in a published release, 4.9.2 pending)
 
 ## Phases
 
@@ -145,134 +145,21 @@ Full details: [milestones/v4.1-ROADMAP.md](milestones/v4.1-ROADMAP.md)
 
 </details>
 
-## v4.9 Craft Skill Catalog (Phases 16-18) — ACTIVE
+<details>
+<summary>v4.9 Craft Skill Catalog (Phases 16-18): SHIPPED 2026-10-13 (catalog landed on master, pending a 4.9.2 release)</summary>
 
-Let Buildomator reach external domain-craft skills just in time: proposed and assessed
-only when a task enters their domain, injected into the one agent context that needs
-them, with no startup token tax, no redistribution, and a trust gate on both safety and
-license. Seeded 2026-10-05 from the committed exploration (design note + craft-skills
-survey + license findings). Requirements: CAT-01..08 (see REQUIREMENTS.md). Ships across
-the 4.9.x line; 5.0 stays reserved.
+Let Buildomator reach external domain-craft skills just in time: proposed and assessed only
+when a task enters their domain, injected into the one agent context that needs them, with no
+startup token tax, no redistribution, and a trust gate on both safety and license. Requirements
+CAT-01 through CAT-08 all delivered.
 
-- [x] Phase 16: Catalog and Trust Gate Foundation (completed 2026-10-05)
-- [x] Phase 17: v1 Capability Wiring and Propose-on-Fit (completed 2026-10-06)
-- [x] Phase 18: Agent Skills Spec Upstream and SKILL.md Conformance Gate (completed 2026-10-12)
+- [x] Phase 16: Catalog and Trust Gate Foundation (5/5 plans, completed 2026-10-05)
+- [x] Phase 17: v1 Capability Wiring and Propose-on-Fit (5/5 plans, completed 2026-10-06)
+- [x] Phase 18: Agent Skills Spec Upstream and SKILL.md Conformance Gate (5/5 plans, completed 2026-10-12)
 
-### Phase 16: Catalog and Trust Gate Foundation
+Full details: [milestones/v4.9-ROADMAP.md](milestones/v4.9-ROADMAP.md)
 
-**Goal:** Build the catalog format and the two-axis trust gate (safety + license) with
-scoped insertion, so an external craft skill can be proposed, gated, and injected into
-exactly one agent context (ephemeral by default), reusing `agent_skills` +
-`trusted_global_roots`, with zero startup cost and no redistribution.
-
-**Requirements:** CAT-01, CAT-03, CAT-04, CAT-05
-
-**Plans:** 5/5 plans complete
-
-Plans:
-
-- [x] 16-01-PLAN.md: catalog JSON + CJS/SDK twin readers + schema/no-vendoring tests (CAT-01)
-- [x] 16-02-PLAN.md: two-axis trust gate (safety + license) in both twins + rejection/flag matrix and parity tests (CAT-03, CAT-04)
-- [x] 16-03-PLAN.md: CJS scoped insertion (gsd-tools craft-skill insert/release, pin record, ephemeral default, sticky opt-in) + end-to-end scoping test (CAT-05)
-- [x] 16-04-PLAN.md: SDK twin of scoped insertion (bm-sdk query craft-skill.*) + vitest scoping/record-parity spec (CAT-05)
-- [x] 16-05-PLAN.md: rebuild sdk/dist, regenerate dist/bm, --check PASS, CI wiring, no-vendoring guard, README/handler docs, phase commit
-
-**Success criteria:**
-
-1. A catalog schema exists (domain -> entry: source, pinned commit, SPDX license, trust
-   tier, scripts flag) holding metadata + pins only (no skill bodies), with the SEO and
-   DuckDB entries present and validated by a test.
-
-2. The trust gate rejects no-license/unknown, proprietary, publisher-not-on-allowlist,
-   and unreviewed bundled scripts; and flags copyleft/source-available. Proven by tests.
-
-3. An accepted skill is injected into only its target agent type (ephemeral removed after
-   the task; sticky persists), via `agent_skills` + `trusted_global_roots`, recorded in
-   `.planning`. A resolver/agent-skills test shows it appears for that agent type only,
-   not for others and not at startup.
-
-4. No third-party skill content is vendored into the repo (reference-only); a test or the
-   drift gate confirms the catalog holds metadata + pins, not bodies.
-
-5. CJS + SDK twins updated where the `agent_skills` path is twin-covered; `dist/bm`
-   regenerated; `node bin/build-bm.cjs --check` PASS.
-
-### Phase 17: v1 Capability Wiring and Propose-on-Fit
-
-**Goal:** Wire the v1 craft capabilities and the fit-based proposal so a task entering a
-domain surfaces the right candidate.
-
-**Depends on:** Phase 16
-
-**Requirements:** CAT-02, CAT-06
-
-**Success criteria:**
-
-1. SEO (coreyhaines31/marketingskills, MIT) and DuckDB (duckdb/duckdb-skills, MIT) are
-   cataloged and insertable through the Phase 16 gate.
-
-2. A document-deliverable in scope routes to Claude Code's built-in first-party doc
-   skills (not cataloged), with no license exposure.
-
-3. Propose-on-fit surfaces a candidate when a phase/quick-task scope matches a trigger,
-   and injects nothing until accepted. Shown end-to-end for at least one domain.
-
-**Plans:** 5/5 plans complete
-
-Plans:
-**Wave 1**
-
-- [x] 17-01-PLAN.md: craft-skill match subcommand in both twins (CJS + SDK) + registry/docs + parity and vitest cases
-- [x] 17-02-PLAN.md: shared references/craft-skill-propose-on-fit.md + executor doc-routing note + REQUIREMENTS CAT-02 autonomous addendum
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 17-03-PLAN.md: wire propose-on-fit into discuss-phase (record), quick (accept/insert/release) and autonomous (allow-gated auto-insert/release)
-- [x] 17-04-PLAN.md: match unit cases + SEO end-to-end proof (match, accept, insert, executor sees it, release) in the CJS insertion spec
-
-**Wave 3** *(blocked on Wave 2 completion)*
-
-- [x] 17-05-PLAN.md: propose-on-fit wiring guard + CI step + README row + rebuild sdk/dist, regenerate dist/bm, build-bm --check PASS
-
-### Phase 18: Agent Skills Spec Upstream and SKILL.md Conformance Gate
-
-**Goal:** Track the Agent Skills spec as the 5th idea-only upstream and harden our own 86
-skills with a conformance + ceiling ratchet that also vets catalog candidates.
-
-**Depends on:** Phase 16
-
-**Requirements:** CAT-07, CAT-08
-
-**Plans:** 5/5 plans complete
-
-Plans:
-
-**Wave 1**
-
-- [x] 18-01-PLAN.md: SKILL.md conformance gate (CJS, zero-dep) + sandbox discrimination test + skill_conformance baseline (CAT-08)
-- [x] 18-02-PLAN.md: Agent Skills spec upstream watch script + offline wedge-guard harness + PROJECT.md fifth-upstream register (CAT-07)
-- [x] 18-04-PLAN.md: opt-in pinned skills-ref@0.1.5 --validate-external on craft-skill assess in both twins + parity case (CAT-08, CAT-03 seam)
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 18-03-PLAN.md: CI job + pre-commit no-auto-regen block + check-drift.cjs entry + README docs incl. opt-in skills.sh path (CAT-08, CAT-07)
-
-**Wave 3** *(blocked on Wave 2 completion)*
-
-- [x] 18-05-PLAN.md: rebuild sdk/dist, regenerate dist/bm, full verification set, human-verify of skills-ref provenance + first opt-in run
-
-**Success criteria:**
-
-1. The Agent Skills spec + skills.sh are on the upstream watch, VibeDrift-style: registered
-   as the fifth idea-only upstream in PROJECT.md (the live register; there is no
-   `upstream-deferred.md`) and watched by `bin/check-agentskills-release.sh`.
-
-2. A SKILL.md conformance gate validates the 86 skills' frontmatter against the spec and
-   enforces a description-length cap + total-count ceiling, wired into pre-commit +
-   check-drift.yml as a loud-fail ratchet.
-
-3. `skills-ref validate` (or an equivalent) is adopted to vet a catalog candidate as part
-   of the Phase 16 trust gate.
+</details>
 
 ## Backlog
 
@@ -295,4 +182,4 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 | v1.2 Upstream Resilience | 3 | 2026-04-24 |
 | v1.3 Consistency & Code-Integrity Safeguards | 2 | 2026-06-27 |
 | v4.1 Buildomator Rebrand | 4 | 2026-07-14 |
-| v4.9 Craft Skill Catalog | 3 | in progress |
+| v4.9 Craft Skill Catalog | 3 | 2026-10-13 (unreleased) |
