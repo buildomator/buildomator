@@ -20,7 +20,7 @@
 - Opt-in, version-pinned `npx skills-ref@0.1.5 validate` added to the trust gate's assess path in both twins, failing closed to a block, with the pure gate kept pure and twin parity proven by a shim that records the exact argv
 - dist/bm regenerated to mirror every phase-18 change, the full CAT-07/CAT-08 verification set run green, and the [SUS] skills-ref@0.1.5 provenance accepted by a human for the opt-in, pinned, fail-closed external-validate path.
 
-**Release status:** NOT yet in a published plugin release. The catalog phases (16-18) landed additively on master after the v4.9.1 tag (2026-09-24, Opus 5.5 tier); `plugin.json` is still 4.9.1. A 4.9.2 release carrying the catalog is pending a separate decision (version bump + marketplace.json + tag + GitHub release).
+**Release status:** Released as plugin v4.9.2 on 2026-10-14 (tag v4.9.2, GitHub release published). The catalog phases (16-18) landed additively on master after the v4.9.1 tag (2026-09-24, Opus 5.5 tier); 4.9.2 bumped `plugin.json` and both `marketplace.json` entries, carrying the catalog plus the ship verification-freshness warning and two post-catalog fixes (WR-01 fail-closed, the `/gsd:` namespace settle).
 
 **Known deferred items at close:** 12 (see STATE.md Deferred Items). All carry-over, none introduced by v4.9: Phase 13/14 verification gaps (from v4.1), 4 quick tasks without a SUMMARY.md on disk (2 recorded complete), 5 June todos, and SEED-001. GitHub issue #34 (ship verification not revision-bound) pairs with SEED-001 as a next-milestone candidate.
 

@@ -7,7 +7,7 @@
 - [x] **v1.2 Upstream Resilience** — Phases 7-9 (shipped 2026-04-24 — 3 phases, 3 plans, 14 tasks, ~26min executor time)
 - [x] **v1.3 Consistency & Code-Integrity Safeguards** — Phases 10-11 (shipped 2026-06-27, released as plugin v4.0.0)
 - [x] **v4.1 Buildomator Rebrand** — Phases 12-15 (shipped 2026-07-14, released as plugin v4.1.0)
-- [x] **v4.9 Craft Skill Catalog** (Phases 16-18, shipped 2026-10-13; catalog on master, not yet in a published release, 4.9.2 pending)
+- [x] **v4.9 Craft Skill Catalog** (Phases 16-18, shipped 2026-10-13; released as plugin v4.9.2 on 2026-10-14)
 
 ## Phases
 
@@ -146,7 +146,7 @@ Full details: [milestones/v4.1-ROADMAP.md](milestones/v4.1-ROADMAP.md)
 </details>
 
 <details>
-<summary>v4.9 Craft Skill Catalog (Phases 16-18): SHIPPED 2026-10-13 (catalog landed on master, pending a 4.9.2 release)</summary>
+<summary>v4.9 Craft Skill Catalog (Phases 16-18): SHIPPED 2026-10-13 (released as plugin v4.9.2 on 2026-10-14)</summary>
 
 Let Buildomator reach external domain-craft skills just in time: proposed and assessed only
 when a task enters their domain, injected into the one agent context that needs them, with no
@@ -182,4 +182,4 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 | v1.2 Upstream Resilience | 3 | 2026-04-24 |
 | v1.3 Consistency & Code-Integrity Safeguards | 2 | 2026-06-27 |
 | v4.1 Buildomator Rebrand | 4 | 2026-07-14 |
-| v4.9 Craft Skill Catalog | 3 | 2026-10-13 (unreleased) |
+| v4.9 Craft Skill Catalog | 3 | 2026-10-13 (released v4.9.2 2026-10-14) |

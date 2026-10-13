@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 
 Phase: Milestone v4.9 complete
 Plan: none
-Status: Awaiting next milestone
-Last activity: 2026-10-14 -- quick 261013-xb8: ship preflight verification-freshness warning + ship.md de-dash
+Status: Awaiting next milestone (v4.9 released as plugin v4.9.2 on 2026-10-14)
+Last activity: 2026-10-14 -- released plugin v4.9.2 (Craft Skill Catalog): version bump, CHANGELOG, README, tag v4.9.2, GitHub release
 
 ## Performance Metrics
 
