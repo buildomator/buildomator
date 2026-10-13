@@ -8,6 +8,21 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.9.2] - 2026-10-14  (Craft Skill Catalog)
+
+Ships the v4.9 Craft Skill Catalog (phases 16 through 18): a way to reach external domain-craft skills just in time, trust-gated on both safety and license, scoped to the one agent that needs them, with no startup token cost and nothing copied into the plugin. Two post-catalog quick tasks ride along. The catalog is native work; the Agent Skills spec and VibeDrift are watched as idea-only upstreams and never run.
+
+### Added
+- **Just-in-time external craft-skill catalog.** A curated catalog (SEO and DuckDB to start) that holds metadata and pinned commits only, never skill bodies, read by matching CJS and SDK twins over a closed schema with a repo-wide no-vendoring guard. `gsd-tools craft-skill` and `bm-sdk query craft-skill.*` list, assess, and insert a skill into a single agent type's `agent_skills` for the length of one task. Ephemeral by default (`craft-skill release`), sticky with `--sticky`, and every insert is recorded in `.planning/craft-skills/pins.json`.
+- **Two-axis trust gate on every insert.** A safety axis (publisher allowlist, full-SHA commit pin, https source, bundled scripts either reviewed or refused) and a license axis (an SPDX classifier: permissive allowed; copyleft and source-available flagged; unlicensed, non-commercial, and proprietary blocked). The gate is structural and takes a one-time human approval; the model never vouches for a skill on its own.
+- **Propose-on-fit wiring.** When a quick task, a discussed phase, or an autonomous phase enters a catalog skill's domain, `craft-skill match` shortlists the candidate deterministically and the model only judges relevance. Interactive runs show one accept prompt carrying the publisher, the license obligation, and the trust tier before an ephemeral insert; autonomous runs auto-insert only when the gate returns allow and log the pin. Document deliverables (docx, pdf, pptx) skip the catalog and go to Claude Code's built-in document skills.
+- **SKILL.md conformance gate and Agent Skills spec watch.** The plugin's own skills are checked against a native subset of the Agent Skills spec (name and description required, allowed-tools well-formed, optional fields reported as advisories), with a fixed skill-count ceiling and a description-length ratchet. It runs in CI and the pre-commit hook and fails loudly instead of regenerating its baseline. The spec and its reference linter join as a fifth idea-only upstream, watched by cron; `craft-skill assess <id> --validate-external <dir>` can optionally run the pinned upstream linter against an external candidate directory and blocks the verdict on any error.
+- **Ship preflight warns when a verification predates the revision being shipped.** `/bm:ship` now compares the commit that last wrote the phase VERIFICATION.md against HEAD. If HEAD has moved since, it warns with the commit count and a `git log --oneline` hint so a stale pass does not ship unnoticed. Read-only and advisory: it never blocks and never re-runs verification.
+
+### Fixed
+- **SDK craft-skill assess fails closed on a bare `--validate-external`.** It now matches the CJS twin and refuses rather than silently returning the base verdict when no external directory is given; a twin-parity test guards it.
+- **Command namespace settled on the `/gsd:` colon form across plugin content.** The remaining `/gsd-<skill>` dash forms in source were rewritten to `/gsd:<skill>`, and the generated `/bm:` surface regenerated from it.
+
 ## [4.9.1] - 2026-09-24  (Claude Opus 5.5)
 
 Adopts Claude Opus 5.5 as the top general model tier. No config migration required.
