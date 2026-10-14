@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 Phase: Milestone v4.9 complete
 Plan: none
 Status: Awaiting next milestone (v4.9 released as plugin v4.9.2 on 2026-10-14)
-Last activity: 2026-10-14 -- quick 261014-1qc: wired propose-on-fit into ui-phase/secure-phase/code-review (agent-filtered, dormant until specialist-targeted entries exist)
+Last activity: 2026-10-14 -- added 3 craft-skill catalog entries (postgres-pro, accessibility-a11y, data-visualization; all MIT, tier A, bm-executor), human-approved and verified live; wired propose-on-fit into ui-phase/secure-phase/code-review (agent-filtered, dormant until specialist-targeted entries exist). Post-4.9.2, unreleased on master.
 
 ## Performance Metrics
 
