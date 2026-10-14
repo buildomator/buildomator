@@ -1,7 +1,13 @@
 {
   "version": 1,
   "licensePolicy": {
-    "allow": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"],
+    "allow": [
+      "MIT",
+      "Apache-2.0",
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "ISC"
+    ],
     "flagCopyleft": [
       "GPL-2.0-only",
       "GPL-2.0-or-later",
@@ -75,13 +81,39 @@
       "kind": "vendor-official",
       "url": "https://github.com/duckdb",
       "label": "published by the DuckDB Foundation"
+    },
+    "jeffallan": {
+      "name": "Jeffallan",
+      "kind": "individual",
+      "url": "https://github.com/Jeffallan",
+      "label": "published by Jeffallan (claude-skills)"
+    },
+    "travisjneuman": {
+      "name": "Travis J. Neuman",
+      "kind": "individual",
+      "url": "https://github.com/travisjneuman",
+      "label": "published by Travis J. Neuman"
+    },
+    "owl-listener": {
+      "name": "MC Dean",
+      "kind": "individual",
+      "url": "https://github.com/Owl-Listener",
+      "label": "published by MC Dean (designer-skills)"
     }
   },
   "skills": {
     "seo-audit": {
       "id": "seo-audit",
       "domain": "seo",
-      "triggers": ["seo", "search ranking", "meta tags", "core web vitals", "indexing", "sitemap", "technical seo"],
+      "triggers": [
+        "seo",
+        "search ranking",
+        "meta tags",
+        "core web vitals",
+        "indexing",
+        "sitemap",
+        "technical seo"
+      ],
       "publisher": "coreyhaines31",
       "source": "https://github.com/coreyhaines31/marketingskills",
       "skill_path": "skills/seo-audit",
@@ -94,14 +126,23 @@
       "bundles_scripts": false,
       "scripts_review": null,
       "tooling": [],
-      "target_agents": ["bm-executor"],
+      "target_agents": [
+        "bm-executor"
+      ],
       "summary": "SEO audit skill from the marketingskills repo: diagnoses technical and on-page SEO issues from instructions and reference notes; no bundled code.",
       "verified_at": "2026-10-05"
     },
     "duckdb-query": {
       "id": "duckdb-query",
       "domain": "data",
-      "triggers": ["duckdb", "sql over files", "parquet", "csv analysis", "query data files", "ad-hoc sql"],
+      "triggers": [
+        "duckdb",
+        "sql over files",
+        "parquet",
+        "csv analysis",
+        "query data files",
+        "ad-hoc sql"
+      ],
       "publisher": "duckdb",
       "source": "https://github.com/duckdb/duckdb-skills",
       "skill_path": "skills/query",
@@ -120,9 +161,103 @@
           "note": "Installed separately by the user; Buildomator never fetches or runs it. Its license is independent of the skill text."
         }
       ],
-      "target_agents": ["bm-executor"],
+      "target_agents": [
+        "bm-executor"
+      ],
       "summary": "DuckDB query skill: runs SQL or natural-language questions against data files and attached databases through the locally installed duckdb CLI.",
       "verified_at": "2026-10-05"
+    },
+    "postgres-pro": {
+      "id": "postgres-pro",
+      "domain": "database",
+      "triggers": [
+        "postgres performance",
+        "explain analyze",
+        "query plan",
+        "slow query",
+        "index tuning",
+        "pg_stat_statements",
+        "sequential scan",
+        "jsonb index"
+      ],
+      "publisher": "jeffallan",
+      "source": "https://github.com/Jeffallan/claude-skills",
+      "skill_path": "skills/postgres-pro",
+      "skill_name": "postgres-pro",
+      "pinned_commit": "1be15d8064f88fc25216442406d40add8fd23b53",
+      "license": "MIT",
+      "license_url": "https://github.com/Jeffallan/claude-skills/blob/1be15d8064f88fc25216442406d40add8fd23b53/LICENSE",
+      "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
+      "trust_tier": "A",
+      "bundles_scripts": false,
+      "scripts_review": null,
+      "tooling": [],
+      "target_agents": [
+        "bm-executor"
+      ],
+      "summary": "PostgreSQL query-performance craft: reading EXPLAIN (ANALYZE, BUFFERS) output, choosing index types and columns, rewriting slow queries, plus JSONB indexing, VACUUM, extensions, and pg_stat_statements monitoring. Instruction and SQL only; the user runs it against their own database.",
+      "verified_at": "2026-10-14"
+    },
+    "accessibility-a11y": {
+      "id": "accessibility-a11y",
+      "domain": "accessibility",
+      "triggers": [
+        "accessible component",
+        "aria roles",
+        "keyboard navigation",
+        "focus management",
+        "focus trap",
+        "wcag",
+        "color contrast",
+        "screen reader"
+      ],
+      "publisher": "travisjneuman",
+      "source": "https://github.com/travisjneuman/.claude",
+      "skill_path": "skills/accessibility-a11y",
+      "skill_name": "accessibility-a11y",
+      "pinned_commit": "49ad78f25b602a10da27738fdbb1f1433bfe95be",
+      "license": "MIT",
+      "license_url": "https://github.com/travisjneuman/.claude/blob/49ad78f25b602a10da27738fdbb1f1433bfe95be/LICENSE",
+      "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
+      "trust_tier": "A",
+      "bundles_scripts": false,
+      "scripts_review": null,
+      "tooling": [],
+      "target_agents": [
+        "bm-executor"
+      ],
+      "summary": "WCAG 2.2 build patterns for accessible UI components: semantic HTML first, correct ARIA, keyboard operation, focus management, color contrast, and reduced motion, with adaptable React examples and a contrast and ARIA quick reference. Build guidance, not a standalone audit tool.",
+      "verified_at": "2026-10-14"
+    },
+    "data-visualization": {
+      "id": "data-visualization",
+      "domain": "visualization",
+      "triggers": [
+        "chart type",
+        "data visualization",
+        "chart encoding",
+        "visualize dataset",
+        "colorblind-safe palette",
+        "axis and legend design",
+        "which chart"
+      ],
+      "publisher": "owl-listener",
+      "source": "https://github.com/Owl-Listener/designer-skills",
+      "skill_path": "ui-design/skills/data-visualization",
+      "skill_name": "data-visualization",
+      "pinned_commit": "9a6930cf84a822eb458624bd11c61aac5bbdf224",
+      "license": "MIT",
+      "license_url": "https://github.com/Owl-Listener/designer-skills/blob/9a6930cf84a822eb458624bd11c61aac5bbdf224/LICENSE",
+      "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
+      "trust_tier": "A",
+      "bundles_scripts": false,
+      "scripts_review": null,
+      "tooling": [],
+      "target_agents": [
+        "bm-executor"
+      ],
+      "summary": "Chart design craft: choosing the right chart type for comparison, trend, part-of-whole, distribution, or relationship, then shaping marks, axes, labels, color encoding, and accessibility. Selection and encoding guidance; it does not emit chart code.",
+      "verified_at": "2026-10-14"
     }
   }
 }

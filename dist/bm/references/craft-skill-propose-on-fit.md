@@ -1,6 +1,6 @@
 # Craft skill propose-on-fit
 
-A per-task check that runs at the moment a task's scope becomes known, never at session start and never per turn, so a task entering a cataloged domain surfaces the right candidate at zero cost when nothing matches. Three surfaces call it: discuss-phase, quick, and autonomous. plan-phase and execute-phase do not run it.
+A per-task check that runs at the moment a task's scope becomes known, never at session start and never per turn, so a task entering a cataloged domain surfaces the right candidate at zero cost when nothing matches. Six surfaces call it: discuss-phase, quick, autonomous, ui-phase, secure-phase, and code-review. plan-phase and execute-phase do not run it. discuss-phase, quick, and autonomous insert into bm-executor; ui-phase, secure-phase, and code-review each filter candidates to the agent they spawn (the bm-ui-* agents, bm-security-auditor, and bm-code-reviewer) and insert into that agent instead.
 
 ## Step 1: Pre-filter (deterministic)
 
@@ -16,7 +16,7 @@ Parse `candidates`. Each candidate carries `id`, `domain`, `matched_triggers`, `
 
 For each candidate, judge relevance only, from `summary`, `domain`, and `matched_triggers` against the actual task. The model never judges safety or license; the structural gate owns that and runs on insert regardless. Drop not-relevant candidates silently. A high-confidence match means both signals agree: a trigger hit AND the model judges the candidate relevant.
 
-## Step 3a: Interactive accept (discuss-phase, quick)
+## Step 3a: Interactive accept (discuss-phase, quick, ui-phase, secure-phase, code-review)
 
 For each relevant candidate, show one `AskUserQuestion`. Header: `Catalog skill`. The question text renders the candidate's `prompt` lines verbatim between `DATA_START` and `DATA_END`, then one line:
 
@@ -91,3 +91,6 @@ When the scope is a document deliverable (docx, pdf, pptx), there is no catalog 
 - discuss-phase: run Step 1 after `analyze_phase`, record only (Step 3a records, does not insert); release is not applicable since it spawns no executor.
 - quick: run Step 1 after init and before the `AGENT_SKILLS_EXECUTOR` capture (re-capture after an insert); run Step 4 release after the executor returns.
 - autonomous: run Step 1 after plan verification and before the execute dispatch; run Step 4 release after execute returns.
+- ui-phase: run Step 1 once the UI-SPEC focus is known and before the ui agents spawn; filter candidates to `bm-ui-researcher` and `bm-ui-checker` and substitute them for bm-executor in the accept, insert, and log lines; re-capture their agent-skills after an insert; run Step 4 release after the revision loop.
+- secure-phase: run Step 1 before the auditor spawns; filter to `bm-security-auditor` and substitute it; re-capture its agent-skills after an insert; run Step 4 release after the auditor returns.
+- code-review: run Step 1 in `spawn_reviewer` before the reviewer spawns; filter to `bm-code-reviewer` and substitute it; capture and inject the reviewer agent-skills (this flow carried none before); run Step 4 release on both the success and failure paths.
