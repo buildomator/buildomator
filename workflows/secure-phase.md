@@ -95,6 +95,19 @@ default. Display the threat table, then AskUserQuestion in plain language:
 - `register_authored_at_plan_time: true` — **Verify mitigations exist** — do not scan for new threats. The register is complete; verify each threat's mitigation is present in the implementation.
 - `register_authored_at_plan_time: false` (retroactive-STRIDE mode) — **Retroactive-STRIDE: build a STRIDE register from implementation files first, then verify mitigations.** The phase was authored before formal threat modelling; the auditor must construct the register from scratch before verifying.
 
+**5a. Propose a catalog skill on fit**
+
+Build the match scope from phase data only (one quoted argument, never a path or eval target). `THREAT_DOMAIN` is the `category` and `component` values of the Step 2c register, one per line:
+
+```bash
+SCOPE=$(printf '%s\n%s\n' "$(bm-sdk query roadmap.get-phase "${PHASE_NUMBER}")" "$THREAT_DOMAIN")
+MATCH=$(bm-sdk query craft-skill.match "$SCOPE" 2>/dev/null || echo '{"candidates":[]}')
+# keep only candidates targeting an agent this flow spawns
+MATCH=$(printf '%s' "$MATCH" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j;try{j=JSON.parse(s)}catch{j={}}const A=["bm-security-auditor"];j.candidates=(j.candidates||[]).filter(c=>(c.target_agents||[]).some(a=>A.includes(a)));console.log(JSON.stringify(j))})')
+```
+
+If `candidates` is empty, continue silently. Otherwise Read `references/craft-skill-propose-on-fit.md`, apply Step 2, then Step 3b when `--auto` is in `$ARGUMENTS` else Step 3a (the Step 4 TEXT_MODE rule applies), substituting `bm-security-auditor` for `bm-executor` throughout. On `inserted:true` set `CRAFT_SKILL_ID=<id>` and re-capture `AGENT_SKILLS_AUDITOR=$(bm-sdk query agent-skills bm-security-auditor)` so the prompt below carries it.
+
 ```
 Agent(
   prompt="Read ~/.claude/agents/bm-security-auditor.md for instructions.\n\n" +
@@ -115,6 +128,8 @@ Handle return:
 - `## SECURED` → record closures → Step 6
 - `## OPEN_THREATS` → record closed + open, present user with accept/block choice → Step 6
 - `## ESCALATE` → present to user → Step 6
+
+If `CRAFT_SKILL_ID` is set, release the inserted catalog skill: `bm-sdk query craft-skill.release --agent bm-security-auditor --id "$CRAFT_SKILL_ID"`, print `craft-skill: released <id> (ephemeral)`, then unset it.
 
 ## 6. Write/Update SECURITY.md
 
@@ -179,4 +194,5 @@ Display `/clear` reminder.
 - [ ] SECURITY.md created or updated
 - [ ] threats_open > 0 BLOCKS advancement (no next-phase routing emitted)
 - [ ] Results with routing presented on success
+- [ ] Catalog skill proposed on fit, filtered to bm-security-auditor, released after auditor return
 </success_criteria>

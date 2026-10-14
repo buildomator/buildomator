@@ -96,7 +96,7 @@ UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
 
 **Parse flags from `$ARGUMENTS`:** `--refresh` (force-regenerate, re-spawn researcher), `--view` (print existing to stdout and exit).
 
-**If exists AND no `--refresh` AND no `--view`:** auto-use existing. Emit a one-line notice and proceed directly to step 7 (checker) on the existing UI-SPEC:
+**If exists AND no `--refresh` AND no `--view`:** auto-use existing. Emit a one-line notice and proceed to step 4.5, then step 7 (checker) on the existing UI-SPEC:
 
 ```
 UI-SPEC.md already exists for Phase {N}, using it.
@@ -110,6 +110,26 @@ Path: ${UI_SPEC_FILE}
 **If exists AND `--refresh`:** continue to step 5 (re-spawn researcher with existing as baseline).
 
 **If does not exist:** continue to step 5 (spawn researcher to generate).
+
+## 4.5. Propose a catalog skill on fit
+
+Build the match scope from phase data only (one quoted argument, never a path or eval target):
+
+```bash
+SCOPE=$(printf '%s' "$PHASE_INFO"; [ -n "$UI_SPEC_FILE" ] && head -40 "$UI_SPEC_FILE")
+MATCH=$(bm-sdk query craft-skill.match "$SCOPE" 2>/dev/null || echo '{"candidates":[]}')
+# keep only candidates targeting an agent this flow spawns
+MATCH=$(printf '%s' "$MATCH" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j;try{j=JSON.parse(s)}catch{j={}}const A=["bm-ui-researcher","bm-ui-checker"];j.candidates=(j.candidates||[]).filter(c=>(c.target_agents||[]).some(a=>A.includes(a)));console.log(JSON.stringify(j))})')
+```
+
+If `candidates` is empty, continue silently to step 5 (or step 7 on the existing-spec path). Otherwise Read `references/craft-skill-propose-on-fit.md`, apply Step 2, then Step 3b when `--auto` is in `$ARGUMENTS` else Step 3a, inserting each candidate into whichever of bm-ui-researcher / bm-ui-checker appears in that candidate's `target_agents`, substituting that agent for `bm-executor` in the question line, insert command and log lines.
+
+On `inserted:true` remember the (agent, id) pair as `CRAFT_SKILL_UI_ID` or `CRAFT_SKILL_UI_CHECKER_ID`, then re-capture before the spawn so the Step 5 / Step 7 prompt carries the inserted skill (the Step 1 capture predates the insert):
+
+```bash
+AGENT_SKILLS_UI=$(bm-sdk query agent-skills bm-ui-researcher)
+AGENT_SKILLS_UI_CHECKER=$(bm-sdk query agent-skills bm-ui-checker)
+```
 
 ## 5. Spawn bm-ui-researcher
 
@@ -257,9 +277,11 @@ Options:
 3. Abandon — exit without approving
 ```
 
-Use AskUserQuestion for the choice.
+Use AskUserQuestion for the choice. On Abandon, first run the Step 10 catalog-skill release for any set id, then exit.
 
 ## 10. Present Final Status
+
+Release any catalog skills inserted at step 4.5. The Step 9 revision loop re-spawns both agents, so release sits after the loop: for each of `CRAFT_SKILL_UI_ID` and `CRAFT_SKILL_UI_CHECKER_ID` that is set, run `bm-sdk query craft-skill.release --agent <that agent> --id "$ID"`, print `craft-skill: released <id> (ephemeral)`, then unset it.
 
 Display:
 ```
@@ -318,4 +340,5 @@ bm-sdk query state.record-session \
 - [ ] Final status displayed with next steps
 - [ ] UI-SPEC.md committed (if commit_docs enabled)
 - [ ] State updated
+- [ ] Catalog skill proposed on fit, filtered to bm-ui-researcher / bm-ui-checker, released after the loop
 </success_criteria>

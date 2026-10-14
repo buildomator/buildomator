@@ -452,6 +452,18 @@ if [ -n "$FALLOW_JSON_PATH" ] && [ -f "$FALLOW_JSON_PATH" ]; then
 fi
 ```
 
+Propose a catalog skill on fit:
+
+```bash
+SCOPE=$(printf 'code review: %s\n' "$PHASE_NAME"; printf '%s\n' "${REVIEW_FILES[@]}")
+MATCH=$(bm-sdk query craft-skill.match "$SCOPE" 2>/dev/null || echo '{"candidates":[]}')
+# keep only candidates targeting an agent this flow spawns
+MATCH=$(printf '%s' "$MATCH" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j;try{j=JSON.parse(s)}catch{j={}}const A=["bm-code-reviewer"];j.candidates=(j.candidates||[]).filter(c=>(c.target_agents||[]).some(a=>A.includes(a)));console.log(JSON.stringify(j))})')
+AGENT_SKILLS_REVIEWER=$(bm-sdk query agent-skills bm-code-reviewer)
+```
+
+If `candidates` is empty, continue silently. Otherwise Read `references/craft-skill-propose-on-fit.md`, apply Step 2, then Step 3b when `--auto` is in `$ARGUMENTS` (autonomous passes it) else Step 3a, substituting `bm-code-reviewer` for `bm-executor` in the question line, insert command and log lines. On `inserted:true` set `CRAFT_SKILL_ID=<id>`; the `AGENT_SKILLS_REVIEWER` capture above runs after the match so it carries any inserted skill into the reviewer prompt.
+
 Spawn the bm-code-reviewer agent:
 
 ```
@@ -461,6 +473,8 @@ ${FILES_TO_READ}
 </files_to_read>
 
 ${STRUCTURAL_FINDINGS_BLOCK}
+
+${AGENT_SKILLS_REVIEWER}
 
 <config>
 depth: ${REVIEW_DEPTH}
@@ -477,6 +491,8 @@ Do NOT commit the output — the orchestrator handles that.
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
+After the reviewer returns (both the success and failure paths), if `CRAFT_SKILL_ID` is set, release the inserted catalog skill: `bm-sdk query craft-skill.release --agent bm-code-reviewer --id "$CRAFT_SKILL_ID"`, print `craft-skill: released <id> (ephemeral)`, then unset it.
 
 **Agent failure handling:**
 
