@@ -18,7 +18,7 @@
   "mcpServers": {
     "bm": {
       "type": "stdio",
-      "command": "node",
+      "command": "${CLAUDE_PLUGIN_ROOT}/bin/gsd-node",
       "args": [
         "${CLAUDE_PLUGIN_ROOT}/mcp/server.cjs"
       ]

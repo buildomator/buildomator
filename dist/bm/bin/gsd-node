@@ -1,0 +1,32 @@
+#!/bin/sh
+# Locate a node binary and exec it with the given arguments.
+# Claude Code may be launched without a login shell (desktop launcher,
+# systemd unit, terminal -e), so node installed by a version manager is
+# not on PATH. PATH is tried first so a normal install is never changed.
+if command -v node >/dev/null 2>&1; then
+  exec node "$@"
+fi
+for d in \
+  "$HOME/.pixi/bin" \
+  /opt/homebrew/bin \
+  /usr/local/bin \
+  "$HOME/.volta/bin" \
+  "$HOME/.local/share/mise/shims" \
+  "$HOME/.asdf/shims" \
+  "$HOME/.nodenv/shims" \
+  "$HOME/.nix-profile/bin" \
+  /home/linuxbrew/.linuxbrew/bin \
+  /snap/bin \
+  "$HOME/.local/share/fnm/aliases/default/bin" \
+  "$HOME/Library/Application Support/fnm/aliases/default/bin" \
+  "$HOME"/.nvm/versions/node/*/bin
+do
+  if [ -x "$d/node" ]; then
+    PATH="$d:$PATH"
+    export PATH
+    exec "$d/node" "$@"
+  fi
+done
+echo "gsd-node: node not found on PATH or in the usual install locations." >&2
+echo "          Start Claude Code from a login shell, or add node to PATH." >&2
+exit 127

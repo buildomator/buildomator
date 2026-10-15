@@ -8,6 +8,9 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+### Fixed
+- **Hooks and the MCP server start when Claude Code is launched without a login shell (#36).** Each hook command now begins with a short POSIX preamble that, only when `node` is not on PATH, looks in the usual install locations (pixi, Homebrew, /usr/local/bin, volta, mise, asdf, nodenv, nix, linuxbrew, snap, fnm, nvm) and prepends the first hit to PATH. When node is already on PATH nothing changes. The MCP server now launches through a new `bin/gsd-node` wrapper that does the same lookup before running node. A `bin/gsd-node.cmd` twin keeps Windows resolving bare `node`; that path follows the npm shim pattern and has not been run on a Windows host yet, so a confirmation on issue #36 is welcome.
+
 ## [4.9.2] - 2026-10-14  (Craft Skill Catalog)
 
 Ships the v4.9 Craft Skill Catalog (phases 16 through 18): a way to reach external domain-craft skills just in time, trust-gated on both safety and license, scoped to the one agent that needs them, with no startup token cost and nothing copied into the plugin. Two post-catalog quick tasks ride along. The catalog is native work; the Agent Skills spec and VibeDrift are watched as idea-only upstreams and never run.
