@@ -99,6 +99,18 @@
       "kind": "individual",
       "url": "https://github.com/Owl-Listener",
       "label": "published by MC Dean (designer-skills)"
+    },
+    "rongiladco": {
+      "name": "Ron Gilad",
+      "kind": "individual",
+      "url": "https://github.com/rongiladco",
+      "label": "published by Ron Gilad (web-accessibility-audit)"
+    },
+    "artais-security": {
+      "name": "Artais Security Labs",
+      "kind": "individual",
+      "url": "https://github.com/Artais-Security",
+      "label": "published by Artais Security Labs"
     }
   },
   "skills": {
@@ -258,6 +270,116 @@
       ],
       "summary": "Chart design craft: choosing the right chart type for comparison, trend, part-of-whole, distribution, or relationship, then shaping marks, axes, labels, color encoding, and accessibility. Selection and encoding guidance; it does not emit chart code.",
       "verified_at": "2026-10-14"
+    },
+    "web-accessibility-audit": {
+      "id": "web-accessibility-audit",
+      "domain": "accessibility",
+      "triggers": [
+        "accessibility",
+        "wcag",
+        "a11y",
+        "aria",
+        "color contrast",
+        "screen reader",
+        "keyboard navigation",
+        "focus order"
+      ],
+      "publisher": "rongiladco",
+      "source": "https://github.com/rongiladco/web-accessibility-audit",
+      "skill_path": ".",
+      "skill_name": "web-accessibility-audit",
+      "pinned_commit": "f33240086c04932c0c70837e3f86e845763aa371",
+      "license": "MIT",
+      "license_url": "https://github.com/rongiladco/web-accessibility-audit/blob/f33240086c04932c0c70837e3f86e845763aa371/LICENSE",
+      "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
+      "trust_tier": "B",
+      "bundles_scripts": true,
+      "scripts_review": {
+        "verdict": "reviewed",
+        "commit": "f33240086c04932c0c70837e3f86e845763aa371",
+        "reviewed_at": "2026-10-15",
+        "note": "Read all three at pin: axe/Playwright runner (fetches only the audited URL), a stdlib Python static-HTML heuristic, and an element screenshotter. No shell-out, no eval, no credential or filesystem access beyond the named output file. Automated mode needs network plus a one-time Playwright Chromium download; a stdlib heuristic fallback runs offline."
+      },
+      "tooling": [
+        {
+          "name": "Node.js",
+          "license": "MIT",
+          "note": "Runtime for the automated axe-core/Playwright audit scripts; installed separately by the user, never fetched by Buildomator. The scripts pull Playwright and @axe-core/playwright via npm and download a Chromium build on first use."
+        },
+        {
+          "name": "Python 3",
+          "license": "Python-2.0",
+          "note": "Runs the offline heuristic fallback; installed separately by the user. Standard library only, no third-party packages."
+        }
+      ],
+      "target_agents": [
+        "bm-ui-researcher",
+        "bm-ui-checker"
+      ],
+      "summary": "Audits live web page URLs for accessibility and writes a prioritized, cited report. Two lenses: a headless-browser axe-core scan of the rendered DOM (contrast, focus order, ARIA) and a dependency-free static HTML pass (alt text, labels, heading order, landmarks, link text). Each finding maps to a WCAG success criterion with level and a concrete fix.",
+      "verified_at": "2026-10-15"
+    },
+    "security-review": {
+      "id": "security-review",
+      "domain": "security",
+      "triggers": [
+        "security",
+        "vulnerability",
+        "owasp",
+        "injection",
+        "authentication",
+        "authorization",
+        "secrets",
+        "xss"
+      ],
+      "publisher": "artais-security",
+      "source": "https://github.com/Artais-Security/claude-skills-security-code-review",
+      "skill_path": ".",
+      "skill_name": "security-review",
+      "pinned_commit": "210bc0c0a45eb03fc8e8c29e76875c589c9dec0e",
+      "license": "MIT",
+      "license_url": "https://github.com/Artais-Security/claude-skills-security-code-review/blob/210bc0c0a45eb03fc8e8c29e76875c589c9dec0e/LICENSE",
+      "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
+      "trust_tier": "A",
+      "bundles_scripts": false,
+      "scripts_review": null,
+      "tooling": [],
+      "target_agents": [
+        "bm-security-auditor"
+      ],
+      "summary": "Code-security review craft aligned to OWASP concerns: authentication and authorization, input validation and injection, secrets handling, dependency risk, data exposure, transport, and web issues (XSS, CSRF, CORS). Topic references carry general notes plus per-stack files (Go, Python, FastAPI, Next.js) and an attacker-perspective file for defensive review. Prose only.",
+      "verified_at": "2026-10-15"
+    },
+    "code-reviewer": {
+      "id": "code-reviewer",
+      "domain": "code-quality",
+      "triggers": [
+        "code review",
+        "code quality",
+        "code smell",
+        "refactor",
+        "n+1",
+        "maintainability",
+        "bug",
+        "pull request"
+      ],
+      "publisher": "jeffallan",
+      "source": "https://github.com/Jeffallan/claude-skills",
+      "skill_path": "skills/code-reviewer",
+      "skill_name": "code-reviewer",
+      "pinned_commit": "1be15d8064f88fc25216442406d40add8fd23b53",
+      "license": "MIT",
+      "license_url": "https://github.com/Jeffallan/claude-skills/blob/1be15d8064f88fc25216442406d40add8fd23b53/LICENSE",
+      "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
+      "trust_tier": "A",
+      "bundles_scripts": false,
+      "scripts_review": null,
+      "tooling": [],
+      "target_agents": [
+        "bm-code-reviewer"
+      ],
+      "summary": "Broad single-pass code review covering correctness, security (SQL injection, XSS, insecure deserialization), performance (N+1 queries), naming, test coverage, and architecture. Walks context, structure, details, then tests, and emits a prioritized, categorized report. References hold a review checklist and common-issue patterns. Prose only.",
+      "verified_at": "2026-10-15"
     }
   }
 }
