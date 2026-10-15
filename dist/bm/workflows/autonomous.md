@@ -348,6 +348,8 @@ Read the phase scope and run the pre-filter, one quoted argument, data only:
 ```bash
 SCOPE_TEXT=$(bm-sdk query roadmap.get-phase ${PHASE_NUM} 2>/dev/null)
 MATCH=$(bm-sdk query craft-skill.match "$SCOPE_TEXT" 2>/dev/null || echo '{"candidates":[]}')
+# keep only candidates targeting an agent this flow spawns
+MATCH=$(printf '%s' "$MATCH" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j;try{j=JSON.parse(s)}catch{j={}}const A=["bm-executor"];j.candidates=(j.candidates||[]).filter(c=>(c.target_agents||[]).some(a=>A.includes(a)));console.log(JSON.stringify(j))})')
 ```
 If `candidates` is empty, continue silently. Otherwise Read `references/craft-skill-propose-on-fit.md` and apply Step 2 (an acceptance recorded in this phase's CONTEXT.md `### Craft skills` counts as relevant) and Step 3b. Insert only when `verdict === 'allow'` AND relevant AND a checkout resolves (ephemeral only; autonomous never uses the sticky flag):
 ```bash

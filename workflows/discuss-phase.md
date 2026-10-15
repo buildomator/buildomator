@@ -310,6 +310,8 @@ Analyze the phase to identify gray areas. Use both `prior_decisions` and `codeba
 Once the domain boundary is known, run the catalog pre-filter with the boundary sentence (item 1 of `analyze_phase`) as the scope, one quoted argument, data only:
 ```bash
 MATCH=$(bm-sdk query craft-skill.match "<domain boundary sentence>" 2>/dev/null || echo '{"candidates":[]}')
+# keep only candidates targeting an agent this flow spawns
+MATCH=$(printf '%s' "$MATCH" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j;try{j=JSON.parse(s)}catch{j={}}const A=["bm-executor"];j.candidates=(j.candidates||[]).filter(c=>(c.target_agents||[]).some(a=>A.includes(a)));console.log(JSON.stringify(j))})')
 ```
 If `candidates` is empty, continue silently. If the scope is a document deliverable (docx, pdf, pptx), set `DOC_DELIVERABLE=true` and skip the catalog (reference "Document deliverables"). Otherwise Read `references/craft-skill-propose-on-fit.md` and apply Step 2 and Step 3a; on accept set `CRAFT_SKILL_ACCEPTED` (id, mode, publisher label, license, obligations, trust tier, verdict, pin line) for `write_context`. Do not insert here; discuss-phase records only.
 </step>

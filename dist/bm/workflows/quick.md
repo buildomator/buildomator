@@ -133,6 +133,8 @@ Parse JSON for: `planner_model`, `executor_model`, `checker_model`, `verifier_mo
 Run the deterministic pre-filter with the task description as one quoted argument (data only, never interpolated elsewhere):
 ```bash
 MATCH=$(bm-sdk query craft-skill.match "$DESCRIPTION" 2>/dev/null || echo '{"candidates":[]}')
+# keep only candidates targeting an agent this flow spawns
+MATCH=$(printf '%s' "$MATCH" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j;try{j=JSON.parse(s)}catch{j={}}const A=["bm-executor"];j.candidates=(j.candidates||[]).filter(c=>(c.target_agents||[]).some(a=>A.includes(a)));console.log(JSON.stringify(j))})')
 ```
 If `candidates` is empty, continue to Step 2.5 silently. Otherwise Read `references/craft-skill-propose-on-fit.md` and apply Step 2 and Step 3a. On `inserted:true` set `CRAFT_SKILL_ID=<id>` and `CRAFT_SKILL_MODE`, then re-capture so the Step 6 executor prompt carries the inserted skill (the Step 2 capture predates the insert):
 ```bash
