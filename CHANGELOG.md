@@ -8,6 +8,17 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [4.9.3] - 2026-10-17  (Craft Skill Catalog: specialist lanes and node resolution)
+
+Grows the craft-skill catalog from two entries to eight, extends propose-on-fit to the UI, security, and code-review flows with per-agent routing, and fixes node resolution for hooks and the MCP server when Claude Code starts without a login shell. Follows the same gsd-core provenance line as 4.9.2.
+
+### Added
+- **Six more catalog skills across four agent lanes.** The catalog now holds eight entries, all MIT and pinned to a full commit: postgres-pro, accessibility-a11y, and data-visualization for the executor lane; web-accessibility-audit for the UI research and check agents; security-review for the security auditor; and code-reviewer for the code reviewer. Each was approved once by a human and checked live against the GitHub API before it was added. web-accessibility-audit is the first entry that bundles scripts; its axe-core and standard-library checks were read at the pinned commit and recorded as reviewed.
+- **Propose-on-fit reaches the UI, security, and code-review flows.** `craft-skill match` now runs in ui-phase, secure-phase, and code-review as well as quick, discuss, and autonomous. Each of the three new flows shortlists candidates for the agent it spawns, so a specialist lane becomes active only when a matching skill targets its agent.
+
+### Changed
+- **Every propose-on-fit surface routes by target agent.** All six surfaces filter matched candidates to the agent they spawn: the UI, security, and code-review flows to their specialist agents, and the quick, discuss, and autonomous flows to bm-executor. A specialist-targeted skill no longer surfaces for the generalist executor, and the executor lane no longer offers a skill meant for a specialist.
+
 ### Fixed
 - **Hooks and the MCP server start when Claude Code is launched without a login shell (#36).** Each hook command now begins with a short POSIX preamble that, only when `node` is not on PATH, looks in the usual install locations (pixi, Homebrew, /usr/local/bin, volta, mise, asdf, nodenv, nix, linuxbrew, snap, fnm, nvm) and prepends the first hit to PATH. When node is already on PATH nothing changes. The MCP server now launches through a new `bin/gsd-node` wrapper that does the same lookup before running node. A `bin/gsd-node.cmd` twin keeps Windows resolving bare `node`; that path follows the npm shim pattern and has not been run on a Windows host yet, so a confirmation on issue #36 is welcome.
 
