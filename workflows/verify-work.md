@@ -48,6 +48,17 @@ Parse JSON for: `planner_model`, `checker_model`, `commit_docs`, `phase_found`, 
 # so we omit --cli-flag — the verb falls through roadmap → config → false.
 MVP_MODE=$(bm-sdk query phase.mvp-mode "${phase_number}" ${GSD_WS} --pick active)
 ```
+
+**Propose a catalog skill on fit.** Verification is the bm-verifier lane, so propose before UAT verification begins. Build the match scope from phase data only (one quoted argument, never a path or eval target):
+
+```bash
+SCOPE=$(printf '%s\n' "$(bm-sdk query roadmap.get-phase "${phase_number}" ${GSD_WS})")
+MATCH=$(bm-sdk query craft-skill.match "$SCOPE" 2>/dev/null || echo '{"candidates":[]}')
+# keep only candidates targeting the verifier lane this flow serves
+MATCH=$(printf '%s' "$MATCH" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j;try{j=JSON.parse(s)}catch{j={}}const A=["bm-verifier"];j.candidates=(j.candidates||[]).filter(c=>(c.target_agents||[]).some(a=>A.includes(a)));console.log(JSON.stringify(j))})')
+```
+
+If `candidates` is empty, continue silently. Otherwise Read `references/craft-skill-propose-on-fit.md`, apply Step 2, then Step 3b when `--auto` is in `$ARGUMENTS` else Step 3a, substituting `bm-verifier` for `bm-executor` in the question line, insert command and log lines. On `inserted:true` set `CRAFT_SKILL_ID=<id>` and re-capture `AGENT_SKILLS_VERIFIER=$(bm-sdk query agent-skills bm-verifier)`.
 </step>
 
 <step name="check_active_session">
@@ -391,6 +402,8 @@ Proceed to `present_test`.
 
 <step name="complete_session">
 **Complete testing and commit:**
+
+If `CRAFT_SKILL_ID` is set from the initialize step, release the inserted catalog skill now that the UAT session is complete: `bm-sdk query craft-skill.release --agent bm-verifier --id "$CRAFT_SKILL_ID"`, print `craft-skill: released <id> (ephemeral)`, then unset it.
 
 **Determine final status:**
 

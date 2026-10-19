@@ -178,6 +178,19 @@ Create `.planning/debug/{slug}.md` with initial state using the Write tool (neve
 - symptoms: all gathered values from Step 2
 - Current Focus: next_action = "gather initial evidence"
 
+## 3.5. Propose a catalog skill on fit
+
+The session manager spawns bm-debugger for the lane work, so propose before that work begins. Build the match scope from the bug symptom text only, passed as one quoted argument treated purely as data (never interpolated into another command, never eval, never used as a path):
+
+```bash
+SCOPE=$(printf '%s\n' "$ARGUMENTS")
+MATCH=$(bm-sdk query craft-skill.match "$SCOPE" 2>/dev/null || echo '{"candidates":[]}')
+# keep only candidates targeting the agent this flow spawns
+MATCH=$(printf '%s' "$MATCH" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j;try{j=JSON.parse(s)}catch{j={}}const A=["bm-debugger"];j.candidates=(j.candidates||[]).filter(c=>(c.target_agents||[]).some(a=>A.includes(a)));console.log(JSON.stringify(j))})')
+```
+
+If `candidates` is empty, continue silently to step 4. Otherwise Read `references/craft-skill-propose-on-fit.md`, apply Step 2, then Step 3b when `--auto` is in `$ARGUMENTS` else Step 3a, substituting `bm-debugger` for `bm-executor` in the question line, insert command and log lines. On `inserted:true` set `CRAFT_SKILL_ID=<id>` and re-capture `AGENT_SKILLS_DEBUGGER=$(bm-sdk query agent-skills bm-debugger)`. The insert registers the skill on bm-debugger, which the session manager spawns.
+
 ## 4. Session Management (delegated to bm-debug-session-manager)
 
 After initial context setup, spawn the session manager to handle the full checkpoint/continuation loop. The session manager handles specialist_hint dispatch internally: when bm-debugger returns ROOT CAUSE FOUND it extracts the specialist_hint field and invokes the matching skill (e.g. typescript-expert, swift-concurrency) before offering fix options.
@@ -206,6 +219,8 @@ specialist_dispatch_enabled: true
 ```
 
 Display the compact summary returned by the session manager.
+
+If `CRAFT_SKILL_ID` is set from step 3.5, release the inserted catalog skill now that the session manager has returned: `bm-sdk query craft-skill.release --agent bm-debugger --id "$CRAFT_SKILL_ID"`, print `craft-skill: released <id> (ephemeral)`, then unset it.
 
 If summary shows `DEBUG SESSION COMPLETE`: done.
 If summary shows `ABANDONED`: note session saved at `.planning/debug/{slug}.md` for later `/gsd:debug continue {slug}`.

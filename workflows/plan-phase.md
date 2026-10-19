@@ -844,6 +844,19 @@ After pattern mapper completes, update the path variable:
 PATTERNS_PATH="${PHASE_DIR}/${PADDED_PHASE}-PATTERNS.md"
 ```
 
+## 7.9. Propose a catalog skill on fit
+
+Build the match scope from phase data only (one quoted argument, never a path or eval target):
+
+```bash
+SCOPE=$(printf '%s\n%s\n' "$PHASE_INFO" "${phase_req_ids}")
+MATCH=$(bm-sdk query craft-skill.match "$SCOPE" 2>/dev/null || echo '{"candidates":[]}')
+# keep only candidates targeting an agent this flow spawns
+MATCH=$(printf '%s' "$MATCH" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let j;try{j=JSON.parse(s)}catch{j={}}const A=["bm-planner"];j.candidates=(j.candidates||[]).filter(c=>(c.target_agents||[]).some(a=>A.includes(a)));console.log(JSON.stringify(j))})')
+```
+
+If `candidates` is empty, continue silently to step 8. Otherwise Read `references/craft-skill-propose-on-fit.md`, apply Step 2, then Step 3b when `--auto` is in `$ARGUMENTS` else Step 3a, substituting `bm-planner` for `bm-executor` in the question line, insert command and log lines. On `inserted:true` set `CRAFT_SKILL_ID=<id>` and re-capture `AGENT_SKILLS_PLANNER=$(bm-sdk query agent-skills bm-planner)` so the step 8 planner prompt (and any revision-loop re-spawn) carries the inserted skill.
+
 ## 8. Spawn bm-planner Agent
 
 Display banner:
@@ -1425,6 +1438,8 @@ Plan bounce complete: {survived}/{total} plans refined
 **Clean up:** Remove all `*-PLAN.pre-bounce.md` backup files after the bounce step completes (whether plans survived or were restored).
 
 ## 13. Requirements Coverage Gate
+
+If `CRAFT_SKILL_ID` is set from step 7.9, release the inserted catalog skill now. The step 12 revision loop may have re-spawned the planner, so release sits here after all planner work: `bm-sdk query craft-skill.release --agent bm-planner --id "$CRAFT_SKILL_ID"`, print `craft-skill: released <id> (ephemeral)`, then unset it.
 
 After plans pass the checker (or checker is skipped), verify that all phase requirements are covered by at least one plan.
 
