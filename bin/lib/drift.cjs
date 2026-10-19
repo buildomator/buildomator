@@ -186,7 +186,10 @@ function detectDrift(input) {
 
     if (actionRequired) {
       directive = action;
-      affectedPaths = chooseAffectedPaths(elements.map((e) => e.path));
+      // gsd-core #5137: sanitize before egress so no absolute, traversal, or
+      // shell-metacharacter path reaches affected_paths or the map-codebase
+      // prompt built by buildMessage.
+      affectedPaths = sanitizePaths(chooseAffectedPaths(elements.map((e) => e.path)));
       if (action === 'auto-remap') {
         spawnMapper = true;
       }
