@@ -27,7 +27,7 @@ import { loadConfig, type GSDConfig } from '../config.js';
 import { resolveModel, MODEL_PROFILES, legacyAgentName } from './config-query.js';
 import { maskIfSecret } from './secrets.js';
 import { findPhase } from './phase.js';
-import { roadmapGetPhase, getMilestoneInfo, extractCurrentMilestone, extractPhasesFromSection } from './roadmap.js';
+import { roadmapGetPhase, getMilestoneInfo, extractCurrentMilestone, extractPhasesFromSection, extractPhaseFieldMultiline } from './roadmap.js';
 import { determinePhaseStatus } from './progress.js';
 import { planningPaths, normalizePhaseName, toPosixPath, resolveAgentsDir, detectRuntime } from './helpers.js';
 import { generatePhaseSlug, assertSafeProjectCode } from './phase-lifecycle-policy.js';
@@ -295,14 +295,11 @@ async function getPhaseInfoForVerifyWork(
  */
 function extractReqIds(roadmapPhase: Record<string, unknown> | null): string | null {
   const section = roadmapPhase?.section as string | undefined;
-  // Accept all bold/colon variants of the Requirements header. The forms
-  //   **Requirements:**  (colon inside bold)
-  //   **Requirements**:  (colon outside bold)
-  //   **Requirements** : (space before outside colon)
-  // render identically in markdown but differ textually. Issue #2769.
-  const reqMatch = section?.match(/^\*\*Requirements:?\*\*[^\S\n]*:?[^\S\n]*([^\n]*)$/m);
-  const reqExtracted = reqMatch
-    ? reqMatch[1].replace(/[\[\]]/g, '').split(',').map((s: string) => s.trim()).filter(Boolean).join(', ')
+  // Accept all bold/colon variants of the Requirements header and read past a
+  // soft wrap so continuation REQ IDs are not truncated (#4826, #2769).
+  const raw = extractPhaseFieldMultiline(section ?? '', 'Requirements');
+  const reqExtracted = raw
+    ? raw.replace(/[\[\]]/g, '').split(',').map((s: string) => s.trim()).filter(Boolean).join(', ')
     : null;
   return (reqExtracted && reqExtracted !== 'TBD') ? reqExtracted : null;
 }

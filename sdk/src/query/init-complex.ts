@@ -40,6 +40,7 @@ import {
   extractCurrentMilestone,
   extractNextMilestoneSection,
   extractPhasesFromSection,
+  extractPhaseFieldMultiline,
 } from './roadmap.js';
 import { agentSkills } from './skills.js';
 import { withProjectRoot } from './init.js';
@@ -542,8 +543,7 @@ export const initManager: QueryHandler = async (_args, projectDir, workstream) =
     const sectionEnd = nextHeader ? sectionStart + (nextHeader.index ?? 0) : content.length;
     const section = content.slice(sectionStart, sectionEnd);
 
-    const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
-    const goal = goalMatch ? goalMatch[1].trim() : null;
+    const goal = extractPhaseFieldMultiline(section, 'Goal');
 
     const dependsMatch = section.match(/\*\*Depends on(?::\*\*|\*\*:)\s*([^\n]+)/i);
     const dependsOn = dependsMatch ? dependsMatch[1].trim() : null;

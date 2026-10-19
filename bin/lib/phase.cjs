@@ -11,6 +11,7 @@ const { extractFrontmatter } = require('./frontmatter.cjs');
 const { summaryFileIsComplete, resolveSummaryPath } = require('./plan-scan.cjs');
 const scanPhasePlans = require('./plan-scan.cjs');
 const { determinePhaseStatus } = require('./commands.cjs');
+const { extractPhaseFieldMultiline } = require('./roadmap.cjs');
 const { writeStateMd, readModifyWriteStateMd, stateExtractField, stateReplaceField, stateReplaceFieldWithFallback, updatePerformanceMetricsSection } = require('./state.cjs');
 
 // #2893 — strict canonical filter: `{padded_phase}-{NN}-PLAN.md` or `PLAN.md`.
@@ -1236,16 +1237,15 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
         );
 
         const sectionText = phaseSectionMatch ? phaseSectionMatch[1] : '';
-        // Accept all bold/colon variants (#2769) — the previous pattern only
-        // matched **Requirements:** (colon inside bold) and silently skipped
-        // **Requirements**: (colon outside), preventing the matching REQ-IDs
-        // from being ticked off in REQUIREMENTS.md on phase completion.
-        const reqMatch = sectionText.match(/\*\*Requirements:?\*\*[^\S\n]*:?[^\S\n]*([^\n]+)/i);
+        // Accept all bold/colon variants (#2769) and read past a soft wrap so
+        // continuation REQ IDs are ticked off too (#4826). An empty Requirements
+        // value now yields null and skips the ticking loop below.
+        const reqRaw = extractPhaseFieldMultiline(sectionText, 'Requirements');
 
         let reqContent = fs.readFileSync(reqPath, 'utf-8');
 
-        if (reqMatch) {
-          const reqIds = reqMatch[1].replace(/[\[\]]/g, '').split(/[,\s]+/).map(r => r.trim()).filter(Boolean);
+        if (reqRaw) {
+          const reqIds = reqRaw.replace(/[\[\]]/g, '').split(/[,\s]+/).map(r => r.trim()).filter(Boolean);
 
           for (const reqId of reqIds) {
             const reqEscaped = escapeRegex(reqId);

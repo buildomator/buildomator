@@ -32,7 +32,7 @@ import {
   planningPaths,
 } from './helpers.js';
 import { extractFrontmatter } from './frontmatter.js';
-import { extractCurrentMilestone, phaseEntryInsertOffset } from './roadmap.js';
+import { extractCurrentMilestone, phaseEntryInsertOffset, extractPhaseFieldMultiline } from './roadmap.js';
 import { determinePhaseStatus } from './progress.js';
 import { scanPhasePlans } from './plan-scan.js';
 import { getMilestonePhaseFilter } from './state.js';
@@ -1174,10 +1174,12 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
         );
 
         const sectionText = phaseSectionMatch ? phaseSectionMatch[1] : '';
-        const reqMatch = sectionText.match(/\*\*Requirements\*?\*?:?\s*([^\n]+)/i);
+        // Read past a soft wrap so continuation REQ IDs are ticked too (#4826).
+        // An empty Requirements value now yields null and skips the write below.
+        const reqRaw = extractPhaseFieldMultiline(sectionText, 'Requirements');
 
-        if (reqMatch) {
-          const reqIds = reqMatch[1].replace(/[[\]]/g, '').split(/[,\s]+/).map(r => r.trim()).filter(Boolean);
+        if (reqRaw) {
+          const reqIds = reqRaw.replace(/[[\]]/g, '').split(/[,\s]+/).map(r => r.trim()).filter(Boolean);
           let reqContent = await readFile(reqPath, 'utf-8');
 
           for (const reqId of reqIds) {

@@ -1842,6 +1842,41 @@ describe('phaseComplete', () => {
     const data = result.data as Record<string, unknown>;
     expect(String(data.next_phase).replace(/^0+(?=\d)/, '')).toBe('2');
   });
+
+  // gsd-core #4826
+  it('ticks continuation REQ IDs from a hard-wrapped Requirements field', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = [
+      '# Roadmap',
+      '',
+      '## Current Milestone: v1.0 Wrapped',
+      '',
+      '### Phase 1: Wrapped',
+      '',
+      '**Goal:** g',
+      '**Requirements:** AUTH-01, AUTH-02,',
+      'AUTH-03, AUTH-04',
+      '',
+    ].join('\n');
+    await setupTestProject(tmpDir, { roadmap, state: STATE_NEXT_DERIVE, phases: ['01-a'] });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+    await writeFile(join(tmpDir, '.planning', 'REQUIREMENTS.md'), [
+      '# Requirements',
+      '',
+      '- [ ] **AUTH-01** a',
+      '- [ ] **AUTH-02** b',
+      '- [ ] **AUTH-03** c',
+      '- [ ] **AUTH-04** d',
+      '',
+    ].join('\n'), 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const req = await readFile(join(tmpDir, '.planning', 'REQUIREMENTS.md'), 'utf-8');
+    expect(req).toMatch(/- \[x\] \*\*AUTH-03\*\*/);
+    expect(req).toMatch(/- \[x\] \*\*AUTH-04\*\*/);
+  });
 });
 
 // ─── phasesClear ────────────────────────────────────────────────────────────

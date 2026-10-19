@@ -18,6 +18,7 @@ import {
   extractCurrentMilestone,
   extractNextMilestoneSection,
   extractPhasesFromSection,
+  extractPhaseFieldMultiline,
   stripShippedMilestones,
 } from './roadmap.js';
 
@@ -1345,5 +1346,79 @@ describe('roadmapAnalyze — Phase 0 / Phase 999 sentinel exclusion (#1580)', ()
       expect(missing).not.toContain('999');
       expect(missing).not.toContain('999.1');
     }
+  });
+});
+
+// ─── extractPhaseFieldMultiline (gsd-core #4826) ────────────────────────────
+
+describe('extractPhaseFieldMultiline', () => {
+  const SECTION = [
+    '### Phase 2: Wrapped Fields',
+    '',
+    '**Goal:** Ship the parser that reads a very long goal sentence which the roadmapper',
+    'soft-wrapped onto a second line and a third line',
+    '**Requirements:** AUTH-01, AUTH-02,',
+    'AUTH-03, AUTH-04',
+    '**Depends on:** Phase 1',
+    '**Plans:** 2 plans',
+    '',
+    'Plans:',
+    '- [ ] 02-01-PLAN.md',
+    '',
+  ].join('\n');
+  const GOAL_JOINED = 'Ship the parser that reads a very long goal sentence which the roadmapper soft-wrapped onto a second line and a third line';
+
+  it('reads Goal across the soft wrap', () => {
+    expect(extractPhaseFieldMultiline(SECTION, 'Goal')).toBe(GOAL_JOINED);
+  });
+  it('reads continuation Requirements IDs', () => {
+    expect(extractPhaseFieldMultiline(SECTION, 'Requirements')).toBe('AUTH-01, AUTH-02, AUTH-03, AUTH-04');
+  });
+  it('returns null for a missing label', () => {
+    expect(extractPhaseFieldMultiline(SECTION, 'Nope')).toBeNull();
+  });
+  it('returns null for an empty value followed by a blank line', () => {
+    expect(extractPhaseFieldMultiline('**Goal:**\n\nmore', 'Goal')).toBeNull();
+  });
+  it('accepts colon-outside, spaced, and no-colon label forms', () => {
+    expect(extractPhaseFieldMultiline('**Requirements**: R-1', 'Requirements')).toBe('R-1');
+    expect(extractPhaseFieldMultiline('**Requirements** : R-1', 'Requirements')).toBe('R-1');
+    expect(extractPhaseFieldMultiline('**Requirements** R-1', 'Requirements')).toBe('R-1');
+  });
+  it('does not absorb a bare Plans: line into the Requirements value', () => {
+    expect(extractPhaseFieldMultiline('**Requirements:** AUTH-01,\nAUTH-02\nPlans:', 'Requirements'))
+      .toBe('AUTH-01, AUTH-02');
+  });
+});
+
+describe('roadmapGetPhase / roadmapAnalyze read wrapped Goal (gsd-core #4826)', () => {
+  const ROADMAP = [
+    '# Roadmap',
+    '',
+    '## Current Milestone: v1.0 Wrapped',
+    '',
+    '### Phase 2: Wrapped Fields',
+    '',
+    '**Goal:** Ship the parser that reads a very long goal sentence which the roadmapper',
+    'soft-wrapped onto a second line and a third line',
+    '**Requirements:** AUTH-01, AUTH-02,',
+    'AUTH-03, AUTH-04',
+    '**Plans:** 2 plans',
+    '',
+  ].join('\n');
+  const GOAL_JOINED = 'Ship the parser that reads a very long goal sentence which the roadmapper soft-wrapped onto a second line and a third line';
+
+  it('roadmapGetPhase returns the full wrapped goal', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), ROADMAP);
+    const result = await roadmapGetPhase(['2'], tmpDir);
+    expect((result.data as Record<string, unknown>).goal).toBe(GOAL_JOINED);
+  });
+
+  it('roadmapAnalyze returns the full wrapped goal for phase 2', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), ROADMAP);
+    const result = await roadmapAnalyze([], tmpDir);
+    const phases = (result.data as Record<string, unknown>).phases as Array<Record<string, unknown>>;
+    const p2 = phases.find((p) => String(p.number).replace(/^0+(?=\d)/, '') === '2');
+    expect(p2?.goal).toBe(GOAL_JOINED);
   });
 });

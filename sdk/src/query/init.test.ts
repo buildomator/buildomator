@@ -790,3 +790,33 @@ describe('initIngestDocs', () => {
     expect(data.planning_exists).toBe(true);
   });
 });
+
+describe('phase_req_ids reads hard-wrapped Requirements (gsd-core #4826)', () => {
+  const WRAPPED_ROADMAP = [
+    '# Roadmap',
+    '',
+    '## v3.0: SDK-First Migration',
+    '',
+    '### Phase 9: Foundation',
+    '',
+    '**Goal:** Build foundation',
+    '**Requirements:** AUTH-01, AUTH-02,',
+    'AUTH-03, AUTH-04',
+    '**Plans:** 1 plan',
+    '',
+  ].join('\n');
+
+  it('initExecutePhase returns continuation REQ IDs', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), WRAPPED_ROADMAP);
+    const result = await initExecutePhase(['9'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(data.phase_req_ids).toBe('AUTH-01, AUTH-02, AUTH-03, AUTH-04');
+  });
+
+  it('initPlanPhase returns continuation REQ IDs', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), WRAPPED_ROADMAP);
+    const result = await initPlanPhase(['9'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(data.phase_req_ids).toBe('AUTH-01, AUTH-02, AUTH-03, AUTH-04');
+  });
+});

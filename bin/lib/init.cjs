@@ -11,11 +11,7 @@ const { maskIfSecret } = require('./secrets.cjs');
 const scanPhasePlans = require('./plan-scan.cjs');
 const { stateExtractField } = require('./state-document.cjs');
 const { determinePhaseStatus } = require('./commands.cjs');
-
-// Accept all bold/colon variants of the Requirements header (#2769):
-// **Requirements:** / **Requirements**: / **Requirements** : render the
-// same in markdown but differ textually.
-const REQUIREMENTS_HEADER_RE = /^\*\*Requirements:?\*\*[^\S\n]*:?[^\S\n]*([^\n]*)$/m;
+const { extractPhaseFieldMultiline } = require('./roadmap.cjs');
 
 function listPhaseSummaryFiles(phaseDir) {
   return scanPhasePlans(phaseDir).summaryFiles;
@@ -114,9 +110,9 @@ function cmdInitExecutePhase(cwd, phase, raw, options = {}) {
       has_reviews: false,
     };
   }
-  const reqMatch = roadmapPhase?.section?.match(REQUIREMENTS_HEADER_RE);
-  const reqExtracted = reqMatch
-    ? reqMatch[1].replace(/[\[\]]/g, '').split(',').map(s => s.trim()).filter(Boolean).join(', ')
+  const reqRaw = roadmapPhase?.section ? extractPhaseFieldMultiline(roadmapPhase.section, 'Requirements') : null;
+  const reqExtracted = reqRaw
+    ? reqRaw.replace(/[\[\]]/g, '').split(',').map(s => s.trim()).filter(Boolean).join(', ')
     : null;
   const phase_req_ids = (reqExtracted && reqExtracted !== 'TBD') ? reqExtracted : null;
 
@@ -243,9 +239,9 @@ function cmdInitPlanPhase(cwd, phase, raw, options = {}) {
       has_reviews: false,
     };
   }
-  const reqMatch = roadmapPhase?.section?.match(REQUIREMENTS_HEADER_RE);
-  const reqExtracted = reqMatch
-    ? reqMatch[1].replace(/[\[\]]/g, '').split(',').map(s => s.trim()).filter(Boolean).join(', ')
+  const reqRaw = roadmapPhase?.section ? extractPhaseFieldMultiline(roadmapPhase.section, 'Requirements') : null;
+  const reqExtracted = reqRaw
+    ? reqRaw.replace(/[\[\]]/g, '').split(',').map(s => s.trim()).filter(Boolean).join(', ')
     : null;
   const phase_req_ids = (reqExtracted && reqExtracted !== 'TBD') ? reqExtracted : null;
 
@@ -1117,8 +1113,7 @@ function cmdInitManager(cwd, raw) {
     const sectionEnd = nextHeader ? sectionStart + nextHeader.index : content.length;
     const section = content.slice(sectionStart, sectionEnd);
 
-    const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
-    const goal = goalMatch ? goalMatch[1].trim() : null;
+    const goal = extractPhaseFieldMultiline(section, 'Goal');
 
     const dependsMatch = section.match(/\*\*Depends on(?::\*\*|\*\*:)\s*([^\n]+)/i);
     const depends_on = dependsMatch ? dependsMatch[1].trim() : null;
