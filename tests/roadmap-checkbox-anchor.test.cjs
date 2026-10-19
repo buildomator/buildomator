@@ -97,6 +97,64 @@ check('#5063 phase 2 roadmap_complete is false (the phase 1 [x] row mentioning P
   });
 });
 
+// ─── #5064: init progress + init manager ───────────────────────────────────
+
+function progressStatus(dir, n) {
+  const d = tool(dir, ['init', 'progress']);
+  return (phase(d, n) || {}).status;
+}
+function managerComplete(dir, n) {
+  const d = tool(dir, ['init', 'manager']);
+  return (phase(d, n) || {}).roadmap_complete;
+}
+
+check('#5064 init progress keeps phase 2 not complete (first-match [ ] wins over a mid-line mention)', () => {
+  withProject((dir) => {
+    assert.strictEqual(progressStatus(dir, 2), 'not_started');
+  });
+});
+
+check('#5064 init progress reports phase 3 complete via the [legacy] bracket-tagged row', () => {
+  withProject((dir) => {
+    assert.strictEqual(progressStatus(dir, 3), 'complete');
+  });
+});
+
+check('#5064 init manager keeps phase 2 roadmap_complete false', () => {
+  withProject((dir) => {
+    assert.strictEqual(managerComplete(dir, 2), false);
+  });
+});
+
+check('#5064 init manager does NOT treat the bracket-tagged row as a checkbox for phase 3', () => {
+  withProject((dir) => {
+    assert.strictEqual(managerComplete(dir, 3), false);
+  });
+});
+
+// A checkbox indented two spaces still binds (leading whitespace allowed).
+const ROADMAP_INDENTED = `# Roadmap
+
+## Current Milestone: v1.0 Indented
+
+  - [x] **Phase 5: Indented complete**
+
+### Phase 5: Indented complete
+**Goal:** g
+`;
+
+check('#5064 init progress matches a checkbox indented two spaces', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ofz-cbindent-'));
+  try {
+    fs.mkdirSync(path.join(dir, '.planning', 'phases'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.planning', 'ROADMAP.md'), ROADMAP_INDENTED, 'utf-8');
+    fs.writeFileSync(path.join(dir, '.planning', 'STATE.md'), STATE, 'utf-8');
+    assert.strictEqual(progressStatus(dir, 5), 'complete');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 if (failures > 0) {
   console.error(`\n${failures} test(s) failed`);
   process.exit(1);

@@ -1091,12 +1091,15 @@ function cmdInitManager(cwd, raw) {
     } catch { return []; }
   })();
 
-  // Pre-extract all checkbox states in a single pass (avoids O(N) regex per phase)
+  // Pre-extract all checkbox states in a single pass (avoids O(N) regex per phase).
+  // gsd-core #5064: line-anchored, label-first, first-match-wins so a mid-line
+  // mention of Phase N cannot impersonate that phase's own row. The manager site
+  // has no bracket-tag tolerance (mirrors upstream).
   const _checkboxStates = new Map();
-  const _cbPattern = /-\s*\[(x| )\]\s*.*Phase\s+(\d+[A-Z]?(?:\.\d+)*)[:\s]/gi;
+  const _cbPattern = /^[ \t]*-\s*\[(x| )\]\s*(?:\*\*|__)?\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)[:\s]/gim;
   let _cbMatch;
   while ((_cbMatch = _cbPattern.exec(content)) !== null) {
-    _checkboxStates.set(_cbMatch[2], _cbMatch[1].toLowerCase() === 'x');
+    if (!_checkboxStates.has(_cbMatch[2])) _checkboxStates.set(_cbMatch[2], _cbMatch[1].toLowerCase() === 'x');
   }
 
   const phasePattern = /#{2,4}\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
@@ -1392,10 +1395,12 @@ function cmdInitProgress(cwd, raw) {
     }
     // #2646: parse `- [x] Phase N` checkbox states so ROADMAP-only phases
     // inherit completion from the ROADMAP when no phase directory exists.
-    const cbPattern = /-\s*\[(x| )\]\s*.*Phase\s+(\d+[A-Z]?(?:\.\d+)*)[:\s]/gi;
+    // gsd-core #5064: line-anchored, label-first, first-match-wins; the progress
+    // site tolerates an optional leading [tag] before the word Phase.
+    const cbPattern = /^[ \t]*-\s*\[(x| )\]\s*(?:\*\*|__)?\s*(?:\[[^\]\n]{0,200}\]\s*)?Phase\s+(\d+[A-Z]?(?:\.\d+)*)[:\s]/gim;
     let cbm;
     while ((cbm = cbPattern.exec(roadmapContent)) !== null) {
-      roadmapCheckboxStates.set(cbm[2], cbm[1].toLowerCase() === 'x');
+      if (!roadmapCheckboxStates.has(cbm[2])) roadmapCheckboxStates.set(cbm[2], cbm[1].toLowerCase() === 'x');
     }
   } catch { /* intentionally empty */ }
 

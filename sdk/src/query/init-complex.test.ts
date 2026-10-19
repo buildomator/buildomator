@@ -871,3 +871,45 @@ describe('initManager workstream (#2731)', () => {
     }
   });
 });
+
+describe('ROADMAP checkbox projection anchoring (gsd-core #5064)', () => {
+  const ANCHOR_ROADMAP = [
+    '# Roadmap',
+    '',
+    '## v3.0: SDK-First Migration',
+    '',
+    '- [x] **Phase 1: Auth** (see Phase 2 for follow-ups)',
+    '- [ ] **Phase 2: Billing**',
+    '- [x] [legacy] Phase 3: Imports',
+    '- [ ] Phase 2: duplicate later row',
+    'Note: the old row read - [x] Phase 2: Billing before the rename',
+    '',
+    '### Phase 1: Auth',
+    '**Goal:** a',
+    '### Phase 2: Billing',
+    '**Goal:** b',
+    '### Phase 3: Imports',
+    '**Goal:** c',
+    '',
+  ].join('\n');
+
+  const findP = (phases: Array<Record<string, unknown>>, n: string) =>
+    phases.find((p) => String(p.number).replace(/^0+(?=\d)/, '') === n);
+
+  it('initProgress keeps phase 2 incomplete and marks phase 3 complete via the bracket-tagged row', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), ANCHOR_ROADMAP);
+    const result = await initProgress([], tmpDir);
+    const phases = (result.data as Record<string, unknown>).phases as Array<Record<string, unknown>>;
+    expect(findP(phases, '2')?.status).not.toBe('complete');
+    expect(findP(phases, '3')?.status).toBe('complete');
+  });
+
+  it('initManager keeps phase 2 incomplete and does NOT treat the bracket-tagged row as phase 3 complete', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), ANCHOR_ROADMAP);
+    const result = await initManager([], tmpDir);
+    const phases = (result.data as Record<string, unknown>).phases as Array<Record<string, unknown>>;
+    expect(findP(phases, '1')?.roadmap_complete).toBe(true);
+    expect(findP(phases, '2')?.roadmap_complete).toBe(false);
+    expect(findP(phases, '3')?.roadmap_complete).toBe(false);
+  });
+});
