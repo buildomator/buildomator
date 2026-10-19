@@ -1212,6 +1212,13 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
   // When false (parallel-milestone case, Bug #2676), the milestone filter is bypassed
   // for next-phase detection so phases from the same secondary milestone are visible.
   let completedPhaseInPrimaryMilestone = true;
+  // gsd-core #4820: phase numbers whose current-milestone ROADMAP checkbox is
+  // `[x]`. A complete phase must never be selected as the next phase, in either
+  // the disk scan or the ROADMAP fallback. Empty when ROADMAP.md is absent, which
+  // preserves the previous behavior.
+  let roadmapCompleteNums: string[] = [];
+  const isRoadmapComplete = (num: string) =>
+    roadmapCompleteNums.some((c) => comparePhaseNum(c, num) === 0);
 
   try {
     const isDirInMilestone = await getMilestonePhaseFilter(projectDir, workstream);
@@ -1231,6 +1238,21 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
     completedPhaseInPrimaryMilestone = completedDirInFilter;
     const effectiveFilter = completedDirInFilter ? isDirInMilestone : (_d: string) => true;
 
+    // Collect the roadmap-complete phase numbers from the same slice the
+    // fallback uses (current-milestone slice for a primary-milestone phase, the
+    // full document otherwise, mirrors Bug #2676).
+    if (existsSync(paths.roadmap)) {
+      try {
+        const roadmapContent = await readFile(paths.roadmap, 'utf-8');
+        const scope = completedDirInFilter
+          ? await extractCurrentMilestone(roadmapContent, projectDir)
+          : roadmapContent;
+        const completePattern = /^[ \t]*-\s*\[[xX]\]\s*(?:\*\*|__)?\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)(?=[:\s])/gim;
+        let cm: RegExpExecArray | null;
+        while ((cm = completePattern.exec(scope)) !== null) roadmapCompleteNums.push(cm[1]);
+      } catch { /* intentionally empty: no ROADMAP means no complete set */ }
+    }
+
     const dirs = allDirs
       .filter(effectiveFilter)
       .sort((a, b) => comparePhaseNum(a, b));
@@ -1241,6 +1263,8 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
         // Skip backlog phases (999.x) — parked ideas, not sequential work (#2129).
         // Parity with bin/lib/phase.cjs, which already skips them.
         if (/^999(?:\.|$)/.test(dm[1])) continue;
+        // Skip phases already marked complete in the ROADMAP (#4820).
+        if (isRoadmapComplete(dm[1])) continue;
         if (comparePhaseNum(dm[1], phaseNum) > 0) {
           nextPhaseNum = dm[1];
           nextPhaseName = dm[2] || null;
@@ -1272,6 +1296,8 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
       while ((pm = phasePattern.exec(roadmapForPhases)) !== null) {
         // Skip backlog phases (999.x): parked ideas, not sequential work.
         if (/^999(?:\.|$)/.test(pm[1])) continue;
+        // Skip phases already marked complete in the ROADMAP (#4820).
+        if (isRoadmapComplete(pm[1])) continue;
         if (comparePhaseNum(pm[1], phaseNum) > 0 &&
             (nextPhaseNum === null || comparePhaseNum(pm[1], nextPhaseNum) < 0)) {
           nextPhaseNum = pm[1];

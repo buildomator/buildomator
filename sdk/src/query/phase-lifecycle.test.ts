@@ -1778,6 +1778,70 @@ describe('phaseComplete', () => {
     expect(pos).toMatch(/^Status: Ready to plan$/m);
     expect(pos).toMatch(/^Plan: Not started$/m);
   });
+
+  // gsd-core #4820
+  const ROADMAP_2_COMPLETE = [
+    '# Roadmap',
+    '',
+    '## Current Milestone',
+    '',
+    '### Phase 1: First',
+    '### Phase 2: Done',
+    '### Phase 3: Next',
+    '',
+    '- [x] **Phase 2: Done**',
+    '- [ ] **Phase 3: Next**',
+    '',
+  ].join('\n');
+
+  it('skips a roadmap-complete phase in the disk scan when selecting the next phase (#4820)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    await setupTestProject(tmpDir, {
+      roadmap: ROADMAP_2_COMPLETE,
+      state: STATE_NEXT_DERIVE,
+      phases: ['01-a', '02-b', '03-c'],
+    });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    const result = await phaseComplete(['1'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(String(data.next_phase).replace(/^0+(?=\d)/, '')).toBe('3');
+  });
+
+  it('skips a roadmap-complete phase in the ROADMAP fallback (#4820)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    await setupTestProject(tmpDir, {
+      roadmap: ROADMAP_2_COMPLETE,
+      state: STATE_NEXT_DERIVE,
+      phases: ['01-a'],
+    });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    const result = await phaseComplete(['1'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(String(data.next_phase).replace(/^0+(?=\d)/, '')).toBe('3');
+  });
+
+  it('leaves selection unchanged when ROADMAP.md is absent (#4820)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    await setupTestProject(tmpDir, {
+      state: STATE_NEXT_DERIVE,
+      phases: ['01-a', '02-b', '03-c'],
+    });
+    // Remove the ROADMAP.md that setupTestProject writes by default.
+    await rm(join(tmpDir, '.planning', 'ROADMAP.md'), { force: true });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    const result = await phaseComplete(['1'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(String(data.next_phase).replace(/^0+(?=\d)/, '')).toBe('2');
+  });
 });
 
 // ─── phasesClear ────────────────────────────────────────────────────────────

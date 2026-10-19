@@ -222,6 +222,81 @@ nextStateCase('#5358 next phase found only in ROADMAP (no directory) -> Ready to
   { '01-a': { plans: 1, summaries: 1 } },
   ROADMAP_1_3, 'Ready to plan', 'Not started');
 
+// ─── #4820: skip roadmap-complete phases in the next_phase cascade ──────────
+
+const ROADMAP_2_COMPLETE = `# Roadmap
+
+## Current Milestone
+
+### Phase 1: First
+### Phase 2: Done
+### Phase 3: Next
+
+- [x] **Phase 2: Done**
+- [ ] **Phase 3: Next**
+`;
+
+const ROADMAP_2_COMPLETE_PADDED = `# Roadmap
+
+## Current Milestone
+
+### Phase 1: First
+### Phase 2: Done
+### Phase 3: Next
+
+- [x] **Phase 02: Done**
+- [ ] **Phase 3: Next**
+`;
+
+const ROADMAP_999_COMPLETE = `# Roadmap
+
+## Current Milestone
+
+### Phase 1: First
+### Phase 2: Second
+### Phase 3: Third
+
+- [x] **Phase 999.1: Parked**
+`;
+
+function nextPhaseCase(name, phases, roadmap, expectNext) {
+  check(name, () => {
+    const opts = { state: STATE_WITH_POSITION, phases };
+    if (roadmap) opts.roadmap = roadmap;
+    const dir = buildFixture(opts);
+    try {
+      const data = runPhaseComplete(dir, '1');
+      // next_phase is zero-padded when sourced from the disk dir name (e.g. 03)
+      // and unpadded from the ROADMAP heading; compare on the stripped integer.
+      const got = String(data.next_phase).replace(/^0+(?=\d)/, '');
+      assert.strictEqual(got, String(expectNext),
+        `expected next_phase ${expectNext}, got ${JSON.stringify(data.next_phase)}`);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+}
+
+nextPhaseCase('#4820 disk scan skips a roadmap-complete phase 2, selecting phase 3',
+  { '01-a': { plans: 1, summaries: 1 }, '02-b': { plans: 1, summaries: 1 }, '03-c': { plans: 0, summaries: 0 } },
+  ROADMAP_2_COMPLETE, 3);
+
+nextPhaseCase('#4820 ROADMAP fallback skips a complete phase 2, selecting phase 3',
+  { '01-a': { plans: 1, summaries: 1 } },
+  ROADMAP_2_COMPLETE, 3);
+
+nextPhaseCase('#4820 a complete 999.x row never changes selection (still phase 2)',
+  { '01-a': { plans: 1, summaries: 1 }, '02-b': { plans: 0, summaries: 0 }, '03-c': { plans: 0, summaries: 0 } },
+  ROADMAP_999_COMPLETE, 2);
+
+nextPhaseCase('#4820 with ROADMAP.md absent, selection is unchanged (phase 2)',
+  { '01-a': { plans: 1, summaries: 1 }, '02-b': { plans: 0, summaries: 0 }, '03-c': { plans: 0, summaries: 0 } },
+  null, 2);
+
+nextPhaseCase('#4820 a zero-padded [x] Phase 02 row still skips the dir 2-... (comparePhaseNum dedupe)',
+  { '01-a': { plans: 1, summaries: 1 }, '02-b': { plans: 1, summaries: 1 }, '03-c': { plans: 0, summaries: 0 } },
+  ROADMAP_2_COMPLETE_PADDED, 3);
+
 if (failures > 0) {
   console.error(`\n${failures} test(s) failed`);
   process.exit(1);

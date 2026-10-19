@@ -1305,6 +1305,21 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
   let nextPhaseName = null;
   let nextPhaseDir = null;
   let isLastPhase = true;
+  // gsd-core #4820: phase numbers whose current-milestone ROADMAP checkbox is
+  // `[x]`. A complete phase must never be selected as the next phase, in either
+  // the disk scan or the ROADMAP fallback. Empty when ROADMAP.md is absent, which
+  // preserves the previous behavior.
+  let roadmapCompleteNums = [];
+  const isRoadmapComplete = (num) =>
+    roadmapCompleteNums.some((c) => comparePhaseNum(c, num) === 0);
+  if (fs.existsSync(roadmapPath)) {
+    try {
+      const scope = extractCurrentMilestone(fs.readFileSync(roadmapPath, 'utf-8'), cwd);
+      const completePattern = /^[ \t]*-\s*\[[xX]\]\s*(?:\*\*|__)?\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)(?=[:\s])/gim;
+      let cm;
+      while ((cm = completePattern.exec(scope)) !== null) roadmapCompleteNums.push(cm[1]);
+    } catch { /* intentionally empty: no ROADMAP means no complete set */ }
+  }
 
   try {
     const isDirInMilestone = getMilestonePhaseFilter(cwd);
@@ -1319,6 +1334,8 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
       const dm = dir.match(/^(\d+[A-Z]?(?:\.\d+)*)-?(.*)/i);
       if (dm) {
         if (/^999(?:\.|$)/.test(dm[1])) continue;
+        // Skip phases already marked complete in the ROADMAP (#4820).
+        if (isRoadmapComplete(dm[1])) continue;
         if (comparePhaseNum(dm[1], phaseNum) > 0) {
           nextPhaseNum = dm[1];
           nextPhaseName = dm[2] || null;
@@ -1345,6 +1362,8 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
       while ((pm = phasePattern.exec(roadmapForPhases)) !== null) {
         // Skip backlog phases (999.x): parked ideas, not sequential work.
         if (/^999(?:\.|$)/.test(pm[1])) continue;
+        // Skip phases already marked complete in the ROADMAP (#4820).
+        if (isRoadmapComplete(pm[1])) continue;
         if (comparePhaseNum(pm[1], phaseNum) > 0 &&
             (nextPhaseNum === null || comparePhaseNum(pm[1], nextPhaseNum) < 0)) {
           nextPhaseNum = pm[1];
