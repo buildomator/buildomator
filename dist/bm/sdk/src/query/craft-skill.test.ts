@@ -425,9 +425,9 @@ describe('craft-skill match (SDK)', () => {
 
   it('returns no candidates and echoes the scope for an unrelated scope', async () => {
     const catalog = await writeCatalogFixture(tmpDir);
-    const r = matchCraftSkills({ scope: 'refactor the login form', catalog });
+    const r = matchCraftSkills({ scope: 'schedule the quarterly team offsite', catalog });
     expect(r.candidates).toEqual([]);
-    expect(r.scope).toBe('refactor the login form');
+    expect(r.scope).toBe('schedule the quarterly team offsite');
   });
 
   it('treats a scope with shell metacharacters as data and still matches', async () => {
