@@ -39,6 +39,43 @@ function coerceTruthToString(t) {
   return '';
 }
 
+// Read a `**Label:**` phase field that may be soft-wrapped across continuation
+// lines (port of gsd-core #4826). The roadmapper wraps long Goal/Requirements
+// values onto a second or third line; a single-line `[^\n]+` read silently
+// truncated them, dropping continuation REQ IDs. Accepts `**Label:**`,
+// `**Label**:`, `**Label** :`, and the no-colon `**Label**` form (#2769).
+function extractPhaseFieldMultiline(section, label) {
+  const escaped = escapeRegex(label);
+  const labelRe = new RegExp(`^[ \\t]*\\*\\*${escaped}:?\\*\\*[ \\t]*:?[ \\t]*(.*)$`, 'i');
+  const lines = section.split('\n');
+  let idx = -1;
+  let firstValue = '';
+  for (let i = 0; i < lines.length; i++) {
+    const lm = lines[i].match(labelRe);
+    if (lm) { idx = i; firstValue = lm[1]; break; }
+  }
+  if (idx === -1) return null;
+  // Stop rules. The first four (blank, bold label, heading, table row) mirror
+  // upstream; the last three (list item, HTML tag line, bare label line such as
+  // `Plans:`) are a downstream extension because our ROADMAP template places
+  // `Plans:` and `- [ ]` rows directly under the fields.
+  const stop = (line) =>
+    /^[ \t]*$/.test(line) ||
+    /^[ \t]*\*\*[^*\n]+\*\*/.test(line) ||
+    /^[ \t]*#{1,6}\s/.test(line) ||
+    /^[ \t]*\|/.test(line) ||
+    /^[ \t]*(?:[-*+]|\d+[.)])\s/.test(line) ||
+    /^[ \t]*</.test(line) ||
+    /^[A-Za-z][A-Za-z ]{0,40}:[ \t]*$/.test(line);
+  const collected = [firstValue];
+  for (let i = idx + 1; i < lines.length; i++) {
+    if (stop(lines[i])) break;
+    collected.push(lines[i]);
+  }
+  const result = collected.map((l) => l.trim()).join(' ').trim();
+  return result === '' ? null : result;
+}
+
 function countPhasePlansAndSummaries(phaseDir) {
   const { planCount, summaryCount } = scanPhasePlans(phaseDir);
   // hasContext and hasResearch are not plan-scan concerns — read the directory
@@ -102,9 +139,9 @@ function searchPhaseInContent(content, escapedPhase, phaseNum) {
 
   const section = content.slice(headerIndex, sectionEnd).trim();
 
-  // Extract goal if present (supports both **Goal:** and **Goal**: formats)
-  const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
-  const goal = goalMatch ? goalMatch[1].trim() : null;
+  // Extract goal if present (supports both **Goal:** and **Goal**: formats),
+  // reading past a soft wrap (#4826).
+  const goal = extractPhaseFieldMultiline(section, 'Goal');
 
   // Mode: vertical-MVP slice mode flag. Lowercased + trimmed for canonical
   // comparison; unrecognized values are preserved verbatim for forward-compat.
@@ -235,8 +272,7 @@ function cmdRoadmapAnalyze(cwd, raw) {
     const sectionEnd = nextHeader ? sectionStart + nextHeader.index : content.length;
     const section = content.slice(sectionStart, sectionEnd);
 
-    const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
-    const goal = goalMatch ? goalMatch[1].trim() : null;
+    const goal = extractPhaseFieldMultiline(section, 'Goal');
 
     const modeMatch = section.match(/\*\*Mode(?::\*\*|\*\*:)\s*([^\n]+)/i);
     const mode = modeMatch ? modeMatch[1].trim().toLowerCase() : null;
@@ -275,7 +311,10 @@ function cmdRoadmapAnalyze(cwd, raw) {
     // #3537: padding-tolerant fragment — the heading discovered above may use
     // a different padding than the summary-bullet checkbox below it (mixed
     // padding inside one ROADMAP is legal and seen in real projects).
-    const checkboxPattern = new RegExp(`-\\s*\\[(x| )\\]\\s*.*Phase\\s+${phaseMarkdownRegexSource(phaseNum)}[:\\s]`, 'i');
+    // gsd-core #5063: anchor to each phase's own checklist line (line start,
+    // label-first) so an earlier [x] row that merely mentions Phase N mid-line
+    // cannot bind this phase's roadmap_complete.
+    const checkboxPattern = new RegExp(`^[ \\t]*-\\s*\\[(x| )\\]\\s*(?:\\*\\*|__)?\\s*Phase\\s+${phaseMarkdownRegexSource(phaseNum)}[:\\s]`, 'im');
     const checkboxMatch = content.match(checkboxPattern);
     const roadmapComplete = checkboxMatch ? checkboxMatch[1] === 'x' : false;
 
@@ -639,4 +678,5 @@ module.exports = {
   cmdRoadmapAnalyze,
   cmdRoadmapUpdatePlanProgress,
   cmdRoadmapAnnotateDependencies,
+  extractPhaseFieldMultiline,
 };

@@ -1625,6 +1625,258 @@ describe('phaseComplete', () => {
 
     expect(String(data.next_phase)).toBe('2');
   });
+
+  // gsd-core #4898
+  it('scopes the Current Plan reset to the Current Position section, leaving prose untouched', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = '# Roadmap\n\n## Current Milestone\n\n### Phase 1: First\n';
+    const state = [
+      '---',
+      'gsd_state_version: 1.0',
+      'milestone: test',
+      'status: executing',
+      '---',
+      '',
+      '# Project State',
+      '',
+      '## Project Reference',
+      '',
+      'plan: keep this prose',
+      '',
+      '## Current Position',
+      '',
+      'Phase: 1 (First)',
+      'Status: Executing Phase 1',
+      'Plan: 02-01-PLAN.md',
+      '',
+    ].join('\n');
+    await setupTestProject(tmpDir, { roadmap, state, phases: ['01-a'] });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const result = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+
+    expect(result).toContain('plan: keep this prose');
+    const pos = result.match(/(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i);
+    expect(pos?.[2]).toMatch(/^Plan: Not started$/m);
+  });
+
+  // gsd-core #4898
+  it('falls back to a whole-body reset when there is no Current Position section', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = '# Roadmap\n\n## Current Milestone\n\n### Phase 1: First\n';
+    const state = [
+      '---',
+      'gsd_state_version: 1.0',
+      'milestone: test',
+      'status: executing',
+      '---',
+      '',
+      '# Project State',
+      '',
+      'Plan: 01',
+      'Status: executing',
+      '',
+    ].join('\n');
+    await setupTestProject(tmpDir, { roadmap, state, phases: ['01-a'] });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const result = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+
+    expect(result).toMatch(/^Plan: Not started$/m);
+  });
+
+  // gsd-core #5358
+  const STATE_NEXT_DERIVE = [
+    '---',
+    'gsd_state_version: 1.0',
+    'milestone: test',
+    'status: executing',
+    '---',
+    '',
+    '# Project State',
+    '',
+    '## Current Position',
+    '',
+    'Phase: 1 (First)',
+    'Status: Executing Phase 1',
+    'Plan: 01-01-PLAN.md',
+    '',
+  ].join('\n');
+  const ROADMAP_NEXT_DERIVE = '# Roadmap\n\n## Current Milestone\n\n### Phase 1: First\n### Phase 2: Second\n';
+
+  async function setupNextDerive(): Promise<string> {
+    await setupTestProject(tmpDir, {
+      roadmap: ROADMAP_NEXT_DERIVE,
+      state: STATE_NEXT_DERIVE,
+      phases: ['01-a', '02-b'],
+    });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+    return join(tmpDir, '.planning', 'phases', '02-b');
+  }
+
+  function positionSection(stateText: string): string {
+    return stateText.match(/(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i)?.[2] ?? '';
+  }
+
+  it('derives Ready to execute for a planned next phase with no summaries (#5358)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const p2 = await setupNextDerive();
+    await writeFile(join(p2, '02-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p2, '02-02-PLAN.md'), 'plan', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const pos = positionSection(await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8'));
+    expect(pos).toMatch(/^Status: Ready to execute$/m);
+    expect(pos).toMatch(/^Plan: Not started$/m);
+  });
+
+  it('derives Ready to execute with the next plan index for a partially executed next phase (#5358)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const p2 = await setupNextDerive();
+    await writeFile(join(p2, '02-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p2, '02-02-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p2, '02-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const pos = positionSection(await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8'));
+    expect(pos).toMatch(/^Status: Ready to execute$/m);
+    expect(pos).toMatch(/^Plan: 2$/m);
+  });
+
+  it('derives Ready for verification for a fully executed next phase with no VERIFICATION.md (#5358)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const p2 = await setupNextDerive();
+    await writeFile(join(p2, '02-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p2, '02-02-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p2, '02-01-SUMMARY.md'), 'summary', 'utf-8');
+    await writeFile(join(p2, '02-02-SUMMARY.md'), 'summary', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const pos = positionSection(await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8'));
+    expect(pos).toMatch(/^Status: Ready for verification$/m);
+    expect(pos).toMatch(/^Plan: 2$/m);
+  });
+
+  it('keeps Ready to plan when the next phase exists only in ROADMAP (#5358)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = '# Roadmap\n\n## Current Milestone\n\n### Phase 1: First\n### Phase 3: Third\n';
+    await setupTestProject(tmpDir, { roadmap, state: STATE_NEXT_DERIVE, phases: ['01-a'] });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const pos = positionSection(await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8'));
+    expect(pos).toMatch(/^Status: Ready to plan$/m);
+    expect(pos).toMatch(/^Plan: Not started$/m);
+  });
+
+  // gsd-core #4820
+  const ROADMAP_2_COMPLETE = [
+    '# Roadmap',
+    '',
+    '## Current Milestone',
+    '',
+    '### Phase 1: First',
+    '### Phase 2: Done',
+    '### Phase 3: Next',
+    '',
+    '- [x] **Phase 2: Done**',
+    '- [ ] **Phase 3: Next**',
+    '',
+  ].join('\n');
+
+  it('skips a roadmap-complete phase in the disk scan when selecting the next phase (#4820)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    await setupTestProject(tmpDir, {
+      roadmap: ROADMAP_2_COMPLETE,
+      state: STATE_NEXT_DERIVE,
+      phases: ['01-a', '02-b', '03-c'],
+    });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    const result = await phaseComplete(['1'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(String(data.next_phase).replace(/^0+(?=\d)/, '')).toBe('3');
+  });
+
+  it('skips a roadmap-complete phase in the ROADMAP fallback (#4820)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    await setupTestProject(tmpDir, {
+      roadmap: ROADMAP_2_COMPLETE,
+      state: STATE_NEXT_DERIVE,
+      phases: ['01-a'],
+    });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    const result = await phaseComplete(['1'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(String(data.next_phase).replace(/^0+(?=\d)/, '')).toBe('3');
+  });
+
+  it('leaves selection unchanged when ROADMAP.md is absent (#4820)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    await setupTestProject(tmpDir, {
+      state: STATE_NEXT_DERIVE,
+      phases: ['01-a', '02-b', '03-c'],
+    });
+    // Remove the ROADMAP.md that setupTestProject writes by default.
+    await rm(join(tmpDir, '.planning', 'ROADMAP.md'), { force: true });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    const result = await phaseComplete(['1'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(String(data.next_phase).replace(/^0+(?=\d)/, '')).toBe('2');
+  });
+
+  // gsd-core #4826
+  it('ticks continuation REQ IDs from a hard-wrapped Requirements field', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = [
+      '# Roadmap',
+      '',
+      '## Current Milestone: v1.0 Wrapped',
+      '',
+      '### Phase 1: Wrapped',
+      '',
+      '**Goal:** g',
+      '**Requirements:** AUTH-01, AUTH-02,',
+      'AUTH-03, AUTH-04',
+      '',
+    ].join('\n');
+    await setupTestProject(tmpDir, { roadmap, state: STATE_NEXT_DERIVE, phases: ['01-a'] });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+    await writeFile(join(tmpDir, '.planning', 'REQUIREMENTS.md'), [
+      '# Requirements',
+      '',
+      '- [ ] **AUTH-01** a',
+      '- [ ] **AUTH-02** b',
+      '- [ ] **AUTH-03** c',
+      '- [ ] **AUTH-04** d',
+      '',
+    ].join('\n'), 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const req = await readFile(join(tmpDir, '.planning', 'REQUIREMENTS.md'), 'utf-8');
+    expect(req).toMatch(/- \[x\] \*\*AUTH-03\*\*/);
+    expect(req).toMatch(/- \[x\] \*\*AUTH-04\*\*/);
+  });
 });
 
 // ─── phasesClear ────────────────────────────────────────────────────────────

@@ -23,7 +23,9 @@ import { join, relative } from 'node:path';
 import { GSDError, ErrorClassification } from '../errors.js';
 import { escapeRegex, normalizeMd, normalizePhaseName, comparePhaseNum, phaseTokenMatches, toPosixPath, planningPaths, } from './helpers.js';
 import { extractFrontmatter } from './frontmatter.js';
-import { extractCurrentMilestone, phaseEntryInsertOffset } from './roadmap.js';
+import { extractCurrentMilestone, phaseEntryInsertOffset, extractPhaseFieldMultiline } from './roadmap.js';
+import { determinePhaseStatus } from './progress.js';
+import { scanPhasePlans } from './plan-scan.js';
 import { getMilestonePhaseFilter } from './state.js';
 import { acquireStateLock, readModifyWriteStateMdFull, releaseStateLock, stateReplaceField, } from './state-mutation.js';
 import { stateExtractField, stateReplaceFieldWithFallback } from './state-document.js';
@@ -806,6 +808,21 @@ function updatePerformanceMetricsSection(content, phaseNum, planCount, summaryCo
     return content;
 }
 // ─── phaseComplete handler ────────────────────────────────────────────────
+// gsd-core #4898: scope a Current Position field rewrite to the
+// `## Current Position` section. The plain `Plan`/`Status` fallback in
+// stateReplaceField matches the first matching line anywhere in the body
+// (im flags), so a prose line elsewhere (e.g. one that starts `plan:`) would be
+// rewritten by mistake. Rewriting only the Current Position slice keeps prose
+// untouched; when the section is absent, fall back to the whole-body behavior.
+function replaceFieldInCurrentPosition(content, primary, fallback, value) {
+    const posPattern = /(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i;
+    const posMatch = content.match(posPattern);
+    if (posMatch) {
+        const newBody = stateReplaceFieldWithFallback(posMatch[2], primary, fallback, value);
+        return content.replace(posPattern, () => `${posMatch[1]}${newBody}`);
+    }
+    return stateReplaceFieldWithFallback(content, primary, fallback, value);
+}
 /**
  * Query handler for phase.complete.
  *
@@ -912,9 +929,11 @@ export const phaseComplete = async (args, projectDir, workstream) => {
                 const currentMilestoneRoadmap = await extractCurrentMilestone(roadmapContent, projectDir);
                 const phaseSectionMatch = currentMilestoneRoadmap.match(new RegExp(`(#{2,4}\\s*Phase\\s+${phaseEscaped}[:\\s][\\s\\S]*?)(?=#{2,4}\\s*Phase\\s+|$)`, 'i'));
                 const sectionText = phaseSectionMatch ? phaseSectionMatch[1] : '';
-                const reqMatch = sectionText.match(/\*\*Requirements\*?\*?:?\s*([^\n]+)/i);
-                if (reqMatch) {
-                    const reqIds = reqMatch[1].replace(/[[\]]/g, '').split(/[,\s]+/).map(r => r.trim()).filter(Boolean);
+                // Read past a soft wrap so continuation REQ IDs are ticked too (#4826).
+                // An empty Requirements value now yields null and skips the write below.
+                const reqRaw = extractPhaseFieldMultiline(sectionText, 'Requirements');
+                if (reqRaw) {
+                    const reqIds = reqRaw.replace(/[[\]]/g, '').split(/[,\s]+/).map(r => r.trim()).filter(Boolean);
                     let reqContent = await readFile(reqPath, 'utf-8');
                     for (const reqId of reqIds) {
                         const reqEscaped = escapeRegex(reqId);
@@ -933,11 +952,18 @@ export const phaseComplete = async (args, projectDir, workstream) => {
     // Step E: Find next phase — filesystem first, then ROADMAP.md fallback
     let nextPhaseNum = null;
     let nextPhaseName = null;
+    let nextPhaseDir = null;
     let isLastPhase = true;
     // Tracks whether the completed phase belongs to the primary milestone in STATE.md.
     // When false (parallel-milestone case, Bug #2676), the milestone filter is bypassed
     // for next-phase detection so phases from the same secondary milestone are visible.
     let completedPhaseInPrimaryMilestone = true;
+    // gsd-core #4820: phase numbers whose current-milestone ROADMAP checkbox is
+    // `[x]`. A complete phase must never be selected as the next phase, in either
+    // the disk scan or the ROADMAP fallback. Empty when ROADMAP.md is absent, which
+    // preserves the previous behavior.
+    let roadmapCompleteNums = [];
+    const isRoadmapComplete = (num) => roadmapCompleteNums.some((c) => comparePhaseNum(c, num) === 0);
     try {
         const isDirInMilestone = await getMilestonePhaseFilter(projectDir, workstream);
         const entries = await readdir(paths.phases, { withFileTypes: true });
@@ -954,6 +980,22 @@ export const phaseComplete = async (args, projectDir, workstream) => {
         });
         completedPhaseInPrimaryMilestone = completedDirInFilter;
         const effectiveFilter = completedDirInFilter ? isDirInMilestone : (_d) => true;
+        // Collect the roadmap-complete phase numbers from the same slice the
+        // fallback uses (current-milestone slice for a primary-milestone phase, the
+        // full document otherwise, mirrors Bug #2676).
+        if (existsSync(paths.roadmap)) {
+            try {
+                const roadmapContent = await readFile(paths.roadmap, 'utf-8');
+                const scope = completedDirInFilter
+                    ? await extractCurrentMilestone(roadmapContent, projectDir)
+                    : roadmapContent;
+                const completePattern = /^[ \t]*-\s*\[[xX]\]\s*(?:\*\*|__)?\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)(?=[:\s])/gim;
+                let cm;
+                while ((cm = completePattern.exec(scope)) !== null)
+                    roadmapCompleteNums.push(cm[1]);
+            }
+            catch { /* intentionally empty: no ROADMAP means no complete set */ }
+        }
         const dirs = allDirs
             .filter(effectiveFilter)
             .sort((a, b) => comparePhaseNum(a, b));
@@ -964,9 +1006,13 @@ export const phaseComplete = async (args, projectDir, workstream) => {
                 // Parity with bin/lib/phase.cjs, which already skips them.
                 if (/^999(?:\.|$)/.test(dm[1]))
                     continue;
+                // Skip phases already marked complete in the ROADMAP (#4820).
+                if (isRoadmapComplete(dm[1]))
+                    continue;
                 if (comparePhaseNum(dm[1], phaseNum) > 0) {
                     nextPhaseNum = dm[1];
                     nextPhaseName = dm[2] || null;
+                    nextPhaseDir = join(paths.phases, dir);
                     isLastPhase = false;
                     break;
                 }
@@ -995,6 +1041,9 @@ export const phaseComplete = async (args, projectDir, workstream) => {
                 // Skip backlog phases (999.x): parked ideas, not sequential work.
                 if (/^999(?:\.|$)/.test(pm[1]))
                     continue;
+                // Skip phases already marked complete in the ROADMAP (#4820).
+                if (isRoadmapComplete(pm[1]))
+                    continue;
                 if (comparePhaseNum(pm[1], phaseNum) > 0 &&
                     (nextPhaseNum === null || comparePhaseNum(pm[1], nextPhaseNum) < 0)) {
                     nextPhaseNum = pm[1];
@@ -1004,6 +1053,41 @@ export const phaseComplete = async (args, projectDir, workstream) => {
             }
         }
         catch { /* intentionally empty */ }
+    }
+    // gsd-core #5358: derive the next phase's Status from its disk state instead
+    // of always writing `Ready to plan`. An already-planned or already-executed
+    // next phase would otherwise route the next session back into plan-phase.
+    // The next phase found only in ROADMAP (no directory) stays `Ready to plan`.
+    // Use the plain string `Ready for verification` (upstream's status contains an
+    // em-dash, which this project forbids).
+    let nextStatus = isLastPhase ? 'Milestone complete' : 'Ready to plan';
+    let nextPlanValue = 'Not started';
+    if (!isLastPhase && nextPhaseDir) {
+        try {
+            const scan = scanPhasePlans(nextPhaseDir);
+            const ladder = await determinePhaseStatus(scan.planCount, scan.summaryCount, nextPhaseDir, 'Pending');
+            if (ladder === 'Pending') {
+                nextStatus = 'Ready to plan';
+                nextPlanValue = 'Not started';
+            }
+            else if (ladder === 'Planned') {
+                nextStatus = 'Ready to execute';
+                nextPlanValue = 'Not started';
+            }
+            else if (ladder === 'In Progress') {
+                nextStatus = 'Ready to execute';
+                nextPlanValue = String(scan.summaryCount + 1);
+            }
+            else {
+                // Executed, Needs Review, Complete
+                nextStatus = 'Ready for verification';
+                nextPlanValue = String(scan.planCount);
+            }
+        }
+        catch {
+            nextStatus = 'Ready to plan';
+            nextPlanValue = 'Not started';
+        }
     }
     // Step F: Update STATE.md atomically
     let stateUpdated = false;
@@ -1034,10 +1118,11 @@ export const phaseComplete = async (args, projectDir, workstream) => {
                 }
             }
             body = stateReplaceFieldWithFallback(body, 'Current Phase', 'Phase', newPhaseValue);
-            // Update Status
-            body = stateReplaceFieldWithFallback(body, 'Status', null, isLastPhase ? 'Milestone complete' : 'Ready to plan');
+            // Update Status (scoped to Current Position so #5358's derived status
+            // lands on the Current Position line, not an earlier prose line)
+            body = replaceFieldInCurrentPosition(body, 'Status', null, nextStatus);
             // Update Current Plan
-            body = stateReplaceFieldWithFallback(body, 'Current Plan', 'Plan', 'Not started');
+            body = replaceFieldInCurrentPosition(body, 'Current Plan', 'Plan', nextPlanValue);
             // Update Last Activity
             body = stateReplaceFieldWithFallback(body, 'Last Activity', 'Last activity', today);
             // Update Performance Metrics section (operates on body only)

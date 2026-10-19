@@ -70,6 +70,18 @@ export interface QueuedPhase {
     depends_on: string | null;
 }
 /**
+ * Read a `**Label:**` phase field that may be soft-wrapped across continuation
+ * lines (port of gsd-core #4826). The roadmapper wraps long Goal/Requirements
+ * values onto a second or third line; a single-line `[^\n]+` read silently
+ * truncated them, dropping continuation REQ IDs.
+ *
+ * Accepts the label as `**Label:**`, `**Label**:`, `**Label** :`, and the
+ * no-colon `**Label**` form (#2769). Continuation lines are appended until the
+ * first line matching any stop rule, then trimmed and joined with single spaces.
+ * Returns null for a missing label or an empty value.
+ */
+export declare function extractPhaseFieldMultiline(section: string, label: string): string | null;
+/**
  * Extract phase entries from an arbitrary ROADMAP milestone section.
  *
  * Parses `#### Phase N: Name` / `### Phase N: Name` / `## Phase N: Name`

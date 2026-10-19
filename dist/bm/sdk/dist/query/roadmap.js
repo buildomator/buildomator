@@ -373,6 +373,53 @@ export async function extractCurrentMilestone(content, projectDir, workstream) {
     return content.slice(sectionStart, sectionEnd) + phaseDetailsTail;
 }
 /**
+ * Read a `**Label:**` phase field that may be soft-wrapped across continuation
+ * lines (port of gsd-core #4826). The roadmapper wraps long Goal/Requirements
+ * values onto a second or third line; a single-line `[^\n]+` read silently
+ * truncated them, dropping continuation REQ IDs.
+ *
+ * Accepts the label as `**Label:**`, `**Label**:`, `**Label** :`, and the
+ * no-colon `**Label**` form (#2769). Continuation lines are appended until the
+ * first line matching any stop rule, then trimmed and joined with single spaces.
+ * Returns null for a missing label or an empty value.
+ */
+export function extractPhaseFieldMultiline(section, label) {
+    const escaped = escapeRegex(label);
+    const labelRe = new RegExp(`^[ \\t]*\\*\\*${escaped}:?\\*\\*[ \\t]*:?[ \\t]*(.*)$`, 'i');
+    const lines = section.split('\n');
+    let idx = -1;
+    let firstValue = '';
+    for (let i = 0; i < lines.length; i++) {
+        const lm = lines[i].match(labelRe);
+        if (lm) {
+            idx = i;
+            firstValue = lm[1];
+            break;
+        }
+    }
+    if (idx === -1)
+        return null;
+    // Stop rules. The first four (blank, bold label, heading, table row) mirror
+    // upstream; the last three (list item, HTML tag line, bare label line such as
+    // `Plans:`) are a downstream extension because our ROADMAP template places
+    // `Plans:` and `- [ ]` rows directly under the fields.
+    const stop = (line) => /^[ \t]*$/.test(line) ||
+        /^[ \t]*\*\*[^*\n]+\*\*/.test(line) ||
+        /^[ \t]*#{1,6}\s/.test(line) ||
+        /^[ \t]*\|/.test(line) ||
+        /^[ \t]*(?:[-*+]|\d+[.)])\s/.test(line) ||
+        /^[ \t]*</.test(line) ||
+        /^[A-Za-z][A-Za-z ]{0,40}:[ \t]*$/.test(line);
+    const collected = [firstValue];
+    for (let i = idx + 1; i < lines.length; i++) {
+        if (stop(lines[i]))
+            break;
+        collected.push(lines[i]);
+    }
+    const result = collected.map((l) => l.trim()).join(' ').trim();
+    return result === '' ? null : result;
+}
+/**
  * Extract phase entries from an arbitrary ROADMAP milestone section.
  *
  * Parses `#### Phase N: Name` / `### Phase N: Name` / `## Phase N: Name`
@@ -392,12 +439,12 @@ export function extractPhasesFromSection(section) {
         const nextHeader = rest.match(/\n#{2,4}\s+Phase\s+\d/i);
         const end = nextHeader ? sectionStart + (nextHeader.index ?? 0) : section.length;
         const body = section.slice(sectionStart, end);
-        const goalMatch = body.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
+        const goal = extractPhaseFieldMultiline(body, 'Goal');
         const dependsMatch = body.match(/\*\*Depends on(?::\*\*|\*\*:)\s*([^\n]+)/i);
         phases.push({
             number: phaseNum,
             name: phaseName,
-            goal: goalMatch ? goalMatch[1].trim() : null,
+            goal,
             depends_on: dependsMatch ? dependsMatch[1].trim() : null,
         });
     }
@@ -498,9 +545,9 @@ function searchPhaseInContent(content, escapedPhase, phaseNum) {
         ? headerIndex + nextHeaderMatch.index
         : content.length;
     const section = content.slice(headerIndex, sectionEnd).trim();
-    // Extract goal if present (supports both **Goal:** and **Goal**: formats)
-    const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
-    const goal = goalMatch ? goalMatch[1].trim() : null;
+    // Extract goal if present (supports both **Goal:** and **Goal**: formats),
+    // reading past a soft wrap (#4826).
+    const goal = extractPhaseFieldMultiline(section, 'Goal');
     // Mode: vertical-MVP slice mode flag. Lowercased + trimmed for canonical
     // comparison; unrecognized values preserved verbatim for forward-compat.
     // Mirrors roadmap.cjs:120-123 — restoring parity that was missed in the SDK port.
@@ -612,8 +659,7 @@ export const roadmapAnalyze = async (_args, projectDir, workstream) => {
         const nextHeader = restOfContent.match(/\n#{2,4}\s+Phase\s+[A-Za-z]?\d/i);
         const sectionEnd = nextHeader ? sectionStart + nextHeader.index : content.length;
         const section = content.slice(sectionStart, sectionEnd);
-        const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
-        const goal = goalMatch ? goalMatch[1].trim() : null;
+        const goal = extractPhaseFieldMultiline(section, 'Goal');
         const dependsMatch = section.match(/\*\*Depends on(?::\*\*|\*\*:)\s*([^\n]+)/i);
         const depends_on = dependsMatch ? dependsMatch[1].trim() : null;
         // Check completion on disk
@@ -649,7 +695,10 @@ export const roadmapAnalyze = async (_args, projectDir, workstream) => {
         }
         catch { /* intentionally empty */ }
         // Check ROADMAP checkbox status
-        const checkboxPattern = new RegExp(`-\\s*\\[(x| )\\]\\s*.*Phase\\s+${escapeRegex(phaseNum)}[:\\s]`, 'i');
+        // gsd-core #5063: anchor to each phase's own checklist line (line start,
+        // label-first) so an earlier [x] row that merely mentions Phase N mid-line
+        // cannot bind this phase's roadmap_complete.
+        const checkboxPattern = new RegExp(`^[ \\t]*-\\s*\\[(x| )\\]\\s*(?:\\*\\*|__)?\\s*Phase\\s+${escapeRegex(phaseNum)}[:\\s]`, 'im');
         const checkboxMatch = content.match(checkboxPattern);
         const roadmapComplete = checkboxMatch ? checkboxMatch[1] === 'x' : false;
         // If roadmap marks phase complete, trust that over disk ONLY for legacy

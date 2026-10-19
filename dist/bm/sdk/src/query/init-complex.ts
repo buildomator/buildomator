@@ -40,6 +40,7 @@ import {
   extractCurrentMilestone,
   extractNextMilestoneSection,
   extractPhasesFromSection,
+  extractPhaseFieldMultiline,
 } from './roadmap.js';
 import { agentSkills } from './skills.js';
 import { withProjectRoot } from './init.js';
@@ -131,13 +132,23 @@ async function resolveAgentSkillPayloadAgents(
  * Extract ROADMAP checkbox states: `- [x] Phase N` → true, `- [ ] Phase N` → false.
  * Shared by initProgress and initManager so both treat ROADMAP as the
  * fallback/override source of truth for completion.
+ *
+ * gsd-core #5064: line-anchored (^, m flag), label-first, and first-match-wins
+ * so a mid-line mention of Phase N on an earlier row cannot impersonate that
+ * phase's own checkbox. When allowBracketTag is set (progress site), an optional
+ * leading `[tag]` before the word Phase is tolerated to preserve current
+ * bracket-tagged row matching.
  */
-function extractCheckboxStates(content: string): Map<string, boolean> {
+function extractCheckboxStates(content: string, allowBracketTag = false): Map<string, boolean> {
   const states = new Map<string, boolean>();
-  const pattern = /-\s*\[(x| )\]\s*.*Phase\s+(\d+[A-Z]?(?:\.\d+)*)[:\s]/gi;
+  const bracket = allowBracketTag ? '(?:\\[[^\\]\\n]{0,200}\\]\\s*)?' : '';
+  const pattern = new RegExp(
+    `^[ \\t]*-\\s*\\[(x| )\\]\\s*(?:\\*\\*|__)?\\s*${bracket}Phase\\s+(\\d+[A-Z]?(?:\\.\\d+)*)[:\\s]`,
+    'gim',
+  );
   let m: RegExpExecArray | null;
   while ((m = pattern.exec(content)) !== null) {
-    states.set(m[2], m[1].toLowerCase() === 'x');
+    if (!states.has(m[2])) states.set(m[2], m[1].toLowerCase() === 'x');
   }
   return states;
 }
@@ -349,7 +360,7 @@ export const initProgress: QueryHandler = async (_args, projectDir, workstream) 
       const pName = hm[2].replace(/\(INSERTED\)/i, '').trim();
       roadmapPhaseNames.set(pNum, pName);
     }
-    checkboxStates = extractCheckboxStates(roadmapContent);
+    checkboxStates = extractCheckboxStates(roadmapContent, true);
     terminalLabels = extractTerminalStatusLabels(roadmapContent);
   } catch { /* intentionally empty */ }
 
@@ -542,8 +553,7 @@ export const initManager: QueryHandler = async (_args, projectDir, workstream) =
     const sectionEnd = nextHeader ? sectionStart + (nextHeader.index ?? 0) : content.length;
     const section = content.slice(sectionStart, sectionEnd);
 
-    const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
-    const goal = goalMatch ? goalMatch[1].trim() : null;
+    const goal = extractPhaseFieldMultiline(section, 'Goal');
 
     const dependsMatch = section.match(/\*\*Depends on(?::\*\*|\*\*:)\s*([^\n]+)/i);
     const dependsOn = dependsMatch ? dependsMatch[1].trim() : null;

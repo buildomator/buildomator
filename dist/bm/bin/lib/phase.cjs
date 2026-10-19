@@ -9,6 +9,9 @@ const { platformWriteSync, platformReadSync, platformEnsureDir } = require('./sh
 const { planningDir, withPlanningLock } = require('./planning-workspace.cjs');
 const { extractFrontmatter } = require('./frontmatter.cjs');
 const { summaryFileIsComplete, resolveSummaryPath } = require('./plan-scan.cjs');
+const scanPhasePlans = require('./plan-scan.cjs');
+const { determinePhaseStatus } = require('./commands.cjs');
+const { extractPhaseFieldMultiline } = require('./roadmap.cjs');
 const { writeStateMd, readModifyWriteStateMd, stateExtractField, stateReplaceField, stateReplaceFieldWithFallback, updatePerformanceMetricsSection } = require('./state.cjs');
 
 // #2893 — strict canonical filter: `{padded_phase}-{NN}-PLAN.md` or `PLAN.md`.
@@ -1093,6 +1096,24 @@ function cmdPhaseRemove(cwd, targetPhase, options, raw) {
   }, raw);
 }
 
+// gsd-core #4898: scope a Current Position field rewrite to the
+// `## Current Position` section. The plain `Plan`/`Status` fallback in
+// stateReplaceField matches the first matching line anywhere in the content
+// (im flags), so for the CJS twin (which receives frontmatter + body) a Status
+// write would otherwise land on the frontmatter `status:` line, and a prose line
+// starting `plan:` would be rewritten by mistake. Rewriting only the Current
+// Position slice keeps the rest untouched; when the section is absent, fall back
+// to the whole-content behavior.
+function replaceFieldInCurrentPosition(content, primary, fallback, value) {
+  const posPattern = /(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i;
+  const posMatch = content.match(posPattern);
+  if (posMatch) {
+    const newBody = stateReplaceFieldWithFallback(posMatch[2], primary, fallback, value);
+    return content.replace(posPattern, () => `${posMatch[1]}${newBody}`);
+  }
+  return stateReplaceFieldWithFallback(content, primary, fallback, value);
+}
+
 function cmdPhaseComplete(cwd, phaseNum, raw) {
   if (!phaseNum) {
     error('phase number required for phase complete');
@@ -1216,16 +1237,15 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
         );
 
         const sectionText = phaseSectionMatch ? phaseSectionMatch[1] : '';
-        // Accept all bold/colon variants (#2769) — the previous pattern only
-        // matched **Requirements:** (colon inside bold) and silently skipped
-        // **Requirements**: (colon outside), preventing the matching REQ-IDs
-        // from being ticked off in REQUIREMENTS.md on phase completion.
-        const reqMatch = sectionText.match(/\*\*Requirements:?\*\*[^\S\n]*:?[^\S\n]*([^\n]+)/i);
+        // Accept all bold/colon variants (#2769) and read past a soft wrap so
+        // continuation REQ IDs are ticked off too (#4826). An empty Requirements
+        // value now yields null and skips the ticking loop below.
+        const reqRaw = extractPhaseFieldMultiline(sectionText, 'Requirements');
 
         let reqContent = fs.readFileSync(reqPath, 'utf-8');
 
-        if (reqMatch) {
-          const reqIds = reqMatch[1].replace(/[\[\]]/g, '').split(/[,\s]+/).map(r => r.trim()).filter(Boolean);
+        if (reqRaw) {
+          const reqIds = reqRaw.replace(/[\[\]]/g, '').split(/[,\s]+/).map(r => r.trim()).filter(Boolean);
 
           for (const reqId of reqIds) {
             const reqEscaped = escapeRegex(reqId);
@@ -1283,7 +1303,23 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
   // so a filesystem-only scan would incorrectly report is_last_phase:true
   let nextPhaseNum = null;
   let nextPhaseName = null;
+  let nextPhaseDir = null;
   let isLastPhase = true;
+  // gsd-core #4820: phase numbers whose current-milestone ROADMAP checkbox is
+  // `[x]`. A complete phase must never be selected as the next phase, in either
+  // the disk scan or the ROADMAP fallback. Empty when ROADMAP.md is absent, which
+  // preserves the previous behavior.
+  let roadmapCompleteNums = [];
+  const isRoadmapComplete = (num) =>
+    roadmapCompleteNums.some((c) => comparePhaseNum(c, num) === 0);
+  if (fs.existsSync(roadmapPath)) {
+    try {
+      const scope = extractCurrentMilestone(fs.readFileSync(roadmapPath, 'utf-8'), cwd);
+      const completePattern = /^[ \t]*-\s*\[[xX]\]\s*(?:\*\*|__)?\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)(?=[:\s])/gim;
+      let cm;
+      while ((cm = completePattern.exec(scope)) !== null) roadmapCompleteNums.push(cm[1]);
+    } catch { /* intentionally empty: no ROADMAP means no complete set */ }
+  }
 
   try {
     const isDirInMilestone = getMilestonePhaseFilter(cwd);
@@ -1298,9 +1334,12 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
       const dm = dir.match(/^(\d+[A-Z]?(?:\.\d+)*)-?(.*)/i);
       if (dm) {
         if (/^999(?:\.|$)/.test(dm[1])) continue;
+        // Skip phases already marked complete in the ROADMAP (#4820).
+        if (isRoadmapComplete(dm[1])) continue;
         if (comparePhaseNum(dm[1], phaseNum) > 0) {
           nextPhaseNum = dm[1];
           nextPhaseName = dm[2] || null;
+          nextPhaseDir = path.join(phasesDir, dir);
           isLastPhase = false;
           break;
         }
@@ -1323,6 +1362,8 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
       while ((pm = phasePattern.exec(roadmapForPhases)) !== null) {
         // Skip backlog phases (999.x): parked ideas, not sequential work.
         if (/^999(?:\.|$)/.test(pm[1])) continue;
+        // Skip phases already marked complete in the ROADMAP (#4820).
+        if (isRoadmapComplete(pm[1])) continue;
         if (comparePhaseNum(pm[1], phaseNum) > 0 &&
             (nextPhaseNum === null || comparePhaseNum(pm[1], nextPhaseNum) < 0)) {
           nextPhaseNum = pm[1];
@@ -1331,6 +1372,38 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
         }
       }
     } catch { /* intentionally empty */ }
+  }
+
+  // gsd-core #5358: derive the next phase's Status from its disk state instead
+  // of always writing `Ready to plan`. An already-planned or already-executed
+  // next phase would otherwise route the next session back into plan-phase.
+  // The next phase found only in ROADMAP (no directory) stays `Ready to plan`.
+  // Use the plain string `Ready for verification` (upstream's status contains an
+  // em-dash, which this project forbids).
+  let nextStatus = isLastPhase ? 'Milestone complete' : 'Ready to plan';
+  let nextPlanValue = 'Not started';
+  if (!isLastPhase && nextPhaseDir) {
+    try {
+      const scan = scanPhasePlans(nextPhaseDir);
+      const ladder = determinePhaseStatus(scan.planCount, scan.summaryCount, nextPhaseDir, 'Pending');
+      if (ladder === 'Pending') {
+        nextStatus = 'Ready to plan';
+        nextPlanValue = 'Not started';
+      } else if (ladder === 'Planned') {
+        nextStatus = 'Ready to execute';
+        nextPlanValue = 'Not started';
+      } else if (ladder === 'In Progress') {
+        nextStatus = 'Ready to execute';
+        nextPlanValue = String(scan.summaryCount + 1);
+      } else {
+        // Executed, Needs Review, Complete
+        nextStatus = 'Ready for verification';
+        nextPlanValue = String(scan.planCount);
+      }
+    } catch {
+      nextStatus = 'Ready to plan';
+      nextPlanValue = 'Not started';
+    }
   }
 
   // Update STATE.md atomically — hold lock across read-modify-write (#P4.4).
@@ -1359,12 +1432,12 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
         stateContent = stateReplaceFieldWithFallback(stateContent, 'Current Phase Name', null, nextPhaseName.replace(/-/g, ' '));
       }
 
-      // Update Status
-      stateContent = stateReplaceFieldWithFallback(stateContent, 'Status', null,
-        isLastPhase ? 'Milestone complete' : 'Ready to plan');
+      // Update Status (scoped to Current Position so #5358's derived status
+      // lands on the Current Position line, not the frontmatter status line)
+      stateContent = replaceFieldInCurrentPosition(stateContent, 'Status', null, nextStatus);
 
       // Update Current Plan
-      stateContent = stateReplaceFieldWithFallback(stateContent, 'Current Plan', 'Plan', 'Not started');
+      stateContent = replaceFieldInCurrentPosition(stateContent, 'Current Plan', 'Plan', nextPlanValue);
 
       // Update Last Activity
       stateContent = stateReplaceFieldWithFallback(stateContent, 'Last Activity', 'Last activity', today);

@@ -6779,6 +6779,32 @@ ${body}`;
   }
   return content.slice(sectionStart, sectionEnd) + phaseDetailsTail;
 }
+function extractPhaseFieldMultiline(section, label) {
+  const escaped = escapeRegex2(label);
+  const labelRe = new RegExp(`^[ \\t]*\\*\\*${escaped}:?\\*\\*[ \\t]*:?[ \\t]*(.*)$`, "i");
+  const lines = section.split("\n");
+  let idx = -1;
+  let firstValue = "";
+  for (let i3 = 0; i3 < lines.length; i3++) {
+    const lm = lines[i3].match(labelRe);
+    if (lm) {
+      idx = i3;
+      firstValue = lm[1];
+      break;
+    }
+  }
+  if (idx === -1)
+    return null;
+  const stop = (line) => /^[ \t]*$/.test(line) || /^[ \t]*\*\*[^*\n]+\*\*/.test(line) || /^[ \t]*#{1,6}\s/.test(line) || /^[ \t]*\|/.test(line) || /^[ \t]*(?:[-*+]|\d+[.)])\s/.test(line) || /^[ \t]*</.test(line) || /^[A-Za-z][A-Za-z ]{0,40}:[ \t]*$/.test(line);
+  const collected = [firstValue];
+  for (let i3 = idx + 1; i3 < lines.length; i3++) {
+    if (stop(lines[i3]))
+      break;
+    collected.push(lines[i3]);
+  }
+  const result = collected.map((l3) => l3.trim()).join(" ").trim();
+  return result === "" ? null : result;
+}
 function extractPhasesFromSection(section) {
   const phasePattern = /#{2,4}\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:\s*([^\n]+)/gi;
   const phases = [];
@@ -6791,12 +6817,12 @@ function extractPhasesFromSection(section) {
     const nextHeader = rest.match(/\n#{2,4}\s+Phase\s+\d/i);
     const end = nextHeader ? sectionStart + (nextHeader.index ?? 0) : section.length;
     const body = section.slice(sectionStart, end);
-    const goalMatch = body.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
+    const goal = extractPhaseFieldMultiline(body, "Goal");
     const dependsMatch = body.match(/\*\*Depends on(?::\*\*|\*\*:)\s*([^\n]+)/i);
     phases.push({
       number: phaseNum,
       name: phaseName,
-      goal: goalMatch ? goalMatch[1].trim() : null,
+      goal,
       depends_on: dependsMatch ? dependsMatch[1].trim() : null
     });
   }
@@ -6867,8 +6893,7 @@ function searchPhaseInContent(content, escapedPhase, phaseNum) {
   const nextHeaderMatch = restOfContent.match(/\n#{2,4}\s+Phase\s+\d/i);
   const sectionEnd = nextHeaderMatch ? headerIndex + nextHeaderMatch.index : content.length;
   const section = content.slice(headerIndex, sectionEnd).trim();
-  const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
-  const goal = goalMatch ? goalMatch[1].trim() : null;
+  const goal = extractPhaseFieldMultiline(section, "Goal");
   const modeMatch = section.match(/\*\*Mode(?::\*\*|\*\*:)\s*([^\n]+)/i);
   const mode = modeMatch ? modeMatch[1].trim().toLowerCase() : null;
   const criteriaMatch = section.match(/\*\*Success Criteria\*\*[^\n]*:\s*\n((?:\s*\d+\.\s*[^\n]+\n?)+)/i);
@@ -6940,8 +6965,7 @@ var roadmapAnalyze = async (_args, projectDir, workstream) => {
     const nextHeader = restOfContent.match(/\n#{2,4}\s+Phase\s+[A-Za-z]?\d/i);
     const sectionEnd = nextHeader ? sectionStart + nextHeader.index : content.length;
     const section = content.slice(sectionStart, sectionEnd);
-    const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
-    const goal = goalMatch ? goalMatch[1].trim() : null;
+    const goal = extractPhaseFieldMultiline(section, "Goal");
     const dependsMatch = section.match(/\*\*Depends on(?::\*\*|\*\*:)\s*([^\n]+)/i);
     const depends_on = dependsMatch ? dependsMatch[1].trim() : null;
     const normalized = normalizePhaseName(phaseNum);
@@ -6975,7 +6999,7 @@ var roadmapAnalyze = async (_args, projectDir, workstream) => {
       }
     } catch {
     }
-    const checkboxPattern = new RegExp(`-\\s*\\[(x| )\\]\\s*.*Phase\\s+${escapeRegex2(phaseNum)}[:\\s]`, "i");
+    const checkboxPattern = new RegExp(`^[ \\t]*-\\s*\\[(x| )\\]\\s*(?:\\*\\*|__)?\\s*Phase\\s+${escapeRegex2(phaseNum)}[:\\s]`, "im");
     const checkboxMatch = content.match(checkboxPattern);
     const roadmapComplete = checkboxMatch ? checkboxMatch[1] === "x" : false;
     if (roadmapComplete && diskStatus !== "complete" && planCount === 0) {
@@ -13691,6 +13715,15 @@ function updatePerformanceMetricsSection(content, phaseNum, planCount, summaryCo
   }
   return content;
 }
+function replaceFieldInCurrentPosition(content, primary, fallback, value) {
+  const posPattern = /(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i;
+  const posMatch = content.match(posPattern);
+  if (posMatch) {
+    const newBody = stateReplaceFieldWithFallback(posMatch[2], primary, fallback, value);
+    return content.replace(posPattern, () => `${posMatch[1]}${newBody}`);
+  }
+  return stateReplaceFieldWithFallback(content, primary, fallback, value);
+}
 var phaseComplete = async (args, projectDir, workstream) => {
   const phaseNum = args[0];
   if (!phaseNum) {
@@ -13774,9 +13807,9 @@ var phaseComplete = async (args, projectDir, workstream) => {
         const currentMilestoneRoadmap = await extractCurrentMilestone(roadmapContent, projectDir);
         const phaseSectionMatch = currentMilestoneRoadmap.match(new RegExp(`(#{2,4}\\s*Phase\\s+${phaseEscaped}[:\\s][\\s\\S]*?)(?=#{2,4}\\s*Phase\\s+|$)`, "i"));
         const sectionText = phaseSectionMatch ? phaseSectionMatch[1] : "";
-        const reqMatch = sectionText.match(/\*\*Requirements\*?\*?:?\s*([^\n]+)/i);
-        if (reqMatch) {
-          const reqIds = reqMatch[1].replace(/[[\]]/g, "").split(/[,\s]+/).map((r3) => r3.trim()).filter(Boolean);
+        const reqRaw = extractPhaseFieldMultiline(sectionText, "Requirements");
+        if (reqRaw) {
+          const reqIds = reqRaw.replace(/[[\]]/g, "").split(/[,\s]+/).map((r3) => r3.trim()).filter(Boolean);
           let reqContent = await readFile25(reqPath, "utf-8");
           for (const reqId of reqIds) {
             const reqEscaped = escapeRegex2(reqId);
@@ -13792,8 +13825,11 @@ var phaseComplete = async (args, projectDir, workstream) => {
   }
   let nextPhaseNum = null;
   let nextPhaseName = null;
+  let nextPhaseDir = null;
   let isLastPhase = true;
   let completedPhaseInPrimaryMilestone = true;
+  let roadmapCompleteNums = [];
+  const isRoadmapComplete = (num) => roadmapCompleteNums.some((c) => comparePhaseNum(c, num) === 0);
   try {
     const isDirInMilestone = await getMilestonePhaseFilter(projectDir, workstream);
     const entries = await readdir13(paths.phases, { withFileTypes: true });
@@ -13804,15 +13840,29 @@ var phaseComplete = async (args, projectDir, workstream) => {
     });
     completedPhaseInPrimaryMilestone = completedDirInFilter;
     const effectiveFilter = completedDirInFilter ? isDirInMilestone : (_d) => true;
+    if (existsSync18(paths.roadmap)) {
+      try {
+        const roadmapContent = await readFile25(paths.roadmap, "utf-8");
+        const scope = completedDirInFilter ? await extractCurrentMilestone(roadmapContent, projectDir) : roadmapContent;
+        const completePattern = /^[ \t]*-\s*\[[xX]\]\s*(?:\*\*|__)?\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)(?=[:\s])/gim;
+        let cm;
+        while ((cm = completePattern.exec(scope)) !== null)
+          roadmapCompleteNums.push(cm[1]);
+      } catch {
+      }
+    }
     const dirs = allDirs.filter(effectiveFilter).sort((a3, b) => comparePhaseNum(a3, b));
     for (const dir of dirs) {
       const dm = dir.match(/^(\d+[A-Z]?(?:\.\d+)*)-?(.*)/i);
       if (dm) {
         if (/^999(?:\.|$)/.test(dm[1]))
           continue;
+        if (isRoadmapComplete(dm[1]))
+          continue;
         if (comparePhaseNum(dm[1], phaseNum) > 0) {
           nextPhaseNum = dm[1];
           nextPhaseName = dm[2] || null;
+          nextPhaseDir = join25(paths.phases, dir);
           isLastPhase = false;
           break;
         }
@@ -13829,6 +13879,8 @@ var phaseComplete = async (args, projectDir, workstream) => {
       while ((pm = phasePattern.exec(roadmapForPhases)) !== null) {
         if (/^999(?:\.|$)/.test(pm[1]))
           continue;
+        if (isRoadmapComplete(pm[1]))
+          continue;
         if (comparePhaseNum(pm[1], phaseNum) > 0 && (nextPhaseNum === null || comparePhaseNum(pm[1], nextPhaseNum) < 0)) {
           nextPhaseNum = pm[1];
           nextPhaseName = pm[2].replace(/\(INSERTED\)/i, "").trim().toLowerCase().replace(/\s+/g, "-");
@@ -13836,6 +13888,30 @@ var phaseComplete = async (args, projectDir, workstream) => {
         }
       }
     } catch {
+    }
+  }
+  let nextStatus = isLastPhase ? "Milestone complete" : "Ready to plan";
+  let nextPlanValue = "Not started";
+  if (!isLastPhase && nextPhaseDir) {
+    try {
+      const scan = scanPhasePlans(nextPhaseDir);
+      const ladder = await determinePhaseStatus(scan.planCount, scan.summaryCount, nextPhaseDir, "Pending");
+      if (ladder === "Pending") {
+        nextStatus = "Ready to plan";
+        nextPlanValue = "Not started";
+      } else if (ladder === "Planned") {
+        nextStatus = "Ready to execute";
+        nextPlanValue = "Not started";
+      } else if (ladder === "In Progress") {
+        nextStatus = "Ready to execute";
+        nextPlanValue = String(scan.summaryCount + 1);
+      } else {
+        nextStatus = "Ready for verification";
+        nextPlanValue = String(scan.planCount);
+      }
+    } catch {
+      nextStatus = "Ready to plan";
+      nextPlanValue = "Not started";
     }
   }
   let stateUpdated = false;
@@ -13859,8 +13935,8 @@ var phaseComplete = async (args, projectDir, workstream) => {
         }
       }
       body = stateReplaceFieldWithFallback(body, "Current Phase", "Phase", newPhaseValue);
-      body = stateReplaceFieldWithFallback(body, "Status", null, isLastPhase ? "Milestone complete" : "Ready to plan");
-      body = stateReplaceFieldWithFallback(body, "Current Plan", "Plan", "Not started");
+      body = replaceFieldInCurrentPosition(body, "Status", null, nextStatus);
+      body = replaceFieldInCurrentPosition(body, "Current Plan", "Plan", nextPlanValue);
       body = stateReplaceFieldWithFallback(body, "Last Activity", "Last activity", today);
       body = updatePerformanceMetricsSection(body, phaseNum, planCount, summaryCount);
       let derivedCompletedPhases = null;
@@ -20804,8 +20880,8 @@ async function getPhaseInfoForVerifyWork(phase, projectDir, workstream) {
 }
 function extractReqIds(roadmapPhase) {
   const section = roadmapPhase?.section;
-  const reqMatch = section?.match(/^\*\*Requirements:?\*\*[^\S\n]*:?[^\S\n]*([^\n]*)$/m);
-  const reqExtracted = reqMatch ? reqMatch[1].replace(/[\[\]]/g, "").split(",").map((s3) => s3.trim()).filter(Boolean).join(", ") : null;
+  const raw = extractPhaseFieldMultiline(section ?? "", "Requirements");
+  const reqExtracted = raw ? raw.replace(/[\[\]]/g, "").split(",").map((s3) => s3.trim()).filter(Boolean).join(", ") : null;
   return reqExtracted && reqExtracted !== "TBD" ? reqExtracted : null;
 }
 function withProjectRoot(projectDir, result, config) {
@@ -21596,12 +21672,14 @@ async function resolveAgentSkillPayloadAgents(requiredAgents, projectDir) {
   }
   return available;
 }
-function extractCheckboxStates(content) {
+function extractCheckboxStates(content, allowBracketTag = false) {
   const states = /* @__PURE__ */ new Map();
-  const pattern = /-\s*\[(x| )\]\s*.*Phase\s+(\d+[A-Z]?(?:\.\d+)*)[:\s]/gi;
+  const bracket = allowBracketTag ? "(?:\\[[^\\]\\n]{0,200}\\]\\s*)?" : "";
+  const pattern = new RegExp(`^[ \\t]*-\\s*\\[(x| )\\]\\s*(?:\\*\\*|__)?\\s*${bracket}Phase\\s+(\\d+[A-Z]?(?:\\.\\d+)*)[:\\s]`, "gim");
   let m3;
   while ((m3 = pattern.exec(content)) !== null) {
-    states.set(m3[2], m3[1].toLowerCase() === "x");
+    if (!states.has(m3[2]))
+      states.set(m3[2], m3[1].toLowerCase() === "x");
   }
   return states;
 }
@@ -21762,7 +21840,7 @@ var initProgress = async (_args, projectDir, workstream) => {
       const pName = hm[2].replace(/\(INSERTED\)/i, "").trim();
       roadmapPhaseNames.set(pNum, pName);
     }
-    checkboxStates = extractCheckboxStates(roadmapContent);
+    checkboxStates = extractCheckboxStates(roadmapContent, true);
     terminalLabels = extractTerminalStatusLabels(roadmapContent);
   } catch {
   }
@@ -21892,8 +21970,7 @@ var initManager = async (_args, projectDir, workstream) => {
     const nextHeader = restOfContent.match(/\n#{2,4}\s+Phase\s+\d/i);
     const sectionEnd = nextHeader ? sectionStart + (nextHeader.index ?? 0) : content.length;
     const section = content.slice(sectionStart, sectionEnd);
-    const goalMatch = section.match(/\*\*Goal(?::\*\*|\*\*:)\s*([^\n]+)/i);
-    const goal = goalMatch ? goalMatch[1].trim() : null;
+    const goal = extractPhaseFieldMultiline(section, "Goal");
     const dependsMatch = section.match(/\*\*Depends on(?::\*\*|\*\*:)\s*([^\n]+)/i);
     const dependsOn = dependsMatch ? dependsMatch[1].trim() : null;
     const normalized = normalizePhaseName(phaseNum);
