@@ -1625,6 +1625,71 @@ describe('phaseComplete', () => {
 
     expect(String(data.next_phase)).toBe('2');
   });
+
+  // gsd-core #4898
+  it('scopes the Current Plan reset to the Current Position section, leaving prose untouched', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = '# Roadmap\n\n## Current Milestone\n\n### Phase 1: First\n';
+    const state = [
+      '---',
+      'gsd_state_version: 1.0',
+      'milestone: test',
+      'status: executing',
+      '---',
+      '',
+      '# Project State',
+      '',
+      '## Project Reference',
+      '',
+      'plan: keep this prose',
+      '',
+      '## Current Position',
+      '',
+      'Phase: 1 (First)',
+      'Status: Executing Phase 1',
+      'Plan: 02-01-PLAN.md',
+      '',
+    ].join('\n');
+    await setupTestProject(tmpDir, { roadmap, state, phases: ['01-a'] });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const result = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+
+    expect(result).toContain('plan: keep this prose');
+    const pos = result.match(/(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i);
+    expect(pos?.[2]).toMatch(/^Plan: Not started$/m);
+  });
+
+  // gsd-core #4898
+  it('falls back to a whole-body reset when there is no Current Position section', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = '# Roadmap\n\n## Current Milestone\n\n### Phase 1: First\n';
+    const state = [
+      '---',
+      'gsd_state_version: 1.0',
+      'milestone: test',
+      'status: executing',
+      '---',
+      '',
+      '# Project State',
+      '',
+      'Plan: 01',
+      'Status: executing',
+      '',
+    ].join('\n');
+    await setupTestProject(tmpDir, { roadmap, state, phases: ['01-a'] });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const result = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+
+    expect(result).toMatch(/^Plan: Not started$/m);
+  });
 });
 
 // ─── phasesClear ────────────────────────────────────────────────────────────

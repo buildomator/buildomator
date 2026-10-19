@@ -1093,6 +1093,22 @@ function cmdPhaseRemove(cwd, targetPhase, options, raw) {
   }, raw);
 }
 
+// gsd-core #4898: scope the Current Plan reset to the `## Current Position`
+// section. The plain `Plan` fallback in stateReplaceField matches the first
+// `plan:`-leading line anywhere in the body (im flags), so a prose line that
+// happens to start with `plan:` before the Current Position block would be
+// rewritten. Rewriting only the Current Position slice keeps prose untouched;
+// when the section is absent, fall back to the whole-body behavior.
+function replacePlanFieldInCurrentPosition(content, value) {
+  const posPattern = /(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i;
+  const posMatch = content.match(posPattern);
+  if (posMatch) {
+    const newBody = stateReplaceFieldWithFallback(posMatch[2], 'Current Plan', 'Plan', value);
+    return content.replace(posPattern, () => `${posMatch[1]}${newBody}`);
+  }
+  return stateReplaceFieldWithFallback(content, 'Current Plan', 'Plan', value);
+}
+
 function cmdPhaseComplete(cwd, phaseNum, raw) {
   if (!phaseNum) {
     error('phase number required for phase complete');
@@ -1364,7 +1380,7 @@ function cmdPhaseComplete(cwd, phaseNum, raw) {
         isLastPhase ? 'Milestone complete' : 'Ready to plan');
 
       // Update Current Plan
-      stateContent = stateReplaceFieldWithFallback(stateContent, 'Current Plan', 'Plan', 'Not started');
+      stateContent = replacePlanFieldInCurrentPosition(stateContent, 'Not started');
 
       // Update Last Activity
       stateContent = stateReplaceFieldWithFallback(stateContent, 'Last Activity', 'Last activity', today);

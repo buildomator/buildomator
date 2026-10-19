@@ -1027,6 +1027,22 @@ function updatePerformanceMetricsSection(
 
 // ─── phaseComplete handler ────────────────────────────────────────────────
 
+// gsd-core #4898: scope the Current Plan reset to the `## Current Position`
+// section. The plain `Plan` fallback in stateReplaceField matches the first
+// `plan:`-leading line anywhere in the body (im flags), so a prose line that
+// happens to start with `plan:` before the Current Position block would be
+// rewritten. Rewriting only the Current Position slice keeps prose untouched;
+// when the section is absent, fall back to the whole-body behavior.
+function replacePlanFieldInCurrentPosition(content: string, value: string): string {
+  const posPattern = /(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i;
+  const posMatch = content.match(posPattern);
+  if (posMatch) {
+    const newBody = stateReplaceFieldWithFallback(posMatch[2], 'Current Plan', 'Plan', value);
+    return content.replace(posPattern, () => `${posMatch[1]}${newBody}`);
+  }
+  return stateReplaceFieldWithFallback(content, 'Current Plan', 'Plan', value);
+}
+
 /**
  * Query handler for phase.complete.
  *
@@ -1294,7 +1310,7 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
         isLastPhase ? 'Milestone complete' : 'Ready to plan');
 
       // Update Current Plan
-      body = stateReplaceFieldWithFallback(body, 'Current Plan', 'Plan', 'Not started');
+      body = replacePlanFieldInCurrentPosition(body, 'Not started');
 
       // Update Last Activity
       body = stateReplaceFieldWithFallback(body, 'Last Activity', 'Last activity', today);
