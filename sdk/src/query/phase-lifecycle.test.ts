@@ -1690,6 +1690,94 @@ describe('phaseComplete', () => {
 
     expect(result).toMatch(/^Plan: Not started$/m);
   });
+
+  // gsd-core #5358
+  const STATE_NEXT_DERIVE = [
+    '---',
+    'gsd_state_version: 1.0',
+    'milestone: test',
+    'status: executing',
+    '---',
+    '',
+    '# Project State',
+    '',
+    '## Current Position',
+    '',
+    'Phase: 1 (First)',
+    'Status: Executing Phase 1',
+    'Plan: 01-01-PLAN.md',
+    '',
+  ].join('\n');
+  const ROADMAP_NEXT_DERIVE = '# Roadmap\n\n## Current Milestone\n\n### Phase 1: First\n### Phase 2: Second\n';
+
+  async function setupNextDerive(): Promise<string> {
+    await setupTestProject(tmpDir, {
+      roadmap: ROADMAP_NEXT_DERIVE,
+      state: STATE_NEXT_DERIVE,
+      phases: ['01-a', '02-b'],
+    });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+    return join(tmpDir, '.planning', 'phases', '02-b');
+  }
+
+  function positionSection(stateText: string): string {
+    return stateText.match(/(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i)?.[2] ?? '';
+  }
+
+  it('derives Ready to execute for a planned next phase with no summaries (#5358)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const p2 = await setupNextDerive();
+    await writeFile(join(p2, '02-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p2, '02-02-PLAN.md'), 'plan', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const pos = positionSection(await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8'));
+    expect(pos).toMatch(/^Status: Ready to execute$/m);
+    expect(pos).toMatch(/^Plan: Not started$/m);
+  });
+
+  it('derives Ready to execute with the next plan index for a partially executed next phase (#5358)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const p2 = await setupNextDerive();
+    await writeFile(join(p2, '02-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p2, '02-02-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p2, '02-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const pos = positionSection(await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8'));
+    expect(pos).toMatch(/^Status: Ready to execute$/m);
+    expect(pos).toMatch(/^Plan: 2$/m);
+  });
+
+  it('derives Ready for verification for a fully executed next phase with no VERIFICATION.md (#5358)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const p2 = await setupNextDerive();
+    await writeFile(join(p2, '02-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p2, '02-02-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p2, '02-01-SUMMARY.md'), 'summary', 'utf-8');
+    await writeFile(join(p2, '02-02-SUMMARY.md'), 'summary', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const pos = positionSection(await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8'));
+    expect(pos).toMatch(/^Status: Ready for verification$/m);
+    expect(pos).toMatch(/^Plan: 2$/m);
+  });
+
+  it('keeps Ready to plan when the next phase exists only in ROADMAP (#5358)', async () => {
+    const { phaseComplete } = await import('./phase-lifecycle.js');
+    const roadmap = '# Roadmap\n\n## Current Milestone\n\n### Phase 1: First\n### Phase 3: Third\n';
+    await setupTestProject(tmpDir, { roadmap, state: STATE_NEXT_DERIVE, phases: ['01-a'] });
+    const p1Dir = join(tmpDir, '.planning', 'phases', '01-a');
+    await writeFile(join(p1Dir, '01-01-PLAN.md'), 'plan', 'utf-8');
+    await writeFile(join(p1Dir, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+
+    await phaseComplete(['1'], tmpDir);
+    const pos = positionSection(await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8'));
+    expect(pos).toMatch(/^Status: Ready to plan$/m);
+    expect(pos).toMatch(/^Plan: Not started$/m);
+  });
 });
 
 // ─── phasesClear ────────────────────────────────────────────────────────────

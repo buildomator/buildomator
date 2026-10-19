@@ -135,6 +135,93 @@ check('#4898 whole-body fallback still resets a top-level Plan line with no Curr
   }
 });
 
+// ─── #5358: next-phase Status derived from disk state ───────────────────────
+
+const STATE_WITH_POSITION = `---
+gsd_state_version: 1.0
+milestone: test
+status: executing
+---
+
+# Project State
+
+## Current Position
+
+Phase: 1 (First)
+Status: Executing Phase 1
+Plan: 01-01-PLAN.md
+`;
+
+const ROADMAP_1_2 = `# Roadmap
+
+## Current Milestone
+
+### Phase 1: First
+### Phase 2: Second
+`;
+
+const ROADMAP_1_ONLY = `# Roadmap
+
+## Current Milestone
+
+### Phase 1: First
+`;
+
+const ROADMAP_1_3 = `# Roadmap
+
+## Current Milestone
+
+### Phase 1: First
+### Phase 3: Third
+`;
+
+function positionField(stateText, field) {
+  const m = stateText.match(/(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i);
+  if (!m) return null;
+  const line = m[2].match(new RegExp(`^${field}:.*$`, 'm'));
+  return line ? line[0] : null;
+}
+
+function nextStateCase(name, phases, roadmap, expectStatus, expectPlan) {
+  check(name, () => {
+    const dir = buildFixture({ state: STATE_WITH_POSITION, roadmap, phases });
+    try {
+      runPhaseComplete(dir, '1');
+      const state = readState(dir);
+      assert.strictEqual(positionField(state, 'Status'), `Status: ${expectStatus}`,
+        `Status mismatch: ${positionField(state, 'Status')}`);
+      assert.strictEqual(positionField(state, 'Plan'), `Plan: ${expectPlan}`,
+        `Plan mismatch: ${positionField(state, 'Plan')}`);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+}
+
+nextStateCase('#5358 next phase with 0 plans -> Ready to plan / Not started',
+  { '01-a': { plans: 1, summaries: 1 }, '02-b': { plans: 0, summaries: 0 } },
+  ROADMAP_1_2, 'Ready to plan', 'Not started');
+
+nextStateCase('#5358 next phase with 2 plans, 0 summaries -> Ready to execute / Not started',
+  { '01-a': { plans: 1, summaries: 1 }, '02-b': { plans: 2, summaries: 0 } },
+  ROADMAP_1_2, 'Ready to execute', 'Not started');
+
+nextStateCase('#5358 next phase with 2 plans, 1 summary -> Ready to execute / 2',
+  { '01-a': { plans: 1, summaries: 1 }, '02-b': { plans: 2, summaries: 1 } },
+  ROADMAP_1_2, 'Ready to execute', '2');
+
+nextStateCase('#5358 next phase with 2 plans, 2 summaries, no verification -> Ready for verification / 2',
+  { '01-a': { plans: 1, summaries: 1 }, '02-b': { plans: 2, summaries: 2 } },
+  ROADMAP_1_2, 'Ready for verification', '2');
+
+nextStateCase('#5358 last phase -> Milestone complete / Not started',
+  { '01-a': { plans: 1, summaries: 1 } },
+  ROADMAP_1_ONLY, 'Milestone complete', 'Not started');
+
+nextStateCase('#5358 next phase found only in ROADMAP (no directory) -> Ready to plan / Not started',
+  { '01-a': { plans: 1, summaries: 1 } },
+  ROADMAP_1_3, 'Ready to plan', 'Not started');
+
 if (failures > 0) {
   console.error(`\n${failures} test(s) failed`);
   process.exit(1);

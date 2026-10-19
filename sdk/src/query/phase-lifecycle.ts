@@ -33,6 +33,8 @@ import {
 } from './helpers.js';
 import { extractFrontmatter } from './frontmatter.js';
 import { extractCurrentMilestone, phaseEntryInsertOffset } from './roadmap.js';
+import { determinePhaseStatus } from './progress.js';
+import { scanPhasePlans } from './plan-scan.js';
 import { getMilestonePhaseFilter } from './state.js';
 import {
   acquireStateLock,
@@ -1027,20 +1029,25 @@ function updatePerformanceMetricsSection(
 
 // ─── phaseComplete handler ────────────────────────────────────────────────
 
-// gsd-core #4898: scope the Current Plan reset to the `## Current Position`
-// section. The plain `Plan` fallback in stateReplaceField matches the first
-// `plan:`-leading line anywhere in the body (im flags), so a prose line that
-// happens to start with `plan:` before the Current Position block would be
-// rewritten. Rewriting only the Current Position slice keeps prose untouched;
-// when the section is absent, fall back to the whole-body behavior.
-function replacePlanFieldInCurrentPosition(content: string, value: string): string {
+// gsd-core #4898: scope a Current Position field rewrite to the
+// `## Current Position` section. The plain `Plan`/`Status` fallback in
+// stateReplaceField matches the first matching line anywhere in the body
+// (im flags), so a prose line elsewhere (e.g. one that starts `plan:`) would be
+// rewritten by mistake. Rewriting only the Current Position slice keeps prose
+// untouched; when the section is absent, fall back to the whole-body behavior.
+function replaceFieldInCurrentPosition(
+  content: string,
+  primary: string,
+  fallback: string | null,
+  value: string,
+): string {
   const posPattern = /(##\s*Current Position\s*\n)([\s\S]*?)(?=\n##|$)/i;
   const posMatch = content.match(posPattern);
   if (posMatch) {
-    const newBody = stateReplaceFieldWithFallback(posMatch[2], 'Current Plan', 'Plan', value);
+    const newBody = stateReplaceFieldWithFallback(posMatch[2], primary, fallback, value);
     return content.replace(posPattern, () => `${posMatch[1]}${newBody}`);
   }
-  return stateReplaceFieldWithFallback(content, 'Current Plan', 'Plan', value);
+  return stateReplaceFieldWithFallback(content, primary, fallback, value);
 }
 
 /**
@@ -1199,6 +1206,7 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
   // Step E: Find next phase — filesystem first, then ROADMAP.md fallback
   let nextPhaseNum: string | null = null;
   let nextPhaseName: string | null = null;
+  let nextPhaseDir: string | null = null;
   let isLastPhase = true;
   // Tracks whether the completed phase belongs to the primary milestone in STATE.md.
   // When false (parallel-milestone case, Bug #2676), the milestone filter is bypassed
@@ -1236,6 +1244,7 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
         if (comparePhaseNum(dm[1], phaseNum) > 0) {
           nextPhaseNum = dm[1];
           nextPhaseName = dm[2] || null;
+          nextPhaseDir = join(paths.phases, dir);
           isLastPhase = false;
           break;
         }
@@ -1273,6 +1282,38 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
     } catch { /* intentionally empty */ }
   }
 
+  // gsd-core #5358: derive the next phase's Status from its disk state instead
+  // of always writing `Ready to plan`. An already-planned or already-executed
+  // next phase would otherwise route the next session back into plan-phase.
+  // The next phase found only in ROADMAP (no directory) stays `Ready to plan`.
+  // Use the plain string `Ready for verification` (upstream's status contains an
+  // em-dash, which this project forbids).
+  let nextStatus = isLastPhase ? 'Milestone complete' : 'Ready to plan';
+  let nextPlanValue = 'Not started';
+  if (!isLastPhase && nextPhaseDir) {
+    try {
+      const scan = scanPhasePlans(nextPhaseDir);
+      const ladder = await determinePhaseStatus(scan.planCount, scan.summaryCount, nextPhaseDir, 'Pending');
+      if (ladder === 'Pending') {
+        nextStatus = 'Ready to plan';
+        nextPlanValue = 'Not started';
+      } else if (ladder === 'Planned') {
+        nextStatus = 'Ready to execute';
+        nextPlanValue = 'Not started';
+      } else if (ladder === 'In Progress') {
+        nextStatus = 'Ready to execute';
+        nextPlanValue = String(scan.summaryCount + 1);
+      } else {
+        // Executed, Needs Review, Complete
+        nextStatus = 'Ready for verification';
+        nextPlanValue = String(scan.planCount);
+      }
+    } catch {
+      nextStatus = 'Ready to plan';
+      nextPlanValue = 'Not started';
+    }
+  }
+
   // Step F: Update STATE.md atomically
   let stateUpdated = false;
   if (existsSync(paths.state)) {
@@ -1305,12 +1346,12 @@ export const phaseComplete: QueryHandler = async (args, projectDir, workstream) 
       }
       body = stateReplaceFieldWithFallback(body, 'Current Phase', 'Phase', newPhaseValue);
 
-      // Update Status
-      body = stateReplaceFieldWithFallback(body, 'Status', null,
-        isLastPhase ? 'Milestone complete' : 'Ready to plan');
+      // Update Status (scoped to Current Position so #5358's derived status
+      // lands on the Current Position line, not an earlier prose line)
+      body = replaceFieldInCurrentPosition(body, 'Status', null, nextStatus);
 
       // Update Current Plan
-      body = replacePlanFieldInCurrentPosition(body, 'Not started');
+      body = replaceFieldInCurrentPosition(body, 'Current Plan', 'Plan', nextPlanValue);
 
       // Update Last Activity
       body = stateReplaceFieldWithFallback(body, 'Last Activity', 'Last activity', today);
