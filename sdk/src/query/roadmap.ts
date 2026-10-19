@@ -811,7 +811,10 @@ export const roadmapAnalyze: QueryHandler = async (_args, projectDir, workstream
     } catch { /* intentionally empty */ }
 
     // Check ROADMAP checkbox status
-    const checkboxPattern = new RegExp(`-\\s*\\[(x| )\\]\\s*.*Phase\\s+${escapeRegex(phaseNum)}[:\\s]`, 'i');
+    // gsd-core #5063: anchor to each phase's own checklist line (line start,
+    // label-first) so an earlier [x] row that merely mentions Phase N mid-line
+    // cannot bind this phase's roadmap_complete.
+    const checkboxPattern = new RegExp(`^[ \\t]*-\\s*\\[(x| )\\]\\s*(?:\\*\\*|__)?\\s*Phase\\s+${escapeRegex(phaseNum)}[:\\s]`, 'im');
     const checkboxMatch = content.match(checkboxPattern);
     const roadmapComplete = checkboxMatch ? checkboxMatch[1] === 'x' : false;
 

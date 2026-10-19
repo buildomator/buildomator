@@ -1422,3 +1422,31 @@ describe('roadmapGetPhase / roadmapAnalyze read wrapped Goal (gsd-core #4826)', 
     expect(p2?.goal).toBe(GOAL_JOINED);
   });
 });
+
+describe('roadmapAnalyze anchors the checkbox regex to each phase line (gsd-core #5063)', () => {
+  const ROADMAP = [
+    '# Roadmap',
+    '',
+    '## Current Milestone: v1.0 Anchor',
+    '',
+    '- [x] **Phase 1: Auth** (see Phase 2 for follow-ups)',
+    '- [ ] **Phase 2: Billing**',
+    '- [ ] Phase 2: duplicate later row',
+    '',
+    '### Phase 1: Auth',
+    '**Goal:** a',
+    '### Phase 2: Billing',
+    '**Goal:** b',
+    '',
+  ].join('\n');
+
+  it('binds roadmap_complete to the phase own line, not a mid-line mention', async () => {
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), ROADMAP);
+    const result = await roadmapAnalyze([], tmpDir);
+    const phases = (result.data as Record<string, unknown>).phases as Array<Record<string, unknown>>;
+    const p1 = phases.find((p) => String(p.number).replace(/^0+(?=\d)/, '') === '1');
+    const p2 = phases.find((p) => String(p.number).replace(/^0+(?=\d)/, '') === '2');
+    expect(p1?.roadmap_complete).toBe(true);
+    expect(p2?.roadmap_complete).toBe(false);
+  });
+});

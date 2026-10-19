@@ -311,7 +311,10 @@ function cmdRoadmapAnalyze(cwd, raw) {
     // #3537: padding-tolerant fragment — the heading discovered above may use
     // a different padding than the summary-bullet checkbox below it (mixed
     // padding inside one ROADMAP is legal and seen in real projects).
-    const checkboxPattern = new RegExp(`-\\s*\\[(x| )\\]\\s*.*Phase\\s+${phaseMarkdownRegexSource(phaseNum)}[:\\s]`, 'i');
+    // gsd-core #5063: anchor to each phase's own checklist line (line start,
+    // label-first) so an earlier [x] row that merely mentions Phase N mid-line
+    // cannot bind this phase's roadmap_complete.
+    const checkboxPattern = new RegExp(`^[ \\t]*-\\s*\\[(x| )\\]\\s*(?:\\*\\*|__)?\\s*Phase\\s+${phaseMarkdownRegexSource(phaseNum)}[:\\s]`, 'im');
     const checkboxMatch = content.match(checkboxPattern);
     const roadmapComplete = checkboxMatch ? checkboxMatch[1] === 'x' : false;
 

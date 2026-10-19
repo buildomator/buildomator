@@ -109,6 +109,8 @@ jobs:
         run: node tests/phase-complete-next-phase-state.test.cjs
       - name: Run roadmap field-multiline guard test
         run: node tests/roadmap-field-multiline.test.cjs
+      - name: Run roadmap checkbox-anchor guard test
+        run: node tests/roadmap-checkbox-anchor.test.cjs
       - name: Run code-fixer worktree-gate guard test
         run: node tests/code-fixer-worktree-gate.test.cjs
       - name: Run decimal phase-order init guard test
