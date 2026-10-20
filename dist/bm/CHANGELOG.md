@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [5.0.1] - 2026-10-20  (Sonnet and Haiku tiers move to 5.5)
+
+Brings the two lagging Claude-compatible model tiers up to the current generation, verified live against Anthropic's model documentation. Nothing changes except the model each tier resolves to. Follows the gsd-core v1.17 provenance line.
+
+### Changed
+- **The `sonnet` tier is now Claude Sonnet 5.5 (`claude-sonnet-5-5`) and the `haiku` tier is now Claude Haiku 5.5 (`claude-haiku-5-5`)** across the four Claude-compatible runtimes (claude, opencode, copilot, hermes). Sonnet 5.5 costs the same as Sonnet 5 ($2 and $10 per MTok). Haiku 5.5 is far cheaper than Haiku 4.5 (from $0.10 and $0.50 per MTok, against $1 and $5) and moves from a 200K to a 1M context window, so the light-tier agents get a newer model at a large cost reduction. The non-Claude runtime tiers (codex, gemini, qwen) are unchanged, and the opus and fable tiers already tracked the current generation. Both ids were checked against Anthropic's live model documentation before the change.
+
 ## [5.0.0] - 2026-10-20  (Superpowers: a sixth upstream, plus seven upstream correctness ports)
 
 A non-breaking milestone. The `/gsd:`, `gsd-sdk`, and `gsd-<role>` spellings all keep working exactly as before: the retirement once planned for v5.0 is deferred to a later major, so no install breaks on this bump. 5.0 marks two other things. Superpowers joins as a sixth upstream, with five of its skills curated into the craft-skill catalog, and seven correctness fixes from gsd-core v1.15 through v1.17 land in both the SDK and CJS twins. Follows the gsd-core v1.17 provenance line.

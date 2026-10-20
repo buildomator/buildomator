@@ -35,8 +35,8 @@ ok('kilo declares fable: null', rawCatalog.runtimeTierDefaults.kilo.fable === nu
 
 // ─── 2. No regression on opus/sonnet/haiku ───────────────────────────────────
 ok('claude.opus is claude-opus-5-5', rp.claude.opus.model === 'claude-opus-5-5');
-ok('claude.sonnet is claude-sonnet-5', rp.claude.sonnet.model === 'claude-sonnet-5');
-ok('claude.haiku still claude-haiku-4-5', rp.claude.haiku.model === 'claude-haiku-4-5');
+ok('claude.sonnet is claude-sonnet-5-5', rp.claude.sonnet.model === 'claude-sonnet-5-5');
+ok('claude.haiku is claude-haiku-5-5', rp.claude.haiku.model === 'claude-haiku-5-5');
 
 // ─── 3. Quality profile: heavy agents -> fable; others unchanged ─────────────
 const quality = mc.getAgentToModelMapForProfile('quality');

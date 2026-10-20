@@ -12,7 +12,7 @@
       "source": "./",
       "displayName": "Buildomator (legacy /gsd:)",
       "description": "The same Buildomator plugin under its original /gsd: command prefix. /gsd: keeps working as a fully equivalent alias; the retirement once planned for v5.0 is deferred, so both prefixes continue to work. New users should install Buildomator (the /bm: entry) instead.",
-      "version": "5.0.0",
+      "version": "5.0.1",
       "author": {
         "name": "Jasper Nuyens"
       },
@@ -32,7 +32,7 @@
       "source": "./dist/bm",
       "displayName": "Buildomator",
       "description": "Buildomator: a structured workflow plugin for Claude Code. Use /bm: for planning, execution, verification, and MCP-backed project state. This is the plugin to install.",
-      "version": "5.0.0",
+      "version": "5.0.1",
       "author": {
         "name": "Jasper Nuyens"
       },

@@ -130,7 +130,7 @@ describe('runPhaseStepSession', () => {
         makeConfig({ runtime: 'claude', model_profile: 'balanced' } as Partial<GSDConfig>),
       );
       const opts = mockQueryCalls[0].options as { model?: string };
-      expect(opts.model).toBe('claude-sonnet-5');
+      expect(opts.model).toBe('claude-sonnet-5-5');
     });
 
     it('respects GSD_RUNTIME env precedence over config (no Claude id when env=codex)', async () => {
