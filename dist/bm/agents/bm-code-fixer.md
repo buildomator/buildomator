@@ -41,6 +41,15 @@ The REVIEW.md fix suggestion is **GUIDANCE**, not a patch to blindly apply.
 4. **Apply the fix** using Edit tool (preferred) for targeted changes, or Write tool for file rewrites
 5. **Verify the fix** using 3-tier verification strategy (see verification_strategy below)
 
+**Three dispositions:** every finding resolves to one of:
+- `fixed`: the fix was applied, verified, and committed.
+- `skipped`: the fix cannot be applied cleanly (code context differs, verification failed and rolled back, commit failed).
+- `rejected`: the finding is technically wrong for this codebase, the suggested fix would break existing behavior, or the finding targets code that nothing calls.
+
+A rejection needs technical reasoning specific to this code (what the reviewer assumed, what the code actually does, why the fix is wrong). "code differs" is a skip reason, not a rejection reason.
+
+**Usage check before implementing (YAGNI):** before implementing a finding that asks you to add, extend, or "implement properly" something, run `grep -rn` (or Grep) for the symbol's actual call sites. If nothing outside the definition uses it, reject with the grep result as evidence rather than building unused code.
+
 **If the source file has changed significantly** and the fix suggestion no longer applies cleanly:
 - Mark finding as "skipped: code context differs from review"
 - Continue with remaining findings
@@ -395,6 +404,7 @@ For each finding in sorted order:
   - No pre-capture needed — rollback uses `git checkout -- {file}` which is atomic
 
 **c. Determine if fix applies:**
+- For add/extend/implement findings, grep for the symbol's call sites first; if nothing outside the definition uses it, reject (see step d)
 - Compare current code state to what reviewer described
 - Check if fix suggestion makes sense given current code
 - Adapt fix if code has minor changes but fix still applies
@@ -409,6 +419,12 @@ For each finding in sorted order:
 **If code context differs significantly:**
 - Mark as "skipped: code context differs from review"
 - Record skip reason: describe what changed
+- Continue to next finding
+
+**If the finding is wrong for this codebase (reject):**
+- Mark as `rejected`
+- Record `reject_reason` with the technical reasoning and any grep evidence
+- Make no edit
 - Continue to next finding
 
 **e. Verify fix:** apply the 3-tier `verification_strategy` (Tier 1 re-read always; Tier 2 syntax check if available — on FAIL execute rollback_strategy and mark "skipped: fix caused errors, rolled back"; Tier 3 accept Tier 1 if no checker).
@@ -447,10 +463,11 @@ For each finding, track:
 ```javascript
 {
   finding_id: "CR-01",
-  status: "fixed" | "skipped",
+  status: "fixed" | "skipped" | "rejected",
   files_modified: ["path/to/file1", "path/to/file2"],  // if fixed
   commit_hash: "abc1234",  // if fixed
-  skip_reason: "code context differs from review"  // if skipped
+  skip_reason: "code context differs from review",  // if skipped
+  reject_reason: "..."  // if rejected
 }
 ```
 
@@ -471,14 +488,15 @@ iteration: {current iteration number, default 1}
 findings_in_scope: {count}
 fixed: {count}
 skipped: {count}
+rejected: {count}
 status: all_fixed | partial | none_fixed
 ---
 ```
 
 Status values:
-- `all_fixed`: All in-scope findings successfully fixed
-- `partial`: Some fixed, some skipped
-- `none_fixed`: All findings skipped (no fixes applied)
+- `all_fixed`: every in-scope finding fixed
+- `partial`: a mix (some fixed, some skipped or rejected)
+- `none_fixed`: nothing fixed (all skipped or rejected)
 
 **3. Body structure:**
 ```markdown
@@ -492,6 +510,7 @@ Status values:
 - Findings in scope: {count}
 - Fixed: {count}
 - Skipped: {count}
+- Rejected: {count}
 
 ## Fixed Issues
 
@@ -511,6 +530,16 @@ Status values:
 
 **File:** `path/to/file.ext:{line}`
 **Reason:** {skip_reason}
+**Original issue:** {issue description from REVIEW.md}
+
+## Rejected Issues
+
+{If no rejected issues, omit this section}
+
+### {finding_id}: {title}
+
+**File:** `path/to/file.ext:{line}`
+**Reasoning:** {technical reasoning, including grep evidence when usage was the question}
 **Original issue:** {issue description from REVIEW.md}
 
 ---
@@ -549,6 +578,8 @@ _Iteration: {N}_
 
 **DO skip findings that cannot be applied cleanly** — do not force broken fixes. Mark as skipped with clear reason.
 
+**DO reject findings that are wrong for this code** — when the finding is technically wrong for this codebase, the suggested fix would break existing behavior, or it targets code nothing calls. A rejection requires technical reasoning specific to this code (grep evidence when usage was the question), not a bare "code differs".
+
 **DO rollback using `git checkout -- {file}`** — atomic and safe since the fix has not been committed yet. Do NOT use Write tool for rollback (partial write on tool failure corrupts the file).
 
 **DO NOT modify files unrelated to the finding** — scope each fix narrowly to the issue at hand.
@@ -570,7 +601,7 @@ _Iteration: {N}_
 Fixes are committed **per-finding**, so each commit is self-contained and valid even if the agent crashes mid-run (before writing REVIEW-FIX.md); the orchestrator handles overall reporting.
 
 - **Agent failure before REVIEW-FIX.md:** workflow detects the missing file and reports: "Agent failed. Some fix commits may already exist — check `git log`."
-- **REVIEW-FIX.md accuracy:** fixed count matches commits made; skip reasons document why each finding was not fixed.
+- **REVIEW-FIX.md accuracy:** fixed count matches commits made; skip reasons document why each finding was not fixed; reject reasons carry the technical reasoning (and grep evidence) for each wrong finding.
 - **Idempotency:** re-running on the same REVIEW.md may differ if code changed — the fixer adapts to current state, not historical review context.
 - **Partial automation:** skip-and-log lets some findings auto-fix while others are left for human judgment.
 
@@ -578,7 +609,8 @@ Fixes are committed **per-finding**, so each commit is self-contained and valid 
 
 <success_criteria>
 
-- [ ] All in-scope findings attempted (either fixed or skipped with reason)
+- [ ] All in-scope findings attempted (fixed, skipped with reason, or rejected with technical reasoning)
+- [ ] Usage grep run before any add/extend/implement-style fix; unused targets rejected with the grep as evidence
 - [ ] Each fix committed atomically with `fix({padded_phase}): {id} {description}` format
 - [ ] All modified files listed after each commit message (multi-file fix support)
 - [ ] REVIEW-FIX.md created with accurate counts, status, and iteration number

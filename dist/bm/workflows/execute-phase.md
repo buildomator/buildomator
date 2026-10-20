@@ -316,6 +316,8 @@ Parse JSON for: `phase`, `plans[]` (each with `id`, `wave`, `autonomous`, `objec
 
 **Wave safety check:** If `WAVE_FILTER` is set and there are still incomplete plans in any lower wave that match the current execution mode, STOP and tell the user to finish earlier waves first. Do not let Wave 2+ execute while prerequisite earlier-wave plans remain incomplete.
 
+**Same-shape batching (optional):** When a wave holds several trivially small plans of the same shape (same file cluster, same task pattern, each well under the per-plan context budget, no checkpoints), the orchestrator MAY dispatch them to a single bm-executor call listing all plan paths, reviewed as one diff, instead of one executor per plan. The executor still writes one SUMMARY.md per plan and one commit per task. When in doubt keep one executor per plan. This is a note, not a new mechanism: do not change the wave loop or the Agent() template.
+
 **If every plan is filtered out:**
 
 The status-aware filter above already keeps paused, blocked and partial plans (`complete: false`) in the run set, so an all-filtered state means every plan reads complete or retired, and the only open question is whether the phase tail (verification, roadmap tick) ran.
@@ -602,8 +604,9 @@ To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeou
        REQUIRED: SUMMARY.md MUST be committed before you return. In worktree mode the
        git_commit_metadata step in execute-plan.md commits SUMMARY.md and REQUIREMENTS.md
        only (STATE.md and ROADMAP.md are excluded automatically). Do NOT skip or defer
-       this commit — the orchestrator force-removes the worktree after you return, and
-       any uncommitted SUMMARY.md will be permanently lost (#2070).
+       this commit. The orchestrator removes the worktree after you return (a non-force
+       attempt first, then a forced removal after rescuing SUMMARY files), and any
+       uncommitted SUMMARY.md will be permanently lost (#2070).
        REQUIRED ORDER: Write SUMMARY.md → commit → only then any narration. No text between Write and commit (truncation risk; #2070 rescue is not primary defense).
        </parallel_execution>
 
@@ -839,9 +842,14 @@ To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeou
          fi
        done < <(find "$WT/.planning" -name "*SUMMARY.md" 2>/dev/null)
        REMOVE_OK=false
-       if git worktree remove "$WT" --force; then
+       if git worktree remove "$WT" 2>/dev/null; then
          REMOVE_OK=true
        else
+         REMAINING_PATHS=$(git -C "$WT" status --porcelain --untracked-files=all 2>/dev/null | grep -v '^.. \.planning/' || true)
+         if [ -n "$REMAINING_PATHS" ]; then
+           echo "⚠ Worktree $WT has uncommitted paths; forcing removal after SUMMARY rescue:"
+           echo "$REMAINING_PATHS"
+         fi
          WT_NAME=$(basename "$WT")
          if [ -f ".git/worktrees/${WT_NAME}/locked" ]; then
            echo "⚠ Worktree $WT is locked — attempting to unlock and retry"
@@ -884,15 +892,28 @@ To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeou
      [ -z "$WT_BRANCH" ] || [ "$WT_BRANCH" = "HEAD" ] && continue
      echo "Cleaning up residual worktree: $WT (branch: $WT_BRANCH)"
      git worktree unlock "$WT" 2>/dev/null || true
-     if ! git worktree remove "$WT" --force; then
-       WT_NAME=$(basename "$WT")
-       if [ -f ".git/worktrees/${WT_NAME}/locked" ]; then
-         echo "⚠ Worktree $WT is locked — unlock failed; manual cleanup required:"
-         echo "    git worktree unlock \"$WT\" && git worktree remove \"$WT\" --force && git branch -D \"$WT_BRANCH\""
-       else
-         echo "⚠ Residual worktree at $WT — remove failed; manual cleanup required"
-       fi
+     REMOVE_OK=false
+     if git worktree remove "$WT" 2>/dev/null; then
+       REMOVE_OK=true
      else
+       REMAINING_PATHS=$(git -C "$WT" status --porcelain --untracked-files=all 2>/dev/null || true)
+       if [ -n "$REMAINING_PATHS" ]; then
+         echo "⚠ Residual worktree $WT has uncommitted paths; forcing removal:"
+         echo "$REMAINING_PATHS"
+       fi
+       if git worktree remove "$WT" --force; then
+         REMOVE_OK=true
+       else
+         WT_NAME=$(basename "$WT")
+         if [ -f ".git/worktrees/${WT_NAME}/locked" ]; then
+           echo "⚠ Worktree $WT is locked — unlock failed; manual cleanup required:"
+           echo "    git worktree unlock \"$WT\" && git worktree remove \"$WT\" --force && git branch -D \"$WT_BRANCH\""
+         else
+           echo "⚠ Residual worktree at $WT — remove failed; manual cleanup required"
+         fi
+       fi
+     fi
+     if [ "$REMOVE_OK" = "true" ]; then
        git branch -D "$WT_BRANCH" 2>/dev/null || true
      fi
    done < "$WT_PATHS_FILE"
@@ -1105,7 +1126,13 @@ After all waves:
 
 ### Issues Encountered
 [Aggregate from SUMMARYs, or "None"]
+
+### Decisions made autonomously (and cost if wrong)
+- **{plan}**: {decision one-liner}. Cost if wrong: {Cost if wrong line, or "not recorded"}
+[One line per deviation or assumption-drift record, or "None" when no SUMMARY has either section]
 ```
+
+Build the roll-up by reading only the `## Deviations from Plan` and `## Assumption Drift (advisory)` sections from each wave SUMMARY (frontmatter plus section grep, not full-body reads, per the context-budget rules) and keep each entry to one line.
 
 **Security gate check:**
 ```bash

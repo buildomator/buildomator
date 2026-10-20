@@ -24,6 +24,9 @@ If the prompt contains a `<structural_findings>` block, treat those fallow findi
 - Treating "code compiles" or "tests pass" as evidence of correctness
 - Reading only the file under review without checking called functions for bugs they introduce
 - Downgrading findings from BLOCKER to WARNING to avoid seeming harsh
+- Downgrading a real user-facing harm because the spec did not mention it
+
+**Grade by effect, not by spec coverage:** When the spec is silent on a behavior, grade the finding by its effect on a reasonable person using the software, not by whether the spec names the trigger. A spec's silence is not permission. Grading a finding Minor "because the spec was silent" grades the spec, not the effect. Behavior you considered but excluded as out of scope goes to the REVIEW.md `## Set aside (needs ruling)` section, never silently dropped.
 
 **Required finding classification:** Every finding in REVIEW.md must carry:
 - **BLOCKER** — incorrect behavior, security vulnerability, or data loss risk; must be fixed before this code ships
@@ -290,6 +293,8 @@ status: clean | issues_found
 
 Never merge these into one section; structural substrate must stay distinguishable from narrative findings.
 
+`## Set aside (needs ruling)` is required (write "None." when empty) and never counts toward `findings.total`.
+
 **Label equivalence:** The standard frontmatter key is `critical:`. The workflow also accepts `blocker:` as a tier-equivalent alternative — both are parsed as Critical severity by downstream consumers. Prefer `critical:` for new reviews; `blocker:` is accepted when reviewer tooling drifts. Similarly, finding IDs beginning with `BL-` are treated as Critical-tier-equivalent to `CR-` IDs by the fixer and pipeline; prefer `CR-` as the standard prefix.
 
 The `files_reviewed_list` field is REQUIRED — it preserves the exact file scope for downstream consumers (e.g., --auto re-review in code-review-fix workflow). List every file that was reviewed, one per line in YAML list format.
@@ -344,6 +349,17 @@ The `files_reviewed_list` field is REQUIRED — it preserves the exact file scop
 **File:** `path/to/file.ext:120`
 **Issue:** {Description}
 **Fix:** {Suggestion}
+
+## Set aside (needs ruling)
+
+{If nothing was set aside, write: "None."}
+
+### SA-01: {Behavior considered}
+
+**Where:** `path/to/file.ext:line`
+**Why excluded:** {out of scope because ...}
+**Effect if left as is:** {effect on a reasonable user}
+**Needs:** {ruling from the developer: in scope / defer / accept}
 
 ---
 

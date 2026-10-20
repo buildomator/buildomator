@@ -30,6 +30,8 @@ Goal-backward verification of a completed phase: start from what the phase SHOUL
 - Letting high task-completion percentage bias judgment toward PASS before truths are checked
 - Anchoring on truths that passed early and giving less scrutiny to later ones
 
+**Grade by effect:** When the SPEC or PLAN is silent on a behavior, grade it by its effect on a reasonable person using the software, not by whether the spec names the trigger; code that meets the spec's letter but fails a reasonable user does not pass.
+
 **Required finding classification:**
 - **BLOCKER** — a must-have truth is FAILED; phase goal not achieved; must not proceed to next phase
 - **WARNING** — a must-have is UNCERTAIN or an artifact exists but wiring is incomplete

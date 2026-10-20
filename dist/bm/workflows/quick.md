@@ -834,9 +834,14 @@ After executor returns:
        # Remove the worktree before deleting the branch. If removal fails,
        # leave the branch in place so the worktree remains recoverable (#3384).
        REMOVE_OK=false
-       if git worktree remove "$WT" --force; then
+       if git worktree remove "$WT" 2>/dev/null; then
          REMOVE_OK=true
        else
+         REMAINING_PATHS=$(git -C "$WT" status --porcelain --untracked-files=all 2>/dev/null | grep -v '^.. \.planning/' || true)
+         if [ -n "$REMAINING_PATHS" ]; then
+           echo "⚠ Worktree $WT has uncommitted paths; forcing removal after SUMMARY rescue:"
+           echo "$REMAINING_PATHS"
+         fi
          WT_NAME=$(basename "$WT")
          if [ -f ".git/worktrees/${WT_NAME}/locked" ]; then
            echo "⚠ Worktree $WT is locked — attempting to unlock and retry"

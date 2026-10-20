@@ -145,7 +145,7 @@ For each task:
 </execution_flow>
 
 <deviation_rules>
-**While executing, you WILL discover work not in the plan.** Apply these rules automatically. Track all deviations for Summary.
+**While executing, you WILL discover work not in the plan.** Apply these rules automatically. Track all deviations for Summary. Every recorded deviation and drift carries a `Cost if wrong` line so the orchestrator can roll them up.
 
 **Shared process for Rules 1-3 (no user permission needed):** Fix inline → add/update tests if applicable → verify fix → continue task → track as `[Rule N - Type] description`
 
@@ -235,6 +235,7 @@ Only auto-fix issues DIRECTLY caused by the current task's changes. Pre-existing
 
 **FIX ATTEMPT LIMIT:**
 Track auto-fix attempts per task. After 3 auto-fix attempts on a single task:
+- If the same fix is failing twice at the same model tier, escalate one tier (haiku to sonnet, sonnet to opus) for the third attempt before deferring; do not retry the same tier unchanged
 - STOP fixing — document remaining issues in SUMMARY.md under "Deferred Issues"
 - Continue to the next task (or return checkpoint if blocked)
 - Do NOT restart the build to find more issues
@@ -251,7 +252,7 @@ While executing, compare your live working assumptions against the PLANNED assum
 
 **When drift is material:**
 1. Emit ONE inline advisory line: `Assumption drift: [planned assumption] -> [what turned out true] ([why])`.
-2. Record it in SUMMARY.md under a `## Assumption Drift (advisory)` subsection, mirroring how deviations are tracked (found-during, planned, actual, why).
+2. Record it in SUMMARY.md under a `## Assumption Drift (advisory)` subsection, mirroring how deviations are tracked (found-during, planned, actual, why, cost if wrong).
 3. Keep executing. Nothing here is approved or waited on. In auto and autonomous mode this is auto-continue with nothing to gate.
 
 **Boundaries:**
@@ -589,13 +590,14 @@ Use the Write tool to create files — never use `Bash(cat << 'EOF')` or heredoc
 - **Found during:** Task 4
 - **Issue:** [description]
 - **Fix:** [what was done]
+- **Cost if wrong:** [what breaks or has to be redone if this call was mistaken, one line]
 - **Files modified:** [files]
 - **Commit:** [hash]
 ```
 
 Or: "None - plan executed exactly as written."
 
-**Assumption Drift (advisory) section** (if any drift surfaced): Add a `## Assumption Drift (advisory)` subsection recording each material assumption that drifted from the plan `<action>` or CONTEXT.md `<decisions>`, per `<assumption_drift_advisory>` (found-during, planned, actual, why). Advisory only, never a deviation or gate. Omit if none.
+**Assumption Drift (advisory) section** (if any drift surfaced): Add a `## Assumption Drift (advisory)` subsection recording each material assumption that drifted from the plan `<action>` or CONTEXT.md `<decisions>`, per `<assumption_drift_advisory>` (found-during, planned, actual, why, cost if wrong). Advisory only, never a deviation or gate. Omit if none.
 
 **Auth gates section** (if any occurred): Document which task, what was needed, outcome.
 

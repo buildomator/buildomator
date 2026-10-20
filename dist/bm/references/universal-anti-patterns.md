@@ -2,6 +2,8 @@
 
 Rules that apply to ALL workflows and agents. Individual workflows may have additional specific anti-patterns.
 
+Writing or editing these rules: see `references/authoring-rules-as-recipes.md` (classify the failure, recipe over prohibition, no nuance clauses).
+
 ---
 
 ## Context Budget Rules
