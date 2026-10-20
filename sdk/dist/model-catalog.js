@@ -23,7 +23,7 @@ export function getAgentToModelMapForProfile(normalizedProfile) {
 // The bm- prefix is the primary agent-name spelling. The gsd- prefix is the
 // 4.x backwards-compat spelling accepted for config keys (model_overrides,
 // agent_skills) and CLI arguments (resolve-model, agent-skills); these three
-// helpers translate it and are removed at v5.0.
+// helpers translate it and are kept past v5.0 (removal deferred to a later major).
 export function normalizeAgentName(name) {
     const s = String(name);
     return s.startsWith('gsd-') ? 'bm-' + s.slice(4) : s;
