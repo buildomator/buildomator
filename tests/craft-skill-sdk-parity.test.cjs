@@ -162,7 +162,7 @@ for (const id of ['seo-audit', 'duckdb-query']) {
 const MATCH_CASES = [
   { scope: 'Audit my site SEO and fix the sitemap', ids: ['seo-audit'], triggers: { 'seo-audit': ['seo', 'sitemap'] } },
   { scope: 'ad-hoc SQL over Parquet files with DuckDB', ids: ['duckdb-query'], triggers: { 'duckdb-query': ['ad-hoc sql', 'duckdb', 'parquet'] } },
-  { scope: 'refactor the login form', ids: [], triggers: {} },
+  { scope: 'schedule the quarterly team offsite', ids: [], triggers: {} },
 ];
 
 for (const tc of MATCH_CASES) {

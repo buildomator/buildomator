@@ -47,7 +47,7 @@ check('reference carries every step heading', () => {
   for (const heading of [
     '## Step 1: Pre-filter (deterministic)',
     '## Step 2: Relevance (model)',
-    '## Step 3a: Interactive accept (discuss-phase, quick)',
+    '## Step 3a: Interactive accept',
     '## Step 3b: Autonomous auto-insert',
     '## Step 4: Release after the task',
     '## Checkout contract',
