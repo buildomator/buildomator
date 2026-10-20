@@ -578,7 +578,7 @@ _Iteration: {N}_
 
 **DO skip findings that cannot be applied cleanly** — do not force broken fixes. Mark as skipped with clear reason.
 
-**DO reject findings that are wrong for this code** — when the finding is technically wrong for this codebase, the suggested fix would break existing behavior, or it targets code nothing calls. A rejection requires technical reasoning specific to this code (grep evidence when usage was the question), not a bare "code differs".
+**DO reject findings that are wrong for this code**: when the finding is technically wrong for this codebase, the suggested fix would break existing behavior, or it targets code nothing calls. A rejection requires technical reasoning specific to this code (grep evidence when usage was the question), not a bare "code differs".
 
 **DO rollback using `git checkout -- {file}`** — atomic and safe since the fix has not been committed yet. Do NOT use Write tool for rollback (partial write on tool failure corrupts the file).
 

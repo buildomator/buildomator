@@ -318,7 +318,7 @@ Do NOT commit the output — the orchestrator handles that.
       break
     fi
     
-    # Still has issues — spawn fixer again, one model tier above the previous pass.
+    # Still has issues, spawn fixer again, one model tier above the previous pass.
     ESCALATED_MODEL=$(tier_up "$PREVIOUS_MODEL")
     echo "Issues remain. Applying fixes for iteration ${ITERATION} at model ${ESCALATED_MODEL} (escalated from ${PREVIOUS_MODEL})..."
     

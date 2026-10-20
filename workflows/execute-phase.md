@@ -906,10 +906,10 @@ To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeou
        else
          WT_NAME=$(basename "$WT")
          if [ -f ".git/worktrees/${WT_NAME}/locked" ]; then
-           echo "⚠ Worktree $WT is locked — unlock failed; manual cleanup required:"
+           echo "⚠ Worktree $WT is locked, unlock failed; manual cleanup required:"
            echo "    git worktree unlock \"$WT\" && git worktree remove \"$WT\" --force && git branch -D \"$WT_BRANCH\""
          else
-           echo "⚠ Residual worktree at $WT — remove failed; manual cleanup required"
+           echo "⚠ Residual worktree at $WT, remove failed; manual cleanup required"
          fi
        fi
      fi
