@@ -1,6 +1,6 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.9
+milestone: v5.0
 milestone_name: Craft Skill Catalog
 status: Awaiting next milestone
 stopped_at: Completed 18-05-PLAN.md
