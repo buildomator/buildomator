@@ -263,7 +263,7 @@ jobs:
 
             // Carrier 1: the inline node resolvers in hooks.json.
             const hooks=fs.readFileSync("dist/bm/hooks/hooks.json","utf8");
-            if(count(hooks,"g=\x27bm\x27")!==17) fail("hooks.json bm plugin-segment occurrences != 17 (got "+count(hooks,"g=\x27bm\x27")+")");
+            if(count(hooks,"g=\x27bm\x27")!==18) fail("hooks.json bm plugin-segment occurrences != 18 (got "+count(hooks,"g=\x27bm\x27")+")");
             if(count(hooks,"g=\x27gsd\x27")!==0) fail("hooks.json still has gsd plugin-segment assignments (got "+count(hooks,"g=\x27gsd\x27")+")");
             if(count(hooks,"cache/gsd-plugin/gsd")!==0) fail("hooks.json still has a gsd-path literal");
             if(count(hooks,"gsd-tools.cjs")<1) fail("hooks.json lost the gsd-tools.cjs identity token");

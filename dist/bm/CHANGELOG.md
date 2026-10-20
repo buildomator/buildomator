@@ -8,6 +8,23 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [5.0.2] - 2026-10-20  (Engine process disciplines mined from Superpowers, and green CI)
+
+Ports seven process-discipline improvements from the Superpowers upstream into the native engine, as instruction changes to the review, fix, executor, and worktree-cleanup paths. Also clears three pre-existing CI failures. No command or config changes for users. Follows the gsd-core v1.17 provenance line.
+
+### Changed
+- **Reviews grade behavior the spec is silent on by its effect on a real user.** The code reviewer now judges out-of-plan but user-visible behavior by what a reasonable person using the software gets, not by whether the spec named the trigger, and lists anything it set aside under a "Set aside (needs ruling)" section so nothing is dropped quietly. The same effect-first sentence is mirrored into the verifier.
+- **The code fixer can reject a finding, not only apply or skip it.** A finding that is wrong for this codebase, would break existing behavior, or targets code nothing calls is now recorded as rejected with specific technical reasoning (grep evidence when the question was usage), and the fix report carries a Rejected Issues section for a developer to rule on.
+- **A stalled fix loop escalates the model instead of retrying the same tier.** On the second and third auto-fix iterations the fixer runs one model tier higher, with the prior skip or reject reason in hand. The executor's fix-attempt limit carries the same note.
+- **Autonomous decisions reach the user with their cost if wrong.** The executor records a cost-if-wrong on each deviation and assumption-drift note, and the phase roll-up surfaces a compact "Decisions made autonomously (and cost if wrong)" list so rulings do not die per-plan.
+- **Worktree cleanup tries a plain removal before forcing one.** Both removal paths now attempt `git worktree remove` without `--force` first and report any remaining uncommitted paths, falling back to a forced removal only after, so a force never silently discards files a user left in a worktree.
+
+### Added
+- **An authoring note on recipes over prohibitions.** A new reference records when to write a rule as a positive recipe rather than a "do not" (shaping failures respond badly to prohibitions), with a no-nuance-clauses guideline, ported from the Superpowers skill-writing method.
+
+### Fixed
+- **CI is green again.** Three pre-existing failures are cleared: the state-document freshness guard now gets the typescript dependency it needs in the drift job; the install-smoke hooks assertion tracks the current plugin-segment count (18, not a stale 17); and the tracked internal milestone is realigned to the 5.x line so the version-alignment gate passes.
+
 ## [5.0.1] - 2026-10-20  (Sonnet and Haiku tiers move to 5.5)
 
 Brings the two lagging Claude-compatible model tiers up to the current generation, verified live against Anthropic's model documentation. Nothing changes except the model each tier resolves to. Follows the gsd-core v1.17 provenance line.

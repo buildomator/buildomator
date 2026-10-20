@@ -90,6 +90,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install sdk dev deps (typescript) for the state-document generator
+        run: npm --prefix sdk ci || npm --prefix sdk install
       - name: Run drift detector tests
         run: |
           node tests/semantic-dup.test.cjs
