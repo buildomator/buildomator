@@ -107,11 +107,12 @@ const EXPECT_BLOCK = (root) => insertArgs('seo-audit', 'bm-executor', '.claude/s
 
 // --- list and assess ---
 
-check('list returns both seed entries with their pins', () => {
+check('list returns the catalog entries with their pins', () => {
   withProject((root) => {
     const cat = copyCatalog(root);
+    const expected = Object.keys(JSON.parse(fs.readFileSync(COMMITTED_CATALOG, 'utf8')).skills).length;
     const list = parseJson(runTool(root, ['craft-skill', 'list', '--catalog', cat]));
-    assert(Array.isArray(list) && list.length === 2, `expected 2 entries: ${JSON.stringify(list)}`);
+    assert(Array.isArray(list) && list.length === expected, `expected ${expected} entries: ${JSON.stringify(list)}`);
     const seo = list.find((e) => e.id === 'seo-audit');
     const duck = list.find((e) => e.id === 'duckdb-query');
     assert(seo && duck, 'both seed ids should be listed');
@@ -169,7 +170,7 @@ check('match surfaces the DuckDB candidate for a data scope', () => {
 
 check('match returns no candidates for an unrelated scope', () => {
   withProject((root) => {
-    const m = parseJson(runTool(root, ['craft-skill', 'match', 'refactor the login form', '--catalog', COMMITTED_CATALOG]));
+    const m = parseJson(runTool(root, ['craft-skill', 'match', 'schedule the quarterly team offsite', '--catalog', COMMITTED_CATALOG]));
     assert(JSON.stringify(m.candidates) === JSON.stringify([]), `expected no candidates: ${JSON.stringify(m.candidates)}`);
   });
 });
