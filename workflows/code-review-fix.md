@@ -239,7 +239,24 @@ if [ "$AUTO_MODE" = "true" ]; then
   # Total fix passes = MAX_ITERATIONS. Loop uses -lt (not -le) intentionally.
   ITERATION=1
   MAX_ITERATIONS=3
-  
+
+  # Resolve the fixer's base model tier once; each retry escalates one tier (capped at opus).
+  FIXER_BASE_MODEL=$(bm-sdk query resolve-model bm-code-fixer 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const o=JSON.parse(s);console.log((o.data??o).model||"inherit")}catch{console.log("inherit")}})')
+  # Map one tier up: haiku -> sonnet, sonnet -> opus, opus -> opus.
+  # inherit and any explicit non-alias id are treated as sonnet, so the first step up is opus.
+  tier_up() {
+    case "$1" in
+      haiku) echo "sonnet" ;;
+      sonnet) echo "opus" ;;
+      opus) echo "opus" ;;
+      *) echo "opus" ;;
+    esac
+  }
+  case "$FIXER_BASE_MODEL" in
+    haiku|sonnet|opus) PREVIOUS_MODEL="$FIXER_BASE_MODEL" ;;
+    *) PREVIOUS_MODEL="sonnet" ;;
+  esac
+
   while [ $ITERATION -lt $MAX_ITERATIONS ]; do
     ITERATION=$((ITERATION + 1))
     
@@ -301,10 +318,11 @@ Do NOT commit the output — the orchestrator handles that.
       break
     fi
     
-    # Still has issues — spawn fixer again
-    echo "Issues remain. Applying fixes for iteration ${ITERATION}..."
+    # Still has issues — spawn fixer again, one model tier above the previous pass.
+    ESCALATED_MODEL=$(tier_up "$PREVIOUS_MODEL")
+    echo "Issues remain. Applying fixes for iteration ${ITERATION} at model ${ESCALATED_MODEL} (escalated from ${PREVIOUS_MODEL})..."
     
-    Agent(subagent_type="gsd:bm-code-fixer", prompt="
+    Agent(subagent_type="gsd:bm-code-fixer", model="${ESCALATED_MODEL}", prompt="
 <files_to_read>
 ${REVIEW_PATH}
 </files_to_read>
@@ -316,10 +334,13 @@ review_path: ${REVIEW_PATH}
 fix_scope: ${FIX_SCOPE}
 fix_report_path: ${FIX_REPORT_PATH}
 iteration: ${ITERATION}
+escalated_from: ${PREVIOUS_MODEL}
+prior_attempt: a prior fixer failed this finding; read the prior skip/reject reason in the .iterN backup of REVIEW-FIX.md before retrying
 </config>
 
-Read REVIEW.md findings, apply fixes, commit each atomically, write REVIEW-FIX.md (overwrite previous). Do NOT commit REVIEW-FIX.md.
+Read REVIEW.md findings, apply fixes, commit each atomically, write REVIEW-FIX.md (overwrite previous). Do NOT commit REVIEW-FIX.md. A prior fixer failed these findings; read the prior skip/reject reason in the .iterN backup of REVIEW-FIX.md before retrying.
 ")
+    PREVIOUS_MODEL="$ESCALATED_MODEL"
     # ORCHESTRATOR RULE — CODEX RUNTIME: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result before proceeding.
     
     # Check if fixer succeeded
@@ -341,6 +362,7 @@ Key design decisions for --auto:
 1. **Re-review scope**: Uses REVIEW_FILES_ARRAY from original REVIEW.md frontmatter, falling back to full phase scope. Scope is NOT lost between iterations.
 2. **Artifact semantics**: REVIEW.md and REVIEW-FIX.md are each overwritten per iteration (latest state). ONE final version of each, not per-iteration copies. Backup files (.iterN.md) preserve history.
 3. **Commit timing**: Fix commits happen per-finding inside the agent. REVIEW-FIX.md is NOT committed until step 7 (after ALL iterations complete). Only ONE docs commit for REVIEW-FIX.md.
+4. **Model escalation**: each retry runs the fixer one model tier above the previous pass (never the same tier unchanged), capped at opus. The iteration spawn passes `model=` explicitly; the first fix pass (step 5) stays on the base tier.
 </step>
 
 <step name="commit_fix_report">
@@ -413,6 +435,7 @@ FIX_STATUS=$(echo "$FIX_FRONTMATTER" | grep "^status:" | cut -d: -f2 | xargs)
 FINDINGS_IN_SCOPE=$(echo "$FIX_FRONTMATTER" | grep "^findings_in_scope:" | cut -d: -f2 | xargs)
 FIXED_COUNT=$(echo "$FIX_FRONTMATTER" | grep "^fixed:" | cut -d: -f2 | xargs)
 SKIPPED_COUNT=$(echo "$FIX_FRONTMATTER" | grep "^skipped:" | cut -d: -f2 | xargs)
+REJECTED_COUNT=$(echo "$FIX_FRONTMATTER" | grep "^rejected:" | cut -d: -f2 | xargs)
 ITERATION_COUNT=$(echo "$FIX_FRONTMATTER" | grep "^iteration:" | cut -d: -f2 | xargs)
 ```
 
@@ -426,6 +449,7 @@ echo "  Fix Scope:       ${FIX_SCOPE}"
 echo "  Findings:        ${FINDINGS_IN_SCOPE}"
 echo "  Fixed:           ${FIXED_COUNT}"
 echo "  Skipped:         ${SKIPPED_COUNT}"
+echo "  Rejected:        ${REJECTED_COUNT:-0}"
 if [ "$AUTO_MODE" = "true" ]; then
   echo "  Iterations:      ${ITERATION_COUNT}"
 fi
@@ -457,6 +481,8 @@ if [ "$FIX_STATUS" = "partial" ] || [ "$FIX_STATUS" = "none_fixed" ]; then
   echo "  cat ${FIX_REPORT_PATH}                     — View fix report"
   echo "  /gsd:code-review ${PHASE_NUMBER}           — Re-review code"
   echo "  /gsd:verify-work                           — Verify phase completion"
+  echo ""
+  echo "  Rejected findings are listed in REVIEW-FIX.md with reasoning; each needs a developer ruling (fix anyway, or drop from the review)."
   echo ""
 fi
 ```
