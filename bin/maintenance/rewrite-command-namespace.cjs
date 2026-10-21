@@ -44,8 +44,8 @@ if (!fs.existsSync(skillsDir)) {
 }
 // Skill dirs are now `skills/<name>/` (no `gsd-` prefix) since the 2026-04-24
 // rename that fixed the duplicated-prefix command-ID bug. Filter: any dir under
-// skills/ that contains a SKILL.md is a skill. Bundled TS artifacts in
-// skills/bundled/ + skills/*.ts are excluded by the SKILL.md-presence check.
+// skills/ that contains a SKILL.md is a skill. Any non-skill dir or loose file
+// under skills/ is excluded by the SKILL.md-presence check.
 const skills = fs.readdirSync(skillsDir)
   .filter(d => {
     const full = path.join(skillsDir, d);

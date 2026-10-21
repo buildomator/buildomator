@@ -8,6 +8,13 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [5.0.3] - 2026-10-21  (Remove Claude Code internal source that drifted in from an upstream sync)
+
+Removes twenty TypeScript files that are Claude Code's own bundled-skill source, not Buildomator's. They landed in the gsd-core `skills/` folder upstream and came across in one sync (v1.36.0); nothing in the plugin ever imported or ran them, and the content files their imports pointed at were never present. They only added weight to the shipped `/bm:` plugin. Follows the gsd-core v1.17 provenance line.
+
+### Removed
+- **`skills/bundled/` and three stray `skills/*.ts` files.** The `skills/bundled/` directory (batch, debug, loop, remember, verify, and the rest of Claude Code's internal skill registry, plus a dead `claudeApi` reference whose model table no longer matched the current generation) and the loose `skills/bundledSkills.ts`, `skills/loadSkillsDir.ts`, and `skills/mcpSkillBuilders.ts`. All were Claude Code internals synced in once and never wired into the plugin, which is why the skill-conformance and namespace tools already skipped them. No user-facing command or behavior changes.
+
 ## [5.0.2] - 2026-10-20  (Engine process disciplines mined from Superpowers, and green CI)
 
 Ports seven process-discipline improvements from the Superpowers upstream into the native engine, as instruction changes to the review, fix, executor, and worktree-cleanup paths. Also clears three pre-existing CI failures. No command or config changes for users. Follows the gsd-core v1.17 provenance line.
