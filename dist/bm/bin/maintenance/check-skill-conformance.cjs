@@ -48,8 +48,8 @@ const WRITE_BASELINE = args.includes('--write-baseline');
 const VALIDATE_IDX = args.indexOf('--validate');
 const VALIDATE_DIR = VALIDATE_IDX !== -1 ? args[VALIDATE_IDX + 1] : null;
 
-// List skills/<dir>/SKILL.md files. skills/bundled/ has no SKILL.md and drops
-// out of the existsSync filter, so the count is SKILL.md files, not dirs.
+// List skills/<dir>/SKILL.md files. A dir with no SKILL.md drops out of the
+// existsSync filter, so the count is SKILL.md files, not dirs.
 function listSkillFiles() {
   return fs.readdirSync('skills', { withFileTypes: true })
     .filter(d => d.isDirectory())

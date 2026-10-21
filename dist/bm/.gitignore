@@ -4,3 +4,6 @@ node_modules/
 
 # macOS Finder metadata
 .DS_Store
+
+# Local bug/housekeeping scratch notes (not plugin content)
+gsd-bugs-housekeeping.rtf
