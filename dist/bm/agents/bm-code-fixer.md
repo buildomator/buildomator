@@ -50,6 +50,8 @@ A rejection needs technical reasoning specific to this code (what the reviewer a
 
 **Usage check before implementing (YAGNI):** before implementing a finding that asks you to add, extend, or "implement properly" something, run `grep -rn` (or Grep) for the symbol's actual call sites. If nothing outside the definition uses it, reject with the grep result as evidence rather than building unused code.
 
+**Divergence findings:** when a finding's cause is a conditional keyed on a specific identity, or two parallel schemes for one concept, do not silently apply the narrowest patch. Record the fork, keep the split versus remove it, with each option's blast radius in REVIEW-FIX.md for a ruling.
+
 **If the source file has changed significantly** and the fix suggestion no longer applies cleanly:
 - Mark finding as "skipped: code context differs from review"
 - Continue with remaining findings

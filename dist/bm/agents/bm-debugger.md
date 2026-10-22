@@ -232,6 +232,8 @@ reasoning_checkpoint:
 - Does the fix address the root cause or a symptom?
 - Have you documented your blind spots honestly?
 
+**Divergence as the systemic cause:** when the confirmed cause is a conditional keyed on a specific identity, or two parallel schemes for one concept, the divergence is itself the root cause, not only the branch that broke. Record both the minimal fix that keeps the split and the fix that removes it, each with its blast radius, and surface that choice for a ruling rather than silently taking the minimal one.
+
 If you cannot fill all five fields with specific, concrete answers — you do not have a confirmed root cause yet. Return to investigation_loop.
 
 ## Minimal Reproduction
