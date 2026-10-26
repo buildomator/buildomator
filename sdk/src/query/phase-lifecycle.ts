@@ -57,6 +57,7 @@ import {
   extractOneLinerFromBody,
   generatePhaseSlug,
   parseMultiwordArg,
+  scanSequentialMaxPhaseFromMilestone,
 } from './phase-lifecycle-policy.js';
 import {
   archiveDirectories,
@@ -154,7 +155,13 @@ export const phaseAdd: QueryHandler = async (args, projectDir, workstream) => {
       throw new GSDError('Phase ID was not computed', ErrorClassification.Execution);
     }
 
-    const resolvedEntry = buildPhaseRoadmapEntry(resolvedPhaseId, description, config.phase_naming);
+    const roadmapMaxPhase = scanSequentialMaxPhaseFromMilestone(milestoneContent);
+    const resolvedEntry = buildPhaseRoadmapEntry(
+      resolvedPhaseId,
+      description,
+      config.phase_naming,
+      roadmapMaxPhase >= 1 ? roadmapMaxPhase : null,
+    );
 
     return { resolvedPhaseId, resolvedDirName, resolvedEntry };
   };
@@ -289,6 +296,10 @@ export const phaseAddBatch: QueryHandler = async (args, projectDir, workstream) 
       maxPhase = computeNextSequentialPhaseId(content, dirNames) - 1;
     }
 
+    // Running previous phase: the first entry chains onto the highest real
+    // roadmap header, each later entry chains onto the one just added before it.
+    let prevPhaseId = scanSequentialMaxPhaseFromMilestone(content);
+
     for (const description of descriptions) {
       const slug = generatePhaseSlug(description);
       let newPhaseId: number | string;
@@ -309,7 +320,13 @@ export const phaseAddBatch: QueryHandler = async (args, projectDir, workstream) 
       await ensureDirectoryWithGitkeep(dirPath);
 
       const phaseEntry =
-        buildPhaseRoadmapEntry(newPhaseId, description, config.phase_naming);
+        buildPhaseRoadmapEntry(
+          newPhaseId,
+          description,
+          config.phase_naming,
+          prevPhaseId >= 1 ? prevPhaseId : null,
+        );
+      if (typeof newPhaseId === 'number') prevPhaseId = newPhaseId;
 
       const insertAt = await phaseEntryInsertOffset(rawContent, projectDir, workstream);
       rawContent = rawContent.slice(0, insertAt) + phaseEntry + rawContent.slice(insertAt);
