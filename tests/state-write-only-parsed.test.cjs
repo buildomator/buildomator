@@ -140,6 +140,67 @@ check('advance-plan on a parseable STATE.md still advances the plan counter', ()
   }
 });
 
+// begin-phase STATE.md with a wrapped Current focus value and a Current
+// Position block, plus a phase dir whose first plan is already summarized.
+function beginPhaseState() {
+  return [
+    '---',
+    'gsd_state_version: 1.0',
+    'milestone: v1.0',
+    '---',
+    '',
+    '# Project State',
+    '',
+    '**Current focus:** old focus line one',
+    'wrapped continuation line two',
+    '',
+    '## Current Position',
+    '',
+    'Phase: 1',
+    'Plan: 1 of 3',
+    'Status: Paused',
+    '',
+  ].join('\n');
+}
+
+function seedGapPlans(dir) {
+  const pd = path.join(dir, '.planning', 'phases', '01-alpha');
+  fs.mkdirSync(pd, { recursive: true });
+  for (const n of ['01', '02', '03']) {
+    fs.writeFileSync(path.join(pd, `01-${n}-PLAN.md`), 'plan', 'utf-8');
+  }
+  // Plan 01 and 03 are summarized; 02 is the gap.
+  fs.writeFileSync(path.join(pd, '01-01-SUMMARY.md'), 'summary', 'utf-8');
+  fs.writeFileSync(path.join(pd, '01-03-SUMMARY.md'), 'summary', 'utf-8');
+}
+
+check('begin-phase replaces a wrapped Current focus value whole', () => {
+  const dir = mkproj();
+  try {
+    writeState(dir, beginPhaseState());
+    seedGapPlans(dir);
+    run(dir, 'state', 'begin-phase', '--phase', '1', '--name', 'Alpha Beta', '--plans', '3');
+    const after = stateText(dir);
+    assert.ok(/\*\*Current focus:\*\* Phase 1: Alpha Beta/.test(after), `expected colon focus label, got:\n${after}`);
+    assert.ok(!/wrapped continuation line two/.test(after), `wrapped continuation line must be gone, got:\n${after}`);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+check('begin-phase gap-closure re-entry resumes at the first unfinished plan', () => {
+  const dir = mkproj();
+  try {
+    writeState(dir, beginPhaseState());
+    seedGapPlans(dir);
+    run(dir, 'state', 'begin-phase', '--phase', '1', '--name', 'Alpha Beta', '--plans', '3');
+    const after = stateText(dir);
+    assert.ok(/^Plan: 2 of 3/m.test(after), `expected re-entry at plan 2, not 1, got:\n${after}`);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 if (failures > 0) {
   console.error(`\n${failures} test(s) failed`);
   process.exit(1);

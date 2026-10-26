@@ -81,7 +81,7 @@ export function isNestedSummaryFile(fileName: string): boolean {
  * A plan and its summary reduce to the same id; an unrelated remediation
  * summary (e.g. 30-FIX-CR02-SUMMARY.md) reduces to an id no plan shares.
  */
-function planSummaryBaseId(filename: string): string {
+export function planSummaryBaseId(filename: string): string {
   let base = filename.replace(/\.md$/i, '');
   base = base.replace(/-?(PLAN|SUMMARY)$/i, '');
   base = base.replace(/^(PLAN|SUMMARY)-/i, '');

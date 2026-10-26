@@ -1131,6 +1131,53 @@ function cmdStateJson(cwd, raw) {
   output(built, raw, JSON.stringify(built, null, 2));
 }
 
+// Plan number embedded in a plan filename. A flat NN-MM-PLAN.md yields its
+// second number, a nested PLAN-NN-slug.md yields its number, a bare PLAN.md is 1.
+function planNumberFromFile(filename) {
+  let m = filename.match(/PLAN-(\d+)/i);
+  if (m) return parseInt(m[1], 10);
+  m = filename.match(/(\d+)-PLAN\.md$/i);
+  if (m) return parseInt(m[1], 10);
+  return 1;
+}
+
+// Lowest plan number in a phase directory whose summary is missing or marks the
+// plan unfinished. Falls back to 1 when the directory has no summaries yet, so a
+// fresh phase still starts at plan 1 while a re-entry resumes at the first plan
+// that still needs running.
+function firstUnfinishedPlanNumber(phaseDir) {
+  const { planFiles, summaryFiles } = scanPhasePlans(phaseDir);
+  if (summaryFiles.length === 0) return 1;
+  const completeIds = new Set();
+  for (const summary of summaryFiles) {
+    if (scanPhasePlans.summaryFileIsComplete(scanPhasePlans.resolveSummaryPath(phaseDir, summary))) {
+      completeIds.add(scanPhasePlans.planSummaryBaseId(summary));
+    }
+  }
+  const ordered = planFiles
+    .map(file => ({ num: planNumberFromFile(file), id: scanPhasePlans.planSummaryBaseId(file) }))
+    .sort((a, b) => a.num - b.num);
+  for (const plan of ordered) {
+    if (!completeIds.has(plan.id)) return plan.num;
+  }
+  return 1;
+}
+
+// Resolve the on-disk phase directory for a phase number, or null when none
+// matches, so the begin-phase handler can scan it for an unfinished plan.
+function resolvePhaseDir(cwd, phaseNumber) {
+  const phasesDir = planningPaths(cwd).phases;
+  if (!fs.existsSync(phasesDir)) return null;
+  const norm = String(phaseNumber).replace(/^0+/, '').padStart(2, '0');
+  try {
+    const entries = fs.readdirSync(phasesDir, { withFileTypes: true });
+    const match = entries.find(e => e.isDirectory() && e.name.startsWith(norm));
+    return match ? path.join(phasesDir, match.name) : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Update STATE.md when a new phase begins execution.
  * Updates body text fields (Current focus, Status, Last Activity, Current Position)
@@ -1169,6 +1216,10 @@ function cmdStateBeginPhase(cwd, phaseNumber, phaseName, planCount, raw) {
     if (!isAlreadyExecuting) {
       // First-time execution: set all progress fields
 
+      // A re-entry after a gap resumes at the first plan that still needs
+      // running; a fresh phase (no summaries on disk) starts at plan 1.
+      const startPlan = firstUnfinishedPlanNumber(resolvePhaseDir(cwd, phaseNumber) || '');
+
       // Update Last Activity Description
       const activityDesc = `Phase ${phaseNumber} execution started`;
       result = stateReplaceField(content, 'Last Activity Description', activityDesc);
@@ -1184,8 +1235,8 @@ function cmdStateBeginPhase(cwd, phaseNumber, phaseName, planCount, raw) {
         if (result) { content = result; updated.push('Current Phase Name'); }
       }
 
-      // Update Current Plan to 1 (starting from the first plan)
-      result = stateReplaceField(content, 'Current Plan', '1');
+      // Update Current Plan to the first plan that still needs running
+      result = stateReplaceField(content, 'Current Plan', String(startPlan));
       if (result) { content = result; updated.push('Current Plan'); }
 
       // Update Total Plans in Phase
@@ -1194,9 +1245,12 @@ function cmdStateBeginPhase(cwd, phaseNumber, phaseName, planCount, raw) {
         if (result) { content = result; updated.push('Total Plans in Phase'); }
       }
 
-      // Update **Current focus:** body text line (#1104)
-      const focusLabel = phaseName ? `Phase ${phaseNumber} — ${phaseName}` : `Phase ${phaseNumber}`;
-      const focusPattern = /(\*\*Current focus:\*\*\s*).*/i;
+      // Update **Current focus:** body text line (#1104). The value capture
+      // runs through any wrapped continuation lines and stops at a blank line,
+      // the next bold field, or the next heading, so a wrapped old value is
+      // replaced whole and no stale continuation line is left behind.
+      const focusLabel = phaseName ? `Phase ${phaseNumber}: ${phaseName}` : `Phase ${phaseNumber}`;
+      const focusPattern = /(\*\*Current focus:\*\*[ \t]*)([^\n]*(?:\n(?![ \t]*(?:\n|$|\*\*|#))[^\n]*)*)/i;
       if (focusPattern.test(content)) {
         content = content.replace(focusPattern, (_match, prefix) => `${prefix}${focusLabel}`);
         updated.push('Current focus');
@@ -1218,7 +1272,7 @@ function cmdStateBeginPhase(cwd, phaseNumber, phaseName, planCount, raw) {
         }
 
         // Update or insert Plan line
-        const newPlan = `Plan: 1 of ${planCount || '?'}`;
+        const newPlan = `Plan: ${startPlan} of ${planCount || '?'}`;
         if (/^Plan:/m.test(posBody)) {
           posBody = posBody.replace(/^Plan:.*$/m, newPlan);
         } else {
