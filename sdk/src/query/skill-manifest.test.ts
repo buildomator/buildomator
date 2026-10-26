@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, writeFile, symlink } from 'node:fs/promises';
 import { tmpdir, homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -58,5 +58,34 @@ describe('skill-manifest', () => {
 
   it('legacy skills dir helper points at ~/.claude/get-shit-done/skills', () => {
     expect(resolveLegacySkillsDir()).toBe(join(homedir(), '.claude', 'get-shit-done', 'skills'));
+  });
+
+  it('skips a SKILL.md that is a symlink instead of a regular file (#5121)', async () => {
+    const tmpDir = await mkdtemp(join(tmpdir(), 'gsd-skill-manifest-'));
+    try {
+      const skillsDir = join(tmpDir, 'custom-skills');
+
+      // A normal skill that must still be discovered.
+      const goodDir = join(skillsDir, 'good-skill');
+      await mkdir(goodDir, { recursive: true });
+      await writeFile(
+        join(goodDir, 'SKILL.md'),
+        '---\nname: good-skill\ndescription: good desc\n---\n\nTRIGGER when: need good\n',
+      );
+
+      // A skill whose SKILL.md is a symlink, not a regular file.
+      const linkDir = join(skillsDir, 'link-skill');
+      await mkdir(linkDir, { recursive: true });
+      const target = join(tmpDir, 'target.md');
+      await writeFile(target, '---\nname: link-skill\ndescription: should be skipped\n---\n');
+      await symlink(target, join(linkDir, 'SKILL.md'));
+
+      const manifest = buildSkillManifest(tmpDir, skillsDir);
+      const names = manifest.skills.map(s => s.name);
+      expect(names).toContain('good-skill');
+      expect(names).not.toContain('link-skill');
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
   });
 });
