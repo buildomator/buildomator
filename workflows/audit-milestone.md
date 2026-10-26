@@ -318,12 +318,12 @@ output (see the Unsatisfied Requirements, Cross-Phase Issues, Broken Flows,
 and Nyquist Coverage sections above). Insert one closure phase per gap (or
 per group of related gaps) using the standard phase chain:
 
-/clear then:
+/clear then (`<AFTER>` is the existing phase to insert after; `<NEW>` is the inserted phase id the insert prints, for example `<AFTER>.1`):
 
-/gsd:phase --insert <N> "Close gap: <REQ-ID> — <description>"
-/gsd:discuss-phase <N>
-/gsd:plan-phase <N>
-/gsd:execute-phase <N>
+/gsd:phase --insert <AFTER> "Close gap <REQ-ID>: <description>"
+/gsd:discuss-phase <NEW>
+/gsd:plan-phase <NEW>
+/gsd:execute-phase <NEW>
 
 For Nyquist-coverage gaps flagged in the table above, prefer running
 `/gsd:validate-phase <N>` for each flagged phase (and `/gsd:secure-phase
@@ -369,12 +369,12 @@ All requirements met. No critical blockers. Accumulated tech debt needs review.
 **B. Plan a cleanup phase** — address the debt above before completing.
 Insert a closure phase using the standard chain:
 
-/clear then:
+/clear then (`<AFTER>` is the existing phase to insert after; `<NEW>` is the inserted phase id the insert prints, for example `<AFTER>.1`):
 
-/gsd:phase --insert <N> "Address tech debt: <area>"
-/gsd:discuss-phase <N>
-/gsd:plan-phase <N>
-/gsd:execute-phase <N>
+/gsd:phase --insert <AFTER> "Address tech debt: <area>"
+/gsd:discuss-phase <NEW>
+/gsd:plan-phase <NEW>
+/gsd:execute-phase <NEW>
 
 ───────────────────────────────────────────────────────────────
 </offer_next>
