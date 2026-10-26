@@ -193,6 +193,24 @@ describe('checkDecisionCoveragePlan — translation gate (#2492)', () => {
     expect(result.data.passed).toBe(true);
     expect(result.data.total).toBe(1); // only D-01 is trackable
   });
+
+  it('answers a caller error on a missing/non-directory phase arg instead of reporting zero coverage (#4939)', async () => {
+    await setupPhase(
+      `<decisions>
+### Cat
+- **D-01:** First decision
+- **D-02:** Second decision
+</decisions>`,
+      { '17-01-PLAN.md': planFile(`  truths: []\n  artifacts: []\n  key_links: []`) },
+    );
+    // A phase number string resolves to a directory that does not exist.
+    const result = await checkDecisionCoveragePlan(['17', contextPath], tmp);
+    const data = result.data as { error?: string; uncovered: unknown[]; passed: boolean };
+    expect(data.error).toMatch(/phase directory not found/);
+    // It must NOT report every decision as uncovered.
+    expect(data.uncovered).toEqual([]);
+    expect(data.passed).toBe(false);
+  });
 });
 
 describe('checkDecisionCoverageVerify — validation gate (#2492)', () => {

@@ -619,6 +619,11 @@ function cmdPhaseAdd(cwd, description, raw, customId) {
 
     let _newPhaseId;
     let _dirName;
+    // Highest phase header present in the active milestone. A new phase depends
+    // on the phase that actually exists, never the arithmetic predecessor,
+    // because the new id is max+1 over headers AND on-disk dirs, so id-1 can
+    // name an orphan dir or a numbering gap.
+    let _roadmapMaxPhase = 0;
 
     if (customId || config.phase_naming === 'custom') {
       // Custom phase naming: use provided ID or generate from description
@@ -638,6 +643,7 @@ function cmdPhaseAdd(cwd, description, raw, customId) {
         if (num >= 999) continue; // backlog phases use 999.x numbering
         if (num > maxPhase) maxPhase = num;
       }
+      _roadmapMaxPhase = maxPhase;
 
       // Also scan .planning/phases/ for orphan directories not tracked in ROADMAP.
       // Directory names follow: [PREFIX-]NN-slug (e.g. 03-api or CK-05-old-feature).
@@ -666,7 +672,9 @@ function cmdPhaseAdd(cwd, description, raw, customId) {
     platformWriteSync(path.join(dirPath, '.gitkeep'), '');
 
     // Build phase entry
-    const dependsOn = config.phase_naming === 'custom' ? '' : `\n**Depends on:** Phase ${typeof _newPhaseId === 'number' ? _newPhaseId - 1 : 'TBD'}`;
+    const dependsOn = config.phase_naming === 'custom'
+      ? ''
+      : (_roadmapMaxPhase >= 1 ? `\n**Depends on:** Phase ${_roadmapMaxPhase}` : '');
     const phaseEntry = `\n### Phase ${_newPhaseId}: ${description}\n\n**Goal:** [To be planned]\n**Requirements**: TBD${dependsOn}\n**Plans:** 0 plans\n\nPlans:\n- [ ] TBD (run /bm:plan-phase ${_newPhaseId} to break down)\n`;
 
     // Insert inside the active milestone window (before its trailing separator)
@@ -705,6 +713,9 @@ function cmdPhaseAddBatch(cwd, descriptions, raw) {
     let rawContent = fs.readFileSync(roadmapPath, 'utf-8');
     const content = extractCurrentMilestone(rawContent, cwd);
     let maxPhase = 0;
+    // Highest phase header present in the active milestone, captured before the
+    // on-disk dir scan so a batch depends on a phase that actually exists.
+    let roadmapMaxPhase = 0;
     if (config.phase_naming !== 'custom') {
       const phasePattern = /#{2,4}\s*Phase\s+(\d+)[A-Z]?(?:\.\d+)*:/gi;
       let m;
@@ -713,6 +724,7 @@ function cmdPhaseAddBatch(cwd, descriptions, raw) {
         if (num >= 999) continue;
         if (num > maxPhase) maxPhase = num;
       }
+      roadmapMaxPhase = maxPhase;
       const phasesOnDisk = path.join(planningDir(cwd), 'phases');
       if (fs.existsSync(phasesOnDisk)) {
         const dirNumPattern = /^(?:[A-Z][A-Z0-9]*-)?(\d+)-/;
@@ -726,6 +738,9 @@ function cmdPhaseAddBatch(cwd, descriptions, raw) {
       }
     }
     const added = [];
+    // Running previous phase: the first entry chains onto the highest real
+    // header, each later entry chains onto the one just added before it.
+    let prevPhase = roadmapMaxPhase;
     for (const description of descriptions) {
       const slug = generateSlugInternal(description);
       let newPhaseId, dirName;
@@ -740,7 +755,10 @@ function cmdPhaseAddBatch(cwd, descriptions, raw) {
       const dirPath = path.join(planningDir(cwd), 'phases', dirName);
       platformEnsureDir(dirPath);
       platformWriteSync(path.join(dirPath, '.gitkeep'), '');
-      const dependsOn = config.phase_naming === 'custom' ? '' : `\n**Depends on:** Phase ${typeof newPhaseId === 'number' ? newPhaseId - 1 : 'TBD'}`;
+      const dependsOn = config.phase_naming === 'custom'
+        ? ''
+        : (prevPhase >= 1 ? `\n**Depends on:** Phase ${prevPhase}` : '');
+      if (typeof newPhaseId === 'number') prevPhase = newPhaseId;
       const phaseEntry = `\n### Phase ${newPhaseId}: ${description}\n\n**Goal:** [To be planned]\n**Requirements**: TBD${dependsOn}\n**Plans:** 0 plans\n\nPlans:\n- [ ] TBD (run /bm:plan-phase ${newPhaseId} to break down)\n`;
       const insertAt = phaseEntryInsertOffset(rawContent, cwd);
       rawContent = rawContent.slice(0, insertAt) + phaseEntry + rawContent.slice(insertAt);

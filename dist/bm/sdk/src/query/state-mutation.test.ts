@@ -672,6 +672,60 @@ describe('stateBeginPhase', () => {
     expect(content).toContain('Budget: $2,500 max test');
     expect((content.match(/^Budget:/gm) || []).length).toBe(1);
   });
+
+  const WRAPPED_FOCUS_STATE = `---
+gsd_state_version: 1.0
+milestone: v3.0
+status: executing
+---
+
+# Project State
+
+**Current focus:** old focus line one
+wrapped continuation line two
+
+## Current Position
+
+Phase: 6
+Plan: 1 of 3
+Status: Paused
+
+Progress: [..........] 0%
+`;
+
+  async function seedGapPhase(): Promise<void> {
+    const pd = join(tmpDir, '.planning', 'phases', '07-gap');
+    await mkdir(pd, { recursive: true });
+    for (const n of ['01', '02', '03']) {
+      await writeFile(join(pd, `07-${n}-PLAN.md`), 'plan', 'utf-8');
+    }
+    // Plan 01 and 03 are summarized; 02 is the gap.
+    await writeFile(join(pd, '07-01-SUMMARY.md'), 'summary', 'utf-8');
+    await writeFile(join(pd, '07-03-SUMMARY.md'), 'summary', 'utf-8');
+  }
+
+  it('replaces a wrapped Current focus value whole (#4945)', async () => {
+    const { stateBeginPhase } = await import('./state-mutation.js');
+    await setupTestProject(tmpDir, WRAPPED_FOCUS_STATE);
+    await seedGapPhase();
+
+    await stateBeginPhase(['--phase', '7', '--name', 'Gap Phase', '--plans', '3'], tmpDir);
+
+    const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    expect(content).toContain('**Current focus:** Phase 7: Gap Phase');
+    expect(content).not.toContain('wrapped continuation line two');
+  });
+
+  it('gap-closure re-entry resumes at the first unfinished plan, not plan 1 (#4945)', async () => {
+    const { stateBeginPhase } = await import('./state-mutation.js');
+    await setupTestProject(tmpDir, WRAPPED_FOCUS_STATE);
+    await seedGapPhase();
+
+    await stateBeginPhase(['--phase', '7', '--name', 'Gap Phase', '--plans', '3'], tmpDir);
+
+    const content = await readFile(join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    expect(content).toContain('Plan: 2 of 3');
+  });
 });
 
 // ─── stateAdvancePlan ───────────────────────────────────────────────────────

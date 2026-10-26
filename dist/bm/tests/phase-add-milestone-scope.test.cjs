@@ -121,6 +121,20 @@ check('no-milestone fallback keeps legacy insertion before the trailing separato
   }
 });
 
+check('phase add after a gap depends on the highest roadmap header', () => {
+  const dir = makeProject(ACTIVE_ROADMAP, ACTIVE_STATE);
+  try {
+    // An orphan dir 05 pushes the next id to 6 while the highest header is 2.
+    fs.mkdirSync(path.join(dir, '.planning', 'phases', '05-orphan'), { recursive: true });
+    const out = run(dir, ['add', 'Gap Phase']);
+    assert.ok(out.includes('### Phase 6: Gap Phase'), 'new phase is 6');
+    assert.ok(out.includes('**Depends on:** Phase 2'), 'depends on the highest header, Phase 2');
+    assert.ok(!out.includes('**Depends on:** Phase 5'), 'must not depend on the orphan dir number');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 if (failures > 0) {
   console.error(`\n${failures} test(s) failed`);
   process.exit(1);

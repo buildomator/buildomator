@@ -304,7 +304,7 @@ TDD Plans: {count} | Gate violations: {count}
 
 ### What the Review Checks
 
-1. **Gate sequence:** Each TDD plan has RED → GREEN commits in order
+1. **Gate sequence:** Each TDD plan has RED → GREEN commits in order. Exception: a RED-only probe plan (whose GREEN lands in a later plan that depends on it) is not faulted for a missing GREEN of its own, and is not credited with that later plan's GREEN.
 2. **Test quality:** RED phase tests fail for the right reason (not import errors or syntax)
 3. **Minimal GREEN:** Implementation is minimal — no premature optimization in GREEN phase
 4. **Refactor discipline:** If REFACTOR commit exists, tests still pass

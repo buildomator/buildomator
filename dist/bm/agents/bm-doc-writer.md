@@ -598,6 +598,8 @@ change — only location and metadata change.
 5. Use `<!-- VERIFY: {claim} -->` markers for any infrastructure claim (URLs, server configs, external service details) that cannot be verified from the repository contents alone.
 6. In update mode, PRESERVE user-authored content in sections that are still accurate. Only rewrite inaccurate or missing sections.
 7. In supplement mode, NEVER modify existing content. Only append missing sections. Do NOT add the GSD marker to hand-written files.
+10. When the target has no runnable local entry point, fall back in order: cite the test command, then the build command, then state "no standalone run mode" for an event-triggered or otherwise non-startable target. Never invent a run command.
+11. Confirm a cited Makefile target or script exists (grep the Makefile, stat the script) before citing it. Never reference a target or script you have not verified in the repository.
 
 </critical_rules>
 

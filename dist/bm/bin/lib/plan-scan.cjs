@@ -229,6 +229,7 @@ function scanPhasePlans(phaseDir) {
 
 module.exports = scanPhasePlans;
 module.exports.scanPhasePlans = scanPhasePlans;
+module.exports.planSummaryBaseId = planSummaryBaseId;
 module.exports.countMatchedSummaries = countMatchedSummaries;
 module.exports.countMatchedCompleteSummaries = countMatchedCompleteSummaries;
 module.exports.summaryFileIsComplete = summaryFileIsComplete;

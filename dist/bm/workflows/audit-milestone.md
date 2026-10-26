@@ -318,12 +318,12 @@ output (see the Unsatisfied Requirements, Cross-Phase Issues, Broken Flows,
 and Nyquist Coverage sections above). Insert one closure phase per gap (or
 per group of related gaps) using the standard phase chain:
 
-/clear then:
+/clear then (`<AFTER>` is the existing phase to insert after; `<NEW>` is the inserted phase id the insert prints, for example `<AFTER>.1`):
 
-/bm:phase --insert <N> "Close gap: <REQ-ID> — <description>"
-/bm:discuss-phase <N>
-/bm:plan-phase <N>
-/bm:execute-phase <N>
+/bm:phase --insert <AFTER> "Close gap <REQ-ID>: <description>"
+/bm:discuss-phase <NEW>
+/bm:plan-phase <NEW>
+/bm:execute-phase <NEW>
 
 For Nyquist-coverage gaps flagged in the table above, prefer running
 `/bm:validate-phase <N>` for each flagged phase (and `/bm:secure-phase
@@ -369,12 +369,12 @@ All requirements met. No critical blockers. Accumulated tech debt needs review.
 **B. Plan a cleanup phase** — address the debt above before completing.
 Insert a closure phase using the standard chain:
 
-/clear then:
+/clear then (`<AFTER>` is the existing phase to insert after; `<NEW>` is the inserted phase id the insert prints, for example `<AFTER>.1`):
 
-/bm:phase --insert <N> "Address tech debt: <area>"
-/bm:discuss-phase <N>
-/bm:plan-phase <N>
-/bm:execute-phase <N>
+/bm:phase --insert <AFTER> "Address tech debt: <area>"
+/bm:discuss-phase <NEW>
+/bm:plan-phase <NEW>
+/bm:execute-phase <NEW>
 
 ───────────────────────────────────────────────────────────────
 </offer_next>

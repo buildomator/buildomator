@@ -199,7 +199,7 @@ timestamp=$(bm-sdk query current-timestamp full --raw)
 
 <step name="commit">
 ```bash
-bm-sdk query commit "wip: [context-name] paused at [X]/[Y]" --files [handoff-path] .planning/HANDOFF.json
+bm-sdk query commit "docs(pause): [context-name] paused at [X]/[Y]" --files [handoff-path] .planning/HANDOFF.json
 ```
 </step>
 

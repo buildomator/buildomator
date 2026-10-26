@@ -325,6 +325,39 @@ describe('phaseAdd', () => {
     expect(roadmap).toContain('**Goal:** [To be planned]');
   });
 
+  it('depends on the highest roadmap header after a numbering gap, not the arithmetic predecessor (#5113)', async () => {
+    const { phaseAdd } = await import('./phase-lifecycle.js');
+    const roadmap = `# Roadmap
+
+## Current Milestone: v3.0 SDK-First Migration
+
+### Phase 1: First
+
+**Goal:** a
+**Plans:** 0 plans
+
+### Phase 2: Second
+
+**Goal:** b
+**Plans:** 0 plans
+
+---
+*Last updated: 2026-04-08*
+`;
+    const state = `---\ngsd_state_version: 1.0\nmilestone: v3.0\n---\n\n# Project State\n`;
+    // Orphan dir 05 pushes the next id to 6 even though the highest header is 2.
+    await setupTestProject(tmpDir, { roadmap, state, phases: ['05-orphan'] });
+
+    const result = await phaseAdd(['Gap Phase'], tmpDir);
+    const data = result.data as Record<string, unknown>;
+    expect(data.phase_number).toBe(6);
+
+    const out = await readFile(join(tmpDir, '.planning', 'ROADMAP.md'), 'utf-8');
+    expect(out).toContain('### Phase 6: Gap Phase');
+    expect(out).toContain('**Depends on:** Phase 2');
+    expect(out).not.toContain('**Depends on:** Phase 5');
+  });
+
   it('skips phases >= 999 when calculating next number (backlog exclusion)', async () => {
     const { phaseAdd } = await import('./phase-lifecycle.js');
     const roadmapWith999 = MINIMAL_ROADMAP.replace(
@@ -695,6 +728,45 @@ describe('phaseAddBatch', () => {
     await setupTestProject(tmpDir);
 
     await expect(phaseAddBatch([], tmpDir)).rejects.toThrow('descriptions array required');
+  });
+
+  it('chains the second batched entry onto the first, not the arithmetic predecessor (#5113)', async () => {
+    const { phaseAddBatch } = await import('./phase-lifecycle.js');
+    const roadmap = `# Roadmap
+
+## Current Milestone: v3.0 SDK-First Migration
+
+### Phase 1: First
+
+**Goal:** a
+**Plans:** 0 plans
+
+### Phase 2: Second
+
+**Goal:** b
+**Plans:** 0 plans
+
+---
+*Last updated: 2026-04-08*
+`;
+    const state = `---\ngsd_state_version: 1.0\nmilestone: v3.0\n---\n\n# Project State\n`;
+    // Orphan dir 05 pushes the first new id to 6.
+    await setupTestProject(tmpDir, { roadmap, state, phases: ['05-orphan'] });
+
+    const result = await phaseAddBatch(['Alpha', 'Beta'], tmpDir);
+    const data = result.data as { phases: Array<Record<string, unknown>> };
+    expect(data.phases[0].phase_number).toBe(6);
+    expect(data.phases[1].phase_number).toBe(7);
+
+    const out = await readFile(join(tmpDir, '.planning', 'ROADMAP.md'), 'utf-8');
+    // First batched entry chains onto the real header (Phase 2), the second onto the first (Phase 6).
+    const alphaIdx = out.indexOf('### Phase 6: Alpha');
+    const betaIdx = out.indexOf('### Phase 7: Beta');
+    expect(alphaIdx).toBeGreaterThan(-1);
+    expect(betaIdx).toBeGreaterThan(-1);
+    expect(out).toContain('**Depends on:** Phase 2');
+    expect(out).toContain('**Depends on:** Phase 6');
+    expect(out).not.toContain('**Depends on:** Phase 5');
   });
 });
 
@@ -2154,20 +2226,20 @@ describe('extractOneLinerFromBody (policy copy)', () => {
 describe('buildPhaseRoadmapEntry — CR-3267 finding 2: first sequential phase has no predecessor', () => {
   it('omits Depends on line when phaseId is 1', async () => {
     const { buildPhaseRoadmapEntry } = await import('./phase-lifecycle-policy.js');
-    const entry = buildPhaseRoadmapEntry(1, 'Bootstrap', 'sequential');
+    const entry = buildPhaseRoadmapEntry(1, 'Bootstrap', 'sequential', null);
     expect(entry).not.toContain('Depends on');
     expect(entry).not.toContain('Phase 0');
   });
 
   it('includes Depends on line when phaseId is 2', async () => {
     const { buildPhaseRoadmapEntry } = await import('./phase-lifecycle-policy.js');
-    const entry = buildPhaseRoadmapEntry(2, 'Second Phase', 'sequential');
+    const entry = buildPhaseRoadmapEntry(2, 'Second Phase', 'sequential', 1);
     expect(entry).toContain('**Depends on:** Phase 1');
   });
 
   it('omits Depends on line for custom naming mode regardless of id', async () => {
     const { buildPhaseRoadmapEntry } = await import('./phase-lifecycle-policy.js');
-    const entry = buildPhaseRoadmapEntry('ALPHA', 'Custom', 'custom');
+    const entry = buildPhaseRoadmapEntry('ALPHA', 'Custom', 'custom', null);
     expect(entry).not.toContain('Depends on');
   });
 });

@@ -7,7 +7,7 @@
  * (first `---` block only; skills with later `---` rules must not use TS `extractFrontmatter`'s last-block rule).
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync, type Dirent } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, readFileSync, writeFileSync, type Dirent } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 
@@ -46,6 +46,31 @@ export interface SkillManifestJson {
     legacy_claude_commands_installed: boolean;
   };
   counts: { skills: number; roots: number };
+}
+
+// Largest SKILL.md the discovery scan will read. A skill manifest only needs
+// frontmatter and a few trigger lines, so a quarter-megabyte cap is generous.
+const MAX_SKILL_FILE_BYTES = 256 * 1024;
+
+/**
+ * Read a SKILL.md during discovery with a type and size guard. The path is
+ * lstat'd first so a symlink, FIFO, device node, or directory is skipped
+ * without a read, and a regular file over the size cap is skipped too. Returns
+ * null when the file should not be read (caller skips the entry).
+ */
+function readSkillFileBounded(path: string): string | null {
+  let st;
+  try {
+    st = lstatSync(path);
+  } catch {
+    return null;
+  }
+  if (!st.isFile() || st.size > MAX_SKILL_FILE_BYTES) return null;
+  try {
+    return readFileSync(path, 'utf-8');
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -133,12 +158,8 @@ export function buildSkillManifest(cwd: string, skillsDir: string | null = null)
       const skillMdPath = join(rootPath, entryName, 'SKILL.md');
       if (!existsSync(skillMdPath)) continue;
 
-      let content: string;
-      try {
-        content = readFileSync(skillMdPath, 'utf-8');
-      } catch {
-        continue;
-      }
+      const content = readSkillFileBounded(skillMdPath);
+      if (content === null) continue;
 
       const frontmatter = extractFrontmatterLeading(content);
       const name = (frontmatter.name as string) || entryName;

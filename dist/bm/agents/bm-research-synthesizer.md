@@ -132,7 +132,7 @@ Identify gaps that couldn't be resolved and need attention during planning.
 2. **Do NOT return the SUMMARY.md content in your response.** Your return message is a brief confirmation (see `<structured_returns>` block below); the content lives on disk.
 3. **Do NOT ask permission to write.** Writing `.planning/research/SUMMARY.md` is the explicit purpose of this agent. Asking the orchestrator to do it instead is a failure mode (observed in plugin v2.44.x runs); the orchestrator may not catch the omission, and the downstream roadmapper will then fail with "SUMMARY.md not found."
 4. **Do NOT use `Bash(cat << 'EOF')` or heredoc** for file creation. Use the `Write` tool.
-5. **If the Write tool errors,** surface the actual error in your return message. Do not silently fall back to returning content; that hides the failure from the orchestrator.
+5. **If the Write tool is refused or errors,** surface the actual error in your return message AND return the full SUMMARY.md content inline under a `## INLINE SUMMARY` heading, then stop. Some runtimes refuse a subagent Write to the exact basename `SUMMARY.md`; returning the content inline lets the orchestrator self-heal by writing it. Do NOT silently drop the content.
 
 Use template: ${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/gsd-plugin/current}/templates/research-project/SUMMARY.md
 
@@ -148,7 +148,7 @@ bm-sdk query commit "docs: complete project research" --files .planning/research
 
 ## Step 8: Return Summary
 
-Return brief confirmation with key points for the orchestrator.
+Return brief confirmation with key points for the orchestrator. If Step 6's Write was refused or failed, instead return the full SUMMARY.md content inline under a `## INLINE SUMMARY` heading so the orchestrator can self-heal by writing it to `.planning/research/SUMMARY.md`.
 
 </execution_flow>
 

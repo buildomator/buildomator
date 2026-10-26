@@ -8967,6 +8967,45 @@ var statePatch = async (args, projectDir, workstream) => {
   });
   return { data: { updated, failed } };
 };
+function planNumberFromFile(filename) {
+  let m3 = filename.match(/PLAN-(\d+)/i);
+  if (m3)
+    return parseInt(m3[1], 10);
+  m3 = filename.match(/(\d+)-PLAN\.md$/i);
+  if (m3)
+    return parseInt(m3[1], 10);
+  return 1;
+}
+function firstUnfinishedPlanNumber(phaseDir) {
+  const { planFiles, summaryFiles } = scanPhasePlans(phaseDir);
+  if (summaryFiles.length === 0)
+    return 1;
+  const completeIds = /* @__PURE__ */ new Set();
+  for (const summary of summaryFiles) {
+    if (summaryFileIsComplete(resolveSummaryPath(phaseDir, summary))) {
+      completeIds.add(planSummaryBaseId(summary));
+    }
+  }
+  const ordered = planFiles.map((file) => ({ num: planNumberFromFile(file), id: planSummaryBaseId(file) })).sort((a3, b) => a3.num - b.num);
+  for (const plan of ordered) {
+    if (!completeIds.has(plan.id))
+      return plan.num;
+  }
+  return 1;
+}
+function resolvePhaseDir2(projectDir, phaseNumber, workstream) {
+  const phasesDir = planningPaths(projectDir, workstream).phases;
+  if (!existsSync6(phasesDir))
+    return null;
+  const norm = String(phaseNumber).replace(/^0+/, "").padStart(2, "0");
+  try {
+    const entries = readdirSync3(phasesDir, { withFileTypes: true });
+    const match = entries.find((e3) => e3.isDirectory() && e3.name.startsWith(norm));
+    return match ? join11(phasesDir, match.name) : null;
+  } catch {
+    return null;
+  }
+}
 var stateBeginPhase = async (args, projectDir, workstream) => {
   const named = parseNamedArgs(args, ["phase", "name", "plans"]);
   let phaseNumber = named.phase || "";
@@ -8989,6 +9028,7 @@ var stateBeginPhase = async (args, projectDir, workstream) => {
   }
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const updated = [];
+  const startPlan = firstUnfinishedPlanNumber(resolvePhaseDir2(projectDir, String(phaseNumber), workstream) || "");
   await readModifyWriteStateMd(projectDir, (content) => {
     const statusValue = `Executing Phase ${phaseNumber}`;
     let u = stateReplaceField(content, "Status", statusValue);
@@ -9019,7 +9059,7 @@ var stateBeginPhase = async (args, projectDir, workstream) => {
         updated.push("Current Phase Name");
       }
     }
-    u = stateReplaceField(content, "Current Plan", "1");
+    u = stateReplaceField(content, "Current Plan", String(startPlan));
     if (u) {
       content = u;
       updated.push("Current Plan");
@@ -9031,8 +9071,8 @@ var stateBeginPhase = async (args, projectDir, workstream) => {
         updated.push("Total Plans in Phase");
       }
     }
-    const focusLabel = phaseName ? `Phase ${phaseNumber} \u2014 ${phaseName}` : `Phase ${phaseNumber}`;
-    const focusPattern = /(\*\*Current focus:\*\*\s*).*/i;
+    const focusLabel = phaseName ? `Phase ${phaseNumber}: ${phaseName}` : `Phase ${phaseNumber}`;
+    const focusPattern = /(\*\*Current focus:\*\*[ \t]*)([^\n]*(?:\n(?![ \t]*(?:\n|$|\*\*|#))[^\n]*)*)/i;
     if (focusPattern.test(content)) {
       content = content.replace(focusPattern, (_match, prefix) => `${prefix}${focusLabel}`);
       updated.push("Current focus");
@@ -9048,7 +9088,7 @@ var stateBeginPhase = async (args, projectDir, workstream) => {
       } else {
         posBody = newPhase + "\n" + posBody;
       }
-      const newPlan = `Plan: 1 of ${planNum ?? "?"}`;
+      const newPlan = `Plan: ${startPlan} of ${planNum ?? "?"}`;
       if (/^Plan:/m.test(posBody)) {
         posBody = posBody.replace(/^Plan:.*$/m, newPlan);
       } else {
@@ -11147,7 +11187,7 @@ var decisionsParse = async (args, projectDir) => {
 
 // dist/query/check-decision-coverage.js
 import { readdir as readdir9, readFile as readFile17 } from "node:fs/promises";
-import { existsSync as existsSync9 } from "node:fs";
+import { existsSync as existsSync9, statSync as statSync3 } from "node:fs";
 import { join as join16, isAbsolute as isAbsolute5 } from "node:path";
 import { execFile as execFileCb } from "node:child_process";
 import { promisify } from "node:util";
@@ -11355,6 +11395,19 @@ var checkDecisionCoveragePlan = async (args, projectDir, workstream) => {
       covered: 0,
       uncovered: [],
       message: "No trackable decisions in CONTEXT.md."
+    };
+    return { data: data2 };
+  }
+  if (!phaseDir || !existsSync9(phaseDir) || !statSync3(phaseDir).isDirectory()) {
+    const data2 = {
+      passed: false,
+      skipped: false,
+      error: `phase directory not found: ${args[0] ?? ""}`,
+      reason: "phase directory not found",
+      total: decisions.length,
+      covered: 0,
+      uncovered: [],
+      message: `phase directory not found: ${args[0] ?? ""}`
     };
     return { data: data2 };
   }
@@ -12943,10 +12996,9 @@ function computePhaseDirectory(namingMode, descriptionSlug, prefix, nextSequenti
   assertSafePhaseDirName(dirName);
   return { phaseId, dirName };
 }
-function buildPhaseRoadmapEntry(phaseId, description, namingMode) {
-  const prevPhase = typeof phaseId === "number" ? phaseId - 1 : null;
-  const dependsOn = namingMode === "custom" || prevPhase === null || prevPhase < 1 ? "" : `
-**Depends on:** Phase ${prevPhase}`;
+function buildPhaseRoadmapEntry(phaseId, description, namingMode, prevPhaseId) {
+  const dependsOn = namingMode === "custom" || prevPhaseId === null || prevPhaseId < 1 ? "" : `
+**Depends on:** Phase ${prevPhaseId}`;
   return `
 ### Phase ${phaseId}: ${description}
 
@@ -13110,7 +13162,8 @@ var phaseAdd = async (args, projectDir, workstream) => {
     if (resolvedPhaseId === "") {
       throw new GSDError("Phase ID was not computed", ErrorClassification.Execution);
     }
-    const resolvedEntry = buildPhaseRoadmapEntry(resolvedPhaseId, description, config.phase_naming);
+    const roadmapMaxPhase = scanSequentialMaxPhaseFromMilestone(milestoneContent);
+    const resolvedEntry = buildPhaseRoadmapEntry(resolvedPhaseId, description, config.phase_naming, roadmapMaxPhase >= 1 ? roadmapMaxPhase : null);
     return { resolvedPhaseId, resolvedDirName, resolvedEntry };
   };
   let newPhaseId = "";
@@ -13202,6 +13255,7 @@ var phaseAddBatch = async (args, projectDir, workstream) => {
       const dirNames = await listDirectories(phasesOnDisk);
       maxPhase = computeNextSequentialPhaseId(content, dirNames) - 1;
     }
+    let prevPhaseId = scanSequentialMaxPhaseFromMilestone(content);
     for (const description of descriptions) {
       const slug = generatePhaseSlug(description);
       let newPhaseId;
@@ -13217,7 +13271,9 @@ var phaseAddBatch = async (args, projectDir, workstream) => {
       assertSafePhaseDirName(dirName);
       const dirPath = join25(planningPaths(projectDir, workstream).phases, dirName);
       await ensureDirectoryWithGitkeep(dirPath);
-      const phaseEntry = buildPhaseRoadmapEntry(newPhaseId, description, config.phase_naming);
+      const phaseEntry = buildPhaseRoadmapEntry(newPhaseId, description, config.phase_naming, prevPhaseId >= 1 ? prevPhaseId : null);
+      if (typeof newPhaseId === "number")
+        prevPhaseId = newPhaseId;
       const insertAt = await phaseEntryInsertOffset(rawContent, projectDir, workstream);
       rawContent = rawContent.slice(0, insertAt) + phaseEntry + rawContent.slice(insertAt);
       added.push({
@@ -15013,7 +15069,7 @@ var workstreamProgress = async (_args, projectDir) => {
 };
 
 // dist/query/docs-init.js
-import { closeSync, existsSync as existsSync23, openSync, readFileSync as readFileSync12, readSync, readdirSync as readdirSync12, statSync as statSync3 } from "node:fs";
+import { closeSync, existsSync as existsSync23, openSync, readFileSync as readFileSync12, readSync, readdirSync as readdirSync12, statSync as statSync4 } from "node:fs";
 import { join as join30, relative as relative8 } from "node:path";
 init_helpers();
 var GSD_MARKER = "<!-- generated-by: gsd-doc-writer -->";
@@ -15088,12 +15144,12 @@ function scanExistingDocs(cwd) {
   const docsDir = join30(cwd, "docs");
   walkDir2(docsDir, 1);
   try {
-    statSync3(docsDir);
+    statSync4(docsDir);
   } catch {
     for (const alt of ["documentation", "doc"]) {
       const altDir = join30(cwd, alt);
       try {
-        const st = statSync3(altDir);
+        const st = statSync4(altDir);
         if (st.isDirectory()) {
           walkDir2(altDir, 1);
           break;
@@ -15258,6 +15314,7 @@ var websearch = async (args) => {
     params.set("freshness", freshness);
   try {
     const response = await fetch(`https://api.search.brave.com/res/v1/web/search?${params}`, {
+      redirect: "manual",
       headers: {
         "Accept": "application/json",
         "X-Subscription-Token": apiKey
@@ -15289,7 +15346,7 @@ import { homedir as homedir6 } from "node:os";
 import { createHash, randomBytes } from "node:crypto";
 
 // dist/query/profile-scan-sessions.js
-import { existsSync as existsSync24, readdirSync as readdirSync13, readFileSync as readFileSync13, statSync as statSync4 } from "node:fs";
+import { existsSync as existsSync24, readdirSync as readdirSync13, readFileSync as readFileSync13, statSync as statSync5 } from "node:fs";
 import { basename, join as join31 } from "node:path";
 import { homedir as homedir5 } from "node:os";
 function formatBytes(bytes) {
@@ -15309,7 +15366,7 @@ function scanProjectDir(projectDirPath) {
       continue;
     const sessionId = entry.replace(".jsonl", "");
     const filePath = join31(projectDirPath, entry);
-    const stat2 = statSync4(filePath);
+    const stat2 = statSync5(filePath);
     sessions.push({
       sessionId,
       filePath,
@@ -15359,7 +15416,7 @@ function buildScanSessionsProjects(overridePath, options) {
     projectDirs = readdirSync13(sessionsDir).filter((entry) => {
       const fullPath = join31(sessionsDir, entry);
       try {
-        return statSync4(fullPath).isDirectory();
+        return statSync5(fullPath).isDirectory();
       } catch {
         return false;
       }
@@ -15416,7 +15473,7 @@ function buildScanSessionsProjects(overridePath, options) {
 
 // dist/query/profile-extract-messages.js
 init_errors();
-import { appendFileSync, mkdtempSync, readdirSync as readdirSync14, statSync as statSync5 } from "node:fs";
+import { appendFileSync, mkdtempSync, readdirSync as readdirSync14, statSync as statSync6 } from "node:fs";
 import { createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
 import { basename as basename2, join as join32 } from "node:path";
@@ -15492,7 +15549,7 @@ async function runExtractMessages(projectArg, options, overridePath) {
     projectDirs = readdirSync14(sessionsDir).filter((entry) => {
       const fullPath = join32(sessionsDir, entry);
       try {
-        return statSync5(fullPath).isDirectory();
+        return statSync6(fullPath).isDirectory();
       } catch {
         return false;
       }
@@ -15597,7 +15654,7 @@ ${available.join("\n")}`, ErrorClassification.Validation);
 
 // dist/query/profile-sample.js
 init_errors();
-import { appendFileSync as appendFileSync2, mkdtempSync as mkdtempSync2, readdirSync as readdirSync15, statSync as statSync6 } from "node:fs";
+import { appendFileSync as appendFileSync2, mkdtempSync as mkdtempSync2, readdirSync as readdirSync15, statSync as statSync7 } from "node:fs";
 import { join as join33 } from "node:path";
 import { tmpdir as tmpdir2 } from "node:os";
 async function runProfileSample(overridePath, options) {
@@ -15614,7 +15671,7 @@ async function runProfileSample(overridePath, options) {
     projectDirs = readdirSync15(sessionsDir).filter((entry) => {
       const fullPath = join33(sessionsDir, entry);
       try {
-        return statSync6(fullPath).isDirectory();
+        return statSync7(fullPath).isDirectory();
       } catch {
         return false;
       }
@@ -16129,10 +16186,26 @@ var profileQuestionnaire = async (args, _projectDir) => {
 };
 
 // dist/query/skill-manifest.js
-import { existsSync as existsSync26, readdirSync as readdirSync17, readFileSync as readFileSync15, writeFileSync as writeFileSync6 } from "node:fs";
+import { existsSync as existsSync26, lstatSync, readdirSync as readdirSync17, readFileSync as readFileSync15, writeFileSync as writeFileSync6 } from "node:fs";
 import { join as join35, resolve as resolve6 } from "node:path";
 import { homedir as homedir7 } from "node:os";
 init_helpers();
+var MAX_SKILL_FILE_BYTES = 256 * 1024;
+function readSkillFileBounded(path) {
+  let st;
+  try {
+    st = lstatSync(path);
+  } catch {
+    return null;
+  }
+  if (!st.isFile() || st.size > MAX_SKILL_FILE_BYTES)
+    return null;
+  try {
+    return readFileSync15(path, "utf-8");
+  } catch {
+    return null;
+  }
+}
 function buildSkillManifest(cwd, skillsDir = null) {
   const canonicalRoots = skillsDir ? [{
     root: resolve6(skillsDir),
@@ -16209,12 +16282,9 @@ function buildSkillManifest(cwd, skillsDir = null) {
       const skillMdPath = join35(rootPath, entryName, "SKILL.md");
       if (!existsSync26(skillMdPath))
         continue;
-      let content;
-      try {
-        content = readFileSync15(skillMdPath, "utf-8");
-      } catch {
+      const content = readSkillFileBounded(skillMdPath);
+      if (content === null)
         continue;
-      }
       const frontmatter = extractFrontmatterLeading(content);
       const name = frontmatter.name || entryName;
       const description = frontmatter.description || "";
@@ -17247,7 +17317,7 @@ var auditUat = async (_args, projectDir, workstream) => {
 
 // dist/query/intel.js
 init_helpers();
-import { existsSync as existsSync30, readFileSync as readFileSync19, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, statSync as statSync7 } from "node:fs";
+import { existsSync as existsSync30, readFileSync as readFileSync19, writeFileSync as writeFileSync7, mkdirSync as mkdirSync5, statSync as statSync8 } from "node:fs";
 import { join as join39 } from "node:path";
 import { createHash as createHash2 } from "node:crypto";
 var INTEL_FILES = {
@@ -17352,7 +17422,7 @@ var intelStatus = async (_args, projectDir, _workstream) => {
     let updatedAt = null;
     if (filename.endsWith(".md")) {
       try {
-        updatedAt = statSync7(filePath).mtime.toISOString();
+        updatedAt = statSync8(filePath).mtime.toISOString();
       } catch {
       }
     } else {
@@ -18631,7 +18701,7 @@ var worktreeCleanupWave = async (args, projectDir) => {
 
 // dist/query/craft-skill.js
 init_helpers();
-import { existsSync as existsSync34, readFileSync as readFileSync22, mkdirSync as mkdirSync7, writeFileSync as writeFileSync9, renameSync as renameSync2, realpathSync as realpathSync2, statSync as statSync8 } from "node:fs";
+import { existsSync as existsSync34, readFileSync as readFileSync22, mkdirSync as mkdirSync7, writeFileSync as writeFileSync9, renameSync as renameSync2, realpathSync as realpathSync2, statSync as statSync9 } from "node:fs";
 import { homedir as homedir9 } from "node:os";
 import { createHash as createHash3 } from "node:crypto";
 import { spawnSync as spawnSync3 } from "node:child_process";
@@ -19471,7 +19541,7 @@ function assessCraftSkill(opts) {
     throw new GSDError("--validate-external requires an existing skill directory", ErrorClassification.Validation);
   }
   const resolved = resolve10(o3.validateExternal);
-  if (!existsSync34(resolved) || !statSync8(resolved).isDirectory()) {
+  if (!existsSync34(resolved) || !statSync9(resolved).isDirectory()) {
     throw new GSDError("--validate-external requires an existing skill directory", ErrorClassification.Validation);
   }
   const res = spawnSync3("npx", externalValidateArgv(resolved), {
@@ -20603,7 +20673,7 @@ init_errors();
 import { readFile as readFile30, readdir as readdir15 } from "node:fs/promises";
 import { join as join45, relative as relative12 } from "node:path";
 init_helpers();
-async function resolvePhaseDir2(phase, projectDir, workstream) {
+async function resolvePhaseDir3(phase, projectDir, workstream) {
   const phasesDir = planningPaths(projectDir, workstream).phases;
   const normalized = normalizePhaseName(phase);
   try {
@@ -20630,7 +20700,7 @@ var phaseListArtifacts = async (args, projectDir, workstream) => {
     throw new GSDError(`invalid --type ${rawType}`, ErrorClassification.Validation);
   }
   const artifactType = rawType;
-  const phaseDir = await resolvePhaseDir2(phase, projectDir, workstream);
+  const phaseDir = await resolvePhaseDir3(phase, projectDir, workstream);
   if (!phaseDir) {
     return { data: { phase: normalizePhaseName(phase), type: artifactType, artifacts: [], error: "Phase not found" } };
   }
@@ -20670,7 +20740,7 @@ var phaseListPlans = async (args, projectDir, workstream) => {
   }
   const phase = args[0];
   const normalized = normalizePhaseName(phase);
-  const phaseDir = await resolvePhaseDir2(phase, projectDir, workstream);
+  const phaseDir = await resolvePhaseDir3(phase, projectDir, workstream);
   if (!phaseDir) {
     return {
       data: {
@@ -21613,7 +21683,7 @@ var initIngestDocs = async (_args, projectDir) => {
 };
 
 // dist/query/init-complex.js
-import { existsSync as existsSync39, readdirSync as readdirSync23, statSync as statSync9 } from "node:fs";
+import { existsSync as existsSync39, readdirSync as readdirSync23, statSync as statSync10 } from "node:fs";
 import { execSync as execSync3 } from "node:child_process";
 import { readFile as readFile31 } from "node:fs/promises";
 import { join as join47, relative as relative14 } from "node:path";
@@ -22007,7 +22077,7 @@ var initManager = async (_args, projectDir, workstream) => {
         let newestMtime = 0;
         for (const f of phaseFiles) {
           try {
-            const st = statSync9(join47(fullDir, f));
+            const st = statSync10(join47(fullDir, f));
             if (st.mtimeMs > newestMtime)
               newestMtime = st.mtimeMs;
           } catch {

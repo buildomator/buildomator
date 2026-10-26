@@ -35,6 +35,12 @@ import {
 } from './helpers.js';
 import { buildStateFrontmatter, getMilestonePhaseFilter } from './state.js';
 import {
+  scanPhasePlans,
+  planSummaryBaseId,
+  summaryFileIsComplete,
+  resolveSummaryPath,
+} from './plan-scan.js';
+import {
   stateExtractField,
   stateReplaceField,
   stateReplaceFieldWithFallback,
@@ -415,6 +421,53 @@ export const statePatch: QueryHandler = async (args, projectDir, workstream) => 
   return { data: { updated, failed } };
 };
 
+// Plan number embedded in a plan filename. A flat NN-MM-PLAN.md yields its
+// second number, a nested PLAN-NN-slug.md yields its number, a bare PLAN.md is 1.
+function planNumberFromFile(filename: string): number {
+  let m = filename.match(/PLAN-(\d+)/i);
+  if (m) return parseInt(m[1], 10);
+  m = filename.match(/(\d+)-PLAN\.md$/i);
+  if (m) return parseInt(m[1], 10);
+  return 1;
+}
+
+// Lowest plan number in a phase directory whose summary is missing or marks the
+// plan unfinished. Falls back to 1 when the directory has no summaries yet, so a
+// fresh phase still starts at plan 1 while a re-entry resumes at the first plan
+// that still needs running.
+function firstUnfinishedPlanNumber(phaseDir: string): number {
+  const { planFiles, summaryFiles } = scanPhasePlans(phaseDir);
+  if (summaryFiles.length === 0) return 1;
+  const completeIds = new Set<string>();
+  for (const summary of summaryFiles) {
+    if (summaryFileIsComplete(resolveSummaryPath(phaseDir, summary))) {
+      completeIds.add(planSummaryBaseId(summary));
+    }
+  }
+  const ordered = planFiles
+    .map(file => ({ num: planNumberFromFile(file), id: planSummaryBaseId(file) }))
+    .sort((a, b) => a.num - b.num);
+  for (const plan of ordered) {
+    if (!completeIds.has(plan.id)) return plan.num;
+  }
+  return 1;
+}
+
+// Resolve the on-disk phase directory for a phase number, or null when none
+// matches, so the begin-phase handler can scan it for an unfinished plan.
+function resolvePhaseDir(projectDir: string, phaseNumber: string, workstream?: string): string | null {
+  const phasesDir = planningPaths(projectDir, workstream).phases;
+  if (!existsSync(phasesDir)) return null;
+  const norm = String(phaseNumber).replace(/^0+/, '').padStart(2, '0');
+  try {
+    const entries = readdirSync(phasesDir, { withFileTypes: true });
+    const match = entries.find(e => e.isDirectory() && e.name.startsWith(norm));
+    return match ? join(phasesDir, match.name) : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Query handler for state.begin-phase command.
  *
@@ -457,6 +510,12 @@ export const stateBeginPhase: QueryHandler = async (args, projectDir, workstream
   const today = new Date().toISOString().split('T')[0];
   const updated: string[] = [];
 
+  // A re-entry after a gap resumes at the first plan that still needs running;
+  // a fresh phase (no summaries on disk) starts at plan 1.
+  const startPlan = firstUnfinishedPlanNumber(
+    resolvePhaseDir(projectDir, String(phaseNumber), workstream) || '',
+  );
+
   await readModifyWriteStateMd(projectDir, (content) => {
     // Update bold/plain fields
     const statusValue = `Executing Phase ${phaseNumber}`;
@@ -493,7 +552,7 @@ export const stateBeginPhase: QueryHandler = async (args, projectDir, workstream
       }
     }
 
-    u = stateReplaceField(content, 'Current Plan', '1');
+    u = stateReplaceField(content, 'Current Plan', String(startPlan));
     if (u) {
       content = u;
       updated.push('Current Plan');
@@ -507,9 +566,12 @@ export const stateBeginPhase: QueryHandler = async (args, projectDir, workstream
       }
     }
 
-    // Update **Current focus:**
-    const focusLabel = phaseName ? `Phase ${phaseNumber} — ${phaseName}` : `Phase ${phaseNumber}`;
-    const focusPattern = /(\*\*Current focus:\*\*\s*).*/i;
+    // Update **Current focus:**. The value capture runs through any wrapped
+    // continuation lines and stops at a blank line, the next bold field, or the
+    // next heading, so a wrapped old value is replaced whole and no stale
+    // continuation line is left behind.
+    const focusLabel = phaseName ? `Phase ${phaseNumber}: ${phaseName}` : `Phase ${phaseNumber}`;
+    const focusPattern = /(\*\*Current focus:\*\*[ \t]*)([^\n]*(?:\n(?![ \t]*(?:\n|$|\*\*|#))[^\n]*)*)/i;
     if (focusPattern.test(content)) {
       content = content.replace(focusPattern, (_match, prefix: string) => `${prefix}${focusLabel}`);
       updated.push('Current focus');
@@ -529,7 +591,7 @@ export const stateBeginPhase: QueryHandler = async (args, projectDir, workstream
         posBody = newPhase + '\n' + posBody;
       }
 
-      const newPlan = `Plan: 1 of ${planNum ?? '?'}`;
+      const newPlan = `Plan: ${startPlan} of ${planNum ?? '?'}`;
       if (/^Plan:/m.test(posBody)) {
         posBody = posBody.replace(/^Plan:.*$/m, newPlan);
       } else {

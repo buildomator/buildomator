@@ -5,6 +5,10 @@ Post-merge build & test gate. Runs after all worktrees in a wave are merged (par
 **Step A — Build gate:**
 
 ```bash
+# Carry the cumulative wave-failure tally across shell blocks (#4915): each
+# fenced block is a fresh shell, so the tally lives in a handoff file.
+mkdir -p .planning/tmp
+[ -f .planning/tmp/execute-phase-handoff.env ] && . .planning/tmp/execute-phase-handoff.env
 # Resolve build command: project config > Xcode > Makefile > language sniff
 BUILD_CMD=$(bm-sdk query config-get workflow.build_command --default "" 2>/dev/null || true)
 if [ -z "$BUILD_CMD" ]; then
@@ -48,6 +52,8 @@ if [ -n "$BUILD_CMD" ]; then
     WAVE_FAILURE_COUNT=$((WAVE_FAILURE_COUNT + 1))
   fi
 fi
+# Persist the running tally so the test gate and step 5.8 see it (#4915).
+printf 'WAVE_FAILURE_COUNT=%s\n' "${WAVE_FAILURE_COUNT:-0}" >> .planning/tmp/execute-phase-handoff.env
 ```
 
 **If `BUILD_EXIT` is 0 (pass):** proceed to Test gate.
@@ -59,6 +65,9 @@ fi
 **Step B — Test gate:**
 
 ```bash
+# Carry the running wave-failure tally forward (#4915).
+mkdir -p .planning/tmp
+[ -f .planning/tmp/execute-phase-handoff.env ] && . .planning/tmp/execute-phase-handoff.env
 # Resolve test command: project config > Xcode > Makefile > language sniff
 TEST_CMD=$(bm-sdk query config-get workflow.test_command --default "" 2>/dev/null || true)
 if [ -z "$TEST_CMD" ]; then
@@ -102,6 +111,8 @@ else
   echo "✗ Post-merge test gate failed (exit code ${TEST_EXIT})"
   WAVE_FAILURE_COUNT=$((WAVE_FAILURE_COUNT + 1))
 fi
+# Persist the cumulative tally so step 5.8 reads the real count (#4915).
+printf 'WAVE_FAILURE_COUNT=%s\n' "${WAVE_FAILURE_COUNT:-0}" >> .planning/tmp/execute-phase-handoff.env
 ```
 
 **If `TEST_EXIT` is 0 (pass):** continue to orchestrator tracking update.

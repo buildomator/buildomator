@@ -974,6 +974,14 @@ To keep the SSE stream warm (it can otherwise terminate with `Stream idle timeou
 
 5.8. **Handle test gate failures (when `WAVE_FAILURE_COUNT > 0`):**
 
+   The post-merge gate runs in its own shell, so read the cumulative tally back
+   from the handoff file before using it (#4915):
+
+   ```bash
+   [ -f .planning/tmp/execute-phase-handoff.env ] && . .planning/tmp/execute-phase-handoff.env
+   echo "Cumulative wave failures: ${WAVE_FAILURE_COUNT:-0}"
+   ```
+
    ```
    ## ⚠ Post-Merge Test Failure (cumulative failures: ${WAVE_FAILURE_COUNT})
 
@@ -1339,11 +1347,19 @@ For each VERIFICATION.md found, look for test file references:
 - The "Test Suite" or "Automated Checks" section
 - File patterns from `key-files.created` in corresponding SUMMARY.md files that match `*.test.*` or `*.spec.*`
 
-Collect all unique test file paths into `REGRESSION_FILES`.
+Collect all unique test file paths into `REGRESSION_FILES`, then persist it so
+the step 3 bash block (a separate shell) can read it (#4915):
+
+```bash
+mkdir -p .planning/tmp
+printf 'REGRESSION_FILES=%s\n' "$REGRESSION_FILES" >> .planning/tmp/execute-phase-handoff.env
+```
 
 **Step 3: Run regression tests (if any found)**
 
 ```bash
+# Read the regression file list handed over from step 2 (#4915).
+[ -f .planning/tmp/execute-phase-handoff.env ] && . .planning/tmp/execute-phase-handoff.env
 # Resolve test command: project config > Makefile > language sniff
 REG_TEST_CMD=$(bm-sdk query config-get workflow.test_command --default "" 2>/dev/null || true)
 if [ -z "$REG_TEST_CMD" ]; then
@@ -1649,6 +1665,8 @@ Parking path: gaps land in `.planning/ROADMAP.md` under `## Backlog` as 999.x en
 
 ```bash
 COMPLETION=$(bm-sdk query phase.complete "${PHASE_NUMBER}")
+# Clear the per-phase cross-shell handoff so the next phase starts fresh (#4915).
+rm -f .planning/tmp/execute-phase-handoff.env
 ```
 
 The CLI handles:

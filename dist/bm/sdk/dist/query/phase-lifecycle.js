@@ -29,7 +29,7 @@ import { scanPhasePlans } from './plan-scan.js';
 import { getMilestonePhaseFilter } from './state.js';
 import { acquireStateLock, readModifyWriteStateMdFull, releaseStateLock, stateReplaceField, } from './state-mutation.js';
 import { stateExtractField, stateReplaceFieldWithFallback } from './state-document.js';
-import { assertNoNullBytes, assertSafePhaseDirName, assertSafeProjectCode, buildPhaseRoadmapEntry, collectDecimalSuffixesFromDirNames, collectDecimalSuffixesFromRoadmap, computeNextDecimalPhase, computeNextSequentialPhaseId, computePhaseDirectory, extractOneLinerFromBody, generatePhaseSlug, parseMultiwordArg, } from './phase-lifecycle-policy.js';
+import { assertNoNullBytes, assertSafePhaseDirName, assertSafeProjectCode, buildPhaseRoadmapEntry, collectDecimalSuffixesFromDirNames, collectDecimalSuffixesFromRoadmap, computeNextDecimalPhase, computeNextSequentialPhaseId, computePhaseDirectory, extractOneLinerFromBody, generatePhaseSlug, parseMultiwordArg, scanSequentialMaxPhaseFromMilestone, } from './phase-lifecycle-policy.js';
 import { archiveDirectories, ensureDirectoryWithGitkeep, listDirectories, } from './phase-filesystem-adapter.js';
 import { readModifyWriteRoadmapMd, replaceInCurrentMilestone, } from './phase-roadmap-mutation.js';
 export { readModifyWriteRoadmapMd, replaceInCurrentMilestone };
@@ -101,7 +101,8 @@ export const phaseAdd = async (args, projectDir, workstream) => {
         if (resolvedPhaseId === '') {
             throw new GSDError('Phase ID was not computed', ErrorClassification.Execution);
         }
-        const resolvedEntry = buildPhaseRoadmapEntry(resolvedPhaseId, description, config.phase_naming);
+        const roadmapMaxPhase = scanSequentialMaxPhaseFromMilestone(milestoneContent);
+        const resolvedEntry = buildPhaseRoadmapEntry(resolvedPhaseId, description, config.phase_naming, roadmapMaxPhase >= 1 ? roadmapMaxPhase : null);
         return { resolvedPhaseId, resolvedDirName, resolvedEntry };
     };
     let newPhaseId = '';
@@ -214,6 +215,9 @@ export const phaseAddBatch = async (args, projectDir, workstream) => {
             const dirNames = await listDirectories(phasesOnDisk);
             maxPhase = computeNextSequentialPhaseId(content, dirNames) - 1;
         }
+        // Running previous phase: the first entry chains onto the highest real
+        // roadmap header, each later entry chains onto the one just added before it.
+        let prevPhaseId = scanSequentialMaxPhaseFromMilestone(content);
         for (const description of descriptions) {
             const slug = generatePhaseSlug(description);
             let newPhaseId;
@@ -231,7 +235,9 @@ export const phaseAddBatch = async (args, projectDir, workstream) => {
             assertSafePhaseDirName(dirName);
             const dirPath = join(planningPaths(projectDir, workstream).phases, dirName);
             await ensureDirectoryWithGitkeep(dirPath);
-            const phaseEntry = buildPhaseRoadmapEntry(newPhaseId, description, config.phase_naming);
+            const phaseEntry = buildPhaseRoadmapEntry(newPhaseId, description, config.phase_naming, prevPhaseId >= 1 ? prevPhaseId : null);
+            if (typeof newPhaseId === 'number')
+                prevPhaseId = newPhaseId;
             const insertAt = await phaseEntryInsertOffset(rawContent, projectDir, workstream);
             rawContent = rawContent.slice(0, insertAt) + phaseEntry + rawContent.slice(insertAt);
             added.push({
