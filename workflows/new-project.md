@@ -1024,6 +1024,14 @@ Commit after writing.
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
+**Self-heal a refused SUMMARY write (#5450):** Some runtimes refuse a subagent Write to the exact basename `SUMMARY.md`. After the synthesizer returns, verify the file landed:
+
+```bash
+bm-sdk query verify-summary .planning/research/SUMMARY.md
+```
+
+If the result reports `summary_exists: false` and the synthesizer's return message carries a `## INLINE SUMMARY` section, write that inline content to `.planning/research/SUMMARY.md` with the Write tool, then re-run the check. Only proceed to the roadmapper once the file exists on disk.
+
 Display research complete banner and key findings:
 
 ```
