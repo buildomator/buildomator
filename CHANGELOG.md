@@ -8,6 +8,29 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [5.0.4] - 2026-10-26  (gsd-core v1.18.0 ports, Superpowers v7.0.1 re-pin, VibeDrift typed-function fix)
+
+A sync batch. Thirteen fixes from gsd-core v1.18.0 land in the native engine: one security fix for the Brave websearch path, several correctness bugs in logic the plugin carries, and a set of cheap prose hardening edits to workflows and agents. The five obra Superpowers skills re-pin to v7.0.1, and the duplicate detector learns to read typed TypeScript functions from a VibeDrift fix. Follows the gsd-core v1.18 provenance line.
+
+### Security
+- **Brave websearch no longer follows redirects, so the subscription token is never forwarded (gsd-core #5409).** Both the SDK and CJS fetch twins set `redirect: 'manual'`, so a 3xx response fails closed instead of replaying the `X-Subscription-Token` header to a redirect target.
+
+### Fixed
+- **The post-merge wave-failure tally and regression file list survive across shell blocks (gsd-core #4915).** Each fenced bash block is a fresh shell, so the cumulative failure count and the prior-phase regression file list now pass through a per-phase handoff file instead of resetting to empty.
+- **A wrapped Current focus value is replaced whole and a gap-closure re-entry resumes at the first unfinished plan (gsd-core #4945).** The focus-field rewrite now runs through wrapped continuation lines and stops at the next blank line, bold field, or heading, and begin-phase resumes at the first plan with no complete summary rather than resetting to plan 1. The focus label also drops its em-dash.
+- **The decision-coverage gate answers a caller error on a missing phase directory instead of reporting zero coverage (gsd-core #4939).** A phase number or non-existent path passed as the phase argument used to read every decision as uncovered and false-block; it now returns a clear error with an empty uncovered list.
+- **The docs-update verifier keys its result file by the doc's relative path under the project root (gsd-core #5050).** Two docs that share a basename (per-package READMEs) no longer overwrite each other, and the absolute project-root prefix keeps the result path valid from a worktree.
+- **Phase add depends on the phase that actually exists, in both twins (gsd-core #5113).** The new phase's `Depends on` line names the highest real roadmap header rather than the arithmetic predecessor, so an orphan directory or a numbering gap no longer makes it point at a phase that is not there. A batch chains its first entry onto a real header and each later entry onto the one before it.
+- **A sequential executor can commit on its linked phase branch (gsd-core #4799).** When the prompt carries a `<sequential_execution>` block the executor accepts the phase branch of the orchestrator's linked worktree; the protected-ref deny-list still applies in every mode.
+- **Skill discovery bounds and type-checks the SKILL.md read (gsd-core #5121).** The read is now gated by an `lstat` that skips a symlink, FIFO, device, or directory and a 256 KiB size cap, so a hostile repo cannot exhaust memory or block the scan.
+- **The research synthesizer returns its SUMMARY inline when the runtime refuses the write, and the orchestrator self-heals (gsd-core #5450).** Claude Code 2.1.310 refuses a subagent write to the exact basename `SUMMARY.md`; the synthesizer now returns the full content under a `## INLINE SUMMARY` heading, and new-project and new-milestone verify the file and write the inline content when it is missing.
+- **The duplicate detector reads typed and generic TypeScript functions (VibeDrift v0.21.7 #88).** The four extractor patterns now tolerate a generic type-param list on the name and a return-type annotation before the brace or arrow, so near-clones on TypeScript are no longer silently under-reported.
+
+### Changed
+- **The five obra Superpowers craft-skill pins move to v7.0.1 (2ce8aa15).** The pinned commit, license URL, and reviewed-script commit on all five obra entries (test-driven development, writing plans, verification before completion, root-cause debugging, and brainstorming) advance to the v7.0.1 commit, with `verified_at` set to 2026-10-26. Non-obra entries and the web-accessibility-audit pin are unchanged.
+- **Four prose fold-ins from gsd-core v1.18.0.** The pause-work commit uses `docs(pause):` not `wip:` (#4943); the audit-milestone closure chain distinguishes the insert-after phase from the inserted phase (#5287); the doc writer gains a no-standalone-run-mode fallback and a cite-only-verified-targets rule (#4928); and the TDD gate-sequence review exempts a RED-only probe plan whose GREEN lands in a later plan (#4867).
+- **The VibeDrift watch baseline advances to v0.21.7.** Future second-upstream scans start after v0.21.7.
+
 ## [5.0.3] - 2026-10-22  (Remove vendored Claude Code skill source, add a divergence-as-root-cause discipline)
 
 Removes twenty TypeScript files that are Claude Code's own bundled-skill source, not Buildomator's. They landed in the gsd-core `skills/` folder upstream and came across in one sync (v1.36.0); nothing in the plugin ever imported or ran them, and the content files their imports pointed at were never present. They only added weight to the shipped `/bm:` plugin. Also adds a small engine discipline: when a bug's root cause is a divergence, the debugger and code fixer surface the eliminate-versus-entrench choice instead of silently taking the minimal patch. Follows the gsd-core v1.17 provenance line.
