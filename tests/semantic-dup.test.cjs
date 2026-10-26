@@ -438,6 +438,38 @@ check('real-method control: identical class methods across files still pair', ()
   assert.strictEqual(res.pairs[0].b.name, 'total');
 });
 
+// ─── typed-function extraction (TypeScript heads) ────────────────────────────
+
+// A body with enough tokens to clear MIN_BODY_TOKENS so the function is kept.
+const TYPED_BODY = `{
+  const total = a + b + c;
+  const scaled = total * factor;
+  if (scaled > limit) {
+    return scaled - offset;
+  }
+  return total + base;
+}`;
+
+check('extractFunctions: typed named function with generic and return type', () => {
+  const fns = dup.extractFunctions(`function parseThing<T>(x: T): Foo ${TYPED_BODY}\n`);
+  assert.deepStrictEqual(fns.map(f => f.name), ['parseThing']);
+});
+
+check('extractFunctions: typed arrow with return-type annotation', () => {
+  const fns = dup.extractFunctions(`const loadThing = async (x: T): Promise<Foo> => ${TYPED_BODY};\n`);
+  assert.deepStrictEqual(fns.map(f => f.name), ['loadThing']);
+});
+
+check('extractFunctions: generic class method with return type', () => {
+  const fns = dup.extractFunctions(`class C {\n  mapThing<T>(x: T): Foo ${TYPED_BODY}\n}\n`);
+  assert.deepStrictEqual(fns.map(f => f.name), ['mapThing']);
+});
+
+check('extractFunctions: negative control, control-flow heads are not functions', () => {
+  const fns = dup.extractFunctions(`function real(): void ${TYPED_BODY}\n`);
+  assert.deepStrictEqual(fns.map(f => f.name), ['real']);
+});
+
 // ─── Footer ──────────────────────────────────────────────────────────────────
 
 // Cleanup temp dir

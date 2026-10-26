@@ -272,19 +272,36 @@ function extractFunctions(src) {
   const functions = [];
   const blanked = conventions.blankSpans(src);
 
+  // A TypeScript function head can carry generic type params on the name and a
+  // return-type annotation between the parameter list and the brace (or arrow).
+  // These two optional fragments let the extractor match typed functions so
+  // near-clones on TypeScript are not under-reported. OPT_GENERIC matches one
+  // level of angle brackets only: a nested generic like Map<string, Array<T>>
+  // is matched up to its first closing bracket, an accepted limit at this tier.
+  const OPT_GENERIC = '(?:<[^>]*>)?';
+  // Return type excludes { = ; so it never swallows the body brace, an arrow's
+  // => , or a statement terminator.
+  const OPT_RET = '(?::\\s*[^{=;]+?)?';
+
   // Pattern 1: named function declarations
-  // function name (...) {
-  const NAMED_FN_RE = /\bfunction\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/g;
-  // Pattern 2: const/let/var name = function(...) {
-  const VAR_FN_RE = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?function\s*(?:[A-Za-z_$][\w$]*)?\s*\([^)]*\)\s*\{/g;
-  // Pattern 3: const/let/var name = (...) => {
-  const ARROW_FN_RE = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>\s*\{/g;
-  // Pattern 4: class methods, methodName(...) {. This also matches two phantom
-  // shapes that are excluded below (see the methodLike handling): a class
+  // function name<T>(...) : Ret {
+  const NAMED_FN_RE = new RegExp(
+    '\\bfunction\\s+([A-Za-z_$][\\w$]*)\\s*' + OPT_GENERIC + '\\s*\\([^)]*\\)\\s*' + OPT_RET + '\\s*\\{', 'g');
+  // Pattern 2: const/let/var name = function<T>(...) : Ret {
+  const VAR_FN_RE = new RegExp(
+    '\\b(?:const|let|var)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*(?:async\\s+)?function\\s*(?:[A-Za-z_$][\\w$]*)?\\s*'
+    + OPT_GENERIC + '\\s*\\([^)]*\\)\\s*' + OPT_RET + '\\s*\\{', 'g');
+  // Pattern 3: const/let/var name = <T>(...) : Ret => {
+  const ARROW_FN_RE = new RegExp(
+    '\\b(?:const|let|var)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*(?:async\\s+)?'
+    + OPT_GENERIC + '\\s*\\([^)]*\\)\\s*' + OPT_RET + '\\s*=>\\s*\\{', 'g');
+  // Pattern 4: class methods, methodName<T>(...) : Ret {. This also matches two
+  // phantom shapes that are excluded below (see the methodLike handling): a class
   // constructor (byte-identical DI bodies across unrelated classes) and a
   // call-shaped head such as test("x", function (a) { ... }) where the argument
   // list carries a callback rather than a method's parameters.
-  const METHOD_RE = /\b([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/g;
+  const METHOD_RE = new RegExp(
+    '\\b([A-Za-z_$][\\w$]*)\\s*' + OPT_GENERIC + '\\s*\\([^)]*\\)\\s*' + OPT_RET + '\\s*\\{', 'g');
 
   const patterns = [
     { re: NAMED_FN_RE, priority: 1 },
@@ -491,6 +508,7 @@ function detect(corpus, opts) {
 module.exports = {
   detect,
   // internals exposed for tests:
+  extractFunctions,
   buildShingles,
   minHashSignature,
   findLshCandidatePairs,
