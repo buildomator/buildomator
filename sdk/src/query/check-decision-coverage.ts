@@ -29,7 +29,7 @@
  */
 
 import { readdir, readFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { join, isAbsolute } from 'node:path';
 import { execFile as execFileCb } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -344,6 +344,23 @@ export const checkDecisionCoveragePlan: QueryHandler = async (args, projectDir, 
       covered: 0,
       uncovered: [],
       message: 'No trackable decisions in CONTEXT.md.',
+    };
+    return { data };
+  }
+
+  // A missing or non-directory phase arg is a caller error, not real zero
+  // coverage. Reporting every decision as uncovered here would false-block the
+  // gate; instead answer a clear error with an empty uncovered list.
+  if (!phaseDir || !existsSync(phaseDir) || !statSync(phaseDir).isDirectory()) {
+    const data = {
+      passed: false,
+      skipped: false,
+      error: `phase directory not found: ${args[0] ?? ''}`,
+      reason: 'phase directory not found',
+      total: decisions.length,
+      covered: 0,
+      uncovered: [] as GateUncoveredItem[],
+      message: `phase directory not found: ${args[0] ?? ''}`,
     };
     return { data };
   }
