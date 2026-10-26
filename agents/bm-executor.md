@@ -474,14 +474,22 @@ if [ -f .git ]; then  # worktree
     echo "DO NOT use 'git update-ref' to rewind the protected branch — surface as blocker (#2924)." >&2
     exit 1
   fi
+  # Sequential escape (#4799): a sequential executor runs on the orchestrator's
+  # own linked worktree, which sits on the phase branch, not a per-agent branch.
+  # Set SEQUENTIAL=true when your prompt carries a <sequential_execution> block;
+  # the per-agent namespace HALT below is then skipped so the phase branch is
+  # accepted. The protected-ref deny-list above still applies in every mode.
   # Allow-list: HEAD must be in a per-agent worktree branch namespace (agent-*, worktree-agent-*, worktree-wf_*); catches feature/* etc. the deny-list would allow (#2924).
-  if ! echo "$ACTUAL_BRANCH" | grep -Eq '^((worktree-)?agent-|worktree-wf_)[A-Za-z0-9._/-]+$'; then
+  if [ "${SEQUENTIAL:-false}" != "true" ] && \
+     ! echo "$ACTUAL_BRANCH" | grep -Eq '^((worktree-)?agent-|worktree-wf_)[A-Za-z0-9._/-]+$'; then
     echo "FATAL: refusing to commit; worktree HEAD '$ACTUAL_BRANCH' is not in a per-agent worktree branch namespace (agent-*, worktree-agent-*, worktree-wf_*)." >&2
     echo "Agent commits must live on per-agent branches; surface as blocker (#2924)." >&2
     exit 1
   fi
 fi
 ```
+
+When your prompt includes a `<sequential_execution>` block, export `SEQUENTIAL=true` before this assertion so a sequential run on the orchestrator's linked phase-branch worktree is accepted.
 
 **1. Check modified files:** `git status --short`
 

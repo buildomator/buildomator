@@ -124,7 +124,7 @@ Pattern B only (verify-only checkpoints). Skip for A/C.
 
 1. Parse segment map: checkpoint locations and types
 2. Per segment:
-   - Subagent route: spawn bm-executor for assigned tasks only. Prompt: task range, plan path, read full plan for context, execute assigned tasks, track deviations, NO SUMMARY/commit. Track via agent protocol.
+   - Subagent route: spawn bm-executor for assigned tasks only. Prompt: task range, plan path, read full plan for context, execute assigned tasks, track deviations, NO SUMMARY/commit. Track via agent protocol. Because segments run on the orchestrator's own linked worktree (on the phase branch, not a per-agent branch), include a `<sequential_execution>` block in the prompt so the executor sets `SEQUENTIAL=true` and its pre-commit HEAD assertion accepts the phase branch (#4799).
    - Main route: execute tasks using standard flow (step name="execute")
 3. **Critical ordering — write and commit SUMMARY.md as one atomic block.** Do NOT
    emit narrative output between the Write tool call and the commit tool call.

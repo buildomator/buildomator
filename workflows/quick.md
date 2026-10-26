@@ -675,6 +675,12 @@ This corrects a known issue where EnterWorktree creates branches from main inste
 </worktree_branch_check>
 ` : ''}
 
+${USE_WORKTREES === "false" ? `
+<sequential_execution>
+This is a sequential single-executor dispatch on the main tree (worktrees disabled). If your pre-commit HEAD assertion runs inside a linked worktree on the phase branch rather than a per-agent branch, set SEQUENTIAL=true so the phase branch is accepted; the protected-ref deny-list still applies (#4799).
+</sequential_execution>
+` : ''}
+
 <files_to_read>
 - ${QUICK_DIR}/${quick_id}-PLAN.md (Plan)
 - .planning/STATE.md (Project state)
