@@ -43,6 +43,7 @@ export const websearch = async (args) => {
         params.set('freshness', freshness);
     try {
         const response = await fetch(`https://api.search.brave.com/res/v1/web/search?${params}`, {
+            redirect: 'manual',
             headers: {
                 'Accept': 'application/json',
                 'X-Subscription-Token': apiKey,

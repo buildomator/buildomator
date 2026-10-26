@@ -125,11 +125,13 @@ export function computePhaseDirectory(namingMode, descriptionSlug, prefix, nextS
     assertSafePhaseDirName(dirName);
     return { phaseId, dirName };
 }
-export function buildPhaseRoadmapEntry(phaseId, description, namingMode) {
-    const prevPhase = typeof phaseId === 'number' ? phaseId - 1 : null;
-    const dependsOn = namingMode === 'custom' || prevPhase === null || prevPhase < 1
+export function buildPhaseRoadmapEntry(phaseId, description, namingMode, prevPhaseId) {
+    // The new phase depends on the phase that actually exists (the highest real
+    // roadmap header below it), never the arithmetic predecessor: the new id is
+    // max+1 over headers AND on-disk dirs, so id-1 can name an orphan dir or a gap.
+    const dependsOn = namingMode === 'custom' || prevPhaseId === null || prevPhaseId < 1
         ? ''
-        : `\n**Depends on:** Phase ${prevPhase}`;
+        : `\n**Depends on:** Phase ${prevPhaseId}`;
     return `\n### Phase ${phaseId}: ${description}\n\n**Goal:** [To be planned]\n**Requirements**: TBD${dependsOn}\n**Plans:** 0 plans\n\nPlans:\n- [ ] TBD (run /gsd:plan-phase ${phaseId} to break down)\n`;
 }
 export function collectDecimalSuffixesFromDirNames(basePhase, dirNames) {

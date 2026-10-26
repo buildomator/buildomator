@@ -6,12 +6,38 @@
  * Uses {@link extractFrontmatterLeading} — same as CJS `frontmatter.cjs` `extractFrontmatter`
  * (first `---` block only; skills with later `---` rules must not use TS `extractFrontmatter`'s last-block rule).
  */
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { extractFrontmatterLeading } from './frontmatter.js';
 import { resolveGlobalSkillsBase, renderGlobalSkillsBaseDisplayPath } from './helpers.js';
 import { resolveLegacySkillsDir } from '../sdk-package-compatibility.js';
+// Largest SKILL.md the discovery scan will read. A skill manifest only needs
+// frontmatter and a few trigger lines, so a quarter-megabyte cap is generous.
+const MAX_SKILL_FILE_BYTES = 256 * 1024;
+/**
+ * Read a SKILL.md during discovery with a type and size guard. The path is
+ * lstat'd first so a symlink, FIFO, device node, or directory is skipped
+ * without a read, and a regular file over the size cap is skipped too. Returns
+ * null when the file should not be read (caller skips the entry).
+ */
+function readSkillFileBounded(path) {
+    let st;
+    try {
+        st = lstatSync(path);
+    }
+    catch {
+        return null;
+    }
+    if (!st.isFile() || st.size > MAX_SKILL_FILE_BYTES)
+        return null;
+    try {
+        return readFileSync(path, 'utf-8');
+    }
+    catch {
+        return null;
+    }
+}
 /**
  * Scan canonical skill roots and build manifest JSON (same shape as gsd-tools.cjs).
  */
@@ -95,13 +121,9 @@ export function buildSkillManifest(cwd, skillsDir = null) {
             const skillMdPath = join(rootPath, entryName, 'SKILL.md');
             if (!existsSync(skillMdPath))
                 continue;
-            let content;
-            try {
-                content = readFileSync(skillMdPath, 'utf-8');
-            }
-            catch {
+            const content = readSkillFileBounded(skillMdPath);
+            if (content === null)
                 continue;
-            }
             const frontmatter = extractFrontmatterLeading(content);
             const name = frontmatter.name || entryName;
             const description = frontmatter.description || '';
