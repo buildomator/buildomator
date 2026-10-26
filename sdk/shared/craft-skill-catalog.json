@@ -403,9 +403,9 @@
       "source": "https://github.com/obra/superpowers",
       "skill_path": "skills/test-driven-development",
       "skill_name": "test-driven-development",
-      "pinned_commit": "bb92a77741419a4ab5f06e711a283343f1ada0c3",
+      "pinned_commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
       "license": "MIT",
-      "license_url": "https://github.com/obra/superpowers/blob/bb92a77741419a4ab5f06e711a283343f1ada0c3/LICENSE",
+      "license_url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/LICENSE",
       "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
       "trust_tier": "A",
       "bundles_scripts": false,
@@ -415,7 +415,7 @@
         "bm-executor"
       ],
       "summary": "Test-driven development discipline: write the test first, watch it fail, write the minimal code to pass, then refactor. Covers when TDD applies, the red-green-refactor loop, and writing tests that assert behavior rather than implementation. Prose only.",
-      "verified_at": "2026-10-19"
+      "verified_at": "2026-10-26"
     },
     "writing-plans": {
       "id": "writing-plans",
@@ -432,9 +432,9 @@
       "source": "https://github.com/obra/superpowers",
       "skill_path": "skills/writing-plans",
       "skill_name": "writing-plans",
-      "pinned_commit": "bb92a77741419a4ab5f06e711a283343f1ada0c3",
+      "pinned_commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
       "license": "MIT",
-      "license_url": "https://github.com/obra/superpowers/blob/bb92a77741419a4ab5f06e711a283343f1ada0c3/LICENSE",
+      "license_url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/LICENSE",
       "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
       "trust_tier": "A",
       "bundles_scripts": false,
@@ -444,7 +444,7 @@
         "bm-planner"
       ],
       "summary": "Writing implementation plans for an engineer who has not seen the codebase: map the files and their responsibilities first, then break the work into small tasks that each name the exact interface, the values, and the proving test. DRY, YAGNI, frequent commits. Prose only.",
-      "verified_at": "2026-10-19"
+      "verified_at": "2026-10-26"
     },
     "verification-before-completion": {
       "id": "verification-before-completion",
@@ -459,9 +459,9 @@
       "source": "https://github.com/obra/superpowers",
       "skill_path": "skills/verification-before-completion",
       "skill_name": "verification-before-completion",
-      "pinned_commit": "bb92a77741419a4ab5f06e711a283343f1ada0c3",
+      "pinned_commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
       "license": "MIT",
-      "license_url": "https://github.com/obra/superpowers/blob/bb92a77741419a4ab5f06e711a283343f1ada0c3/LICENSE",
+      "license_url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/LICENSE",
       "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
       "trust_tier": "A",
       "bundles_scripts": false,
@@ -471,7 +471,7 @@
         "bm-verifier"
       ],
       "summary": "Gate against premature completion claims: before asserting work is done, fixed, or passing, identify the command that proves it, run it fresh in full, read the whole output and exit code, then claim status. Evidence before assertions. Prose only.",
-      "verified_at": "2026-10-19"
+      "verified_at": "2026-10-26"
     },
     "systematic-debugging": {
       "id": "systematic-debugging",
@@ -490,15 +490,15 @@
       "source": "https://github.com/obra/superpowers",
       "skill_path": "skills/systematic-debugging",
       "skill_name": "systematic-debugging",
-      "pinned_commit": "bb92a77741419a4ab5f06e711a283343f1ada0c3",
+      "pinned_commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
       "license": "MIT",
-      "license_url": "https://github.com/obra/superpowers/blob/bb92a77741419a4ab5f06e711a283343f1ada0c3/LICENSE",
+      "license_url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/LICENSE",
       "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
       "trust_tier": "B",
       "bundles_scripts": true,
       "scripts_review": {
         "verdict": "reviewed",
-        "commit": "bb92a77741419a4ab5f06e711a283343f1ada0c3",
+        "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
         "reviewed_at": "2026-10-19",
         "note": "find-polluter.sh is a test-pollution bisector that runs npm test on files you name; condition-based-waiting-example.ts is a non-executed illustrative example. No network, credential access, or eval. Buildomator never runs it."
       },
@@ -507,7 +507,7 @@
         "bm-debugger"
       ],
       "summary": "Scientific-method debugging: no fix without a root-cause investigation first. Frame a hypothesis, instrument to confirm it, trace to the true cause, apply the minimal fix, then verify. References cover root-cause tracing, defense in depth, and condition-based waiting. Bundles a shell test-pollution finder.",
-      "verified_at": "2026-10-19"
+      "verified_at": "2026-10-26"
     },
     "brainstorming": {
       "id": "brainstorming",
@@ -523,15 +523,15 @@
       "source": "https://github.com/obra/superpowers",
       "skill_path": "skills/brainstorming",
       "skill_name": "brainstorming",
-      "pinned_commit": "bb92a77741419a4ab5f06e711a283343f1ada0c3",
+      "pinned_commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
       "license": "MIT",
-      "license_url": "https://github.com/obra/superpowers/blob/bb92a77741419a4ab5f06e711a283343f1ada0c3/LICENSE",
+      "license_url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/LICENSE",
       "obligations": "Keep the copyright and permission notice with any copy of the skill text; no other conditions.",
       "trust_tier": "B",
       "bundles_scripts": true,
       "scripts_review": {
         "verdict": "reviewed",
-        "commit": "bb92a77741419a4ab5f06e711a283343f1ada0c3",
+        "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
         "reviewed_at": "2026-10-19",
         "note": "Bundles a loopback (127.0.0.1) HTTP/WebSocket companion server: per-session token auth, CSP, origin check, path-traversal guards. Its page fetches a brand logo from primeradiant.com unless SUPERPOWERS_DISABLE_TELEMETRY or CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC is set (recommended). No credential access or exfiltration; Buildomator never runs it."
       },
@@ -545,8 +545,8 @@
       "target_agents": [
         "bm-executor"
       ],
-      "summary": "Draws out what the user actually wants before anything gets built: asks the few questions that resolve real unknowns, surfaces the why behind the request, and stops once intent is clear. Optional local visual companion. The questioning method is prose; the companion bundles a Node server.",
-      "verified_at": "2026-10-19"
+      "summary": "Draws out what the user actually wants before anything gets built: asks one question at a time to resolve the real unknowns, surfaces the reasoning behind the request, and stops once intent is clear. Optional local visual companion. The questioning method is prose; the companion bundles a Node server.",
+      "verified_at": "2026-10-26"
     }
   }
 }
