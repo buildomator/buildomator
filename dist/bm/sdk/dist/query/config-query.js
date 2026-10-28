@@ -21,6 +21,7 @@ import { loadConfig } from '../config.js';
 import { planningPaths } from './helpers.js';
 import { maskIfSecret } from './secrets.js';
 export { MODEL_PROFILES, VALID_PROFILES, getAgentToModelMapForProfile } from '../model-catalog.js';
+import { isLitellmProfile, litellmBaseProfile, resolveLitellmModel } from '../litellm-resolve.js';
 export { normalizeAgentName, legacyAgentName, lookupByAgentName } from '../model-catalog.js';
 import { AGENT_TO_PHASE_TYPE, MODEL_PROFILES, resolveRuntimeTierDefault, runtimesWithReasoningEffort, normalizeAgentName, lookupByAgentName, } from '../model-catalog.js';
 const RUNTIMES_WITH_REASONING_EFFORT = runtimesWithReasoningEffort();
@@ -169,6 +170,9 @@ export const resolveModel = async (args, projectDir, workstream) => {
     const agentModels = MODEL_PROFILES[agentKey];
     const resolveModelIds = config.resolve_model_ids;
     // Fall back to profile lookup
+    if (!agentModels && isLitellmProfile(profile)) {
+        return { data: { model: resolveLitellmModel(config, profile, 'sonnet'), profile, unknown_agent: true } };
+    }
     if (!agentModels) {
         const semanticFallback = profile === 'quality' ? 'opus'
             : profile === 'budget' ? 'haiku'
@@ -185,6 +189,13 @@ export const resolveModel = async (args, projectDir, workstream) => {
         ? config.models[phaseType]
         : undefined;
     const tier = typeof phaseTier === 'string' ? phaseTier : alias;
+    if (isLitellmProfile(profile)) {
+        const base = litellmBaseProfile(profile);
+        const litellmTier = typeof phaseTier === 'string' ? phaseTier : (agentModels[base] || agentModels['balanced'] || 'sonnet');
+        if (litellmTier === 'inherit')
+            return { data: { model: 'inherit', profile } };
+        return { data: { model: resolveLitellmModel(config, profile, litellmTier), profile } };
+    }
     const runtimeTier = resolveRuntimeTier(config, tier);
     if (runtimeTier?.model) {
         const result = { model: runtimeTier.model, profile };

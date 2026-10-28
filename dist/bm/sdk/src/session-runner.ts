@@ -15,6 +15,7 @@ import type { GSDEventStream, EventStreamContext } from './event-stream.js';
 import { getToolsForPhase } from './tool-scoping.js';
 import { detectRuntime } from './query/helpers.js';
 import { resolveRuntimeTierDefault } from './model-catalog.js';
+import { isLitellmProfile, resolveLitellmModel } from './litellm-resolve.js';
 
 // ─── Model resolution ────────────────────────────────────────────────────────
 
@@ -30,8 +31,18 @@ import { resolveRuntimeTierDefault } from './model-catalog.js';
  * In those cases — and whenever `resolve_model_ids: "omit"` is set — leave
  * `model` unset so the runtime falls back to its configured default.
  */
-function resolveModel(options?: SessionOptions, config?: GSDConfig): string | undefined {
+export function resolveModel(options?: SessionOptions, config?: GSDConfig): string | undefined {
   if (options?.model) return options.model;
+
+  // litellm-* profiles split tiers between local and Anthropic ids themselves,
+  // independent of runtime. With no agent context the profile maps to the
+  // sonnet tier (the same ladder balanced and adaptive use below).
+  if (config?.model_profile) {
+    const litellmProfile = String(config.model_profile).toLowerCase();
+    if (isLitellmProfile(litellmProfile)) {
+      return resolveLitellmModel(config as Record<string, unknown>, litellmProfile, 'sonnet');
+    }
+  }
 
   // Honor the explicit "don't resolve model ids" config knob (#2652, #2832).
   // Mirrors `query/config-query.ts` resolve_model_ids === 'omit' branch.

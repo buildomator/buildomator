@@ -395,6 +395,20 @@ function _deepMergeConfig(base, overlay) {
   return result;
 }
 
+function _mergeLitellmModels(overrides, litellm) {
+  const models = litellm && typeof litellm === 'object' ? litellm.models : null;
+  if (!models || typeof models !== 'object') return overrides || null;
+  const merged = { ...(overrides || {}) };
+  const lit = { ...(merged.litellm && typeof merged.litellm === 'object' ? merged.litellm : {}) };
+  for (const tier of ['opus', 'sonnet', 'haiku']) {
+    if (typeof models[tier] === 'string' && models[tier].trim() && lit[tier] === undefined) {
+      lit[tier] = models[tier].trim();
+    }
+  }
+  merged.litellm = lit;
+  return merged;
+}
+
 function loadConfig(cwd, options = {}) {
   const activeWorkstream = Object.prototype.hasOwnProperty.call(options, 'workstream')
     ? options.workstream
@@ -625,7 +639,10 @@ function loadConfig(cwd, options = {}) {
       // raw `parsed` blob, so direct `.planning/config.json` edits surface
       // unknown runtime/tier names at load time, not silently (review finding #10).
       runtime: parsed.runtime || null,
-      model_profile_overrides: parsed.model_profile_overrides || null,
+      // litellm.models.<tier> is sugar for model_profile_overrides.litellm.<tier>;
+      // an explicit override for the same tier wins.
+      litellm: parsed.litellm || null,
+      model_profile_overrides: _mergeLitellmModels(parsed.model_profile_overrides, parsed.litellm),
       agent_skills: parsed.agent_skills || {},
       agent_skills_security: parsed.agent_skills_security || null,
       manager: parsed.manager || {},
@@ -1512,6 +1529,47 @@ function _resolveRuntimeTier(config, tier) {
   });
 }
 
+// litellm-* profiles: per-tier runtime split. Some tiers resolve to a
+// user-named local model id served through a litellm gateway, the rest stay
+// on the Anthropic id. Twinned with sdk/src/litellm-resolve.ts: both must emit
+// the same id for the same config and tier.
+const LITELLM_PROFILES = new Set(['litellm-full', 'litellm-adaptive', 'litellm-balanced']);
+
+function _litellmUserModel(config, tier) {
+  const raw = config.model_profile_overrides?.litellm?.[tier];
+  const id = typeof raw === 'string' ? raw : raw?.model;
+  return typeof id === 'string' && id.trim() ? id.trim() : null;
+}
+
+function _resolveLitellmModel(config, profile, tier) {
+  const localTier = tier === 'fable' ? 'opus' : tier;
+  const isFull = profile === 'litellm-full';
+  const localTiers = isFull ? ['opus', 'sonnet', 'haiku'] : ['sonnet', 'haiku'];
+  if (!localTiers.includes(localTier)) {
+    return MODEL_ALIAS_MAP[tier] || tier;
+  }
+  const userId = _litellmUserModel(config, localTier);
+  if (userId) return userId;
+  if (isFull) {
+    throw new Error(
+      `litellm-full needs a local model id for the ${localTier} tier. ` +
+      `Set litellm.models.${localTier} (or model_profile_overrides.litellm.${localTier}).`
+    );
+  }
+  const fallback = RUNTIME_PROFILE_MAP.litellm?.[localTier]?.model || MODEL_ALIAS_MAP[localTier] || localTier;
+  const key = `litellm-unset::${localTier}`;
+  if (!_warnedConfigKeys.has(key)) {
+    _warnedConfigKeys.add(key);
+    try {
+      process.stderr.write(
+        `bm: warning: ${profile} has no litellm.models.${localTier}; ` +
+        `falling back to ${fallback} (Anthropic passthrough).\n`
+      );
+    } catch { /* ok */ }
+  }
+  return fallback;
+}
+
 function resolveModelInternal(cwd, agentType) {
   const config = loadConfig(cwd);
   const agentKey = normalizeAgentName(agentType);
@@ -1555,6 +1613,17 @@ function resolveModelInternal(cwd, agentType) {
     : (profile === 'inherit'
       ? 'inherit'
       : (agentModels ? (agentModels[profile] || agentModels['balanced']) : null));
+
+  // litellm-* profiles drive their own per-tier runtime split, independent of
+  // config.runtime (Claude Code stays the harness, pointed at the gateway).
+  if (LITELLM_PROFILES.has(profile)) {
+    const baseProfile = profile === 'litellm-balanced' ? 'balanced' : 'adaptive';
+    const litellmTier = (phaseTypeTier && VALID_TIERS.has(phaseTypeTier))
+      ? phaseTypeTier
+      : (agentModels ? (agentModels[baseProfile] || agentModels['balanced']) : 'sonnet');
+    if (litellmTier === 'inherit') return 'inherit';
+    return _resolveLitellmModel(config, profile, litellmTier);
+  }
 
   // 3. Runtime-aware resolution (#2517) — only when `runtime` is explicitly set
   // to a non-Claude runtime. `runtime: "claude"` is the implicit default and is

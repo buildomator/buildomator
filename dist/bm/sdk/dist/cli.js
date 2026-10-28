@@ -5219,6 +5219,7 @@ function mergeDefaults(parsed) {
   return {
     ...structuredClone(CONFIG_DEFAULTS),
     ...parsed,
+    ...mergeLitellmModels(parsed),
     git: {
       ...CONFIG_DEFAULTS.git,
       ...legacyBranchingStrategy ? { branching_strategy: legacyBranchingStrategy } : {},
@@ -5237,6 +5238,21 @@ function mergeDefaults(parsed) {
       ...parsed.agent_skills ?? {}
     }
   };
+}
+function mergeLitellmModels(parsed) {
+  const litellm = parsed.litellm;
+  const models = litellm && typeof litellm === "object" ? litellm.models : void 0;
+  if (!models || typeof models !== "object")
+    return {};
+  const existing = parsed.model_profile_overrides;
+  const existingLit = existing?.litellm;
+  const lit = existingLit && typeof existingLit === "object" ? { ...existingLit } : {};
+  for (const tier of ["opus", "sonnet", "haiku"]) {
+    const id = models[tier];
+    if (typeof id === "string" && id.trim() && lit[tier] === void 0)
+      lit[tier] = id.trim();
+  }
+  return { model_profile_overrides: { ...existing ?? {}, litellm: lit } };
 }
 
 // dist/query-tools-error-factory.js
@@ -6346,6 +6362,55 @@ function maskIfSecret(keyPath, value) {
 
 // dist/query/config-query.js
 init_model_catalog();
+
+// dist/litellm-resolve.js
+init_model_catalog();
+var LITELLM_PROFILES = /* @__PURE__ */ new Set([
+  "litellm-full",
+  "litellm-adaptive",
+  "litellm-balanced"
+]);
+function isLitellmProfile(profile) {
+  return LITELLM_PROFILES.has(profile);
+}
+function litellmBaseProfile(profile) {
+  return profile === "litellm-balanced" ? "balanced" : "adaptive";
+}
+var warned = /* @__PURE__ */ new Set();
+function userModel(config, tier) {
+  const overrides = config.model_profile_overrides;
+  const lit = overrides?.litellm;
+  const raw = lit?.[tier];
+  const id = typeof raw === "string" ? raw : raw?.model;
+  return typeof id === "string" && id.trim() ? id.trim() : null;
+}
+function resolveLitellmModel(config, profile, tier) {
+  const localTier = tier === "fable" ? "opus" : tier;
+  const isFull = profile === "litellm-full";
+  const localTiers = isFull ? ["opus", "sonnet", "haiku"] : ["sonnet", "haiku"];
+  if (!localTiers.includes(localTier)) {
+    return resolveRuntimeTierDefault("claude", tier)?.model ?? tier;
+  }
+  const userId = userModel(config, localTier);
+  if (userId)
+    return userId;
+  if (isFull) {
+    throw new Error(`litellm-full needs a local model id for the ${localTier} tier. Set litellm.models.${localTier} (or model_profile_overrides.litellm.${localTier}).`);
+  }
+  const fallback = resolveRuntimeTierDefault("litellm", localTier)?.model ?? resolveRuntimeTierDefault("claude", localTier)?.model ?? localTier;
+  const key = `litellm-unset::${localTier}`;
+  if (!warned.has(key)) {
+    warned.add(key);
+    try {
+      process.stderr.write(`bm: warning: ${profile} has no litellm.models.${localTier}; falling back to ${fallback} (Anthropic passthrough).
+`);
+    } catch {
+    }
+  }
+  return fallback;
+}
+
+// dist/query/config-query.js
 init_model_catalog();
 init_model_catalog();
 var RUNTIMES_WITH_REASONING_EFFORT = runtimesWithReasoningEffort();
@@ -6444,6 +6509,9 @@ var resolveModel = async (args, projectDir, workstream) => {
   }
   const agentModels = MODEL_PROFILES[agentKey];
   const resolveModelIds = config.resolve_model_ids;
+  if (!agentModels && isLitellmProfile(profile)) {
+    return { data: { model: resolveLitellmModel(config, profile, "sonnet"), profile, unknown_agent: true } };
+  }
   if (!agentModels) {
     const semanticFallback = profile === "quality" ? "opus" : profile === "budget" ? "haiku" : profile === "inherit" ? "inherit" : "sonnet";
     return { data: { model: semanticFallback, profile, unknown_agent: true } };
@@ -6455,6 +6523,13 @@ var resolveModel = async (args, projectDir, workstream) => {
   const phaseType = AGENT_TO_PHASE_TYPE[agentKey];
   const phaseTier = phaseType && typeof config.models === "object" ? config.models[phaseType] : void 0;
   const tier = typeof phaseTier === "string" ? phaseTier : alias;
+  if (isLitellmProfile(profile)) {
+    const base = litellmBaseProfile(profile);
+    const litellmTier = typeof phaseTier === "string" ? phaseTier : agentModels[base] || agentModels["balanced"] || "sonnet";
+    if (litellmTier === "inherit")
+      return { data: { model: "inherit", profile } };
+    return { data: { model: resolveLitellmModel(config, profile, litellmTier), profile } };
+  }
   const runtimeTier = resolveRuntimeTier(config, tier);
   if (runtimeTier?.model) {
     const result = { model: runtimeTier.model, profile };
@@ -8652,6 +8727,8 @@ var VALID_CONFIG_KEYS = /* @__PURE__ */ new Set([
   "runtime",
   // #3162 — documented top-level key: controls model ID resolution for non-Claude runtimes
   "resolve_model_ids",
+  // litellm gateway: api_base is informational, models.<tier> are the local model ids
+  "litellm.api_base",
   // extra directories a symlinked global skill may resolve into (array of absolute paths, default empty)
   "agent_skills_security.trusted_global_roots"
 ]);
@@ -8684,6 +8761,12 @@ var DYNAMIC_KEY_PATTERNS = [
     source: "^model_profile_overrides\\.[a-zA-Z0-9_-]+\\.(fable|opus|sonnet|haiku)$",
     description: "model_profile_overrides.<runtime>.<fable|opus|sonnet|haiku>",
     test: (k6) => /^model_profile_overrides\.[a-zA-Z0-9_-]+\.(fable|opus|sonnet|haiku)$/.test(k6)
+  },
+  // litellm.models.<tier>: local model id per tier for the litellm-* profiles
+  {
+    source: "^litellm\\.models\\.(opus|sonnet|haiku)$",
+    description: "litellm.models.<opus|sonnet|haiku>",
+    test: (k6) => /^litellm\.models\.(opus|sonnet|haiku)$/.test(k6)
   },
   // #3023 — per-phase-type model map: models.<phase_type> = <tier>
   {
@@ -38597,6 +38680,12 @@ init_model_catalog();
 function resolveModel2(options, config) {
   if (options?.model)
     return options.model;
+  if (config?.model_profile) {
+    const litellmProfile = String(config.model_profile).toLowerCase();
+    if (isLitellmProfile(litellmProfile)) {
+      return resolveLitellmModel(config, litellmProfile, "sonnet");
+    }
+  }
   if (config?.resolve_model_ids === "omit") {
     return void 0;
   }
