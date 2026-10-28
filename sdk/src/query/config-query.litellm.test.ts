@@ -174,3 +174,39 @@ describe('twin parity: CJS resolver and SDK resolvers emit identical ids', () =>
     }
   }
 });
+
+describe('litellm config sugar and schema (SDK)', () => {
+  it('maps litellm.models onto model_profile_overrides.litellm', async () => {
+    const { loadConfig } = await import('../config.js');
+    await writeConfig({ litellm: { models: LOCAL } });
+    const cfg = await loadConfig(tmpDir);
+    expect((cfg.model_profile_overrides as Record<string, unknown>).litellm).toEqual(LOCAL);
+  });
+
+  it('an explicit override wins over litellm.models for the same tier', async () => {
+    const { loadConfig } = await import('../config.js');
+    await writeConfig({ litellm: { models: LOCAL }, model_profile_overrides: { litellm: { sonnet: 'override-mid' } } });
+    const cfg = await loadConfig(tmpDir);
+    const lit = (cfg.model_profile_overrides as Record<string, Record<string, string>>).litellm;
+    expect(lit.sonnet).toBe('override-mid');
+    expect(lit.haiku).toBe('local-small');
+  });
+
+  it('resolveModel sees litellm.models via the sugar', async () => {
+    await writeConfig({ model_profile: 'litellm-adaptive', litellm: { models: LOCAL } });
+    expect(await modelFor('bm-executor')).toBe('local-mid');
+    expect(await modelFor('bm-planner')).toBe(OPUS);
+  });
+
+  it('config keys validate and the profiles are accepted', async () => {
+    const { isValidConfigKeyPath } = await import('./config-schema.js');
+    const { VALID_PROFILES } = await import('../model-catalog.js');
+    for (const k of ['litellm.api_base', 'litellm.models.opus', 'litellm.models.sonnet', 'litellm.models.haiku']) {
+      expect(isValidConfigKeyPath(k), k).toBe(true);
+    }
+    expect(isValidConfigKeyPath('litellm.models.fable')).toBe(false);
+    for (const p of ['litellm-full', 'litellm-adaptive', 'litellm-balanced']) {
+      expect(VALID_PROFILES).toContain(p);
+    }
+  });
+});

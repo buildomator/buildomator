@@ -130,6 +130,14 @@ test('config-set-model-profile accepts the three litellm profiles', () => {
   }
 });
 
+test('litellm config keys validate in the CJS schema', () => {
+  const schema = require('../bin/lib/config-schema.cjs');
+  for (const k of ['litellm.api_base', 'litellm.models.opus', 'litellm.models.sonnet', 'litellm.models.haiku', 'model_profile_overrides.litellm.sonnet']) {
+    assert.ok(schema.isValidConfigKey(k), k);
+  }
+  assert.ok(!schema.isValidConfigKey('litellm.models.fable'));
+});
+
 test('loadConfig maps litellm.models onto the override seam', () => {
   setConfig({ litellm: { models: LOCAL }, model_profile_overrides: { litellm: { opus: 'x-big' } } });
   const cfg = core.loadConfig(tmp);
