@@ -37,6 +37,7 @@ function expandTilde(p) {
 export function getRuntimeConfigDir(runtime) {
     switch (runtime) {
         case 'claude':
+        case 'litellm': // gateway only: Claude Code stays the harness, so it shares Claude's config dir
             return process.env.CLAUDE_CONFIG_DIR
                 ? expandTilde(process.env.CLAUDE_CONFIG_DIR)
                 : join(homedir(), '.claude');

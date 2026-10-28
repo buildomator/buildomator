@@ -399,6 +399,7 @@ function expandTilde(p) {
 function getRuntimeConfigDir(runtime) {
   switch (runtime) {
     case "claude":
+    case "litellm":
       return process.env.CLAUDE_CONFIG_DIR ? expandTilde(process.env.CLAUDE_CONFIG_DIR) : join4(homedir2(), ".claude");
     case "opencode":
       if (process.env.OPENCODE_CONFIG_DIR)
