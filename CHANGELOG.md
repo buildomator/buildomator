@@ -8,6 +8,15 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [5.0.5] - 2026-10-28  (Local-model litellm profiles)
+
+Adds three opt-in model profiles that run some or all agent tiers on local models through a litellm gateway. Claude Code stays the harness; litellm is only an Anthropic-compatible gateway in front of it. Follows the gsd-core v1.18 provenance line.
+
+### Added
+- **Three litellm profiles: `litellm-full`, `litellm-adaptive`, `litellm-balanced`.** They reuse the existing per-agent tier assignment and add a per-tier runtime split. `litellm-full` sends every tier local and hard-errors on any tier with no local id. `litellm-adaptive` and `litellm-balanced` keep the opus tier on the Anthropic id and send sonnet and haiku local; an unset sonnet or haiku tier falls back to the Anthropic id with a one-time warning. The same rule runs in the CJS resolver, the SDK `resolve-model` handler and the SDK session runner, and a parity test checks that all three emit the same id.
+- **A user-configurable local model map.** `litellm.models.opus`, `litellm.models.sonnet` and `litellm.models.haiku` name the route served for each tier, and `litellm.api_base` records where the gateway lives. The map is shorthand for `model_profile_overrides.litellm.<tier>`, and an explicit override wins. Moving from one local model family to another is a config edit, with no plugin change. Both config schemas accept the new keys.
+- **`references/litellm-local-models.md`.** Operator setup for the gateway (litellm `config.yaml`, `ANTHROPIC_BASE_URL`), when to use each profile, and the config map. It says plainly that end-to-end routing is not verified: it depends on Claude Code accepting an arbitrary model id and forwarding it to the gateway, which is a spike to run on your Claude Code version. The plugin-side resolution is unit-tested either way.
+
 ## [5.0.4] - 2026-10-26  (gsd-core v1.18.0 ports, Superpowers v7.0.1 re-pin, VibeDrift typed-function fix)
 
 A sync batch. Thirteen fixes from gsd-core v1.18.0 land in the native engine: one security fix for the Brave websearch path, several correctness bugs in logic the plugin carries, and a set of cheap prose hardening edits to workflows and agents. The five obra Superpowers skills re-pin to v7.0.1, and the duplicate detector learns to read typed TypeScript functions from a VibeDrift fix. Follows the gsd-core v1.18 provenance line.
