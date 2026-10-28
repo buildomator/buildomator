@@ -8,6 +8,19 @@ import type { ParsedPlan, PlanResult, SessionOptions, PhaseStepType } from './ty
 import type { GSDConfig } from './config.js';
 import type { GSDEventStream, EventStreamContext } from './event-stream.js';
 /**
+ * Resolve model identifier from options or config profile.
+ *
+ * Priority: explicit model option > config model_profile > default.
+ *
+ * Runtime-aware (#2832): the profile -> Claude-id map only applies when the
+ * project is targeting the Claude runtime. For Codex, Gemini, OpenCode, etc.,
+ * forcing a Claude model id (e.g. 'claude-sonnet-4-6') silently routes the
+ * autonomous run through the Claude path, which is wrong for those runtimes.
+ * In those cases — and whenever `resolve_model_ids: "omit"` is set — leave
+ * `model` unset so the runtime falls back to its configured default.
+ */
+export declare function resolveModel(options?: SessionOptions, config?: GSDConfig): string | undefined;
+/**
  * Run a plan execution session via the Agent SDK query() function.
  *
  * Builds the executor prompt from the parsed plan, configures query() with

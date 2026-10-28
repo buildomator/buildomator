@@ -113,6 +113,7 @@ function mergeDefaults(parsed) {
     return {
         ...structuredClone(CONFIG_DEFAULTS),
         ...parsed,
+        ...mergeLitellmModels(parsed),
         git: {
             ...CONFIG_DEFAULTS.git,
             ...(legacyBranchingStrategy ? { branching_strategy: legacyBranchingStrategy } : {}),
@@ -131,5 +132,25 @@ function mergeDefaults(parsed) {
             ...(parsed.agent_skills ?? {}),
         },
     };
+}
+/**
+ * litellm.models.<tier> is sugar for model_profile_overrides.litellm.<tier>.
+ * An explicit override for the same tier wins. Mirrors _mergeLitellmModels in
+ * bin/lib/core.cjs.
+ */
+function mergeLitellmModels(parsed) {
+    const litellm = parsed.litellm;
+    const models = litellm && typeof litellm === 'object' ? litellm.models : undefined;
+    if (!models || typeof models !== 'object')
+        return {};
+    const existing = parsed.model_profile_overrides;
+    const existingLit = existing?.litellm;
+    const lit = existingLit && typeof existingLit === 'object' ? { ...existingLit } : {};
+    for (const tier of ['opus', 'sonnet', 'haiku']) {
+        const id = models[tier];
+        if (typeof id === 'string' && id.trim() && lit[tier] === undefined)
+            lit[tier] = id.trim();
+    }
+    return { model_profile_overrides: { ...(existing ?? {}), litellm: lit } };
 }
 //# sourceMappingURL=config.js.map
