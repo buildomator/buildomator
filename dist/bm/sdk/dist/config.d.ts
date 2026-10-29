@@ -71,15 +71,6 @@ export interface GSDConfig {
     project_code?: string | null;
     /** Interactive vs headless; mirrors gsd-tools flat `config.mode`. */
     mode?: string;
-    /** litellm gateway: models.<tier> are local model ids for the litellm-* profiles; api_base is informational. */
-    litellm?: {
-        api_base?: string;
-        models?: {
-            opus?: string;
-            sonnet?: string;
-            haiku?: string;
-        };
-    } | null;
     [key: string]: unknown;
 }
 export declare const CONFIG_DEFAULTS: GSDConfig;

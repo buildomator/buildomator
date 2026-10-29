@@ -1,5 +1,5 @@
 {
-  "profiles": ["quality", "balanced", "budget", "adaptive", "inherit", "litellm-full", "litellm-adaptive", "litellm-balanced"],
+  "profiles": ["quality", "balanced", "budget", "adaptive", "inherit"],
   "phaseTypes": ["planning", "discuss", "research", "execution", "verification", "completion"],
   "adaptiveTierMap": {
     "heavy": "opus",
@@ -36,12 +36,6 @@
       "opus": { "model": "anthropic/claude-opus-5-5" },
       "sonnet": { "model": "anthropic/claude-sonnet-5-5" },
       "haiku": { "model": "anthropic/claude-haiku-5-5" }
-    },
-    "litellm": {
-      "fable": { "model": "claude-fable-5-1" },
-      "opus": { "model": "claude-opus-5-5" },
-      "sonnet": { "model": "claude-sonnet-5-5" },
-      "haiku": { "model": "claude-haiku-5-5" }
     },
     "copilot": {
       "fable": { "model": "claude-fable-5-1" },

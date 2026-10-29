@@ -10,7 +10,6 @@ import { buildExecutorPrompt, parseAgentTools, DEFAULT_ALLOWED_TOOLS } from './p
 import { getToolsForPhase } from './tool-scoping.js';
 import { detectRuntime } from './query/helpers.js';
 import { resolveRuntimeTierDefault } from './model-catalog.js';
-import { isLitellmProfile, resolveLitellmModel } from './litellm-resolve.js';
 // ─── Model resolution ────────────────────────────────────────────────────────
 /**
  * Resolve model identifier from options or config profile.
@@ -27,15 +26,6 @@ import { isLitellmProfile, resolveLitellmModel } from './litellm-resolve.js';
 export function resolveModel(options, config) {
     if (options?.model)
         return options.model;
-    // litellm-* profiles split tiers between local and Anthropic ids themselves,
-    // independent of runtime. With no agent context the profile maps to the
-    // sonnet tier (the same ladder balanced and adaptive use below).
-    if (config?.model_profile) {
-        const litellmProfile = String(config.model_profile).toLowerCase();
-        if (isLitellmProfile(litellmProfile)) {
-            return resolveLitellmModel(config, litellmProfile, 'sonnet');
-        }
-    }
     // Honor the explicit "don't resolve model ids" config knob (#2652, #2832).
     // Mirrors `query/config-query.ts` resolve_model_ids === 'omit' branch.
     if (config?.resolve_model_ids === 'omit') {

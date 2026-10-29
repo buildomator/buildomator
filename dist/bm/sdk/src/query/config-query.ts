@@ -23,7 +23,6 @@ import { planningPaths } from './helpers.js';
 import { maskIfSecret } from './secrets.js';
 import type { QueryHandler } from './utils.js';
 export { MODEL_PROFILES, VALID_PROFILES, getAgentToModelMapForProfile } from '../model-catalog.js';
-import { isLitellmProfile, litellmBaseProfile, resolveLitellmModel } from '../litellm-resolve.js';
 export { normalizeAgentName, legacyAgentName, lookupByAgentName } from '../model-catalog.js';
 import {
   AGENT_TO_PHASE_TYPE,
@@ -203,9 +202,6 @@ export const resolveModel: QueryHandler = async (args, projectDir, workstream) =
   const resolveModelIds = (config as Record<string, unknown>).resolve_model_ids;
 
   // Fall back to profile lookup
-  if (!agentModels && isLitellmProfile(profile)) {
-    return { data: { model: resolveLitellmModel(config as Record<string, unknown>, profile, 'sonnet'), profile, unknown_agent: true } };
-  }
   if (!agentModels) {
     const semanticFallback =
       profile === 'quality' ? 'opus'
@@ -225,12 +221,6 @@ export const resolveModel: QueryHandler = async (args, projectDir, workstream) =
     ? ((config as Record<string, unknown>).models as Record<string, unknown>)[phaseType]
     : undefined;
   const tier = typeof phaseTier === 'string' ? phaseTier : alias;
-  if (isLitellmProfile(profile)) {
-    const base = litellmBaseProfile(profile);
-    const litellmTier = typeof phaseTier === 'string' ? phaseTier : (agentModels[base] || agentModels['balanced'] || 'sonnet');
-    if (litellmTier === 'inherit') return { data: { model: 'inherit', profile } };
-    return { data: { model: resolveLitellmModel(config as Record<string, unknown>, profile, litellmTier), profile } };
-  }
   const runtimeTier = resolveRuntimeTier(config as Record<string, unknown>, tier);
   if (runtimeTier?.model) {
     const result: Record<string, unknown> = { model: runtimeTier.model, profile };

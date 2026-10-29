@@ -86,8 +86,6 @@ export const VALID_CONFIG_KEYS: ReadonlySet<string> = new Set([
   'runtime',
   // #3162 — documented top-level key: controls model ID resolution for non-Claude runtimes
   'resolve_model_ids',
-  // litellm gateway: api_base is informational, models.<tier> are the local model ids
-  'litellm.api_base',
   // extra directories a symlinked global skill may resolve into (array of absolute paths, default empty)
   'agent_skills_security.trusted_global_roots',
 ]);
@@ -137,12 +135,6 @@ export const DYNAMIC_KEY_PATTERNS: readonly DynamicKeyPattern[] = [
     source: '^model_profile_overrides\\.[a-zA-Z0-9_-]+\\.(fable|opus|sonnet|haiku)$',
     description: 'model_profile_overrides.<runtime>.<fable|opus|sonnet|haiku>',
     test: (k) => /^model_profile_overrides\.[a-zA-Z0-9_-]+\.(fable|opus|sonnet|haiku)$/.test(k),
-  },
-  // litellm.models.<tier>: local model id per tier for the litellm-* profiles
-  {
-    source: '^litellm\\.models\\.(opus|sonnet|haiku)$',
-    description: 'litellm.models.<opus|sonnet|haiku>',
-    test: (k) => /^litellm\.models\.(opus|sonnet|haiku)$/.test(k),
   },
   // #3023 — per-phase-type model map: models.<phase_type> = <tier>
   {

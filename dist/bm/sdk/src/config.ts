@@ -81,8 +81,6 @@ export interface GSDConfig {
   project_code?: string | null;
   /** Interactive vs headless; mirrors gsd-tools flat `config.mode`. */
   mode?: string;
-  /** litellm gateway: models.<tier> are local model ids for the litellm-* profiles; api_base is informational. */
-  litellm?: { api_base?: string; models?: { opus?: string; sonnet?: string; haiku?: string } } | null;
   [key: string]: unknown;
 }
 
@@ -199,7 +197,6 @@ function mergeDefaults(parsed: Record<string, unknown>): GSDConfig {
   return {
     ...structuredClone(CONFIG_DEFAULTS),
     ...parsed,
-    ...mergeLitellmModels(parsed),
     git: {
       ...CONFIG_DEFAULTS.git,
       ...(legacyBranchingStrategy ? { branching_strategy: legacyBranchingStrategy } : {}),
@@ -218,24 +215,4 @@ function mergeDefaults(parsed: Record<string, unknown>): GSDConfig {
       ...(parsed.agent_skills as Record<string, unknown> ?? {}),
     },
   };
-}
-
-/**
- * litellm.models.<tier> is sugar for model_profile_overrides.litellm.<tier>.
- * An explicit override for the same tier wins. Mirrors _mergeLitellmModels in
- * bin/lib/core.cjs.
- */
-function mergeLitellmModels(parsed: Record<string, unknown>): Record<string, unknown> {
-  const litellm = parsed.litellm as { models?: Record<string, unknown> } | null | undefined;
-  const models = litellm && typeof litellm === 'object' ? litellm.models : undefined;
-  if (!models || typeof models !== 'object') return {};
-  const existing = parsed.model_profile_overrides as Record<string, unknown> | undefined;
-  const existingLit = existing?.litellm;
-  const lit: Record<string, unknown> =
-    existingLit && typeof existingLit === 'object' ? { ...(existingLit as Record<string, unknown>) } : {};
-  for (const tier of ['opus', 'sonnet', 'haiku']) {
-    const id = models[tier];
-    if (typeof id === 'string' && id.trim() && lit[tier] === undefined) lit[tier] = id.trim();
-  }
-  return { model_profile_overrides: { ...(existing ?? {}), litellm: lit } };
 }

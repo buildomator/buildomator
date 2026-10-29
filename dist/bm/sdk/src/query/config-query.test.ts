@@ -362,11 +362,10 @@ describe('MODEL_PROFILES', () => {
 // ─── VALID_PROFILES ─────────────────────────────────────────────────────────
 
 describe('VALID_PROFILES', () => {
-  it('contains the base profiles, inherit, and the litellm profiles', async () => {
+  it('contains the base profiles and inherit', async () => {
     const { VALID_PROFILES } = await import('./config-query.js');
     expect(VALID_PROFILES.sort()).toEqual([
-      'adaptive', 'balanced', 'budget', 'inherit',
-      'litellm-adaptive', 'litellm-balanced', 'litellm-full', 'quality',
+      'adaptive', 'balanced', 'budget', 'inherit', 'quality',
     ]);
   });
 });
