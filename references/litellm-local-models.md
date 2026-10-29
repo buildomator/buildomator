@@ -1,88 +1,99 @@
-# Local models through a litellm gateway
+# Running GSD against local models through a gateway
 
-Opt-in advanced path. Claude Code stays the harness; litellm is only an Anthropic-compatible gateway in front of it. The plugin emits model ids and nothing else. Which model serves each tier is your choice, set in config, so moving from qwen3 to deepseek later is a config edit and not a plugin change.
+Opt-in advanced path for pointing a GSD run at locally hosted models instead of
+Anthropic. Claude Code stays the harness. It talks to an Anthropic-compatible
+gateway (for example LiteLLM) through its own native environment variables. The
+plugin does no gateway routing of its own: it only emits the tier aliases
+(`sonnet`, `opus`, `haiku`) and Claude Code remaps each alias to a local model id.
 
-Status: the plugin side (profile resolution, config mapping, validation) is unit-tested. Whether Claude Code accepts an arbitrary model id such as `local-mid` and forwards it to the gateway, instead of validating it against a known Anthropic list, depends on your Claude Code version and has NOT been verified end to end. Run the spike at the bottom before relying on this.
+Keep `.planning/config.json` on a plain profile (`adaptive` or `balanced`) with
+no litellm block. The plugin has no litellm gateway profile and no litellm config
+key; it never passes a concrete model id on the agent spawn path.
 
-## The three profiles
+## The routing chain
 
-All three reuse the existing per-agent tier assignment (opus, sonnet, haiku). What changes is which tier resolves to a local id.
-
-| Profile | Tier assignment | opus tier | sonnet tier | haiku tier | Use it when |
-|---|---|---|---|---|---|
-| `litellm-full` | adaptive | local | local | local | You want zero Anthropic calls (offline, privacy, no cap usage). |
-| `litellm-adaptive` | adaptive | Anthropic opus | local | local | Planner, debugger and roadmapper stay on Claude; executor, researchers and checkers run local. |
-| `litellm-balanced` | balanced | Anthropic opus | local | local | Like adaptive, but the balanced assignment puts nearly every agent (including the executor) on the sonnet tier, so almost all of them run local. Only the planner and eval-planner stay on Claude. |
-
-Set one with `config-set model_profile litellm-adaptive` (or the other names).
-
-## Configure the local map
-
-In `.planning/config.json`:
-
-```json
-{
-  "model_profile": "litellm-adaptive",
-  "litellm": {
-    "api_base": "http://localhost:4000",
-    "models": {
-      "opus": "local-big",
-      "sonnet": "local-mid",
-      "haiku": "local-small"
-    }
-  }
-}
+```
+Buildomator tier (light / standard / heavy)
+  -> alias haiku / sonnet / opus     via .planning/config.json profile (adaptive or balanced)
+  -> local model id                  via ANTHROPIC_DEFAULT_{HAIKU,SONNET,OPUS}_MODEL
+  -> ANTHROPIC_BASE_URL              -> the gateway
+  -> the gateway's model routes      -> local weights
 ```
 
-- `litellm.models.<tier>` names the route litellm serves for that tier. Keys: `opus`, `sonnet`, `haiku`.
-- `litellm.api_base` is informational. The plugin does not use it to resolve ids; it records where your gateway lives.
-- `litellm.models.<tier>` is shorthand for `model_profile_overrides.litellm.<tier>`. If both are set for a tier, the explicit `model_profile_overrides` value wins.
-- A per-agent `model_overrides` entry still beats everything.
+The plugin stops at the alias. Claude Code's per-tier remap turns `sonnet` into
+your local route name, sends the request to `ANTHROPIC_BASE_URL`, and the gateway
+serves it from the backing local model.
 
-Unset tiers:
+## Environment variables to export
 
-- `litellm-adaptive` and `litellm-balanced`: an unset sonnet or haiku tier falls back to the Anthropic id for that tier and prints a one-time warning to stderr. The opus tier never needs a local id on these two.
-- `litellm-full`: any unset tier (opus, sonnet or haiku) is a hard error, because "full" means no Anthropic. Set all three.
-
-## Gateway setup (outside the plugin)
-
-Run litellm as an Anthropic-compatible gateway and point Claude Code at it:
+Export these before starting Claude Code. The environment is inherited only by
+sessions started after you export it, so set them in the terminal you will launch
+Claude Code from (or source them from a provisioning script).
 
 ```sh
-export ANTHROPIC_BASE_URL=http://localhost:4000
+# Where the gateway lives, and its auth token.
+export ANTHROPIC_BASE_URL="http://192.168.1.90:4000"
+export ANTHROPIC_AUTH_TOKEN="sk-your-gateway-token"
+
+# Remap each tier alias to a local route name the gateway serves.
+export ANTHROPIC_DEFAULT_OPUS_MODEL="your-heavy-local-route"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="your-standard-local-route"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="your-light-local-route"
 ```
 
-litellm `config.yaml`:
+The per-tier `ANTHROPIC_DEFAULT_*_MODEL` alias remap needs a recent Claude Code.
+Treat the version as approximate: the Claude Code docs tie a version stamp to the
+single `ANTHROPIC_DEFAULT_MODEL` variable, not to the per-tier variants, so there
+is no firm version number to quote. If the per-tier remap does not take effect,
+your Claude Code is likely too old for it.
+
+## Operator caveats
+
+These are measured behaviors of a live local run, not plugin concerns.
+
+- max_tokens reasoning-budget trap. Reasoning models charge their thinking
+  against the output budget. A tight `max_tokens` is spent before any answer
+  starts, so the request returns HTTP 200 with `stop_reason` `end_turn` and an
+  EMPTY content array. An empty content array means raise the budget, not that
+  the gateway is down. Use at least 1024 `max_tokens` for probes.
+- Prefill-dominated latency. Decode is slow and prefill dominates wall-clock on
+  large contexts, and every subagent starts its own context. Set `API_TIMEOUT_MS`
+  (for example 1800000) and `CLAUDE_CODE_MAX_CONTEXT_TOKENS` so long prefills do
+  not time out and the context window matches the local model.
+- Cluster LAN requirement. The gateway host is only reachable on its LAN. Off the
+  LAN the gateway address (for example 192.168.1.90) is unreachable, so run from a
+  machine on that network.
+
+## Gateway config example
+
+Run the gateway as an Anthropic-compatible endpoint whose `model_list` maps the
+local route names your `ANTHROPIC_DEFAULT_*_MODEL` variables point at to the
+backing local models. Example LiteLLM `config.yaml`:
 
 ```yaml
 model_list:
-  - model_name: claude-opus-5-5
+  - model_name: your-heavy-local-route    # ANTHROPIC_DEFAULT_OPUS_MODEL
     litellm_params:
-      model: anthropic/claude-opus-5-5
-      api_key: os.environ/ANTHROPIC_REAL_KEY
-  - model_name: local-mid        # whatever you put in litellm.models.sonnet
-    litellm_params:
-      model: openai/qwen3-coder
-      api_base: http://strix.local:8080/v1
+      model: openai/qwen3-235b-a22b
+      api_base: http://192.168.1.90:8080/v1
       api_key: "sk-local"
-  - model_name: local-small      # litellm.models.haiku
+  - model_name: your-standard-local-route  # ANTHROPIC_DEFAULT_SONNET_MODEL
     litellm_params:
-      model: openai/qwen3-small
-      api_base: http://strix.local:8080/v1
+      model: openai/glm-4.5-air
+      api_base: http://192.168.1.90:8080/v1
       api_key: "sk-local"
-  - model_name: local-big        # litellm.models.opus, used only by litellm-full
+  - model_name: your-light-local-route     # ANTHROPIC_DEFAULT_HAIKU_MODEL
     litellm_params:
-      model: openai/qwen3-max
-      api_base: http://strix.local:8080/v1
+      model: openai/qwen3.8-flash-next
+      api_base: http://192.168.1.90:8080/v1
       api_key: "sk-local"
 ```
 
-The hybrid profiles send their opus-tier agents to `claude-opus-5-5`, so the gateway needs that passthrough entry (and passthrough entries for any other Anthropic id you let through, such as the sonnet or haiku fallbacks). `litellm-full` needs no Anthropic entry at all.
+## Running it
 
-## Switching model family later
-
-Change the three route names in `litellm.models` and the matching `model_list` entries in litellm. No new profile and no plugin update.
-
-## Spike before you rely on it
-
-The open question is Claude Code's handling of ids it does not recognize. To check, with `litellm-adaptive` and a local map in place and Claude Code pointed at the gateway, run one `/bm:quick` whose executor is sonnet tier and confirm the request shows up in the litellm log and reaches the local box. If Claude Code rejects unknown ids, the fallbacks are: name your local routes with ids Claude Code accepts and rewrite them inside litellm, use Claude Code's own custom-provider configuration if your version has it, or drive the work through the `bm-sdk query` path. The plugin-side resolution is correct regardless of how this spike turns out.
+1. On the gateway's LAN, export the variables above (or source your provisioning
+   script) in a dedicated terminal.
+2. Start Claude Code from that terminal so it inherits the environment.
+3. Keep `.planning/config.json` on `adaptive` or `balanced` with no litellm block.
+4. Run a GSD task. Subagents spawn with tier aliases, Claude Code remaps each to a
+   local route, and requests land on the gateway.
