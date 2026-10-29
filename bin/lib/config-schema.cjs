@@ -84,8 +84,6 @@ const VALID_CONFIG_KEYS = new Set([
   'runtime',
   // #3162 — documented top-level key: controls model ID resolution for non-Claude runtimes
   'resolve_model_ids',
-  // litellm gateway: api_base is informational, models.<tier> are the local model ids
-  'litellm.api_base',
   // extra directories a symlinked global skill may resolve into (array of absolute paths, default empty)
   'agent_skills_security.trusted_global_roots',
 ]);
@@ -113,9 +111,6 @@ const DYNAMIC_KEY_PATTERNS = [
   // <runtime> is a free string (so users can map non-built-in runtimes); <tier> is enum-restricted.
   { topLevel: 'model_profile_overrides', test: (k) => /^model_profile_overrides\.[a-zA-Z0-9_-]+\.(fable|opus|sonnet|haiku)$/.test(k),
     description: 'model_profile_overrides.<runtime>.<fable|opus|sonnet|haiku>' },
-  // litellm.models.<tier>: local model id per tier for the litellm-* profiles
-  { topLevel: 'litellm', test: (k) => /^litellm\.models\.(opus|sonnet|haiku)$/.test(k),
-    description: 'litellm.models.<opus|sonnet|haiku>' },
   // #3023 — per-phase-type model map: models.<phase_type> = <tier>
   // Six named slots (planning/discuss/research/execution/verification/completion);
   // unknown phase-types are rejected. Per-agent model_overrides still take
