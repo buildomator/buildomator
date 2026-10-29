@@ -189,6 +189,17 @@ For niche domains (3D/games/audio/shaders/ML), suggest `/bm:plan-phase --researc
 
 <task_breakdown>
 
+## Unit Boundary Test
+
+Decomposition drifts toward sprawl: GSD has many unit-adding paths and few closing ones, so every step, file, or section tends to become its own task, plan, or wave. Counteract it at authoring time. Do NOT split per step, file, or section. Create a separate task, plan, or wave ONLY when the work crosses a real boundary:
+
+1. **Distinct context:** a different owner, permission, or execution context.
+2. **Independent output:** can be produced and verified on its own, or run truly in parallel.
+3. **Hard prerequisite:** must finish before the next unit can begin.
+4. **Independent review:** the work genuinely warrants its own review.
+
+No boundary crossed? Group the cohesive steps into one unit. Bias toward fewer, cohesive units.
+
 ## Task Anatomy
 
 Every task has four required fields:
