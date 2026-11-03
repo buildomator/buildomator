@@ -8551,10 +8551,10 @@ var frontmatterValidate = async (args, projectDir) => {
 
 // dist/query/config-mutation.js
 init_errors();
-import { readFile as readFile14, writeFile as writeFile4, mkdir, rename, unlink as unlink2 } from "node:fs/promises";
-import { existsSync as existsSync7 } from "node:fs";
+import { readFile as readFile16, writeFile as writeFile4, mkdir, rename, unlink as unlink2 } from "node:fs/promises";
+import { existsSync as existsSync9 } from "node:fs";
 import { homedir as homedir3 } from "node:os";
-import { join as join12 } from "node:path";
+import { join as join15 } from "node:path";
 
 // dist/query/config-schema.js
 var VALID_CONFIG_KEYS = /* @__PURE__ */ new Set([
@@ -8715,11 +8715,778 @@ init_helpers();
 
 // dist/query/state-mutation.js
 init_errors();
-import { open, unlink, stat, readFile as readFile13, writeFile as writeFile3, readdir as readdir6 } from "node:fs/promises";
-import { constants, unlinkSync as unlinkSync2, existsSync as existsSync6, mkdirSync as mkdirSync2, writeFileSync as writeFileSync2, readdirSync as readdirSync3, readFileSync as readFileSync5 } from "node:fs";
-import { isAbsolute as isAbsolute2, join as join11, relative as relative3, resolve as resolve2 } from "node:path";
+import { open, unlink, stat, readFile as readFile15, writeFile as writeFile3, readdir as readdir7 } from "node:fs/promises";
+import { constants, unlinkSync as unlinkSync2, existsSync as existsSync8, mkdirSync as mkdirSync3, writeFileSync as writeFileSync3, readdirSync as readdirSync3, readFileSync as readFileSync6 } from "node:fs";
+import { isAbsolute as isAbsolute5, join as join14, relative as relative3, resolve as resolve3 } from "node:path";
 init_helpers();
 init_state_document();
+
+// dist/query/reconcile.js
+import { existsSync as existsSync7, mkdirSync as mkdirSync2, readFileSync as readFileSync5, renameSync, writeFileSync as writeFileSync2 } from "node:fs";
+import { createHash } from "node:crypto";
+import { dirname as dirname2, isAbsolute as isAbsolute4, join as join13, resolve as resolve2 } from "node:path";
+
+// dist/query/check-decision-coverage.js
+import { readdir as readdir6, readFile as readFile14 } from "node:fs/promises";
+import { existsSync as existsSync6, statSync as statSync2 } from "node:fs";
+import { join as join12, isAbsolute as isAbsolute3 } from "node:path";
+import { execFile as execFileCb } from "node:child_process";
+import { promisify } from "node:util";
+
+// dist/query/decisions.js
+import { readFile as readFile13 } from "node:fs/promises";
+import { isAbsolute as isAbsolute2, join as join11 } from "node:path";
+var DISCRETION_HEADINGS = /* @__PURE__ */ new Set([
+  "claude's discretion",
+  "claudes discretion",
+  "claude discretion"
+]);
+var NON_TRACKABLE_TAGS = /* @__PURE__ */ new Set(["informational", "folded", "deferred"]);
+function stripFencedCode(content) {
+  return content.replace(/```[\s\S]*?```/g, " ").replace(/~~~[\s\S]*?~~~/g, " ");
+}
+function extractDecisionsBlock(content) {
+  const cleaned = stripFencedCode(content);
+  const matches = [...cleaned.matchAll(/<decisions>([\s\S]*?)<\/decisions>/g)];
+  if (matches.length === 0)
+    return null;
+  return matches.map((m3) => m3[1]).join("\n\n");
+}
+function parseDecisions(content) {
+  if (!content || typeof content !== "string")
+    return [];
+  const block = extractDecisionsBlock(content);
+  if (block === null)
+    return [];
+  const lines = block.split(/\r?\n/);
+  const out = [];
+  let category = "";
+  let inDiscretion = false;
+  const bulletRe = /^\s*-\s+\*\*D-(\d+)(?:\s*\[([^\]]+)\])?\s*:\*\*\s*(.*)$/;
+  let current = null;
+  const flush = () => {
+    if (current) {
+      current.text = current.text.trim();
+      out.push(current);
+      current = null;
+    }
+  };
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const headingMatch = trimmed.match(/^###\s+(.+?)\s*$/);
+    if (headingMatch) {
+      flush();
+      category = headingMatch[1];
+      const normalized = category.toLowerCase().replace(/[\u2018\u2019\u201A\u201B\u201C\u201D\u201E\u201F'"`]/g, "").trim();
+      inDiscretion = DISCRETION_HEADINGS.has(normalized);
+      continue;
+    }
+    const bulletMatch = line.match(bulletRe);
+    if (bulletMatch) {
+      flush();
+      const id = `D-${bulletMatch[1]}`;
+      const tags = bulletMatch[2] ? bulletMatch[2].split(",").map((t) => t.trim().toLowerCase()).filter(Boolean) : [];
+      const trackable = !inDiscretion && !tags.some((t) => NON_TRACKABLE_TAGS.has(t));
+      current = { id, text: bulletMatch[3], category, tags, trackable };
+      continue;
+    }
+    if (current && trimmed !== "" && !trimmed.startsWith("-") && /^[ \t]/.test(line)) {
+      current.text += " " + trimmed;
+      continue;
+    }
+    if (trimmed === "") {
+      flush();
+    }
+  }
+  flush();
+  return out;
+}
+var decisionsParse = async (args, projectDir) => {
+  const filePath = args[0];
+  if (!filePath) {
+    return { data: { decisions: [], trackable: 0, total: 0, missing: true } };
+  }
+  const resolved = isAbsolute2(filePath) ? filePath : join11(projectDir, filePath);
+  let raw = "";
+  try {
+    raw = await readFile13(resolved, "utf-8");
+  } catch {
+    return { data: { decisions: [], trackable: 0, total: 0, missing: true } };
+  }
+  const decisions = parseDecisions(raw);
+  const trackable = decisions.filter((d) => d.trackable);
+  return {
+    data: {
+      decisions,
+      trackable: trackable.length,
+      total: decisions.length,
+      missing: false
+    }
+  };
+};
+
+// dist/query/check-decision-coverage.js
+var execFile = promisify(execFileCb);
+function normalizePhrase(text) {
+  return text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+var SOFT_PHRASE_MIN_WORDS = 6;
+function softPhrase(text) {
+  const words = normalizePhrase(text).split(" ").filter(Boolean);
+  if (words.length < SOFT_PHRASE_MIN_WORDS)
+    return "";
+  return words.slice(0, SOFT_PHRASE_MIN_WORDS).join(" ");
+}
+function decisionMentioned(haystack, decision) {
+  if (!haystack)
+    return false;
+  const idRe = new RegExp(`\\b${decision.id}\\b`);
+  if (idRe.test(haystack))
+    return true;
+  const phrase = softPhrase(decision.text);
+  if (!phrase)
+    return false;
+  return normalizePhrase(haystack).includes(phrase);
+}
+async function readIfExists(path) {
+  try {
+    return await readFile14(path, "utf-8");
+  } catch {
+    return "";
+  }
+}
+async function loadPlanContents(phaseDir) {
+  if (!existsSync6(phaseDir))
+    return [];
+  let entries = [];
+  try {
+    entries = await readdir6(phaseDir);
+  } catch {
+    return [];
+  }
+  const planFiles = entries.filter((e3) => /-PLAN\.md$/.test(e3));
+  const out = [];
+  for (const f of planFiles) {
+    out.push(await readIfExists(join12(phaseDir, f)));
+  }
+  return out;
+}
+var DESIGNATED_HEADINGS_RE = /^#{1,6}\s+(?:must[_ ]haves?|truths?|tasks?|objective)\b/i;
+function stripCommentsAndFences(text) {
+  return text.replace(/<!--[\s\S]*?-->/g, " ").replace(/```[\s\S]*?```/g, " ").replace(/~~~[\s\S]*?~~~/g, " ");
+}
+function extractYamlBlock(frontmatter, key) {
+  const re = new RegExp(`^${key}\\s*:(.*)$`, "m");
+  const match = frontmatter.match(re);
+  if (!match)
+    return "";
+  const startIdx = (match.index ?? 0) + match[0].length;
+  const sameLine = match[1] ?? "";
+  const rest = frontmatter.slice(startIdx + 1).split(/\r?\n/);
+  const block = [sameLine];
+  for (const line of rest) {
+    if (line === "" || /^\s/.test(line)) {
+      block.push(line);
+    } else {
+      break;
+    }
+  }
+  return block.join("\n");
+}
+function extractPlanSections(planContent) {
+  if (!planContent)
+    return { designated: "" };
+  const cleaned = stripCommentsAndFences(planContent);
+  const fmMatch = cleaned.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  const frontmatter = fmMatch ? fmMatch[1] : "";
+  const body = fmMatch ? fmMatch[2] : cleaned;
+  const fmParts = [];
+  for (const key of ["must_haves", "truths", "objective"]) {
+    const block = extractYamlBlock(frontmatter, key);
+    if (block)
+      fmParts.push(block);
+  }
+  const bodyLines = body.split(/\r?\n/);
+  const bodyParts = [];
+  let inDesignated = false;
+  for (const line of bodyLines) {
+    const heading = /^#{1,6}\s+/.test(line);
+    if (heading) {
+      inDesignated = DESIGNATED_HEADINGS_RE.test(line);
+      if (inDesignated)
+        bodyParts.push(line);
+      continue;
+    }
+    if (inDesignated)
+      bodyParts.push(line);
+  }
+  return { designated: [...fmParts, bodyParts.join("\n")].join("\n\n") };
+}
+async function loadPlanSections(phaseDir) {
+  const contents = await loadPlanContents(phaseDir);
+  return contents.map(extractPlanSections);
+}
+function planSectionsMention(planSections, decision) {
+  for (const p of planSections) {
+    if (decisionMentioned(p.designated, decision))
+      return true;
+  }
+  return false;
+}
+async function loadGateConfig(projectDir, workstream) {
+  try {
+    const cfg = await loadConfig(projectDir, workstream);
+    const wf = cfg.workflow ?? {};
+    const v3 = wf.context_coverage_gate;
+    if (typeof v3 === "boolean")
+      return v3;
+    if (typeof v3 === "string") {
+      const lower = v3.toLowerCase();
+      if (lower === "false" || lower === "true")
+        return lower !== "false";
+      console.warn(`[gsd] workflow.context_coverage_gate is a string "${v3}" \u2014 expected boolean. Defaulting to ON.`);
+      return true;
+    }
+    if (v3 !== void 0 && v3 !== null) {
+      console.warn(`[gsd] workflow.context_coverage_gate has invalid type ${typeof v3} (value: ${JSON.stringify(v3)}); expected boolean. Defaulting to ON.`);
+    }
+    return true;
+  } catch {
+    return true;
+  }
+}
+function resolvePath(p, projectDir) {
+  return isAbsolute3(p) ? p : join12(projectDir, p);
+}
+function buildPlanMessage(uncovered) {
+  if (uncovered.length === 0)
+    return "All trackable CONTEXT.md decisions are covered by plans.";
+  const lines = [
+    `## \u26A0 Decision Coverage Gap`,
+    ``,
+    `${uncovered.length} CONTEXT.md decision(s) are not covered by any plan:`,
+    ``
+  ];
+  for (const u of uncovered) {
+    lines.push(`- **${u.id}** (${u.category || "uncategorized"}): ${u.text}`);
+  }
+  lines.push("");
+  lines.push("Resolve by citing `D-NN:` in a relevant plan's `must_haves`/`truths` (or body),");
+  lines.push("OR move the decision to `### Claude's Discretion` / tag it `[informational]` if it should not be tracked.");
+  return lines.join("\n");
+}
+function buildVerifyMessage(notHonored) {
+  if (notHonored.length === 0)
+    return "All trackable CONTEXT.md decisions are honored by shipped artifacts.";
+  const lines = [
+    `### Decision Coverage (warning)`,
+    ``,
+    `${notHonored.length} decision(s) not found in shipped artifacts:`,
+    ``
+  ];
+  for (const u of notHonored) {
+    lines.push(`- **${u.id}** (${u.category || "uncategorized"}): ${u.text}`);
+  }
+  lines.push("");
+  lines.push("This is a soft warning \u2014 verification status is unchanged.");
+  return lines.join("\n");
+}
+var checkDecisionCoveragePlan = async (args, projectDir, workstream) => {
+  const phaseDir = args[0] ? resolvePath(args[0], projectDir) : "";
+  const contextPath = args[1] ? resolvePath(args[1], projectDir) : "";
+  const enabled = await loadGateConfig(projectDir, workstream);
+  if (!enabled) {
+    const data2 = {
+      passed: true,
+      skipped: true,
+      reason: "workflow.context_coverage_gate is false",
+      total: 0,
+      covered: 0,
+      uncovered: [],
+      message: "Decision coverage gate disabled by config."
+    };
+    return { data: data2 };
+  }
+  if (!contextPath || !existsSync6(contextPath)) {
+    const data2 = {
+      passed: true,
+      skipped: true,
+      reason: "CONTEXT.md missing",
+      total: 0,
+      covered: 0,
+      uncovered: [],
+      message: "No CONTEXT.md \u2014 nothing to check."
+    };
+    return { data: data2 };
+  }
+  const contextRaw = await readIfExists(contextPath);
+  const decisions = parseDecisions(contextRaw).filter((d) => d.trackable);
+  if (decisions.length === 0) {
+    const data2 = {
+      passed: true,
+      skipped: true,
+      reason: "no trackable decisions",
+      total: 0,
+      covered: 0,
+      uncovered: [],
+      message: "No trackable decisions in CONTEXT.md."
+    };
+    return { data: data2 };
+  }
+  if (!phaseDir || !existsSync6(phaseDir) || !statSync2(phaseDir).isDirectory()) {
+    const data2 = {
+      passed: false,
+      skipped: false,
+      error: `phase directory not found: ${args[0] ?? ""}`,
+      reason: "phase directory not found",
+      total: decisions.length,
+      covered: 0,
+      uncovered: [],
+      message: `phase directory not found: ${args[0] ?? ""}`
+    };
+    return { data: data2 };
+  }
+  const planSections = await loadPlanSections(phaseDir);
+  const uncovered = [];
+  let covered = 0;
+  for (const d of decisions) {
+    if (planSectionsMention(planSections, d)) {
+      covered++;
+    } else {
+      uncovered.push({ id: d.id, text: d.text, category: d.category });
+    }
+  }
+  const passed = uncovered.length === 0;
+  const data = {
+    passed,
+    skipped: false,
+    total: decisions.length,
+    covered,
+    uncovered,
+    message: buildPlanMessage(uncovered)
+  };
+  return { data };
+};
+async function recentCommitMessages(projectDir, limit = 200) {
+  try {
+    const { stdout } = await execFile("git", ["log", `-n`, String(limit), "--pretty=%s%n%b"], {
+      cwd: projectDir,
+      maxBuffer: 4 * 1024 * 1024
+    });
+    return stdout;
+  } catch {
+    return "";
+  }
+}
+var MAX_MODIFIED_FILE_BYTES = 256 * 1024;
+async function readBoundedFile(absPath) {
+  try {
+    const raw = await readFile14(absPath, "utf-8");
+    return raw.length > MAX_MODIFIED_FILE_BYTES ? raw.slice(0, MAX_MODIFIED_FILE_BYTES) : raw;
+  } catch {
+    return "";
+  }
+}
+function isInsideRoot(candidatePath, rootDir) {
+  const root = isAbsolute3(rootDir) ? rootDir : join12(process.cwd(), rootDir);
+  const target = isAbsolute3(candidatePath) ? candidatePath : join12(root, candidatePath);
+  const normalizedRoot = root.endsWith("/") ? root : root + "/";
+  const normalizedTarget = target;
+  return normalizedTarget === root || normalizedTarget.startsWith(normalizedRoot);
+}
+async function readModifiedFilesContent(projectDir, summaries) {
+  const out = [];
+  let total = 0;
+  for (const summary of summaries) {
+    if (!summary)
+      continue;
+    const blockMatches = summary.matchAll(/files_modified:\s*\n((?:[ \t]*-\s+.+\n?)+)/g);
+    for (const blockMatch of blockMatches) {
+      const block = blockMatch[1] ?? "";
+      const files = [...block.matchAll(/-\s+(.+)/g)].map((m3) => m3[1].trim().replace(/^["']|["']$/g, ""));
+      for (const f of files) {
+        if (!f)
+          continue;
+        if (total >= 50)
+          break;
+        if (!isInsideRoot(f, projectDir)) {
+          console.warn(`[gsd] decision-coverage: skipping files_modified entry "${f}" \u2014 outside project root`);
+          continue;
+        }
+        out.push(await readBoundedFile(resolvePath(f, projectDir)));
+        total++;
+      }
+      if (total >= 50)
+        break;
+    }
+    if (total >= 50)
+      break;
+  }
+  return out.join("\n\n");
+}
+var checkDecisionCoverageVerify = async (args, projectDir, workstream) => {
+  const phaseDir = args[0] ? resolvePath(args[0], projectDir) : "";
+  const contextPath = args[1] ? resolvePath(args[1], projectDir) : "";
+  const enabled = await loadGateConfig(projectDir, workstream);
+  if (!enabled) {
+    const data2 = {
+      skipped: true,
+      blocking: false,
+      reason: "workflow.context_coverage_gate is false",
+      total: 0,
+      honored: 0,
+      not_honored: [],
+      message: "Decision coverage gate disabled by config."
+    };
+    return { data: data2 };
+  }
+  if (!contextPath || !existsSync6(contextPath)) {
+    const data2 = {
+      skipped: true,
+      blocking: false,
+      reason: "CONTEXT.md missing",
+      total: 0,
+      honored: 0,
+      not_honored: [],
+      message: "No CONTEXT.md \u2014 nothing to check."
+    };
+    return { data: data2 };
+  }
+  const contextRaw = await readIfExists(contextPath);
+  const decisions = parseDecisions(contextRaw).filter((d) => d.trackable);
+  if (decisions.length === 0) {
+    const data2 = {
+      skipped: true,
+      blocking: false,
+      reason: "no trackable decisions",
+      total: 0,
+      honored: 0,
+      not_honored: [],
+      message: "No trackable decisions in CONTEXT.md."
+    };
+    return { data: data2 };
+  }
+  const planContents = await loadPlanContents(phaseDir);
+  const summaryParts = [];
+  let summaryContent = "";
+  if (existsSync6(phaseDir)) {
+    try {
+      const entries = await readdir6(phaseDir);
+      for (const e3 of entries.filter((x) => /-SUMMARY\.md$/.test(x))) {
+        summaryParts.push(await readIfExists(join12(phaseDir, e3)));
+      }
+    } catch {
+    }
+  }
+  summaryContent = summaryParts.join("\n\n");
+  const filesModifiedContent = await readModifiedFilesContent(projectDir, summaryParts);
+  const commits = await recentCommitMessages(projectDir);
+  const haystack = [planContents.join("\n\n"), summaryContent, filesModifiedContent, commits].join("\n\n");
+  const notHonored = [];
+  let honored = 0;
+  for (const d of decisions) {
+    if (decisionMentioned(haystack, d)) {
+      honored++;
+    } else {
+      notHonored.push({ id: d.id, text: d.text, category: d.category });
+    }
+  }
+  const data = {
+    skipped: false,
+    blocking: false,
+    total: decisions.length,
+    honored,
+    not_honored: notHonored,
+    message: buildVerifyMessage(notHonored)
+  };
+  return { data };
+};
+
+// dist/query/reconcile.js
+var RECONCILE_OUTCOMES = ["reconciled-auto", "reconciled-asked", "dismissed"];
+var LEDGER_REL = join13(".planning", "reconcile-ledger.json");
+var PENDING_REL = join13(".planning", "reconcile-pending.json");
+var AUTO_REWRITABLE_FILES = ["CLAUDE.md", "PROJECT.md"];
+var MIN_SHARED_STEMS = 2;
+var MIN_OVERLAP_RATIO = 0.4;
+var STEM_LENGTH = 5;
+var MIN_WORD_LENGTH = 4;
+var STOPWORDS = /* @__PURE__ */ new Set([
+  "that",
+  "this",
+  "with",
+  "from",
+  "have",
+  "been",
+  "when",
+  "then",
+  "than",
+  "they",
+  "them",
+  "their",
+  "there",
+  "what",
+  "will",
+  "would",
+  "should",
+  "could",
+  "must",
+  "each",
+  "every",
+  "only",
+  "also",
+  "into",
+  "over",
+  "such",
+  "both",
+  "does",
+  "done",
+  "were",
+  "your",
+  "ours",
+  "itself",
+  "about",
+  "after",
+  "before",
+  "because",
+  "which",
+  "while",
+  "where",
+  "these",
+  "those",
+  "being",
+  "always",
+  "never"
+]);
+function contentHash(text) {
+  return createHash("sha256").update(normalizePhrase(text)).digest("hex").slice(0, 16);
+}
+function stems(text) {
+  const out = /* @__PURE__ */ new Set();
+  for (const w of normalizePhrase(text).split(" ")) {
+    if (w.length >= MIN_WORD_LENGTH && !STOPWORDS.has(w))
+      out.add(w.slice(0, STEM_LENGTH));
+  }
+  return out;
+}
+function parseDecisionLog(stateContent) {
+  const sectionPattern = /###?\s*(?:Decisions|Decisions Made|Accumulated.*Decisions)\s*\n([\s\S]*?)(?=\n###?|\n##[^#]|$)/i;
+  const match = stateContent.match(sectionPattern);
+  if (!match)
+    return [];
+  const seen = /* @__PURE__ */ new Set();
+  const out = [];
+  for (const line of match[1].split("\n")) {
+    const m3 = line.match(/^- \[Phase [^\]]*\]:\s*(.+?)\s*$/);
+    if (!m3)
+      continue;
+    const text = m3[1];
+    const hash = contentHash(text);
+    if (seen.has(hash))
+      continue;
+    seen.add(hash);
+    const sepIdx = text.indexOf(" \u2014 ");
+    const summary = sepIdx === -1 ? text : text.slice(0, sepIdx);
+    out.push({ hash, text, summary });
+  }
+  return out;
+}
+function isManagedLine(lines, idx) {
+  let start = 0;
+  for (let i3 = idx; i3 >= 0; i3--) {
+    if (/^#/.test(lines[i3])) {
+      start = i3;
+      break;
+    }
+  }
+  let end = lines.length;
+  for (let i3 = idx + 1; i3 < lines.length; i3++) {
+    if (/^#/.test(lines[i3])) {
+      end = i3;
+      break;
+    }
+  }
+  for (let i3 = start; i3 < end; i3++) {
+    if (/do not edit manually|auto-managed/i.test(lines[i3]))
+      return true;
+  }
+  return false;
+}
+function assessTargetDoc(path, content, line, projectDir) {
+  let rel = path;
+  if (isAbsolute4(path)) {
+    if (!projectDir || dirname2(path) !== resolve2(projectDir)) {
+      return { autoRewritable: false, surfaceReason: "not a repo-root rule doc" };
+    }
+    rel = path.slice(resolve2(projectDir).length + 1);
+  }
+  rel = rel.replace(/^\.\//, "");
+  if (!AUTO_REWRITABLE_FILES.includes(rel)) {
+    return { autoRewritable: false, surfaceReason: "not a repo-root CLAUDE.md or PROJECT.md" };
+  }
+  const lines = content.split("\n");
+  if (/^\s*@/.test(lines[line] ?? "")) {
+    return { autoRewritable: false, surfaceReason: "line is an @-include" };
+  }
+  if (isManagedLine(lines, line)) {
+    return { autoRewritable: false, surfaceReason: "inside an auto-managed do-not-edit block" };
+  }
+  return { autoRewritable: true, surfaceReason: null };
+}
+function readJson(path) {
+  try {
+    return JSON.parse(readFileSync5(path, "utf-8"));
+  } catch {
+    return null;
+  }
+}
+function writeJsonAtomic(path, value) {
+  mkdirSync2(dirname2(path), { recursive: true });
+  const tmp = `${path}.tmp-${process.pid}`;
+  writeFileSync2(tmp, JSON.stringify(value, null, 2) + "\n", "utf-8");
+  renameSync(tmp, path);
+}
+function isDisabled(cwd) {
+  const cfg = readJson(join13(cwd, ".planning", "config.json"));
+  return cfg?.workflow?.decision_reconciliation === false;
+}
+function readDecisions(cwd) {
+  for (const p of [join13(cwd, ".planning", "STATE.md"), join13(cwd, "STATE.md")]) {
+    if (existsSync7(p))
+      return parseDecisionLog(readFileSync5(p, "utf-8"));
+  }
+  return [];
+}
+function readLedger(cwd) {
+  const j = readJson(join13(cwd, LEDGER_REL));
+  return j && typeof j.entries === "object" && j.entries ? j : { version: 1, entries: {} };
+}
+function readPending(cwd) {
+  const j = readJson(join13(cwd, PENDING_REL));
+  return j && typeof j.entries === "object" && j.entries ? j : { version: 1, entries: {} };
+}
+var RULE_DOCS = ["CLAUDE.md", "PROJECT.md", join13(".planning", "PROJECT.md")];
+function findCandidates(cwd, decision) {
+  const want = stems(decision.summary);
+  const out = [];
+  if (want.size === 0)
+    return out;
+  for (const rel of RULE_DOCS) {
+    const full = join13(cwd, rel);
+    if (!existsSync7(full))
+      continue;
+    const content = readFileSync5(full, "utf-8");
+    const lines = content.split("\n");
+    for (let i3 = 0; i3 < lines.length; i3++) {
+      const trimmed = lines[i3].trim();
+      if (!trimmed || /^#/.test(trimmed) || /^```/.test(trimmed) || /^<!--/.test(trimmed))
+        continue;
+      const lineStems = stems(trimmed);
+      let shared = 0;
+      for (const s3 of lineStems)
+        if (want.has(s3))
+          shared++;
+      if (shared < MIN_SHARED_STEMS || shared / Math.min(want.size, lineStems.size) < MIN_OVERLAP_RATIO)
+        continue;
+      const verdict = assessTargetDoc(rel, content, i3, cwd);
+      out.push({
+        file: rel,
+        ruleText: trimmed.replace(/^[-*>]\s+/, ""),
+        autoRewritable: verdict.autoRewritable,
+        surfaceReason: verdict.surfaceReason
+      });
+    }
+  }
+  return out;
+}
+function pickDecision(decisions, args) {
+  if (args.includes("--latest"))
+    return decisions.length ? decisions[decisions.length - 1] : null;
+  const hash = args.find((a3) => !a3.startsWith("--"));
+  return hash ? decisions.find((d) => d.hash === hash) ?? null : null;
+}
+function describe(cwd, d, ledger) {
+  const candidates = findCandidates(cwd, d);
+  const recorded = ledger.entries[d.hash];
+  const ledgerOutcome = recorded ? recorded.outcome : null;
+  return {
+    decisionHash: d.hash,
+    decisionText: d.text,
+    candidates,
+    ledgerOutcome,
+    modelNeeded: candidates.length > 0 && ledgerOutcome === null
+  };
+}
+var RECONCILE_DIRECTIVE = "Read references/decision-reconciliation.md and apply its capture-time branch to each candidate: rewrite and commit a clear contradiction, write an ambiguous one to the pending record with reconcile pending. Never ask from this surface.";
+function reconcileDirectiveForLatest(cwd) {
+  if (isDisabled(cwd))
+    return null;
+  const decisions = readDecisions(cwd);
+  if (!decisions.length)
+    return null;
+  const d = decisions[decisions.length - 1];
+  const r3 = describe(cwd, d, readLedger(cwd));
+  if (!r3.modelNeeded)
+    return null;
+  return { candidates: r3.candidates, decisionHash: r3.decisionHash, directive: RECONCILE_DIRECTIVE };
+}
+var reconcileCandidates = async (args, projectDir) => {
+  if (isDisabled(projectDir)) {
+    return { data: { skipped: true, reason: "workflow.decision_reconciliation is false", candidates: [], modelNeeded: false } };
+  }
+  const d = pickDecision(readDecisions(projectDir), args);
+  if (!d) {
+    return { data: { decisionHash: null, decisionText: null, candidates: [], ledgerOutcome: null, modelNeeded: false, reason: "decision not found" } };
+  }
+  return { data: describe(projectDir, d, readLedger(projectDir)) };
+};
+var reconcileSweep = async (_args, projectDir) => {
+  if (isDisabled(projectDir)) {
+    return { data: { skipped: true, reason: "workflow.decision_reconciliation is false", decisions: [], count: 0 } };
+  }
+  const ledger = readLedger(projectDir);
+  const decisions = readDecisions(projectDir).filter((d) => !ledger.entries[d.hash]).map((d) => describe(projectDir, d, ledger));
+  return { data: { decisions, count: decisions.length } };
+};
+var reconcileRecord = async (args, projectDir) => {
+  const hash = args.find((a3) => !a3.startsWith("--"));
+  const oIdx = args.indexOf("--outcome");
+  const outcome = oIdx !== -1 ? args[oIdx + 1] : void 0;
+  if (!hash)
+    return { data: { error: "decision hash required" } };
+  if (!outcome || !RECONCILE_OUTCOMES.includes(outcome)) {
+    return { data: { error: `--outcome must be one of ${RECONCILE_OUTCOMES.join(", ")}` } };
+  }
+  const ledger = readLedger(projectDir);
+  const existing = ledger.entries[hash];
+  let changed = false;
+  if (!existing || existing.outcome !== outcome) {
+    ledger.entries[hash] = { outcome, at: (/* @__PURE__ */ new Date()).toISOString() };
+    writeJsonAtomic(join13(projectDir, LEDGER_REL), ledger);
+    changed = true;
+  }
+  const pending = readPending(projectDir);
+  const drained = Object.prototype.hasOwnProperty.call(pending.entries, hash);
+  if (drained) {
+    delete pending.entries[hash];
+    writeJsonAtomic(join13(projectDir, PENDING_REL), pending);
+  }
+  return { data: { recorded: true, hash, outcome, changed, drainedPending: drained } };
+};
+var reconcilePending = async (args, projectDir) => {
+  const d = pickDecision(readDecisions(projectDir), args);
+  if (!d)
+    return { data: { error: "decision not found" } };
+  const pending = readPending(projectDir);
+  pending.entries[d.hash] = {
+    decisionText: d.text,
+    candidates: findCandidates(projectDir, d).map((c) => ({ file: c.file, ruleText: c.ruleText }))
+  };
+  writeJsonAtomic(join13(projectDir, PENDING_REL), pending);
+  return { data: { pending: true, hash: d.hash, total: Object.keys(pending.entries).length } };
+};
+
+// dist/query/state-mutation.js
 var PROGRESS_FRONTMATTER_FIELDS = /* @__PURE__ */ new Set(["Progress", "Total Plans in Phase", "Total Phases"]);
 var _heldStateLocks = /* @__PURE__ */ new Set();
 process.on("exit", () => {
@@ -8761,21 +9528,21 @@ function readTextArgOrFile(projectDir, value, filePath, label) {
   if (!filePath) {
     return (value ?? "").trim();
   }
-  const root = resolve2(projectDir);
-  const resolved = isAbsolute2(filePath) ? resolve2(filePath) : resolve2(root, filePath);
+  const root = resolve3(projectDir);
+  const resolved = isAbsolute5(filePath) ? resolve3(filePath) : resolve3(root, filePath);
   const rel = relative3(root, resolved);
-  if (rel.startsWith("..") || isAbsolute2(rel)) {
+  if (rel.startsWith("..") || isAbsolute5(rel)) {
     throw new Error(`${label} path rejected: outside project directory`);
   }
   try {
-    return readFileSync5(resolved, "utf-8").trimEnd();
+    return readFileSync6(resolved, "utf-8").trimEnd();
   } catch {
     throw new Error(`${label} file not found: ${filePath}`);
   }
 }
 async function isLockProcessDead(lockPath) {
   try {
-    const raw = await readFile13(lockPath, "utf-8");
+    const raw = await readFile15(lockPath, "utf-8");
     const pid = parseInt(raw.trim(), 10);
     if (!Number.isFinite(pid) || pid <= 0)
       return true;
@@ -8858,7 +9625,7 @@ async function readModifyWriteStateMd(projectDir, modifier, workstream, options 
   try {
     let content;
     try {
-      content = await readFile13(statePath, "utf-8");
+      content = await readFile15(statePath, "utf-8");
     } catch {
       content = "";
     }
@@ -8895,7 +9662,7 @@ async function readModifyWriteStateMdFull(projectDir, modifier, workstream) {
   try {
     let content = "";
     try {
-      content = await readFile13(statePath, "utf-8");
+      content = await readFile15(statePath, "utf-8");
     } catch {
     }
     const modified = await modifier(content);
@@ -9000,13 +9767,13 @@ function firstUnfinishedPlanNumber(phaseDir) {
 }
 function resolvePhaseDir2(projectDir, phaseNumber, workstream) {
   const phasesDir = planningPaths(projectDir, workstream).phases;
-  if (!existsSync6(phasesDir))
+  if (!existsSync8(phasesDir))
     return null;
   const norm = String(phaseNumber).replace(/^0+/, "").padStart(2, "0");
   try {
     const entries = readdirSync3(phasesDir, { withFileTypes: true });
     const match = entries.find((e3) => e3.isDirectory() && e3.name.startsWith(norm));
-    return match ? join11(phasesDir, match.name) : null;
+    return match ? join14(phasesDir, match.name) : null;
   } catch {
     return null;
   }
@@ -9226,10 +9993,10 @@ var stateUpdateProgress = async (_args, projectDir, workstream) => {
   let totalSummaries = 0;
   try {
     const isDirInMilestone = await getMilestonePhaseFilter(projectDir, workstream);
-    const entries = await readdir6(phasesDir, { withFileTypes: true });
+    const entries = await readdir7(phasesDir, { withFileTypes: true });
     const phaseDirs = entries.filter((e3) => e3.isDirectory()).map((e3) => e3.name).filter(isDirInMilestone);
     for (const dir of phaseDirs) {
-      const files = await readdir6(join11(phasesDir, dir));
+      const files = await readdir7(join14(phasesDir, dir));
       totalPlans += files.filter((f) => /-PLAN\.md$/i.test(f)).length;
       totalSummaries += files.filter((f) => /-SUMMARY\.md$/i.test(f)).length;
     }
@@ -9292,7 +10059,8 @@ var stateAddDecision = async (args, projectDir, workstream) => {
     return content;
   }, workstream);
   if (added) {
-    return { data: { added: true, decision: entry } };
+    const reconcile = reconcileDirectiveForLatest(projectDir);
+    return { data: reconcile ? { added: true, decision: entry, reconcile } : { added: true, decision: entry } };
   }
   return { data: { added: false, reason: "Decisions section not found in STATE.md" } };
 };
@@ -9508,7 +10276,7 @@ var statePlannedPhase = async (args, projectDir, workstream) => {
   }
   const phaseLabel = String(phaseNumber).trim();
   const statePath = planningPaths(projectDir, workstream).state;
-  if (!existsSync6(statePath)) {
+  if (!existsSync8(statePath)) {
     return { data: { error: "STATE.md not found" } };
   }
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
@@ -9563,7 +10331,7 @@ var stateMilestoneSwitch = async (args, projectDir, workstream) => {
   try {
     let content = "";
     try {
-      content = await readFile13(statePath, "utf-8");
+      content = await readFile15(statePath, "utf-8");
     } catch {
     }
     const existingFm = extractFrontmatter2(content);
@@ -9649,8 +10417,8 @@ var stateSignalWaiting = async (args, projectDir, _workstream) => {
   const optionsRaw = parsed.options;
   const phase = parsed.phase || null;
   const waitingPaths = [
-    join11(projectDir, ".gsd", "WAITING.json"),
-    join11(projectDir, ".planning", "WAITING.json")
+    join14(projectDir, ".gsd", "WAITING.json"),
+    join14(projectDir, ".planning", "WAITING.json")
   ];
   const signal = {
     status: "waiting",
@@ -9662,10 +10430,10 @@ var stateSignalWaiting = async (args, projectDir, _workstream) => {
   };
   try {
     const payload = JSON.stringify(signal, null, 2);
-    mkdirSync2(join11(projectDir, ".gsd"), { recursive: true });
-    mkdirSync2(join11(projectDir, ".planning"), { recursive: true });
+    mkdirSync3(join14(projectDir, ".gsd"), { recursive: true });
+    mkdirSync3(join14(projectDir, ".planning"), { recursive: true });
     for (const p of waitingPaths) {
-      writeFileSync2(p, payload, "utf-8");
+      writeFileSync3(p, payload, "utf-8");
     }
     return { data: { signaled: true, path: waitingPaths[0], paths: waitingPaths } };
   } catch (e3) {
@@ -9675,12 +10443,12 @@ var stateSignalWaiting = async (args, projectDir, _workstream) => {
 };
 var stateSignalResume = async (_args, projectDir, _workstream) => {
   const paths = [
-    join11(projectDir, ".gsd", "WAITING.json"),
-    join11(projectDir, ".planning", "WAITING.json")
+    join14(projectDir, ".gsd", "WAITING.json"),
+    join14(projectDir, ".planning", "WAITING.json")
   ];
   let removed = false;
   for (const p of paths) {
-    if (existsSync6(p)) {
+    if (existsSync8(p)) {
       try {
         unlinkSync2(p);
         removed = true;
@@ -9693,10 +10461,10 @@ var stateSignalResume = async (_args, projectDir, _workstream) => {
 var stateValidate = async (_args, projectDir, workstream) => {
   const paths = planningPaths(projectDir, workstream);
   const statePath = paths.state;
-  if (!existsSync6(statePath)) {
+  if (!existsSync8(statePath)) {
     return { data: { error: "STATE.md not found" } };
   }
-  const content = await readFile13(statePath, "utf-8");
+  const content = await readFile15(statePath, "utf-8");
   const warnings = [];
   const drift = {};
   const status = stateExtractField(content, "Status") || "";
@@ -9704,13 +10472,13 @@ var stateValidate = async (_args, projectDir, workstream) => {
   const totalPlansRaw = stateExtractField(content, "Total Plans in Phase");
   const totalPlansInPhase = totalPlansRaw ? parseInt(totalPlansRaw, 10) : null;
   const phasesDir = paths.phases;
-  if (currentPhase && existsSync6(phasesDir)) {
+  if (currentPhase && existsSync8(phasesDir)) {
     const normalized = normalizePhaseName(currentPhase.replace(/\s+of\s+\d+.*/, "").trim());
     try {
       const entries = readdirSync3(phasesDir, { withFileTypes: true });
       const phaseDir = entries.find((e3) => e3.isDirectory() && phaseTokenMatches(e3.name, normalized));
       if (phaseDir) {
-        const phaseDirPath = join11(phasesDir, phaseDir.name);
+        const phaseDirPath = join14(phasesDir, phaseDir.name);
         const files = readdirSync3(phaseDirPath);
         const diskPlans = files.filter((f) => /-PLAN\.md$/i.test(f)).length;
         const diskSummaries = files.filter((f) => /-SUMMARY\.md$/i.test(f)).length;
@@ -9721,7 +10489,7 @@ var stateValidate = async (_args, projectDir, workstream) => {
         const verificationFiles = files.filter((f) => f.includes("VERIFICATION") && f.endsWith(".md"));
         for (const vf of verificationFiles) {
           try {
-            const vContent = readFileSync5(join11(phaseDirPath, vf), "utf-8");
+            const vContent = readFileSync6(join14(phaseDirPath, vf), "utf-8");
             if (/status:\s*passed/i.test(vContent) && /executing/i.test(status)) {
               warnings.push(`Status drift: STATE.md says "${status}" but ${vf} shows verification passed \u2014 phase may be complete`);
               drift.verification_status = { state_status: status, verification: "passed" };
@@ -9745,14 +10513,14 @@ var stateSync = async (args, projectDir, workstream) => {
   const verify = args.includes("--verify");
   const paths = planningPaths(projectDir, workstream);
   const statePath = paths.state;
-  if (!existsSync6(statePath)) {
+  if (!existsSync8(statePath)) {
     return { data: { error: "STATE.md not found" } };
   }
-  const content = await readFile13(statePath, "utf-8");
+  const content = await readFile15(statePath, "utf-8");
   const changes = [];
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const phasesDir = paths.phases;
-  if (!existsSync6(phasesDir)) {
+  if (!existsSync8(phasesDir)) {
     return { data: { synced: true, changes: [], dry_run: verify } };
   }
   let entries;
@@ -9766,7 +10534,7 @@ var stateSync = async (args, projectDir, workstream) => {
   let highestIncompletePhase = null;
   let highestIncompletePhaseplanCount = 0;
   for (const dir of entries) {
-    const dirPath = join11(phasesDir, dir);
+    const dirPath = join14(phasesDir, dir);
     const files = readdirSync3(dirPath);
     const plans = files.filter((f) => /-PLAN\.md$/i.test(f)).length;
     const summaries = files.filter((f) => /-SUMMARY\.md$/i.test(f)).length;
@@ -9927,10 +10695,10 @@ var statePrune = async (args, projectDir, workstream) => {
   const dryRun = parsed["dry-run"] === true;
   const paths = planningPaths(projectDir, workstream);
   const statePath = paths.state;
-  if (!existsSync6(statePath)) {
+  if (!existsSync8(statePath)) {
     return { data: { error: "STATE.md not found" } };
   }
-  const fullContent = await readFile13(statePath, "utf-8");
+  const fullContent = await readFile15(statePath, "utf-8");
   const fm = extractFrontmatter2(fullContent);
   const fmProgress = typeof fm.progress === "object" && fm.progress !== null ? fm.progress : null;
   const phaseCandidates = [
@@ -9989,13 +10757,13 @@ var statePrune = async (args, projectDir, workstream) => {
     archived.push(...result.archivedSections);
     return result.newContent;
   }, workstream);
-  const archivePath = join11(paths.planning, "STATE-ARCHIVE.md");
+  const archivePath = join14(paths.planning, "STATE-ARCHIVE.md");
   const totalPruned = archived.reduce((sum, s3) => sum + s3.count, 0);
   if (archived.length > 0) {
     const timestamp = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
     let archiveContent = "";
-    if (existsSync6(archivePath)) {
-      archiveContent = readFileSync5(archivePath, "utf-8");
+    if (existsSync8(archivePath)) {
+      archiveContent = readFileSync6(archivePath, "utf-8");
     } else {
       archiveContent = "# STATE Archive\n\nPruned entries from STATE.md. Recoverable but no longer loaded into agent context.\n\n";
     }
@@ -10009,7 +10777,7 @@ ${section.lines.join("\n")}
 
 `;
     }
-    writeFileSync2(archivePath, archiveContent, "utf-8");
+    writeFileSync3(archivePath, archiveContent, "utf-8");
   }
   return {
     data: {
@@ -10213,7 +10981,7 @@ var configSet = async (args, projectDir, workstream) => {
   try {
     let config = {};
     try {
-      const raw = await readFile14(paths.config, "utf-8");
+      const raw = await readFile16(paths.config, "utf-8");
       config = JSON.parse(raw);
     } catch {
     }
@@ -10248,7 +11016,7 @@ var configSetModelProfile = async (args, projectDir, workstream) => {
   try {
     let config = {};
     try {
-      const raw = await readFile14(paths.config, "utf-8");
+      const raw = await readFile16(paths.config, "utf-8");
       config = JSON.parse(raw);
     } catch {
     }
@@ -10271,7 +11039,7 @@ var configSetModelProfile = async (args, projectDir, workstream) => {
 };
 var configNewProject = async (args, projectDir, workstream) => {
   const paths = planningPaths(projectDir, workstream);
-  if (existsSync7(paths.config)) {
+  if (existsSync9(paths.config)) {
     return { data: { created: false, reason: "already_exists" } };
   }
   let userChoices = {};
@@ -10284,20 +11052,20 @@ var configNewProject = async (args, projectDir, workstream) => {
     }
   }
   const planningDir = paths.planning;
-  if (!existsSync7(planningDir)) {
+  if (!existsSync9(planningDir)) {
     await mkdir(planningDir, { recursive: true });
   }
   const homeDir = homedir3();
   let globalDefaults = {};
   try {
-    const defaultsPath = join12(homeDir, ".gsd", "defaults.json");
-    const defaultsRaw = await readFile14(defaultsPath, "utf-8");
+    const defaultsPath = join15(homeDir, ".gsd", "defaults.json");
+    const defaultsRaw = await readFile16(defaultsPath, "utf-8");
     globalDefaults = JSON.parse(defaultsRaw);
   } catch {
   }
-  const hasBraveSearch = !!(process.env.BRAVE_API_KEY || existsSync7(join12(homeDir, ".gsd", "brave_api_key")));
-  const hasFirecrawl = !!(process.env.FIRECRAWL_API_KEY || existsSync7(join12(homeDir, ".gsd", "firecrawl_api_key")));
-  const hasExaSearch = !!(process.env.EXA_API_KEY || existsSync7(join12(homeDir, ".gsd", "exa_api_key")));
+  const hasBraveSearch = !!(process.env.BRAVE_API_KEY || existsSync9(join15(homeDir, ".gsd", "brave_api_key")));
+  const hasFirecrawl = !!(process.env.FIRECRAWL_API_KEY || existsSync9(join15(homeDir, ".gsd", "firecrawl_api_key")));
+  const hasExaSearch = !!(process.env.EXA_API_KEY || existsSync9(join15(homeDir, ".gsd", "exa_api_key")));
   const defaults = {
     model_profile: "balanced",
     commit_docs: true,
@@ -10389,7 +11157,7 @@ var configEnsureSection = async (args, projectDir, workstream) => {
   const paths = planningPaths(projectDir, workstream);
   let config = {};
   try {
-    const raw = await readFile14(paths.config, "utf-8");
+    const raw = await readFile16(paths.config, "utf-8");
     config = JSON.parse(raw);
   } catch {
   }
@@ -10405,8 +11173,8 @@ init_commit();
 
 // dist/query/template.js
 init_errors();
-import { readdir as readdir7, writeFile as writeFile5 } from "node:fs/promises";
-import { join as join13, resolve as resolve3, relative as relative4 } from "node:path";
+import { readdir as readdir8, writeFile as writeFile5 } from "node:fs/promises";
+import { join as join16, resolve as resolve4, relative as relative4 } from "node:path";
 init_helpers();
 var templateSelect = async (args, projectDir, workstream) => {
   const phaseNum = args[0];
@@ -10417,10 +11185,10 @@ var templateSelect = async (args, projectDir, workstream) => {
   const normalized = normalizePhaseName(phaseNum);
   let phaseDir = null;
   try {
-    const entries = await readdir7(paths.phases);
+    const entries = await readdir8(paths.phases);
     for (const entry of entries) {
       if (phaseTokenMatches(entry, normalized)) {
-        phaseDir = join13(paths.phases, entry);
+        phaseDir = join16(paths.phases, entry);
         break;
       }
     }
@@ -10431,7 +11199,7 @@ var templateSelect = async (args, projectDir, workstream) => {
     return { data: { template: "plan" } };
   }
   try {
-    const files = await readdir7(phaseDir);
+    const files = await readdir8(phaseDir);
     const plans = files.filter((f) => f.match(/-PLAN\.md$/i));
     const summaries = files.filter((f) => f.match(/-SUMMARY\.md$/i));
     if (plans.length === 0) {
@@ -10458,7 +11226,7 @@ var templateFill = async (args, projectDir) => {
   if (!outputPath) {
     throw new GSDError("output path required", ErrorClassification.Validation);
   }
-  const resolvedOut = resolve3(projectDir, outputPath);
+  const resolvedOut = resolve4(projectDir, outputPath);
   const rel = relative4(projectDir, resolvedOut);
   if (rel.startsWith("..") || rel.includes("..")) {
     throw new GSDError(`Output path escapes project directory: ${outputPath}`, ErrorClassification.Validation);
@@ -10576,9 +11344,9 @@ var templateFill = async (args, projectDir) => {
 
 // dist/query/verify.js
 init_errors();
-import { readFile as readFile15, readdir as readdir8 } from "node:fs/promises";
-import { existsSync as existsSync8, readdirSync as readdirSync4, readFileSync as readFileSync6, statSync as statSync2 } from "node:fs";
-import { join as join14, isAbsolute as isAbsolute3 } from "node:path";
+import { readFile as readFile17, readdir as readdir9 } from "node:fs/promises";
+import { existsSync as existsSync10, readdirSync as readdirSync4, readFileSync as readFileSync7, statSync as statSync3 } from "node:fs";
+import { join as join17, isAbsolute as isAbsolute6 } from "node:path";
 init_helpers();
 var verifyPlanStructure = async (args, projectDir) => {
   const filePath = args[0];
@@ -10588,10 +11356,10 @@ var verifyPlanStructure = async (args, projectDir) => {
   if (filePath.includes("\0")) {
     throw new GSDError("file path contains null bytes", ErrorClassification.Validation);
   }
-  const fullPath = isAbsolute3(filePath) ? filePath : join14(projectDir, filePath);
+  const fullPath = isAbsolute6(filePath) ? filePath : join17(projectDir, filePath);
   let content;
   try {
-    content = await readFile15(fullPath, "utf-8");
+    content = await readFile17(fullPath, "utf-8");
   } catch {
     return { data: { error: "File not found", path: filePath } };
   }
@@ -10656,11 +11424,11 @@ var verifyPhaseCompleteness = async (args, projectDir, workstream) => {
   let phaseDir = null;
   let phaseNumber = normalized;
   try {
-    const entries = await readdir8(phasesDir, { withFileTypes: true });
+    const entries = await readdir9(phasesDir, { withFileTypes: true });
     const dirs = entries.filter((e3) => e3.isDirectory()).map((e3) => e3.name).sort();
     const match = dirs.find((d) => phaseTokenMatches(d, normalized));
     if (match) {
-      phaseDir = join14(phasesDir, match);
+      phaseDir = join17(phasesDir, match);
       const numMatch = match.match(/^(\d+[A-Z]?(?:\.\d+)*)/i);
       if (numMatch)
         phaseNumber = numMatch[1];
@@ -10674,7 +11442,7 @@ var verifyPhaseCompleteness = async (args, projectDir, workstream) => {
   const warnings = [];
   let files;
   try {
-    files = await readdir8(phaseDir);
+    files = await readdir9(phaseDir);
   } catch {
     return { data: { error: "Cannot read phase directory" } };
   }
@@ -10711,10 +11479,10 @@ var verifyArtifacts = async (args, projectDir) => {
   if (planFilePath.includes("\0")) {
     throw new GSDError("file path contains null bytes", ErrorClassification.Validation);
   }
-  const fullPath = isAbsolute3(planFilePath) ? planFilePath : join14(projectDir, planFilePath);
+  const fullPath = isAbsolute6(planFilePath) ? planFilePath : join17(projectDir, planFilePath);
   let content;
   try {
-    content = await readFile15(fullPath, "utf-8");
+    content = await readFile17(fullPath, "utf-8");
   } catch {
     return { data: { error: "File not found", path: planFilePath } };
   }
@@ -10730,11 +11498,11 @@ var verifyArtifacts = async (args, projectDir) => {
     const artPath = artObj.path;
     if (!artPath)
       continue;
-    const artFullPath = join14(projectDir, artPath);
+    const artFullPath = join17(projectDir, artPath);
     let exists = false;
     let fileContent = "";
     try {
-      fileContent = await readFile15(artFullPath, "utf-8");
+      fileContent = await readFile17(artFullPath, "utf-8");
       exists = true;
     } catch {
     }
@@ -10805,10 +11573,10 @@ var verifyReferences = async (args, projectDir) => {
   if (!filePath) {
     throw new GSDError("file path required", ErrorClassification.Validation);
   }
-  const fullPath = isAbsolute3(filePath) ? filePath : join14(projectDir, filePath);
+  const fullPath = isAbsolute6(filePath) ? filePath : join17(projectDir, filePath);
   let content;
   try {
-    content = await readFile15(fullPath, "utf-8");
+    content = await readFile17(fullPath, "utf-8");
   } catch {
     return { data: { error: "File not found", path: filePath } };
   }
@@ -10817,8 +11585,8 @@ var verifyReferences = async (args, projectDir) => {
   const atRefs = content.match(/@([^\s\n,)]+\/[^\s\n,)]+)/g) || [];
   for (const ref of atRefs) {
     const cleanRef = ref.slice(1);
-    const resolved = cleanRef.startsWith("~/") ? join14(process.env.HOME || "", cleanRef.slice(2)) : join14(projectDir, cleanRef);
-    if (existsSync8(resolved)) {
+    const resolved = cleanRef.startsWith("~/") ? join17(process.env.HOME || "", cleanRef.slice(2)) : join17(projectDir, cleanRef);
+    if (existsSync10(resolved)) {
       found.push(cleanRef);
     } else {
       missing.push(cleanRef);
@@ -10831,8 +11599,8 @@ var verifyReferences = async (args, projectDir) => {
       continue;
     if (found.includes(cleanRef) || missing.includes(cleanRef))
       continue;
-    const resolved = join14(projectDir, cleanRef);
-    if (existsSync8(resolved)) {
+    const resolved = join17(projectDir, cleanRef);
+    if (existsSync10(resolved)) {
       found.push(cleanRef);
     } else {
       missing.push(cleanRef);
@@ -10854,8 +11622,8 @@ var verifySummary = async (args, projectDir) => {
   }
   const checkCountIdx = args.indexOf("--check-count");
   const checkCount = checkCountIdx !== -1 ? parseInt(args[checkCountIdx + 1], 10) || 2 : 2;
-  const fullPath = join14(projectDir, summaryPath);
-  if (!existsSync8(fullPath)) {
+  const fullPath = join17(projectDir, summaryPath);
+  if (!existsSync10(fullPath)) {
     return {
       data: {
         passed: false,
@@ -10869,7 +11637,7 @@ var verifySummary = async (args, projectDir) => {
       }
     };
   }
-  const content = readFileSync6(fullPath, "utf-8");
+  const content = readFileSync7(fullPath, "utf-8");
   const errors = [];
   const mentionedFiles = /* @__PURE__ */ new Set();
   const patterns = [
@@ -10888,7 +11656,7 @@ var verifySummary = async (args, projectDir) => {
   const filesToCheck = Array.from(mentionedFiles).slice(0, checkCount);
   const missing = [];
   for (const file of filesToCheck) {
-    if (!existsSync8(join14(projectDir, file))) {
+    if (!existsSync10(join17(projectDir, file))) {
       missing.push(file);
     }
   }
@@ -10943,9 +11711,9 @@ var verifyPathExists = async (args, projectDir) => {
   if (targetPath.includes("\0")) {
     throw new GSDError("path contains null bytes", ErrorClassification.Validation);
   }
-  const fullPath = isAbsolute3(targetPath) ? targetPath : join14(projectDir, targetPath);
+  const fullPath = isAbsolute6(targetPath) ? targetPath : join17(projectDir, targetPath);
   try {
-    const stats = statSync2(fullPath);
+    const stats = statSync3(fullPath);
     const type = stats.isDirectory() ? "directory" : stats.isFile() ? "file" : "other";
     return { data: { exists: true, type } };
   } catch {
@@ -10961,7 +11729,7 @@ var verifySchemaDrift = async (args, projectDir, workstream) => {
   const { checkSchemaDrift: checkSchemaDrift2 } = await Promise.resolve().then(() => (init_schema_detect(), schema_detect_exports));
   const { execGit: execGit2 } = await Promise.resolve().then(() => (init_commit(), commit_exports));
   const phasesDir = planningPaths(projectDir, workstream).phases;
-  if (!existsSync8(phasesDir)) {
+  if (!existsSync10(phasesDir)) {
     return {
       data: {
         drift_detected: false,
@@ -10974,8 +11742,8 @@ var verifySchemaDrift = async (args, projectDir, workstream) => {
   const dirNames = readdirSync4(phasesDir, { withFileTypes: true }).filter((e3) => e3.isDirectory()).map((e3) => e3.name).sort((a3, b) => comparePhaseNum(a3, b));
   let phaseDirName = dirNames.find((d) => phaseTokenMatches(d, normalized)) ?? null;
   if (!phaseDirName && /^[\d.]+/.test(phaseArg)) {
-    const exact = join14(phasesDir, phaseArg);
-    if (existsSync8(exact))
+    const exact = join17(phasesDir, phaseArg);
+    if (existsSync10(exact))
       phaseDirName = phaseArg;
   }
   if (!phaseDirName) {
@@ -10987,7 +11755,7 @@ var verifySchemaDrift = async (args, projectDir, workstream) => {
       }
     };
   }
-  const phaseDir = join14(phasesDir, phaseDirName);
+  const phaseDir = join17(phasesDir, phaseDirName);
   function filesModifiedFromFrontmatter(fm) {
     const v3 = fm.files_modified;
     if (Array.isArray(v3))
@@ -11001,14 +11769,14 @@ var verifySchemaDrift = async (args, projectDir, workstream) => {
   const allFiles = [];
   const planFiles = readdirSync4(phaseDir).filter((f) => f.endsWith("-PLAN.md") || f === "PLAN.md");
   for (const pf of planFiles) {
-    const content = readFileSync6(join14(phaseDir, pf), "utf-8");
+    const content = readFileSync7(join17(phaseDir, pf), "utf-8");
     const fm = extractFrontmatter2(content);
     allFiles.push(...filesModifiedFromFrontmatter(fm));
   }
   let executionLog = "";
   const summaryFiles = readdirSync4(phaseDir).filter((f) => f.endsWith("-SUMMARY.md"));
   for (const sf of summaryFiles) {
-    executionLog += readFileSync6(join14(phaseDir, sf), "utf-8") + "\n";
+    executionLog += readFileSync7(join17(phaseDir, sf), "utf-8") + "\n";
   }
   const gitLog = execGit2(projectDir, ["log", "--oneline", "--all", "-50"]);
   if (gitLog.exitCode === 0) {
@@ -11096,756 +11864,6 @@ var verifyDrift = async (args, projectDir) => {
   } catch (err) {
     return { data: { skipped: true, reason: "sdk-exception: " + (err instanceof Error ? err.message : String(err)) } };
   }
-};
-
-// dist/query/decisions.js
-import { readFile as readFile16 } from "node:fs/promises";
-import { isAbsolute as isAbsolute4, join as join15 } from "node:path";
-var DISCRETION_HEADINGS = /* @__PURE__ */ new Set([
-  "claude's discretion",
-  "claudes discretion",
-  "claude discretion"
-]);
-var NON_TRACKABLE_TAGS = /* @__PURE__ */ new Set(["informational", "folded", "deferred"]);
-function stripFencedCode(content) {
-  return content.replace(/```[\s\S]*?```/g, " ").replace(/~~~[\s\S]*?~~~/g, " ");
-}
-function extractDecisionsBlock(content) {
-  const cleaned = stripFencedCode(content);
-  const matches = [...cleaned.matchAll(/<decisions>([\s\S]*?)<\/decisions>/g)];
-  if (matches.length === 0)
-    return null;
-  return matches.map((m3) => m3[1]).join("\n\n");
-}
-function parseDecisions(content) {
-  if (!content || typeof content !== "string")
-    return [];
-  const block = extractDecisionsBlock(content);
-  if (block === null)
-    return [];
-  const lines = block.split(/\r?\n/);
-  const out = [];
-  let category = "";
-  let inDiscretion = false;
-  const bulletRe = /^\s*-\s+\*\*D-(\d+)(?:\s*\[([^\]]+)\])?\s*:\*\*\s*(.*)$/;
-  let current = null;
-  const flush = () => {
-    if (current) {
-      current.text = current.text.trim();
-      out.push(current);
-      current = null;
-    }
-  };
-  for (const line of lines) {
-    const trimmed = line.trim();
-    const headingMatch = trimmed.match(/^###\s+(.+?)\s*$/);
-    if (headingMatch) {
-      flush();
-      category = headingMatch[1];
-      const normalized = category.toLowerCase().replace(/[\u2018\u2019\u201A\u201B\u201C\u201D\u201E\u201F'"`]/g, "").trim();
-      inDiscretion = DISCRETION_HEADINGS.has(normalized);
-      continue;
-    }
-    const bulletMatch = line.match(bulletRe);
-    if (bulletMatch) {
-      flush();
-      const id = `D-${bulletMatch[1]}`;
-      const tags = bulletMatch[2] ? bulletMatch[2].split(",").map((t) => t.trim().toLowerCase()).filter(Boolean) : [];
-      const trackable = !inDiscretion && !tags.some((t) => NON_TRACKABLE_TAGS.has(t));
-      current = { id, text: bulletMatch[3], category, tags, trackable };
-      continue;
-    }
-    if (current && trimmed !== "" && !trimmed.startsWith("-") && /^[ \t]/.test(line)) {
-      current.text += " " + trimmed;
-      continue;
-    }
-    if (trimmed === "") {
-      flush();
-    }
-  }
-  flush();
-  return out;
-}
-var decisionsParse = async (args, projectDir) => {
-  const filePath = args[0];
-  if (!filePath) {
-    return { data: { decisions: [], trackable: 0, total: 0, missing: true } };
-  }
-  const resolved = isAbsolute4(filePath) ? filePath : join15(projectDir, filePath);
-  let raw = "";
-  try {
-    raw = await readFile16(resolved, "utf-8");
-  } catch {
-    return { data: { decisions: [], trackable: 0, total: 0, missing: true } };
-  }
-  const decisions = parseDecisions(raw);
-  const trackable = decisions.filter((d) => d.trackable);
-  return {
-    data: {
-      decisions,
-      trackable: trackable.length,
-      total: decisions.length,
-      missing: false
-    }
-  };
-};
-
-// dist/query/reconcile.js
-import { existsSync as existsSync10, mkdirSync as mkdirSync3, readFileSync as readFileSync7, renameSync, writeFileSync as writeFileSync3 } from "node:fs";
-import { createHash } from "node:crypto";
-import { dirname as dirname2, isAbsolute as isAbsolute6, join as join17, resolve as resolve4 } from "node:path";
-
-// dist/query/check-decision-coverage.js
-import { readdir as readdir9, readFile as readFile17 } from "node:fs/promises";
-import { existsSync as existsSync9, statSync as statSync3 } from "node:fs";
-import { join as join16, isAbsolute as isAbsolute5 } from "node:path";
-import { execFile as execFileCb } from "node:child_process";
-import { promisify } from "node:util";
-var execFile = promisify(execFileCb);
-function normalizePhrase(text) {
-  return text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-}
-var SOFT_PHRASE_MIN_WORDS = 6;
-function softPhrase(text) {
-  const words = normalizePhrase(text).split(" ").filter(Boolean);
-  if (words.length < SOFT_PHRASE_MIN_WORDS)
-    return "";
-  return words.slice(0, SOFT_PHRASE_MIN_WORDS).join(" ");
-}
-function decisionMentioned(haystack, decision) {
-  if (!haystack)
-    return false;
-  const idRe = new RegExp(`\\b${decision.id}\\b`);
-  if (idRe.test(haystack))
-    return true;
-  const phrase = softPhrase(decision.text);
-  if (!phrase)
-    return false;
-  return normalizePhrase(haystack).includes(phrase);
-}
-async function readIfExists(path) {
-  try {
-    return await readFile17(path, "utf-8");
-  } catch {
-    return "";
-  }
-}
-async function loadPlanContents(phaseDir) {
-  if (!existsSync9(phaseDir))
-    return [];
-  let entries = [];
-  try {
-    entries = await readdir9(phaseDir);
-  } catch {
-    return [];
-  }
-  const planFiles = entries.filter((e3) => /-PLAN\.md$/.test(e3));
-  const out = [];
-  for (const f of planFiles) {
-    out.push(await readIfExists(join16(phaseDir, f)));
-  }
-  return out;
-}
-var DESIGNATED_HEADINGS_RE = /^#{1,6}\s+(?:must[_ ]haves?|truths?|tasks?|objective)\b/i;
-function stripCommentsAndFences(text) {
-  return text.replace(/<!--[\s\S]*?-->/g, " ").replace(/```[\s\S]*?```/g, " ").replace(/~~~[\s\S]*?~~~/g, " ");
-}
-function extractYamlBlock(frontmatter, key) {
-  const re = new RegExp(`^${key}\\s*:(.*)$`, "m");
-  const match = frontmatter.match(re);
-  if (!match)
-    return "";
-  const startIdx = (match.index ?? 0) + match[0].length;
-  const sameLine = match[1] ?? "";
-  const rest = frontmatter.slice(startIdx + 1).split(/\r?\n/);
-  const block = [sameLine];
-  for (const line of rest) {
-    if (line === "" || /^\s/.test(line)) {
-      block.push(line);
-    } else {
-      break;
-    }
-  }
-  return block.join("\n");
-}
-function extractPlanSections(planContent) {
-  if (!planContent)
-    return { designated: "" };
-  const cleaned = stripCommentsAndFences(planContent);
-  const fmMatch = cleaned.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
-  const frontmatter = fmMatch ? fmMatch[1] : "";
-  const body = fmMatch ? fmMatch[2] : cleaned;
-  const fmParts = [];
-  for (const key of ["must_haves", "truths", "objective"]) {
-    const block = extractYamlBlock(frontmatter, key);
-    if (block)
-      fmParts.push(block);
-  }
-  const bodyLines = body.split(/\r?\n/);
-  const bodyParts = [];
-  let inDesignated = false;
-  for (const line of bodyLines) {
-    const heading = /^#{1,6}\s+/.test(line);
-    if (heading) {
-      inDesignated = DESIGNATED_HEADINGS_RE.test(line);
-      if (inDesignated)
-        bodyParts.push(line);
-      continue;
-    }
-    if (inDesignated)
-      bodyParts.push(line);
-  }
-  return { designated: [...fmParts, bodyParts.join("\n")].join("\n\n") };
-}
-async function loadPlanSections(phaseDir) {
-  const contents = await loadPlanContents(phaseDir);
-  return contents.map(extractPlanSections);
-}
-function planSectionsMention(planSections, decision) {
-  for (const p of planSections) {
-    if (decisionMentioned(p.designated, decision))
-      return true;
-  }
-  return false;
-}
-async function loadGateConfig(projectDir, workstream) {
-  try {
-    const cfg = await loadConfig(projectDir, workstream);
-    const wf = cfg.workflow ?? {};
-    const v3 = wf.context_coverage_gate;
-    if (typeof v3 === "boolean")
-      return v3;
-    if (typeof v3 === "string") {
-      const lower = v3.toLowerCase();
-      if (lower === "false" || lower === "true")
-        return lower !== "false";
-      console.warn(`[gsd] workflow.context_coverage_gate is a string "${v3}" \u2014 expected boolean. Defaulting to ON.`);
-      return true;
-    }
-    if (v3 !== void 0 && v3 !== null) {
-      console.warn(`[gsd] workflow.context_coverage_gate has invalid type ${typeof v3} (value: ${JSON.stringify(v3)}); expected boolean. Defaulting to ON.`);
-    }
-    return true;
-  } catch {
-    return true;
-  }
-}
-function resolvePath(p, projectDir) {
-  return isAbsolute5(p) ? p : join16(projectDir, p);
-}
-function buildPlanMessage(uncovered) {
-  if (uncovered.length === 0)
-    return "All trackable CONTEXT.md decisions are covered by plans.";
-  const lines = [
-    `## \u26A0 Decision Coverage Gap`,
-    ``,
-    `${uncovered.length} CONTEXT.md decision(s) are not covered by any plan:`,
-    ``
-  ];
-  for (const u of uncovered) {
-    lines.push(`- **${u.id}** (${u.category || "uncategorized"}): ${u.text}`);
-  }
-  lines.push("");
-  lines.push("Resolve by citing `D-NN:` in a relevant plan's `must_haves`/`truths` (or body),");
-  lines.push("OR move the decision to `### Claude's Discretion` / tag it `[informational]` if it should not be tracked.");
-  return lines.join("\n");
-}
-function buildVerifyMessage(notHonored) {
-  if (notHonored.length === 0)
-    return "All trackable CONTEXT.md decisions are honored by shipped artifacts.";
-  const lines = [
-    `### Decision Coverage (warning)`,
-    ``,
-    `${notHonored.length} decision(s) not found in shipped artifacts:`,
-    ``
-  ];
-  for (const u of notHonored) {
-    lines.push(`- **${u.id}** (${u.category || "uncategorized"}): ${u.text}`);
-  }
-  lines.push("");
-  lines.push("This is a soft warning \u2014 verification status is unchanged.");
-  return lines.join("\n");
-}
-var checkDecisionCoveragePlan = async (args, projectDir, workstream) => {
-  const phaseDir = args[0] ? resolvePath(args[0], projectDir) : "";
-  const contextPath = args[1] ? resolvePath(args[1], projectDir) : "";
-  const enabled = await loadGateConfig(projectDir, workstream);
-  if (!enabled) {
-    const data2 = {
-      passed: true,
-      skipped: true,
-      reason: "workflow.context_coverage_gate is false",
-      total: 0,
-      covered: 0,
-      uncovered: [],
-      message: "Decision coverage gate disabled by config."
-    };
-    return { data: data2 };
-  }
-  if (!contextPath || !existsSync9(contextPath)) {
-    const data2 = {
-      passed: true,
-      skipped: true,
-      reason: "CONTEXT.md missing",
-      total: 0,
-      covered: 0,
-      uncovered: [],
-      message: "No CONTEXT.md \u2014 nothing to check."
-    };
-    return { data: data2 };
-  }
-  const contextRaw = await readIfExists(contextPath);
-  const decisions = parseDecisions(contextRaw).filter((d) => d.trackable);
-  if (decisions.length === 0) {
-    const data2 = {
-      passed: true,
-      skipped: true,
-      reason: "no trackable decisions",
-      total: 0,
-      covered: 0,
-      uncovered: [],
-      message: "No trackable decisions in CONTEXT.md."
-    };
-    return { data: data2 };
-  }
-  if (!phaseDir || !existsSync9(phaseDir) || !statSync3(phaseDir).isDirectory()) {
-    const data2 = {
-      passed: false,
-      skipped: false,
-      error: `phase directory not found: ${args[0] ?? ""}`,
-      reason: "phase directory not found",
-      total: decisions.length,
-      covered: 0,
-      uncovered: [],
-      message: `phase directory not found: ${args[0] ?? ""}`
-    };
-    return { data: data2 };
-  }
-  const planSections = await loadPlanSections(phaseDir);
-  const uncovered = [];
-  let covered = 0;
-  for (const d of decisions) {
-    if (planSectionsMention(planSections, d)) {
-      covered++;
-    } else {
-      uncovered.push({ id: d.id, text: d.text, category: d.category });
-    }
-  }
-  const passed = uncovered.length === 0;
-  const data = {
-    passed,
-    skipped: false,
-    total: decisions.length,
-    covered,
-    uncovered,
-    message: buildPlanMessage(uncovered)
-  };
-  return { data };
-};
-async function recentCommitMessages(projectDir, limit = 200) {
-  try {
-    const { stdout } = await execFile("git", ["log", `-n`, String(limit), "--pretty=%s%n%b"], {
-      cwd: projectDir,
-      maxBuffer: 4 * 1024 * 1024
-    });
-    return stdout;
-  } catch {
-    return "";
-  }
-}
-var MAX_MODIFIED_FILE_BYTES = 256 * 1024;
-async function readBoundedFile(absPath) {
-  try {
-    const raw = await readFile17(absPath, "utf-8");
-    return raw.length > MAX_MODIFIED_FILE_BYTES ? raw.slice(0, MAX_MODIFIED_FILE_BYTES) : raw;
-  } catch {
-    return "";
-  }
-}
-function isInsideRoot(candidatePath, rootDir) {
-  const root = isAbsolute5(rootDir) ? rootDir : join16(process.cwd(), rootDir);
-  const target = isAbsolute5(candidatePath) ? candidatePath : join16(root, candidatePath);
-  const normalizedRoot = root.endsWith("/") ? root : root + "/";
-  const normalizedTarget = target;
-  return normalizedTarget === root || normalizedTarget.startsWith(normalizedRoot);
-}
-async function readModifiedFilesContent(projectDir, summaries) {
-  const out = [];
-  let total = 0;
-  for (const summary of summaries) {
-    if (!summary)
-      continue;
-    const blockMatches = summary.matchAll(/files_modified:\s*\n((?:[ \t]*-\s+.+\n?)+)/g);
-    for (const blockMatch of blockMatches) {
-      const block = blockMatch[1] ?? "";
-      const files = [...block.matchAll(/-\s+(.+)/g)].map((m3) => m3[1].trim().replace(/^["']|["']$/g, ""));
-      for (const f of files) {
-        if (!f)
-          continue;
-        if (total >= 50)
-          break;
-        if (!isInsideRoot(f, projectDir)) {
-          console.warn(`[gsd] decision-coverage: skipping files_modified entry "${f}" \u2014 outside project root`);
-          continue;
-        }
-        out.push(await readBoundedFile(resolvePath(f, projectDir)));
-        total++;
-      }
-      if (total >= 50)
-        break;
-    }
-    if (total >= 50)
-      break;
-  }
-  return out.join("\n\n");
-}
-var checkDecisionCoverageVerify = async (args, projectDir, workstream) => {
-  const phaseDir = args[0] ? resolvePath(args[0], projectDir) : "";
-  const contextPath = args[1] ? resolvePath(args[1], projectDir) : "";
-  const enabled = await loadGateConfig(projectDir, workstream);
-  if (!enabled) {
-    const data2 = {
-      skipped: true,
-      blocking: false,
-      reason: "workflow.context_coverage_gate is false",
-      total: 0,
-      honored: 0,
-      not_honored: [],
-      message: "Decision coverage gate disabled by config."
-    };
-    return { data: data2 };
-  }
-  if (!contextPath || !existsSync9(contextPath)) {
-    const data2 = {
-      skipped: true,
-      blocking: false,
-      reason: "CONTEXT.md missing",
-      total: 0,
-      honored: 0,
-      not_honored: [],
-      message: "No CONTEXT.md \u2014 nothing to check."
-    };
-    return { data: data2 };
-  }
-  const contextRaw = await readIfExists(contextPath);
-  const decisions = parseDecisions(contextRaw).filter((d) => d.trackable);
-  if (decisions.length === 0) {
-    const data2 = {
-      skipped: true,
-      blocking: false,
-      reason: "no trackable decisions",
-      total: 0,
-      honored: 0,
-      not_honored: [],
-      message: "No trackable decisions in CONTEXT.md."
-    };
-    return { data: data2 };
-  }
-  const planContents = await loadPlanContents(phaseDir);
-  const summaryParts = [];
-  let summaryContent = "";
-  if (existsSync9(phaseDir)) {
-    try {
-      const entries = await readdir9(phaseDir);
-      for (const e3 of entries.filter((x) => /-SUMMARY\.md$/.test(x))) {
-        summaryParts.push(await readIfExists(join16(phaseDir, e3)));
-      }
-    } catch {
-    }
-  }
-  summaryContent = summaryParts.join("\n\n");
-  const filesModifiedContent = await readModifiedFilesContent(projectDir, summaryParts);
-  const commits = await recentCommitMessages(projectDir);
-  const haystack = [planContents.join("\n\n"), summaryContent, filesModifiedContent, commits].join("\n\n");
-  const notHonored = [];
-  let honored = 0;
-  for (const d of decisions) {
-    if (decisionMentioned(haystack, d)) {
-      honored++;
-    } else {
-      notHonored.push({ id: d.id, text: d.text, category: d.category });
-    }
-  }
-  const data = {
-    skipped: false,
-    blocking: false,
-    total: decisions.length,
-    honored,
-    not_honored: notHonored,
-    message: buildVerifyMessage(notHonored)
-  };
-  return { data };
-};
-
-// dist/query/reconcile.js
-var RECONCILE_OUTCOMES = ["reconciled-auto", "reconciled-asked", "dismissed"];
-var LEDGER_REL = join17(".planning", "reconcile-ledger.json");
-var PENDING_REL = join17(".planning", "reconcile-pending.json");
-var AUTO_REWRITABLE_FILES = ["CLAUDE.md", "PROJECT.md"];
-var MIN_SHARED_STEMS = 2;
-var MIN_OVERLAP_RATIO = 0.4;
-var STEM_LENGTH = 5;
-var MIN_WORD_LENGTH = 4;
-var STOPWORDS = /* @__PURE__ */ new Set([
-  "that",
-  "this",
-  "with",
-  "from",
-  "have",
-  "been",
-  "when",
-  "then",
-  "than",
-  "they",
-  "them",
-  "their",
-  "there",
-  "what",
-  "will",
-  "would",
-  "should",
-  "could",
-  "must",
-  "each",
-  "every",
-  "only",
-  "also",
-  "into",
-  "over",
-  "such",
-  "both",
-  "does",
-  "done",
-  "were",
-  "your",
-  "ours",
-  "itself",
-  "about",
-  "after",
-  "before",
-  "because",
-  "which",
-  "while",
-  "where",
-  "these",
-  "those",
-  "being",
-  "always",
-  "never"
-]);
-function contentHash(text) {
-  return createHash("sha256").update(normalizePhrase(text)).digest("hex").slice(0, 16);
-}
-function stems(text) {
-  const out = /* @__PURE__ */ new Set();
-  for (const w of normalizePhrase(text).split(" ")) {
-    if (w.length >= MIN_WORD_LENGTH && !STOPWORDS.has(w))
-      out.add(w.slice(0, STEM_LENGTH));
-  }
-  return out;
-}
-function parseDecisionLog(stateContent) {
-  const sectionPattern = /###?\s*(?:Decisions|Decisions Made|Accumulated.*Decisions)\s*\n([\s\S]*?)(?=\n###?|\n##[^#]|$)/i;
-  const match = stateContent.match(sectionPattern);
-  if (!match)
-    return [];
-  const seen = /* @__PURE__ */ new Set();
-  const out = [];
-  for (const line of match[1].split("\n")) {
-    const m3 = line.match(/^- \[Phase [^\]]*\]:\s*(.+?)\s*$/);
-    if (!m3)
-      continue;
-    const text = m3[1];
-    const hash = contentHash(text);
-    if (seen.has(hash))
-      continue;
-    seen.add(hash);
-    const sepIdx = text.indexOf(" \u2014 ");
-    const summary = sepIdx === -1 ? text : text.slice(0, sepIdx);
-    out.push({ hash, text, summary });
-  }
-  return out;
-}
-function isManagedLine(lines, idx) {
-  let start = 0;
-  for (let i3 = idx; i3 >= 0; i3--) {
-    if (/^#/.test(lines[i3])) {
-      start = i3;
-      break;
-    }
-  }
-  let end = lines.length;
-  for (let i3 = idx + 1; i3 < lines.length; i3++) {
-    if (/^#/.test(lines[i3])) {
-      end = i3;
-      break;
-    }
-  }
-  for (let i3 = start; i3 < end; i3++) {
-    if (/do not edit manually|auto-managed/i.test(lines[i3]))
-      return true;
-  }
-  return false;
-}
-function assessTargetDoc(path, content, line, projectDir) {
-  let rel = path;
-  if (isAbsolute6(path)) {
-    if (!projectDir || dirname2(path) !== resolve4(projectDir)) {
-      return { autoRewritable: false, surfaceReason: "not a repo-root rule doc" };
-    }
-    rel = path.slice(resolve4(projectDir).length + 1);
-  }
-  rel = rel.replace(/^\.\//, "");
-  if (!AUTO_REWRITABLE_FILES.includes(rel)) {
-    return { autoRewritable: false, surfaceReason: "not a repo-root CLAUDE.md or PROJECT.md" };
-  }
-  const lines = content.split("\n");
-  if (/^\s*@/.test(lines[line] ?? "")) {
-    return { autoRewritable: false, surfaceReason: "line is an @-include" };
-  }
-  if (isManagedLine(lines, line)) {
-    return { autoRewritable: false, surfaceReason: "inside an auto-managed do-not-edit block" };
-  }
-  return { autoRewritable: true, surfaceReason: null };
-}
-function readJson(path) {
-  try {
-    return JSON.parse(readFileSync7(path, "utf-8"));
-  } catch {
-    return null;
-  }
-}
-function writeJsonAtomic(path, value) {
-  mkdirSync3(dirname2(path), { recursive: true });
-  const tmp = `${path}.tmp-${process.pid}`;
-  writeFileSync3(tmp, JSON.stringify(value, null, 2) + "\n", "utf-8");
-  renameSync(tmp, path);
-}
-function isDisabled(cwd) {
-  const cfg = readJson(join17(cwd, ".planning", "config.json"));
-  return cfg?.workflow?.decision_reconciliation === false;
-}
-function readDecisions(cwd) {
-  for (const p of [join17(cwd, ".planning", "STATE.md"), join17(cwd, "STATE.md")]) {
-    if (existsSync10(p))
-      return parseDecisionLog(readFileSync7(p, "utf-8"));
-  }
-  return [];
-}
-function readLedger(cwd) {
-  const j = readJson(join17(cwd, LEDGER_REL));
-  return j && typeof j.entries === "object" && j.entries ? j : { version: 1, entries: {} };
-}
-function readPending(cwd) {
-  const j = readJson(join17(cwd, PENDING_REL));
-  return j && typeof j.entries === "object" && j.entries ? j : { version: 1, entries: {} };
-}
-var RULE_DOCS = ["CLAUDE.md", "PROJECT.md", join17(".planning", "PROJECT.md")];
-function findCandidates(cwd, decision) {
-  const want = stems(decision.summary);
-  const out = [];
-  if (want.size === 0)
-    return out;
-  for (const rel of RULE_DOCS) {
-    const full = join17(cwd, rel);
-    if (!existsSync10(full))
-      continue;
-    const content = readFileSync7(full, "utf-8");
-    const lines = content.split("\n");
-    for (let i3 = 0; i3 < lines.length; i3++) {
-      const trimmed = lines[i3].trim();
-      if (!trimmed || /^#/.test(trimmed) || /^```/.test(trimmed) || /^<!--/.test(trimmed))
-        continue;
-      const lineStems = stems(trimmed);
-      let shared = 0;
-      for (const s3 of lineStems)
-        if (want.has(s3))
-          shared++;
-      if (shared < MIN_SHARED_STEMS || shared / Math.min(want.size, lineStems.size) < MIN_OVERLAP_RATIO)
-        continue;
-      const verdict = assessTargetDoc(rel, content, i3, cwd);
-      out.push({
-        file: rel,
-        ruleText: trimmed.replace(/^[-*>]\s+/, ""),
-        autoRewritable: verdict.autoRewritable,
-        surfaceReason: verdict.surfaceReason
-      });
-    }
-  }
-  return out;
-}
-function pickDecision(decisions, args) {
-  if (args.includes("--latest"))
-    return decisions.length ? decisions[decisions.length - 1] : null;
-  const hash = args.find((a3) => !a3.startsWith("--"));
-  return hash ? decisions.find((d) => d.hash === hash) ?? null : null;
-}
-function describe(cwd, d, ledger) {
-  const candidates = findCandidates(cwd, d);
-  const recorded = ledger.entries[d.hash];
-  const ledgerOutcome = recorded ? recorded.outcome : null;
-  return {
-    decisionHash: d.hash,
-    decisionText: d.text,
-    candidates,
-    ledgerOutcome,
-    modelNeeded: candidates.length > 0 && ledgerOutcome === null
-  };
-}
-var reconcileCandidates = async (args, projectDir) => {
-  if (isDisabled(projectDir)) {
-    return { data: { skipped: true, reason: "workflow.decision_reconciliation is false", candidates: [], modelNeeded: false } };
-  }
-  const d = pickDecision(readDecisions(projectDir), args);
-  if (!d) {
-    return { data: { decisionHash: null, decisionText: null, candidates: [], ledgerOutcome: null, modelNeeded: false, reason: "decision not found" } };
-  }
-  return { data: describe(projectDir, d, readLedger(projectDir)) };
-};
-var reconcileSweep = async (_args, projectDir) => {
-  if (isDisabled(projectDir)) {
-    return { data: { skipped: true, reason: "workflow.decision_reconciliation is false", decisions: [], count: 0 } };
-  }
-  const ledger = readLedger(projectDir);
-  const decisions = readDecisions(projectDir).filter((d) => !ledger.entries[d.hash]).map((d) => describe(projectDir, d, ledger));
-  return { data: { decisions, count: decisions.length } };
-};
-var reconcileRecord = async (args, projectDir) => {
-  const hash = args.find((a3) => !a3.startsWith("--"));
-  const oIdx = args.indexOf("--outcome");
-  const outcome = oIdx !== -1 ? args[oIdx + 1] : void 0;
-  if (!hash)
-    return { data: { error: "decision hash required" } };
-  if (!outcome || !RECONCILE_OUTCOMES.includes(outcome)) {
-    return { data: { error: `--outcome must be one of ${RECONCILE_OUTCOMES.join(", ")}` } };
-  }
-  const ledger = readLedger(projectDir);
-  const existing = ledger.entries[hash];
-  let changed = false;
-  if (!existing || existing.outcome !== outcome) {
-    ledger.entries[hash] = { outcome, at: (/* @__PURE__ */ new Date()).toISOString() };
-    writeJsonAtomic(join17(projectDir, LEDGER_REL), ledger);
-    changed = true;
-  }
-  const pending = readPending(projectDir);
-  const drained = Object.prototype.hasOwnProperty.call(pending.entries, hash);
-  if (drained) {
-    delete pending.entries[hash];
-    writeJsonAtomic(join17(projectDir, PENDING_REL), pending);
-  }
-  return { data: { recorded: true, hash, outcome, changed, drainedPending: drained } };
-};
-var reconcilePending = async (args, projectDir) => {
-  const d = pickDecision(readDecisions(projectDir), args);
-  if (!d)
-    return { data: { error: "decision not found" } };
-  const pending = readPending(projectDir);
-  pending.entries[d.hash] = {
-    decisionText: d.text,
-    candidates: findCandidates(projectDir, d).map((c) => ({ file: c.file, ruleText: c.ruleText }))
-  };
-  writeJsonAtomic(join17(projectDir, PENDING_REL), pending);
-  return { data: { pending: true, hash: d.hash, total: Object.keys(pending.entries).length } };
 };
 
 // dist/query/commands-list.js

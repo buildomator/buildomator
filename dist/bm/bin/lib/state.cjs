@@ -510,6 +510,8 @@ function cmdStateAddDecision(cwd, options, raw) {
   // Auto-create fallback guarantees added === true; no else branch needed.
   const result = { added: true, decision: entry };
   if (created) result.created = true;
+  const reconcile = require('./reconcile.cjs').reconcileDirectiveForLatest(cwd);
+  if (reconcile) result.reconcile = reconcile;
   output(result, raw, 'true');
 }
 

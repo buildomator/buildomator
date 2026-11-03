@@ -38,6 +38,13 @@ export declare function assessTargetDoc(path: string, content: string, line: num
     autoRewritable: boolean;
     surfaceReason: string | null;
 };
+export declare const RECONCILE_DIRECTIVE = "Read references/decision-reconciliation.md and apply its capture-time branch to each candidate: rewrite and commit a clear contradiction, write an ambiguous one to the pending record with reconcile pending. Never ask from this surface.";
+/** Directive for the most recently logged decision, or null when nothing needs judging. */
+export declare function reconcileDirectiveForLatest(cwd: string): {
+    candidates: Candidate[];
+    decisionHash: string;
+    directive: string;
+} | null;
 export declare const reconcileCandidates: QueryHandler;
 export declare const reconcileSweep: QueryHandler;
 export declare const reconcileRecord: QueryHandler;

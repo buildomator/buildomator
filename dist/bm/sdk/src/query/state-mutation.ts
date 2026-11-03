@@ -49,6 +49,7 @@ import {
   isStateTemplateDefault,
 } from './state-document.js';
 import type { QueryHandler } from './utils.js';
+import { reconcileDirectiveForLatest } from './reconcile.js';
 
 const PROGRESS_FRONTMATTER_FIELDS = new Set(['Progress', 'Total Plans in Phase', 'Total Phases']);
 
@@ -884,7 +885,8 @@ export const stateAddDecision: QueryHandler = async (args, projectDir, workstrea
   }, workstream);
 
   if (added) {
-    return { data: { added: true, decision: entry } };
+    const reconcile = reconcileDirectiveForLatest(projectDir);
+    return { data: reconcile ? { added: true, decision: entry, reconcile } : { added: true, decision: entry } };
   }
   return { data: { added: false, reason: 'Decisions section not found in STATE.md' } };
 };

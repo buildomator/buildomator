@@ -194,6 +194,20 @@ function describeDecision(cwd, d, ledger) {
   };
 }
 
+const RECONCILE_DIRECTIVE =
+  'Read references/decision-reconciliation.md and apply its capture-time branch to each candidate: rewrite and commit a clear contradiction, write an ambiguous one to the pending record with reconcile pending. Never ask from this surface.';
+
+// Directive for the most recently logged decision, or null when nothing needs judging.
+function reconcileDirectiveForLatest(cwd) {
+  if (isDisabled(cwd)) return null;
+  const decisions = readDecisions(cwd);
+  if (!decisions.length) return null;
+  const d = decisions[decisions.length - 1];
+  const r = describeDecision(cwd, d, readLedger(cwd));
+  if (!r.modelNeeded) return null;
+  return { candidates: r.candidates, decisionHash: r.decisionHash, directive: RECONCILE_DIRECTIVE };
+}
+
 function reconcileCandidates(cwd, args) {
   if (isDisabled(cwd)) {
     return { skipped: true, reason: 'workflow.decision_reconciliation is false', candidates: [], modelNeeded: false };
@@ -279,4 +293,6 @@ module.exports = {
   reconcileRecord,
   reconcilePending,
   cmdReconcile,
+  reconcileDirectiveForLatest,
+  RECONCILE_DIRECTIVE,
 };
