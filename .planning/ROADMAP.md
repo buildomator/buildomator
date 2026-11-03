@@ -187,12 +187,12 @@ session start) instead of silently keeping both.
 4. With no candidate rule on topic, no model call is made; the content-hash ledger stops a resolved or dismissed conflict from being raised again.
 5. Logic lands in both the CJS and SDK twins, `dist/bm` is regenerated, and `build-bm --check` reports PASS on a clean tree.
 
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 19-01-PLAN.md -- Core reconcile engine (decision-log reader, candidate retrieval, content-hash ledger, target-doc safety gate) in both twins, plus the agent-procedure reference and golden fixtures
+- [x] 19-01-PLAN.md -- Core reconcile engine (decision-log reader, candidate retrieval, content-hash ledger, target-doc safety gate) in both twins, plus the agent-procedure reference and golden fixtures
 
 **Wave 2** *(blocked on 19-01)*
 
