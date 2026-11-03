@@ -187,7 +187,7 @@ session start) instead of silently keeping both.
 4. With no candidate rule on topic, no model call is made; the content-hash ledger stops a resolved or dismissed conflict from being raised again.
 5. Logic lands in both the CJS and SDK twins, `dist/bm` is regenerated, and `build-bm --check` reports PASS on a clean tree.
 
-**Plans:** 1/4 plans executed
+**Plans:** 2/4 plans executed
 
 Plans:
 **Wave 1**
@@ -196,7 +196,7 @@ Plans:
 
 **Wave 2** *(blocked on 19-01)*
 
-- [ ] 19-02-PLAN.md -- Capture-time firing: add-decision attaches a reconcile directive, execute-plan applies clear-rewrite-or-ask
+- [x] 19-02-PLAN.md -- Capture-time firing: add-decision attaches a reconcile directive, execute-plan applies clear-rewrite-or-ask
 - [ ] 19-03-PLAN.md -- Session-start firing: sweep hook writes a pending-conflict record and systemMessage, plus the on-demand reconcile skill
 
 **Wave 3** *(blocked on 19-02 + 19-03)*
