@@ -240,6 +240,30 @@ jobs:
       - name: Verify all version sites agree (BUILD-02)
         run: node bin/maintenance/check-version-alignment.cjs
 
+  reconcile-guard:
+    name: Decision reconcile engine, twin parity, bm drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install sdk deps and build sdk/dist
+        run: |
+          npm --prefix sdk ci || npm --prefix sdk install
+          npm --prefix sdk run build
+      - name: Run reconcile SDK unit tests
+        run: |
+          cd sdk
+          npx vitest run reconcile
+          npx vitest run state-mutation.reconcile
+      - name: Run reconcile CJS/SDK parity test
+        run: node tests/reconcile-sdk-parity.test.cjs
+      - name: Run reconcile capture-time parity test
+        run: node tests/reconcile-capture-parity.test.cjs
+      - name: Fail on any drift between the committed dist/bm and a fresh build
+        run: node bin/build-bm.cjs --check
+
   bm-coexistence:
     name: gsd + bm coexistence gates (COMPAT-01..04)
     # Gates the four coexistence tests so a regression in single-fire election,
