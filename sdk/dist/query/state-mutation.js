@@ -27,6 +27,7 @@ import { comparePhaseNum, normalizePhaseName, phaseTokenMatches, planningPaths, 
 import { buildStateFrontmatter, getMilestonePhaseFilter } from './state.js';
 import { scanPhasePlans, planSummaryBaseId, summaryFileIsComplete, resolveSummaryPath, } from './plan-scan.js';
 import { stateExtractField, stateReplaceField, stateReplaceFieldIfTemplate, stateReplaceFieldIfTemplateWithFallback, isStateTemplateDefault, } from './state-document.js';
+import { reconcileDirectiveForLatest } from './reconcile.js';
 const PROGRESS_FRONTMATTER_FIELDS = new Set(['Progress', 'Total Plans in Phase', 'Total Phases']);
 // ─── Process exit lock cleanup (D2 — match CJS state.cjs:16-23) ─────────
 /**
@@ -789,7 +790,8 @@ export const stateAddDecision = async (args, projectDir, workstream) => {
         return content;
     }, workstream);
     if (added) {
-        return { data: { added: true, decision: entry } };
+        const reconcile = reconcileDirectiveForLatest(projectDir);
+        return { data: reconcile ? { added: true, decision: entry, reconcile } : { added: true, decision: entry } };
     }
     return { data: { added: false, reason: 'Decisions section not found in STATE.md' } };
 };

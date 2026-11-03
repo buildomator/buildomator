@@ -199,6 +199,20 @@ function describe(cwd, d, ledger) {
         modelNeeded: candidates.length > 0 && ledgerOutcome === null,
     };
 }
+export const RECONCILE_DIRECTIVE = 'Read references/decision-reconciliation.md and apply its capture-time branch to each candidate: rewrite and commit a clear contradiction, write an ambiguous one to the pending record with reconcile pending. Never ask from this surface.';
+/** Directive for the most recently logged decision, or null when nothing needs judging. */
+export function reconcileDirectiveForLatest(cwd) {
+    if (isDisabled(cwd))
+        return null;
+    const decisions = readDecisions(cwd);
+    if (!decisions.length)
+        return null;
+    const d = decisions[decisions.length - 1];
+    const r = describe(cwd, d, readLedger(cwd));
+    if (!r.modelNeeded)
+        return null;
+    return { candidates: r.candidates, decisionHash: r.decisionHash, directive: RECONCILE_DIRECTIVE };
+}
 // ─── handlers ───────────────────────────────────────────────────────────────
 export const reconcileCandidates = async (args, projectDir) => {
     if (isDisabled(projectDir)) {
