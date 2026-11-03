@@ -724,6 +724,34 @@ const NON_FAMILY_COMMAND_ALIASES = [
     "mutation": false
   },
   {
+    "canonical": "reconcile.candidates",
+    "aliases": [
+      "reconcile candidates"
+    ],
+    "mutation": false
+  },
+  {
+    "canonical": "reconcile.pending",
+    "aliases": [
+      "reconcile pending"
+    ],
+    "mutation": true
+  },
+  {
+    "canonical": "reconcile.record",
+    "aliases": [
+      "reconcile record"
+    ],
+    "mutation": true
+  },
+  {
+    "canonical": "reconcile.sweep",
+    "aliases": [
+      "reconcile sweep"
+    ],
+    "mutation": false
+  },
+  {
     "canonical": "requirements.mark-complete",
     "aliases": [
       "requirements mark-complete"

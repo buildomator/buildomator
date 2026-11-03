@@ -28,6 +28,17 @@
  *      forget the id.
  */
 import type { QueryHandler } from './utils.js';
+export declare function normalizePhrase(text: string): string;
+/**
+ * Build a soft-match phrase: the first 6 normalized words. Six is empirically
+ * long enough to avoid collisions with common English fragments and short
+ * enough to survive minor rewordings.
+ *
+ * Returns an empty string when the decision text has fewer than
+ * SOFT_PHRASE_MIN_WORDS words — such decisions are effectively id-only and
+ * callers must rely on a `D-NN` citation (review F5).
+ */
+export declare function softPhrase(text: string): string;
 export declare const checkDecisionCoveragePlan: QueryHandler;
 export declare const checkDecisionCoverageVerify: QueryHandler;
 //# sourceMappingURL=check-decision-coverage.d.ts.map
