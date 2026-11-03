@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v5.0
-milestone_name: Craft Skill Catalog
-status: Awaiting next milestone
-stopped_at: Completed 18-05-PLAN.md
-last_updated: "2026-10-13T14:17:21.866Z"
-last_activity: 2026-10-13 -- milestone v4.9 completed and archived
+milestone: v5.1
+milestone_name: Decision Reconciliation Guard
+status: planning
+last_updated: "2026-11-03T13:03:18.218Z"
+last_activity: 2026-11-03
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 
 ## Current Position
 
-Phase: Milestone v4.9 complete
-Plan: none
-Status: Awaiting next milestone (v4.9 released as plugin v4.9.2 on 2026-10-14)
-Last activity: 2026-10-29 -- added the "Unit Boundary Test" splitting heuristic to bm-planner (quick 261029-346, dist/bm regen 9891ae9, local only, NOT pushed): a compact anti-over-decomposition rule (split only at a real boundary: distinct context, independent output, hard prerequisite, or independent review; else group, bias toward fewer units) targeting GSD's scope asymmetry, ported as an idea from paperclip. Evaluated paperclip itself and declined it as an upstream/craft-skill: it is a product-level agent-orchestration control plane, and its catalog ideas (trust tier, role routing, per-file hash) already exist in bm or are redundant with the git-commit pin. Both twins carry the rule; build-bm --check PASS on a clean tree. Prior: 2026-10-29 -- reverted the v5.0.5 litellm-* profiles (quick 261029-21r, build commit 2b06c14, local only, NOT pushed) after the xortex spike proved them the wrong abstraction: GSD runs on local models via plain adaptive/balanced (which emit the sonnet/opus/haiku aliases) plus Claude Code's ANTHROPIC_DEFAULT_*_MODEL env-var remap to a LiteLLM gateway, so the plugin does no gateway routing of its own; removed the profiles, runtime block, resolver, and config sugar across both twins, the catalog, both schemas, and the litellm tests, and rewrote references/litellm-local-models.md to the env-var chain. Live end-to-end verified: a headless Claude Code agent on the gateway drove a Write tool call on glm-4.5-air and produced the correct artifact (qwen3.8 fails CC's agentic chat-template, deepseek-v4-flash 16k too small). SDK 198/198 plus CJS resolver/parity green, build-bm --check PASS on a clean tree. Version/release decision (whether to cut v5.0.6 over the never-pushed v5.0.5 tag) deferred to human review. Prior: 2026-10-28 -- prepared plugin v5.0.5 (quick 261028-psa, local tag v5.0.5, NOT yet pushed): general local-model litellm profiles (litellm-full / litellm-adaptive / litellm-balanced) with a per-tier local/Anthropic split twinned across the CJS resolver, the SDK resolve-model handler and the SDK session runner, a user-configurable litellm.models map, and references/litellm-local-models.md (end-to-end routing NOT verified, pending the Claude Code spike). Prior: synced upstream and prepared plugin v5.0.4 (quick 261026-jdq, release commit 661bc29, dist/bm regen c955833, local tag v5.0.4, NOT yet pushed): ported the 13 applicable gsd-core v1.18.0 fixes across both twins (including the #5409 Brave redirect-token security fix), re-pinned the five obra Superpowers skills to v7.0.1 (2ce8aa15), and applied the VibeDrift v0.21.7 #88 typed-function extraction fix; build-bm --check PASS, SDK 2008/2008 and CJS guard tests green. Awaiting the push/publish go. Prior: v5.0.0 through v5.0.3 shipped 2026-10-20..22 (Superpowers sixth upstream, engine disciplines, dead-code removal); v4.9.3 shipped 2026-10-17.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-11-03 — Milestone v5.1 started
 
 ## Performance Metrics
 

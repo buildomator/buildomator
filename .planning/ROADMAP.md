@@ -8,6 +8,7 @@
 - [x] **v1.3 Consistency & Code-Integrity Safeguards** — Phases 10-11 (shipped 2026-06-27, released as plugin v4.0.0)
 - [x] **v4.1 Buildomator Rebrand** — Phases 12-15 (shipped 2026-07-14, released as plugin v4.1.0)
 - [x] **v4.9 Craft Skill Catalog** (Phases 16-18, shipped 2026-10-13; released as plugin v4.9.2 on 2026-10-14)
+- [ ] **v5.1 Decision Reconciliation Guard** — Phase 19 (planning, started 2026-11-03)
 
 ## Phases
 
@@ -161,6 +162,31 @@ Full details: [milestones/v4.9-ROADMAP.md](milestones/v4.9-ROADMAP.md)
 
 </details>
 
+## Active: v5.1 Decision Reconciliation Guard
+
+A guard that reconciles newly recorded decisions against the project's always-loaded
+authority docs. Origin: a recurring failure where a decision logged in STATE.md
+contradicted a rule still asserted in CLAUDE.md / PROJECT.md, and the stale rule, loaded
+every session, kept winning. This is not VibeDrift (that is file-structure drift); it
+reuses the decision phrase-matcher and points it at the authority docs nothing currently
+reconciles. Spec: docs/superpowers/specs/2026-11-03-decision-reconciliation-guard-design.md
+
+### Phase 19: Decision Reconciliation Guard
+
+**Goal:** When a newly recorded STATE.md decision contradicts a rule in the project
+CLAUDE.md or PROJECT.md, reconcile it (clear, at capture) or surface it (ambiguous, or at
+session start) instead of silently keeping both.
+
+**Requirements:** RECON-01, RECON-02, RECON-03, RECON-04, RECON-05, RECON-06, RECON-07
+
+**Success criteria:**
+
+1. Recording a decision that clearly contradicts a CLAUDE.md / PROJECT.md rule rewrites that rule, commits it as its own revertible commit, and notifies, with no blocking prompt.
+2. An ambiguous contradiction blocks and asks the user which rule wins before anything changes.
+3. A session started while an unreconciled contradicting decision exists surfaces it at startup for confirmation, and never rewrites silently.
+4. With no candidate rule on topic, no model call is made; the content-hash ledger stops a resolved or dismissed conflict from being raised again.
+5. Logic lands in both the CJS and SDK twins, `dist/bm` is regenerated, and `build-bm --check` reports PASS on a clean tree.
+
 ## Backlog
 
 Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
@@ -183,3 +209,4 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 | v1.3 Consistency & Code-Integrity Safeguards | 2 | 2026-06-27 |
 | v4.1 Buildomator Rebrand | 4 | 2026-07-14 |
 | v4.9 Craft Skill Catalog | 3 | 2026-10-13 (released v4.9.2 2026-10-14) |
+| v5.1 Decision Reconciliation Guard | 1 (planning) | — |

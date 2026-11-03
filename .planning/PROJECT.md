@@ -87,11 +87,18 @@ Deferred (carried to ROADMAP `## Backlog`): LIFE-02, LIFE-03, BEHAVIOR-01, UPST-
 
 **Previously shipped:** v1.1 Session Continuity (2026-04-20) — checkpoint/resume across `/compact`; details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md). v1.0 MVP (2026-04-06) — plugin packaging + MCP + memory; details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md).
 
-## Next Milestone
+## Current Milestone: v5.1 Decision Reconciliation Guard
 
-None defined yet. Start with `/bm:new-milestone` (questioning → research → requirements → roadmap).
+**Goal:** When a newly recorded decision contradicts a rule in the project CLAUDE.md or PROJECT.md, reconcile it (clear case) or surface it (ambiguous, or at session start) instead of silently keeping both, so a stale rule can no longer ambush later sessions.
 
-**Candidate theme for the next milestone: verification integrity.** GitHub issue #34 reports that a passing VERIFICATION.md is not bound to the revision it evaluated, so `/bm:ship` can ship a stale pass on a clean tree. It pairs with SEED-001 (evidence-based verification) and the open Phase 13/14 verification gaps. A scoped source-tree fingerprint at verify time with explicit PASS_FRESH / STALE / PASS_UNBOUND states, checked at ship time, is the shape of the fix.
+**Target features:**
+- Capture-time guard: a clear contradiction rewrites the stale rule and commits it with a notice; an ambiguous one stops and asks.
+- Session-start sweep: surfaces contradictions since the last reconciliation for the user to confirm (always ask, never a silent rewrite).
+- Agent-driven judgment over mechanical candidate retrieval, a content-hash ledger for cost and noise control, built across both the CJS and SDK twins.
+
+**Spec:** docs/superpowers/specs/2026-11-03-decision-reconciliation-guard-design.md (approved 2026-11-03, builder-check resolved).
+
+**Later candidate theme: verification integrity.** GitHub issue #34 reports that a passing VERIFICATION.md is not bound to the revision it evaluated, so `/bm:ship` can ship a stale pass on a clean tree. It pairs with SEED-001 (evidence-based verification) and the open Phase 13/14 verification gaps. A scoped source-tree fingerprint at verify time with explicit PASS_FRESH / STALE / PASS_UNBOUND states, checked at ship time, is the shape of the fix.
 
 **Standing context for whatever comes next:**
 - Repo + cache id stay `gsd-plugin` → no `CLAUDE_PLUGIN_ROOT`/hook-path breakage. Full repo/cache rename still deferred (high-risk lever).
