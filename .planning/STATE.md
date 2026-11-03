@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 
 ## Current Position
 
-Phase: 19 (decision-reconciliation-guard) — EXECUTING
+Phase: 19 (decision-reconciliation-guard) - EXECUTING
 Plan: 4 of 4
 Status: Executing Phase 19
 Last activity: 2026-11-03 -- Phase 19 execution started
