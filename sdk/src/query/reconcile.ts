@@ -41,6 +41,7 @@ const LEDGER_REL = join('.planning', 'reconcile-ledger.json');
 const PENDING_REL = join('.planning', 'reconcile-pending.json');
 const AUTO_REWRITABLE_FILES = ['CLAUDE.md', 'PROJECT.md'];
 const MIN_SHARED_STEMS = 2;
+const MIN_OVERLAP_RATIO = 0.4;
 const STEM_LENGTH = 5;
 const MIN_WORD_LENGTH = 4;
 const STOPWORDS = new Set([
@@ -188,9 +189,10 @@ function findCandidates(cwd: string, decision: DecisionEntry): Candidate[] {
     for (let i = 0; i < lines.length; i++) {
       const trimmed = lines[i].trim();
       if (!trimmed || /^#/.test(trimmed) || /^```/.test(trimmed) || /^<!--/.test(trimmed)) continue;
+      const lineStems = stems(trimmed);
       let shared = 0;
-      for (const s of stems(trimmed)) if (want.has(s)) shared++;
-      if (shared < MIN_SHARED_STEMS) continue;
+      for (const s of lineStems) if (want.has(s)) shared++;
+      if (shared < MIN_SHARED_STEMS || shared / Math.min(want.size, lineStems.size) < MIN_OVERLAP_RATIO) continue;
       const verdict = assessTargetDoc(rel, content, i, cwd);
       out.push({
         file: rel,
