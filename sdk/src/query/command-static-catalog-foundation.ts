@@ -13,6 +13,7 @@ import { commit, checkCommit } from './commit.js';
 import { templateFill, templateSelect } from './template.js';
 import { verifySummary, verifyPathExists } from './verify.js';
 import { decisionsParse } from './decisions.js';
+import { reconcileCandidates, reconcileRecord, reconcileSweep, reconcilePending } from './reconcile.js';
 import { checkDecisionCoveragePlan, checkDecisionCoverageVerify } from './check-decision-coverage.js';
 import { commandsList } from './commands-list.js';
 import { checkConfigGates } from './config-gates.js';
@@ -76,6 +77,14 @@ export const VERIFY_DECISION_STATIC_CATALOG: ReadonlyArray<readonly [string, Que
   ['check decision-coverage-plan', checkDecisionCoveragePlan],
   ['check.decision-coverage-verify', checkDecisionCoverageVerify],
   ['check decision-coverage-verify', checkDecisionCoverageVerify],
+  ['reconcile.candidates', reconcileCandidates],
+  ['reconcile candidates', reconcileCandidates],
+  ['reconcile.record', reconcileRecord],
+  ['reconcile record', reconcileRecord],
+  ['reconcile.sweep', reconcileSweep],
+  ['reconcile sweep', reconcileSweep],
+  ['reconcile.pending', reconcilePending],
+  ['reconcile pending', reconcilePending],
 ] as const;
 
 export const DECISION_ROUTING_STATIC_CATALOG: ReadonlyArray<readonly [string, QueryHandler]> = [

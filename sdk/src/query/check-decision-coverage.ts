@@ -65,7 +65,7 @@ interface VerifyGateData {
   message: string;
 }
 
-function normalizePhrase(text: string): string {
+export function normalizePhrase(text: string): string {
   return text
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, ' ')
@@ -85,7 +85,7 @@ const SOFT_PHRASE_MIN_WORDS = 6;
  * SOFT_PHRASE_MIN_WORDS words — such decisions are effectively id-only and
  * callers must rely on a `D-NN` citation (review F5).
  */
-function softPhrase(text: string): string {
+export function softPhrase(text: string): string {
   const words = normalizePhrase(text).split(' ').filter(Boolean);
   if (words.length < SOFT_PHRASE_MIN_WORDS) return '';
   return words.slice(0, SOFT_PHRASE_MIN_WORDS).join(' ');

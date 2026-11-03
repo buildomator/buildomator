@@ -11,6 +11,11 @@ export const NON_FAMILY_COMMAND_MANIFEST: readonly NonFamilyCommandManifestEntry
   { canonical: 'check.decision-coverage-plan', aliases: ['check decision-coverage-plan'], mutation: false, outputMode: 'json' },
   { canonical: 'check.decision-coverage-verify', aliases: ['check decision-coverage-verify'], mutation: false, outputMode: 'json' },
 
+  { canonical: 'reconcile.candidates', aliases: ['reconcile candidates'], mutation: false, outputMode: 'json' },
+  { canonical: 'reconcile.sweep', aliases: ['reconcile sweep'], mutation: false, outputMode: 'json' },
+  { canonical: 'reconcile.record', aliases: ['reconcile record'], mutation: true, outputMode: 'json' },
+  { canonical: 'reconcile.pending', aliases: ['reconcile pending'], mutation: true, outputMode: 'json' },
+
   { canonical: 'frontmatter.get', aliases: [], mutation: false, outputMode: 'json' },
   { canonical: 'frontmatter.set', aliases: [], mutation: true, outputMode: 'json' },
   { canonical: 'frontmatter.merge', aliases: [], mutation: true, outputMode: 'json' },
