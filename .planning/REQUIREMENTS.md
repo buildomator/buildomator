@@ -10,13 +10,13 @@ docs/superpowers/specs/2026-11-03-decision-reconciliation-guard-design.md
 
 ### Reconciliation
 
-- [ ] **RECON-01**: A decision recorded at capture time that clearly contradicts a rule in the project CLAUDE.md or PROJECT.md triggers an in-place rewrite of that rule to match the decision, committed as its own revertible commit, with a notice and no blocking prompt.
-- [ ] **RECON-02**: A recorded decision whose contradiction with a rule is ambiguous blocks and asks the user which rule wins before anything changes.
+- [x] **RECON-01**: A decision recorded at capture time that clearly contradicts a rule in the project CLAUDE.md or PROJECT.md triggers an in-place rewrite of that rule to match the decision, committed as its own revertible commit, with a notice and no blocking prompt.
+- [x] **RECON-02**: A recorded decision whose contradiction with a rule is ambiguous blocks and asks the user which rule wins before anything changes.
 - [x] **RECON-03**: At session start, a sweep re-checks decisions recorded since the last reconciliation against the rule docs and surfaces any contradiction for the user to confirm before applying, never a silent rewrite.
-- [ ] **RECON-04**: Candidate retrieval is mechanical and runs no model; the semantic contradiction judgment runs only when at least one candidate rule exists.
-- [ ] **RECON-05**: A content-hash ledger records per-decision reconciliation outcomes, so a resolved or dismissed conflict is not raised again and a session with no new decisions does no model work.
-- [ ] **RECON-06**: The guard never auto-rewrites ROADMAP.md, STATE.md, the global `~/.claude/CLAUDE.md`, or a rule inside an auto-managed block or `@`-include; such conflicts are surfaced for the user instead.
-- [ ] **RECON-07**: The guard ships across both the CJS and SDK twins, with `dist/bm` regenerated and `build-bm --check` passing on a clean tree.
+- [x] **RECON-04**: Candidate retrieval is mechanical and runs no model; the semantic contradiction judgment runs only when at least one candidate rule exists.
+- [x] **RECON-05**: A content-hash ledger records per-decision reconciliation outcomes, so a resolved or dismissed conflict is not raised again and a session with no new decisions does no model work.
+- [x] **RECON-06**: The guard never auto-rewrites ROADMAP.md, STATE.md, the global `~/.claude/CLAUDE.md`, or a rule inside an auto-managed block or `@`-include; such conflicts are surfaced for the user instead.
+- [x] **RECON-07**: The guard ships across both the CJS and SDK twins, with `dist/bm` regenerated and `build-bm --check` passing on a clean tree.
 
 ## Out of Scope
 
@@ -35,13 +35,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RECON-01 | Phase 19 | Pending |
-| RECON-02 | Phase 19 | Pending |
+| RECON-01 | Phase 19 | Complete |
+| RECON-02 | Phase 19 | Complete |
 | RECON-03 | Phase 19 | Complete |
-| RECON-04 | Phase 19 | Pending |
-| RECON-05 | Phase 19 | Pending |
-| RECON-06 | Phase 19 | Pending |
-| RECON-07 | Phase 19 | Pending |
+| RECON-04 | Phase 19 | Complete |
+| RECON-05 | Phase 19 | Complete |
+| RECON-06 | Phase 19 | Complete |
+| RECON-07 | Phase 19 | Complete |
 
 **Coverage:**
 - v5.1 requirements: 7 total

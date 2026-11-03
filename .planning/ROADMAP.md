@@ -187,7 +187,7 @@ session start) instead of silently keeping both.
 4. With no candidate rule on topic, no model call is made; the content-hash ledger stops a resolved or dismissed conflict from being raised again.
 5. Logic lands in both the CJS and SDK twins, `dist/bm` is regenerated, and `build-bm --check` reports PASS on a clean tree.
 
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -201,7 +201,7 @@ Plans:
 
 **Wave 3** *(blocked on 19-02 + 19-03)*
 
-- [ ] 19-04-PLAN.md -- Regenerate sdk/dist + dist/bm, build-bm --check PASS on a clean tree, wire reconcile tests into CI
+- [x] 19-04-PLAN.md -- Regenerate sdk/dist + dist/bm, build-bm --check PASS on a clean tree, wire reconcile tests into CI
 
 ## Backlog
 
