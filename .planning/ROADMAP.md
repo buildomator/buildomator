@@ -187,6 +187,22 @@ session start) instead of silently keeping both.
 4. With no candidate rule on topic, no model call is made; the content-hash ledger stops a resolved or dismissed conflict from being raised again.
 5. Logic lands in both the CJS and SDK twins, `dist/bm` is regenerated, and `build-bm --check` reports PASS on a clean tree.
 
+**Plans:** 4 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 19-01-PLAN.md -- Core reconcile engine (decision-log reader, candidate retrieval, content-hash ledger, target-doc safety gate) in both twins, plus the agent-procedure reference and golden fixtures
+
+**Wave 2** *(blocked on 19-01)*
+
+- [ ] 19-02-PLAN.md -- Capture-time firing: add-decision attaches a reconcile directive, execute-plan applies clear-rewrite-or-ask
+- [ ] 19-03-PLAN.md -- Session-start firing: sweep hook writes a pending-conflict record and systemMessage, plus the on-demand reconcile skill
+
+**Wave 3** *(blocked on 19-02 + 19-03)*
+
+- [ ] 19-04-PLAN.md -- Regenerate sdk/dist + dist/bm, build-bm --check PASS on a clean tree, wire reconcile tests into CI
+
 ## Backlog
 
 Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
