@@ -94,9 +94,9 @@ function runHook(command, home, pathValue) {
   return { status: r.status, stdout: r.stdout || '', stderr: r.stderr || '' };
 }
 
-// ── case 1: one identical preamble across all 36 commands ────────────────────
+// ── case 1: one identical preamble across all 38 commands ────────────────────
 
-check('all 18 commands in both hooks.json files share one identical preamble', () => {
+check('all 19 commands in both hooks.json files share one identical preamble', () => {
   const gsd = require(path.join(ROOT, 'hooks', 'hooks.json')).hooks;
   const bm = require(path.join(ROOT, 'dist', 'bm', 'hooks', 'hooks.json')).hooks;
   const prefixes = new Set();
@@ -114,7 +114,7 @@ check('all 18 commands in both hooks.json files share one identical preamble', (
       }
     }
   }
-  assert(n === 36, `expected 36 commands across both files, got ${n}`);
+  assert(n === 38, `expected 38 commands across both files, got ${n}`);
   assert(prefixes.size === 1, `expected one shared preamble, got ${prefixes.size}`);
   const pre = [...prefixes][0];
   assert(pre.startsWith('command -v node >/dev/null 2>&1 || { for d in "$HOME/.pixi/bin"'), `unexpected preamble: ${pre}`);
