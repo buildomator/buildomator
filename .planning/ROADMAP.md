@@ -8,7 +8,7 @@
 - [x] **v1.3 Consistency & Code-Integrity Safeguards** — Phases 10-11 (shipped 2026-06-27, released as plugin v4.0.0)
 - [x] **v4.1 Buildomator Rebrand** — Phases 12-15 (shipped 2026-07-14, released as plugin v4.1.0)
 - [x] **v4.9 Craft Skill Catalog** (Phases 16-18, shipped 2026-10-13; released as plugin v4.9.2 on 2026-10-14)
-- [ ] **v5.1 Decision Reconciliation Guard** — Phase 19 (planning, started 2026-11-03)
+- [x] **v5.1 Decision Reconciliation Guard**: Phase 19 (shipped 2026-11-04)
 
 ## Phases
 
@@ -225,4 +225,4 @@ Still-deferred, carried forward (surfaces at next `/gsd:new-milestone`):
 | v1.3 Consistency & Code-Integrity Safeguards | 2 | 2026-06-27 |
 | v4.1 Buildomator Rebrand | 4 | 2026-07-14 |
 | v4.9 Craft Skill Catalog | 3 | 2026-10-13 (released v4.9.2 2026-10-14) |
-| v5.1 Decision Reconciliation Guard | 1 (planning) | — |
+| v5.1 Decision Reconciliation Guard | 1 | 2026-11-04 |

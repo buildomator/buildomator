@@ -8,6 +8,18 @@ History before 2.38.2 lives in git + the per-milestone archive (see `.planning/m
 
 ## [Unreleased]
 
+## [5.1.0] - 2026-11-04  (Decision Reconciliation Guard)
+
+A guard that reconciles a newly recorded decision against the authority docs that load every session. The failure it closes: a decision logged in STATE.md contradicts a rule still asserted in CLAUDE.md or PROJECT.md, and because that stale rule reloads on every session it keeps winning. This is not VibeDrift, which is file-structure drift. It reuses the existing decision phrase-matcher and points it at the authority docs that nothing previously reconciled. Native milestone; follows the gsd-core v1.18 provenance line.
+
+### Added
+- **Reconcile engine in both twins.** A decision-log reader, candidate-rule retrieval over CLAUDE.md and PROJECT.md (reusing the decision phrase-matcher), a content-hash ledger, and a target-doc safety gate, landed in the CJS and SDK resolvers with golden fixtures and an agent-procedure reference. When no candidate rule is on topic, no model call is made.
+- **Capture-time reconciliation.** Recording a decision that clearly contradicts a rule rewrites that rule, commits the rewrite as its own revertible commit, and notifies, with no blocking prompt. An ambiguous contradiction blocks and asks which rule wins before anything changes. `add-decision` attaches the reconcile directive and `execute-plan` applies the clear-rewrite-or-ask outcome.
+- **Session-start reconciliation.** A session started while an unreconciled contradicting decision exists surfaces it at startup for confirmation through a sweep hook that writes a pending-conflict record and a `systemMessage`, plus an on-demand reconcile skill. Startup never rewrites silently. The content-hash ledger stops a resolved or dismissed conflict from being raised again.
+
+### Build
+- `dist/bm` regenerated and `check:bm-drift` (build-bm --check) reports PASS on a clean tree. The reconcile unit, parity, and bm drift checks are wired into CI.
+
 ## [5.0.5] - 2026-10-28  (Local-model litellm profiles)
 
 Adds three opt-in model profiles that run some or all agent tiers on local models through a litellm gateway. Claude Code stays the harness; litellm is only an Anthropic-compatible gateway in front of it. Follows the gsd-core v1.18 provenance line.
