@@ -129,6 +129,8 @@ jobs:
         run: node tests/roadmap-analyze-line-anchor.test.cjs
       - name: Run STATE.md field line-anchor guard test
         run: node tests/state-field-line-anchor.test.cjs
+      - name: Run write-profile evidence redaction guard test
+        run: node tests/profile-redact-evidence-quotes.test.cjs
       - name: Run state-document generated-freshness guard test
         run: node tests/state-document-generated-fresh.test.cjs
       - name: Run phase-add milestone-scope guard test
