@@ -50,6 +50,37 @@ describe('writeProfile', () => {
     expect(md).toContain('Developer Profile');
     expect(md).toMatch(/Communication Style/i);
   });
+
+  it('redacts secrets in evidence_quotes, the array the profile renders', async () => {
+    const analysisPath = join(tmpDir, 'analysis.json');
+    const outPath = join(tmpDir, '.planning', 'USER-PROFILE.md');
+    const token = `ghp_${'a'.repeat(36)}`;
+    await writeFile(
+      analysisPath,
+      JSON.stringify({
+        profile_version: '1.0',
+        data_source: 'test',
+        dimensions: {
+          communication_style: {
+            rating: 'terse-direct',
+            confidence: 'HIGH',
+            claude_instruction: 'Keep it short.',
+            summary: 'Test summary.',
+            evidence_quotes: [
+              { signal: 'pastes credentials', quote: `use ${token} for the API`, project: 'demo' },
+            ],
+          },
+        },
+      }),
+      'utf-8',
+    );
+    const result = await writeProfile(['--input', analysisPath, '--output', outPath], tmpDir);
+    expect((result.data as Record<string, unknown>).sensitive_redacted).toBe(1);
+    const md = await readFile(outPath, 'utf-8');
+    expect(md).not.toContain(token);
+    expect(md).toContain('[REDACTED]');
+    expect(md).not.toContain('None detected');
+  });
 });
 
 describe('generateDevPreferences', () => {

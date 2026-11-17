@@ -371,11 +371,16 @@ function cmdWriteProfileLogic(
   for (const dimKey of Object.keys(dimensions)) {
     const dim = dimensions[dimKey];
     if (!dim) continue;
-    if (dim.evidence && Array.isArray(dim.evidence)) {
-      for (const ev of dim.evidence as Array<Record<string, unknown>>) {
+    // The renderer prefers `evidence_quotes` (the profiler's schema) over the
+    // legacy `evidence` key, so redact both or the rendered array leaks.
+    for (const arr of [dim.evidence_quotes, dim.evidence]) {
+      if (!Array.isArray(arr)) continue;
+      for (const ev of arr as Array<Record<string, unknown>>) {
+        if (!ev || typeof ev !== 'object') continue;
         if (ev.quote) ev.quote = redactSensitive(String(ev.quote));
         if (ev.example) ev.example = redactSensitive(String(ev.example));
         if (ev.signal) ev.signal = redactSensitive(String(ev.signal));
+        if (ev.pattern) ev.pattern = redactSensitive(String(ev.pattern));
       }
     }
   }
