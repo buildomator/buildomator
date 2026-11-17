@@ -269,7 +269,11 @@ async function readModifyWriteStateMd(
     let content: string;
     try {
       content = await readFile(statePath, 'utf-8');
-    } catch {
+    } catch (err) {
+      // Only a missing file starts from empty. Any other read error (EACCES,
+      // EMFILE, EIO...) must propagate, or the write below replaces the real
+      // STATE.md with bare frontmatter. Matches platformReadSync in state.cjs.
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
       content = '';
     }
     // Strip frontmatter before passing to modifier so that regex replacements
@@ -316,8 +320,10 @@ export async function readModifyWriteStateMdFull(
     let content = '';
     try {
       content = await readFile(statePath, 'utf-8');
-    } catch {
-      /* missing */
+    } catch (err) {
+      // Missing file reads as empty; any other read error must not be
+      // mistaken for an empty STATE.md and overwritten.
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
     }
     const modified = await modifier(content);
     // Nothing parsed: leave the file exactly as it was found on disk.

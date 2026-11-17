@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, writeFile, readFile, rm, mkdir, utimes, stat } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm, mkdir, utimes, stat, chmod } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { existsSync } from 'node:fs';
@@ -279,6 +279,56 @@ describe('write only what you parsed', () => {
     expect(String(data.reason)).toMatch(/Progress field not found/);
     expect(await readFile(sp(), 'utf-8')).toBe(before);
     expect(await mtimeOf()).toBe(m);
+  });
+});
+
+// ─── unreadable STATE.md is never overwritten ──────────────────────────────
+
+// A read failure other than ENOENT (EACCES, EMFILE, EIO...) must not be treated
+// as an empty file: the handler would rebuild bare frontmatter and write it over
+// the real STATE.md. A write-only file (0o200) makes the read fail with EACCES
+// while a write would still succeed, which is exactly the destructive case.
+const canMakeUnreadable = process.platform !== 'win32'
+  && !(typeof process.getuid === 'function' && process.getuid() === 0);
+
+describe.skipIf(!canMakeUnreadable)('unreadable STATE.md is never overwritten', () => {
+  let tmpDir: string;
+  const sp = () => join(tmpDir, '.planning', 'STATE.md');
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'gsd-unreadable-'));
+    await setupTestProject(tmpDir);
+    await chmod(sp(), 0o200);
+  });
+
+  afterEach(async () => {
+    await chmod(sp(), 0o600).catch(() => {});
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('state.begin-phase rethrows the read error and leaves the file intact', async () => {
+    const { stateBeginPhase } = await import('./state-mutation.js');
+    await expect(
+      stateBeginPhase(['--phase', '11', '--name', 'Next', '--plans', '2'], tmpDir),
+    ).rejects.toMatchObject({ code: 'EACCES' });
+    await chmod(sp(), 0o600);
+    expect(await readFile(sp(), 'utf-8')).toBe(MINIMAL_STATE);
+  });
+
+  it('readModifyWriteStateMdFull rethrows the read error and leaves the file intact', async () => {
+    const { readModifyWriteStateMdFull } = await import('./state-mutation.js');
+    await expect(
+      readModifyWriteStateMdFull(tmpDir, (content) => `${content}\nappended\n`),
+    ).rejects.toMatchObject({ code: 'EACCES' });
+    await chmod(sp(), 0o600);
+    expect(await readFile(sp(), 'utf-8')).toBe(MINIMAL_STATE);
+  });
+
+  it('a missing STATE.md is still treated as empty', async () => {
+    const { readModifyWriteStateMdFull } = await import('./state-mutation.js');
+    await rm(sp());
+    await readModifyWriteStateMdFull(tmpDir, (content) => `${content}# Project State\n`);
+    expect(await readFile(sp(), 'utf-8')).toContain('# Project State');
   });
 });
 
