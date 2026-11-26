@@ -4,6 +4,10 @@
 
 # Buildomator for Claude Code
 
+<!-- yarkr:badges:start -->
+[![Indexed on Yarkr](https://api.yarkr.com/functions/v1/api/api/v1/badges/repos/buildomator/buildomator/version.svg)](https://yarkr.com/arks/buildomator/buildomator)
+<!-- yarkr:badges:end -->
+
 **Plugin version:** `4.1.0`
 
 **Buildomator** (formerly [gsd-plugin](https://github.com/jnuyens/gsd-plugin)) is a Claude Code plugin that plans, executes, and verifies your work. It asks you only about the real design and architecture decisions that need your judgment, then carries out the rest on its own. Each step runs in its own focused subcontext, so token use stays low even on long projects.
@@ -77,6 +81,40 @@ You should now be inside a Claude Code session (you'll see the Claude Code promp
 That's it. This installs everything: slash commands, agent definitions, hooks, and an MCP server for project state. The `/reload-plugins` step activates the freshly installed plugin in your current session; without it the slash commands and hooks aren't loaded until you restart Claude Code. Enable auto-update for the marketplace in Claude Code settings to receive updates automatically.
 
 `bm@buildomator` is the Buildomator plugin; its commands are all `/bm:*`. That is the only install you need. Coming from an older version that used a different command prefix? See [Migrating](#migrating-from-gsd) below.
+
+<!-- yarkr:install:start -->
+## Install with Yarkr
+
+This repo is indexed on [Yarkr](https://yarkr.com/arks/buildomator/buildomator) as the ark [buildomator/buildomator](https://yarkr.com/arks/buildomator/buildomator), so its skills install into Claude Code, Codex, Cursor and other agent harnesses with one command.
+
+### CLI
+
+Install the whole ark, which Yarkr keeps equal to this repo:
+
+```bash
+npx yarkr-cli sync buildomator/buildomator
+```
+
+Or add individual skills:
+
+```bash
+npx yarkr-cli add skill:buildomator/buildomator/add-backlog
+npx yarkr-cli add skill:buildomator/buildomator/add-phase
+npx yarkr-cli add skill:buildomator/buildomator/add-tests
+```
+
+No Node.js? `curl -fsSL https://yarkr.com/install.sh | sh` (macOS, Linux) or `irm https://yarkr.com/install.ps1 | iex` (Windows PowerShell) installs `yarkr` as a standalone binary; then type `yarkr` in place of `npx yarkr-cli`.
+
+### MCP
+
+Connect your agent to the ark over MCP:
+
+```bash
+npx yarkr-cli mcp add buildomator/buildomator
+```
+
+Or point any MCP client at `https://api.yarkr.com/functions/v1/api/mcp/o/buildomator/buildomator`.
+<!-- yarkr:install:end -->
 
 ## Quick start
 
